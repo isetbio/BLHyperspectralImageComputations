@@ -1,26 +1,7 @@
 classdef HyperSpectralImageDataExtractor < handle
-%HYPERSPECTRALIMAGEDATAEXTRACTOR Class to extract hyperspectral image data
-%Usage:
-%     sceneData = struct(...
-%         'database', 'manchester_database', ...                                          % database directory
-%         'name', 'scene4', ...                                                           % scene subdirectory
-%         'referencePaintFileName',  'ref_n7.mat', ...                                    % name of reference paint data file
-%         'reflectanceDataFileName', 'ref_cyflower1bb_reg1.mat', ...                      % name of scene reflectance data file
-%         'spectralRadianceDataFileName', 'radiance_by_reflectance_cyflower1.mat' ...     % name of spectral radiance factor to convert scene reflectance to radiances in Watts/steradian/m^2/nm - akin to the scene illuminant
-%     );
-%     
-%     % Instantiate a @HyperSpectralImageDataExtractor object
-%     hyperSpectralImageDataHandler = HyperSpectralImageDataExtractor(sceneData);
-%    
-%     % Display a sRGB version of the hyperspectral image with the reference object outlined in red
-%     clipLuminance = 12000; gammaValue = 1.7;
-%     hyperSpectralImageDataHandler.showLabeledsRGBImage(clipLuminance, gammaValue);
-%     
-%     % Get the isetbio scene object directly
-%     sceneObject = hyperSpectralImageDataHandler.isetbioSceneObject;
-%     
-%     % Export the isetbio scene object
-%     fileNameOfExportedSceneObject = hyperSpectralImageDataHandler.exportIsetbioSceneObject();
+%HYPERSPECTRALIMAGEDATAEXTRACTOR Abstarct class to extract hyperspectral image data
+% Use one of its subclasses, such as @ManchesterHyperSpectralImageDataExtractor.
+% For more information: doc ManchesterHyperSpectralImageDataExtractor
 %
 %    4/28/2015   npc    Wrote it.
 %
@@ -42,7 +23,10 @@ classdef HyperSpectralImageDataExtractor < handle
             'illuminant',   [], ... 
             'radianceMap',  [] ...                                                
         );
+    end
     
+    % Protected properties, so that our subclasses can set them
+    properties (SetAccess = protected)
         % struct with various information regarding the reference object in the scene
         referenceObjectData = struct(...
             'spectroRadiometerReadings', struct(), ...
@@ -61,7 +45,8 @@ classdef HyperSpectralImageDataExtractor < handle
         wattsToLumens = 683;
     end
     
-    properties (Access = private)
+    % Protected, so that our subclasses can set/get them
+    properties (Access = protected)
         % struct with filenames of different data files for the current scene
         % passed during instantiation of the HyperSpectralImageDataExtractor
         sceneData = struct();
@@ -73,22 +58,13 @@ classdef HyperSpectralImageDataExtractor < handle
     % Public API
     methods
         % Constructor
-        function obj = HyperSpectralImageDataExtractor(sceneData)
+        function obj = HyperSpectralImageDataExtractor()
             % Load CIE '31 CMFs
             colorMatchingData = load('T_xyz1931.mat');
             obj.sensorXYZ = struct;
             obj.sensorXYZ.S = colorMatchingData.S_xyz1931;
             obj.sensorXYZ.T = colorMatchingData.T_xyz1931;
             clear 'colorMatchingData';
-
-            % generate local copy of sceneData struct
-            obj.sceneData = sceneData;
-            
-            % Generate the reference object data struct
-            obj.generateReferenceObjectDataStruct();
-    
-            % Generate the radiance data struct
-            obj.generateRadianceDataStruct();
         end
         
         % Method to display an sRGB version of the hyperspectral image with the reference object outlined in red
@@ -113,11 +89,16 @@ classdef HyperSpectralImageDataExtractor < handle
 		end
     end
     
-    % Private methods
-    methods (Access = private)
-        generateReferenceObjectDataStruct(obj);
+    methods (Abstract)
+        generateSceneDataStruct(obj,sceneName);
+    end
+    
+    
+    % Protected methods
+    methods (Access = protected)
         generateRadianceDataStruct(obj);
         roiLuminance = computeROIluminance(obj);
+        chromaticity = computeROIchromaticity(obj);
     end
 end
 

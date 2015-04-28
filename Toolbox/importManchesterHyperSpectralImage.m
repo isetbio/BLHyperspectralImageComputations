@@ -1,15 +1,9 @@
 function importManchesterHyperSpectralImage
    
-    sceneData = struct(...
-        'database', 'manchester_database', ...                                          % database directory
-        'name', 'scene4', ...                                                           % scene subdirectory
-        'referencePaintFileName',  'ref_n7.mat', ...                                    % name of reference paint data file
-        'reflectanceDataFileName', 'ref_cyflower1bb_reg1.mat', ...                      % name of scene reflectance data file
-        'spectralRadianceDataFileName', 'radiance_by_reflectance_cyflower1.mat' ...     % name of spectral radiance factor to convert scene reflectance to radiances in Watts/steradian/m^2/nm - akin to the scene illuminant
-    );
+    sceneName = 'scene4';
     
-    % Instantiate a HyperSpectralImageDataExtractor
-    hyperSpectralImageDataHandler = HyperSpectralImageDataExtractor(sceneData);
+    % Instantiate a ManchesterHyperSpectralImageDataExtractor
+    hyperSpectralImageDataHandler = ManchesterHyperSpectralImageDataExtractor(sceneName);
    
     % Show an sRGB version of the hyperspectral image with the reference object outlined in red
     clipLuminance = 12000; gammaValue = 1.7;
@@ -28,11 +22,10 @@ function importManchesterHyperSpectralImage
     % Export isetbio scene object
     fileNameOfExportedSceneObject = hyperSpectralImageDataHandler.exportIsetbioSceneObject();
     test(fileNameOfExportedSceneObject)
-
 end
 
 
- function test(sceneObjectOrFileNameOfSceneObject)
+function test(sceneObjectOrFileNameOfSceneObject)
  
     if (ischar(sceneObjectOrFileNameOfSceneObject)) && (exist(sceneObjectOrFileNameOfSceneObject, 'file'))
         % Load exported scene object

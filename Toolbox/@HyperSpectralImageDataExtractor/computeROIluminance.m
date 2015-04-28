@@ -1,3 +1,4 @@
+% Method to compute the mean luminance of the ROI
 function roiLuminance = computeROIluminance(obj)
 
     cols = obj.referenceObjectData.geometry.roiXYpos(1) + (-obj.referenceObjectData.geometry.roiSize(1):obj.referenceObjectData.geometry.roiSize(1));
@@ -5,4 +6,5 @@ function roiLuminance = computeROIluminance(obj)
     v = obj.sceneLuminanceMap(rows,cols);
     roiLuminance = mean(v(:));
 end
+
 

@@ -1,0 +1,13 @@
+% Method to compute the mean chromaticity of the ROI
+function chromaticity = computeROIchromaticity(obj)
+    cols = obj.referenceObjectData.geometry.roiXYpos(1) + (-obj.referenceObjectData.geometry.roiSize(1):obj.referenceObjectData.geometry.roiSize(1));
+    rows = obj.referenceObjectData.geometry.roiXYpos(2) + (-obj.referenceObjectData.geometry.roiSize(2):obj.referenceObjectData.geometry.roiSize(2));
+    X = squeeze(obj.sceneXYZmap(rows,cols,1));
+    Y = squeeze(obj.sceneXYZmap(rows,cols,2));
+    Z = squeeze(obj.sceneXYZmap(rows,cols,3));
+    meanX = mean(X(:));
+    meanY = mean(Y(:));
+    meanZ = mean(Z(:));
+    chromaticity(1) = meanX / (meanX+meanY+meanZ);
+    chromaticity(2) = meanY / (meanX+meanY+meanZ);
+end

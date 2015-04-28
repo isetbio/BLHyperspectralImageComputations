@@ -61,7 +61,7 @@ function scene = sceneFromHyperSpectralImageData(varargin)
     
     % Illuminant scaling must be done after photons are set. The multispectral data all have 
     % an illuminant structure that is set, so they do not pass through this step.
-    scene = sceneIlluminantScale(scene);
+    %scene = sceneIlluminantScale(scene);
     
     meanSceneLuminanceFromIsetbio = sceneGet(scene, 'mean luminance');
     fprintf('ISETBIO''s estimate of mean scene luminance: %2.2f cd/m2\n', meanSceneLuminanceFromIsetbio);
