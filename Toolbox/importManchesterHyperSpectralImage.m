@@ -17,20 +17,31 @@ function importManchesterHyperSpectralImage
     
     resp = input('Export isetbio scene object ? [1=yes] : ');
     if (resp ~= 1)
+        % Get the isetbio scene object directly
+        sceneObject = hyperSpectralImageDataHandler.isetbioSceneObject;
+        test(sceneObject)
+    
         disp('Bye bye');
         return;
     end
 
     % Export isetbio scene object
     fileNameOfExportedSceneObject = hyperSpectralImageDataHandler.exportIsetbioSceneObject();
-    
     test(fileNameOfExportedSceneObject)
+
 end
 
 
- function test(fileNameOfExportedSceneObject)
-    % Load exported scene object
-    load(fileNameOfExportedSceneObject);
+ function test(sceneObjectOrFileNameOfSceneObject)
+ 
+    if (ischar(sceneObjectOrFileNameOfSceneObject)) && (exist(sceneObjectOrFileNameOfSceneObject, 'file'))
+        % Load exported scene object
+        load(sceneObjectOrFileNameOfSceneObject);
+    else
+        scene = sceneObjectOrFileNameOfSceneObject;
+    end
+    
+    whos 'scene'
     % display scene
     vcAddAndSelectObject(scene); sceneWindow;
     

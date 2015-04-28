@@ -1,6 +1,7 @@
 % Method to display an sRGB version of the hyperspectral image with the reference object outlined in red
 function showLabeledsRGBImage(obj, clipLuminance, gammaValue)
 
+    % To cal format for fast computations
     [sceneXYZcalFormat, nCols, mRows] = ImageToCalFormat(obj.sceneXYZmap);
     
     % Clip luminance
@@ -30,15 +31,61 @@ function showLabeledsRGBImage(obj, clipLuminance, gammaValue)
     sRGBimage = sRGBimage .^ (1/gammaValue);   
  
     % Label reference object
-    cols = obj.referenceObjectData.geometry.roiXYpos(1) + (-obj.referenceObjectData.geometry.roiSize(1):obj.referenceObjectData.geometry.roiSize(1));
-    rows = obj.referenceObjectData.geometry.roiXYpos(2) + (-obj.referenceObjectData.geometry.roiSize(2):obj.referenceObjectData.geometry.roiSize(2));
-    sRGBimage(rows, cols,1) = 1;
-    sRGBimage(rows, cols,2) = 0;
-    sRGBimage(rows, cols,3) = 0;
+    outlineWidth = 4;
+    [rowIndices, colIndices] = indicesForRedRectangle(obj, outlineWidth);
+    for k = 1:numel(rowIndices)
+        if (mod(k,10) < 5)
+            sRGBimage(rowIndices(k), colIndices(k),1) = 1;
+            sRGBimage(rowIndices(k), colIndices(k),2) = 0;
+            sRGBimage(rowIndices(k), colIndices(k),3) = 0;
+        else
+            sRGBimage(rowIndices(k), colIndices(k),1) = 0;
+            sRGBimage(rowIndices(k), colIndices(k),2) = 0;
+            sRGBimage(rowIndices(k), colIndices(k),3) = 1;
+        end
+    end
     
+    % Display it
     figure(2); clf;
     imshow(sRGBimage, 'Border','tight'); truesize;
     title('sRGB image with reference object outlined in red');
+    
+    % Keep a copy of it
+    obj.sRGBimage = sRGBimage;
 end
+
+function [rowIndices, colIndices] = indicesForRedRectangle(obj, outlineWidth)
+    colIndices = [];
+    rowIndices = [];
+    
+    for k = 1:outlineWidth
+        newColIndices = obj.referenceObjectData.geometry.roiXYpos(1) + (-obj.referenceObjectData.geometry.roiSize(1)-outlineWidth:obj.referenceObjectData.geometry.roiSize(1)+outlineWidth);
+        newRowIndices = ones(size(newColIndices)) * (obj.referenceObjectData.geometry.roiXYpos(2)-obj.referenceObjectData.geometry.roiSize(2)-k);
+        colIndices = [colIndices newColIndices];
+        rowIndices = [rowIndices newRowIndices];
+    end
+    
+    for k = 1:outlineWidth
+        newColIndices = obj.referenceObjectData.geometry.roiXYpos(1) + (-obj.referenceObjectData.geometry.roiSize(1)-outlineWidth:obj.referenceObjectData.geometry.roiSize(1)+outlineWidth);
+        newRowIndices = ones(size(newColIndices)) * (obj.referenceObjectData.geometry.roiXYpos(2)+obj.referenceObjectData.geometry.roiSize(2)+k);
+        colIndices = [colIndices newColIndices];
+        rowIndices = [rowIndices newRowIndices];
+    end
+    
+    for k = 1:outlineWidth
+        newRowIndices = obj.referenceObjectData.geometry.roiXYpos(2) + (-obj.referenceObjectData.geometry.roiSize(2)-outlineWidth:obj.referenceObjectData.geometry.roiSize(2)+outlineWidth);
+        newColIndices = ones(size(newRowIndices)) * (obj.referenceObjectData.geometry.roiXYpos(1)-obj.referenceObjectData.geometry.roiSize(1)-k);
+        colIndices = [colIndices newColIndices];
+        rowIndices = [rowIndices newRowIndices];
+    end
+    
+    for k = 1:outlineWidth
+        newRowIndices = obj.referenceObjectData.geometry.roiXYpos(2) + (-obj.referenceObjectData.geometry.roiSize(2)-outlineWidth:obj.referenceObjectData.geometry.roiSize(2)+outlineWidth);
+        newColIndices = ones(size(newRowIndices)) * (obj.referenceObjectData.geometry.roiXYpos(1)+obj.referenceObjectData.geometry.roiSize(1)+k);
+        colIndices = [colIndices newColIndices];
+        rowIndices = [rowIndices newRowIndices];
+    end
+end
+
 
 
