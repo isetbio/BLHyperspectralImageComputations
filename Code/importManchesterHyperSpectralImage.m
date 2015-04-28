@@ -46,6 +46,7 @@ function test(sceneObjectOrFileNameOfSceneObject)
     
     % Shown optical image
     vcAddAndSelectObject(oi); oiWindow;
+    
 end
 
 
