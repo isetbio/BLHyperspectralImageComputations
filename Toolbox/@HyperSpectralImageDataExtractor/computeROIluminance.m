@@ -1,4 +1,4 @@
-% Method to compute the mean luminance of the ROI
+% Method to compute the mean luminance of the reference object ROI
 function roiLuminance = computeROIluminance(obj)
 
     cols = obj.referenceObjectData.geometry.roiXYpos(1) + (-obj.referenceObjectData.geometry.roiSize(1):obj.referenceObjectData.geometry.roiSize(1));

@@ -37,6 +37,19 @@ function generateSceneDataStruct(obj,sceneName)
             obj.sceneData.referenceObjectData           = generateReferenceObjectDataStructForManchesterScene4(referencePaintMaterialFileName);
             obj.sceneData.reflectanceDataFileName       = 'ref_cyflower1bb_reg1.mat';
             obj.sceneData.spectralRadianceDataFileName  = 'radiance_by_reflectance_cyflower1.mat';
+            
+        case 'scene5'
+            referencePaintMaterialFileName              = fullfile(sourceDir, sceneName, 'ref_n7.mat');
+            obj.sceneData.referenceObjectData           = generateReferenceObjectDataStructForManchesterScene5(referencePaintMaterialFileName);
+            obj.sceneData.reflectanceDataFileName       = 'ref_cbrufefields1bb_reg1.mat';
+            obj.sceneData.spectralRadianceDataFileName  = 'radiance_by_reflectance_cbrufefields.mat';
+       
+        case 'scene6'
+            referencePaintMaterialFileName              = fullfile(sourceDir, sceneName, 'ref_n7.mat');
+            obj.sceneData.referenceObjectData           = generateReferenceObjectDataStructForManchesterScene6(referencePaintMaterialFileName);
+            obj.sceneData.reflectanceDataFileName       = 'ref_braga1bb_reg1.mat';
+            obj.sceneData.spectralRadianceDataFileName  = 'radiance_by_reflectance_braga1.mat';
+            
         otherwise
             error('Unknown scene name (''%s'') for database ''%s''. ', sceneName, databaseName);   
     end
@@ -186,6 +199,75 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
          'info', ['Recorded in the Gualtar campus of University of Minho, Portugal, on 31 July 2002 at 17:40' ...
                 'under direct sunlight and blue sky. Ambient temperature: 29 C.' ...
                 'Camera aperture: f/22, focus: 38, zoom set to maximum giving a focal length of 75 mm'] ...
+    );    
+end
+
+function referenceObjectData = generateReferenceObjectDataStructForManchesterScene5(referencePaintMaterialFileName)
+    % Spectral data for reference paint material (variable: 'ref_n7')
+    ref_n7 = [];
+    load(referencePaintMaterialFileName);
+    if (isempty(ref_n7))
+        error('Data file does not contain the expected ''ref_n7'' field.');
+    end
+    
+    referenceObjectData = struct(...
+        'spectroRadiometerReadings', struct( ...    % Spectro-radiometer readings from the reference object
+            'xChroma',      0.323, ...              % 
+            'yChroma',      0.338, ...              %
+            'Yluma',        8450,  ...              % cd/m2
+            'CCT',          5924   ...              % deg kelvin
+            ), ...
+         'paintMaterial', struct( ...               % SPD of the reference object
+            'name',   'Munsell N7 matt grey', ...
+            'wave', ref_n7(:,1),...
+            'spd',  ref_n7(:,2) ...
+         ), ...
+         'geometry', struct( ...                    % Geometry of the reference object
+            'shape',            'sphere', ...
+            'distanceToCamera', 56, ...             % meters
+            'sizeInMeters',     30/100.0, ...       % for this scene, the reported size is the ball diameter
+            'sizeInPixels',     167, ...            % estimated manually from the picture
+            'roiXYpos',         [83 981], ...       % pixels (center)
+            'roiSize',          [10 10] ...         % pixels (halfwidth, halfheight)
+         ), ...
+         'info', ['Scene was recorded at Brufe, Terras do Bouro, Minho region, Portugal, on 25 July 2002 at 16:15'...
+                  'under a blue sky with some wind.  Ambient temperature was 30ºC. Camera aperture was f/16, focus 3.0,'...
+                  'and zoom maximum'] ...
+    );    
+end
+
+
+function referenceObjectData = generateReferenceObjectDataStructForManchesterScene6(referencePaintMaterialFileName)
+    % Spectral data for reference paint material (variable: 'ref_n7')
+    ref_n7 = [];
+    load(referencePaintMaterialFileName);
+    if (isempty(ref_n7))
+        error('Data file does not contain the expected ''ref_n7'' field.');
+    end
+    
+    referenceObjectData = struct(...
+        'spectroRadiometerReadings', struct( ...    % Spectro-radiometer readings from the reference object
+            'xChroma',      0.326, ...              % 
+            'yChroma',      0.339, ...              %
+            'Yluma',        11000,  ...              % cd/m2
+            'CCT',          5803   ...              % deg kelvin
+            ), ...
+         'paintMaterial', struct( ...               % SPD of the reference object
+            'name',   'Munsell N7 matt grey', ...
+            'wave', ref_n7(:,1),...
+            'spd',  ref_n7(:,2) ...
+         ), ...
+         'geometry', struct( ...                    % Geometry of the reference object
+            'shape',            'sphere', ...
+            'distanceToCamera', 3.1, ...             % meters
+            'sizeInMeters',     1.6/100.0, ...       % for this scene, the reported size is the ball diameter
+            'sizeInPixels',     57, ...            % estimated manually from the picture
+            'roiXYpos',         [1304-1 984+2], ...       % pixels (center)
+            'roiSize',          [5 5] ...         % pixels (halfwidth, halfheight)
+         ), ...
+         'info', ['sScene was recorded in the Picoto area, Braga, Minho region, Portugal, on 8 August 2002 at 12:57'...
+                  'under direct sunlight with a thin cloud and a slight wind. Ambient temperature was 28 ºC. '...
+                  'Camera aperture was f/22, focus 5.0, and zoom set to maximum giving a focal length of 75 mm'] ...
     );    
 end
 

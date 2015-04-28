@@ -6,9 +6,15 @@ classdef ManchesterHyperSpectralImageDataExtractor < HyperSpectralImageDataExtra
 %     % Instantiate a ManchesterHyperSpectralImageDataExtractor
 %     hyperSpectralImageDataHandler = ManchesterHyperSpectralImageDataExtractor(sceneName);
 %    
+%     % Return shooting info
+%     hyperSpectralImageDataHandler.shootingInfo()
+% 
+%     % Plot the scene illuminant
+%     hyperSpectralImageDataHandler.plotSceneIlluminant();
+%    
 %     % Display a sRGB version of the hyperspectral image with the reference object outlined in red
-%     clipLuminance = 12000; gammaValue = 1.7;
-%     hyperSpectralImageDataHandler.showLabeledsRGBImage(clipLuminance, gammaValue);
+%     clipLuminance = 12000; gammaValue = 1.7; outlineWidth = 2;
+%     hyperSpectralImageDataHandler.showLabeledsRGBImage(clipLuminance, gammaValue, outlineWidth);
 %     
 %     % Get the isetbio scene object directly
 %     sceneObject = hyperSpectralImageDataHandler.isetbioSceneObject;

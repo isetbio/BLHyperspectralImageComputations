@@ -1,4 +1,4 @@
-% Method to compute the mean chromaticity of the ROI
+% Method to compute the mean chromaticity of the  the reference object ROI
 function chromaticity = computeROIchromaticity(obj)
     cols = obj.referenceObjectData.geometry.roiXYpos(1) + (-obj.referenceObjectData.geometry.roiSize(1):obj.referenceObjectData.geometry.roiSize(1));
     rows = obj.referenceObjectData.geometry.roiXYpos(2) + (-obj.referenceObjectData.geometry.roiSize(2):obj.referenceObjectData.geometry.roiSize(2));

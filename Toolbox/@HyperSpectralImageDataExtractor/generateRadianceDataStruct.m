@@ -1,3 +1,7 @@
+% Method that computes the radianceMap from the imported reflectance and
+% the illuminant. This method also computes the luminance and xy chroma of
+% the reference object and contrasts this to the values measured and
+% catalogued in the database.
 function generateRadianceDataStruct(obj)
     
     % Assemble sourceDirectory path
@@ -16,7 +20,7 @@ function generateRadianceDataStruct(obj)
     
     % Load the reflectanceToRadiance scaling factors ('radiance')
     % Spectral radiance factors required to convert scene reflectance to radiances in Watts/steradian/m^2/nm
-    % This is akin to the scene illuminant in some arbitrary units
+    % This is the scene illuminant.
     radiance = [];
     load(fullfile(sourceDir, obj.sceneData.name, obj.sceneData.spectralRadianceDataFileName));
     if (isempty(radiance))
@@ -30,39 +34,21 @@ function generateRadianceDataStruct(obj)
         error('wave numbers for scene radiance and refenence surface  do not match');
     end
     
+    % make sure the wave sampling is consistent between illuminant and reflectances
+    if (numel(wave) ~= size(reflectances,3))
+        error('Spectral bands of reflectances (%d) does not agree with spectral samples (%d) of the illuminant', size(reflectances,3), numel(wave));
+    end
+    
     % Compute radianceMap from reflectances and illuminant
     radianceMap = bsxfun(@times, reflectances, reshape(illuminant, [1 1 numel(illuminant)]));
     
     % Divide power per nm by spectral bandwidth
     radianceMap = radianceMap / (wave(2)-wave(1));
-    
-    % Flag indicating whether to adjust the image radiance so that the reported 
-    % and thecomputed luminances match.
-    adjustRadianceToMatchReportedAndComputedRefLuminances = false;
-    
-    if (adjustRadianceToMatchReportedAndComputedRefLuminances) 
-        % Compute XYZ image
-        obj.sceneXYZmap = MultispectralToSensorImage(radianceMap, WlsToS(wave), obj.sensorXYZ.T, obj.sensorXYZ.S);
-    
-        % Store scene luminance map
-        obj.sceneLuminanceMap = squeeze(obj.sceneXYZmap(:,:,2));
-    
-        % Compute reference luminance
-        computedfromRadianceReferenceLuminance = obj.computeROIluminance();
-    
-        % compute radiance scale factor, so that the computed luminance of the
-        % reference surface  matches the measured luminance of the reference surface
-        radianceScaleFactor = referenceObjectData.spectroRadiometerReadings.Yluma/computedfromRadianceReferenceLuminance
-    
-        % Second pass: adjust scene radiance and illuminant
-        radianceMap  = radianceMap * radianceScaleFactor;
-        illuminant   = illuminant * radianceScaleFactor;
-    end
-    
+     
     % Compute and store XYZ image
     obj.sceneXYZmap = MultispectralToSensorImage(radianceMap, WlsToS(wave), obj.sensorXYZ.T, obj.sensorXYZ.S);
     
-    % Compute and store sluminance map
+    % Compute and store luminance map
     obj.sceneLuminanceMap = obj.wattsToLumens * squeeze(obj.sceneXYZmap(:,:,2));
     
     % Compute scene luminance range and mean
@@ -70,10 +56,10 @@ function generateRadianceDataStruct(obj)
     maxSceneLuminance  = max(obj.sceneLuminanceMap(:));
     meanSceneLuminance = mean(obj.sceneLuminanceMap(:));
     
-    % Compute reference luminance
+    % Compute luminance of reference object
     computedfromRadianceReferenceLuminance = obj.computeROIluminance();
     
-    % Compute reference x,y chromaticities
+    % Compute x,y chromaticities of reference object
     computedFromRadianceReferenceChromaticity = obj.computeROIchromaticity();
     
     fprintf('\nReference object x,y chromaticities:\n\tcomputed: (%1.4f, %1.4f) \n\treported: (%1.4f, %1.4f)\n' , computedFromRadianceReferenceChromaticity(1), computedFromRadianceReferenceChromaticity(2), obj.referenceObjectData.spectroRadiometerReadings.xChroma, obj.referenceObjectData.spectroRadiometerReadings.yChroma);
@@ -81,13 +67,12 @@ function generateRadianceDataStruct(obj)
     fprintf('\nScene radiance  (Watts/steradian/m2/nm):\n\tMin: %2.2f\n\tMax: %2.2f\n', min(radianceMap(:)), max(radianceMap(:)));
     fprintf('\nScene luminance (cd/m2):\n\tMin  : %2.2f\n\tMax  : %2.2f\n\tMean : %2.2f\n\tRatio: %2.0f:1\n', minSceneLuminance, maxSceneLuminance, meanSceneLuminance, maxSceneLuminance/minSceneLuminance);
     
-    % Return data
+    % Return radianceData struct
     obj.radianceData = struct(...
         'sceneName',    obj.sceneData.name, ...
         'wave',         wave, ...
         'illuminant',   illuminant, ... 
         'radianceMap',  radianceMap ...                                                
     );
-    
 end
 

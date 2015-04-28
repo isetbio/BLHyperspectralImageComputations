@@ -1,9 +1,13 @@
 function importManchesterHyperSpectralImage
    
-    sceneName = 'scene4'; clipLuminance = 12000; gammaValue = 1.7; outlineWidth = 2;
+    % green scenes
     sceneName = 'scene1'; clipLuminance = 4000;  gammaValue = 1.7; outlineWidth = 1;
     sceneName = 'scene2'; clipLuminance = 4000;  gammaValue = 1.7; outlineWidth = 1;
     sceneName = 'scene3'; clipLuminance = 4000;  gammaValue = 1.7; outlineWidth = 1;
+    sceneName = 'scene4'; clipLuminance = 12000; gammaValue = 1.7; outlineWidth = 2;
+    
+    sceneName = 'scene5'; clipLuminance = 4000; gammaValue = 1.7; outlineWidth = 2;  % this has discrepancy in the number of spectral bands
+    sceneName = 'scene6'; clipLuminance = 14000; gammaValue = 1.7; outlineWidth = 2;
     
     % Instantiate a ManchesterHyperSpectralImageDataExtractor
     hyperSpectralImageDataHandler = ManchesterHyperSpectralImageDataExtractor(sceneName);
@@ -11,7 +15,7 @@ function importManchesterHyperSpectralImage
     % Return shooting info
     hyperSpectralImageDataHandler.shootingInfo()
     
-    % Plot illuminant
+    % Plot the scene illuminant
     hyperSpectralImageDataHandler.plotSceneIlluminant();
     
     % Show an sRGB version of the hyperspectral image with the reference object outlined in red
@@ -30,9 +34,7 @@ function importManchesterHyperSpectralImage
     test(fileNameOfExportedSceneObject)
 end
 
-
 function test(sceneObjectOrFileNameOfSceneObject)
- 
     if (ischar(sceneObjectOrFileNameOfSceneObject)) && (exist(sceneObjectOrFileNameOfSceneObject, 'file'))
         % Load exported scene object
         load(sceneObjectOrFileNameOfSceneObject);
@@ -52,7 +54,6 @@ function test(sceneObjectOrFileNameOfSceneObject)
     
     % Shown optical image
     vcAddAndSelectObject(oi); oiWindow;
-    
 end
 
 
