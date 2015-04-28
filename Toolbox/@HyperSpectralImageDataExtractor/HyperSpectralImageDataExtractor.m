@@ -39,6 +39,9 @@ classdef HyperSpectralImageDataExtractor < handle
     properties(SetAccess = private, Dependent = true)
         % The computed isetbio scene object
         isetbioSceneObject;
+        
+        % Information about the scene shooting
+        shootingInfo;
     end
     
     properties (Constant)
@@ -68,7 +71,7 @@ classdef HyperSpectralImageDataExtractor < handle
         end
         
         % Method to display an sRGB version of the hyperspectral image with the reference object outlined in red
-        showLabeledsRGBImage(obj, clipLuminance, gammaValue);
+        showLabeledsRGBImage(obj, clipLuminance, gammaValue, outlineWidth);
         
         % Method to export generated isetbio scene object
         exportFileName = exportIsetbioSceneObject(obj);
@@ -85,8 +88,21 @@ classdef HyperSpectralImageDataExtractor < handle
                 'sceneDistance',        obj.referenceObjectData.geometry.distanceToCamera, ...
                 'scenePixelsPerMeter',  obj.referenceObjectData.geometry.sizeInPixels/obj.referenceObjectData.geometry.sizeInMeters  ...
             );
+        end
         
-		end
+        function info = get.shootingInfo(obj)
+            info = obj.referenceObjectData.info;
+        end
+        
+        function plotSceneIlluminant(obj)
+            % Plot the illuminant
+            h = figure(1);
+            set(h, 'Position', [10 920 560 420]);
+            plot(obj.radianceData.wave, obj.radianceData.illuminant, 'ks-');
+            xlabel('wavelength (nm)');
+            ylabel('Energy (Watts/steradian/m^2/nm');
+            title('Scene illuminant');
+        end
     end
     
     methods (Abstract)

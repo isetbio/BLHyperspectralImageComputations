@@ -1,21 +1,27 @@
 function importManchesterHyperSpectralImage
    
-    sceneName = 'scene4';
+    sceneName = 'scene4'; clipLuminance = 12000; gammaValue = 1.7; outlineWidth = 2;
+    sceneName = 'scene1'; clipLuminance = 4000;  gammaValue = 1.7; outlineWidth = 1;
+    sceneName = 'scene2'; clipLuminance = 4000;  gammaValue = 1.7; outlineWidth = 1;
+    sceneName = 'scene3'; clipLuminance = 4000;  gammaValue = 1.7; outlineWidth = 1;
     
     % Instantiate a ManchesterHyperSpectralImageDataExtractor
     hyperSpectralImageDataHandler = ManchesterHyperSpectralImageDataExtractor(sceneName);
    
+    % Return shooting info
+    hyperSpectralImageDataHandler.shootingInfo()
+    
+    % Plot illuminant
+    hyperSpectralImageDataHandler.plotSceneIlluminant();
+    
     % Show an sRGB version of the hyperspectral image with the reference object outlined in red
-    clipLuminance = 12000; gammaValue = 1.7;
-    hyperSpectralImageDataHandler.showLabeledsRGBImage(clipLuminance, gammaValue);
+    hyperSpectralImageDataHandler.showLabeledsRGBImage(clipLuminance, gammaValue, outlineWidth);
     
     resp = input('Export isetbio scene object ? [1=yes] : ');
     if (resp ~= 1)
         % Get the isetbio scene object directly
         sceneObject = hyperSpectralImageDataHandler.isetbioSceneObject;
         test(sceneObject)
-    
-        disp('Bye bye');
         return;
     end
 

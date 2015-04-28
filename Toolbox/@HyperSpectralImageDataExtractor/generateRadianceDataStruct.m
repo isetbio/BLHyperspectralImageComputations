@@ -30,13 +30,6 @@ function generateRadianceDataStruct(obj)
         error('wave numbers for scene radiance and refenence surface  do not match');
     end
     
-    % Plot the illuminant
-    figure(1);
-    plot(wave, illuminant, 'ks-');
-    xlabel('wavelength (nm)');
-    ylabel('Energy (Watts/steradian/m^2/nm');
-    title('Scene illuminant');
-    
     % Compute radianceMap from reflectances and illuminant
     radianceMap = bsxfun(@times, reflectances, reshape(illuminant, [1 1 numel(illuminant)]));
     

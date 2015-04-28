@@ -1,5 +1,5 @@
 % Method to display an sRGB version of the hyperspectral image with the reference object outlined in red
-function showLabeledsRGBImage(obj, clipLuminance, gammaValue)
+function showLabeledsRGBImage(obj, clipLuminance, gammaValue, outlineWidth)
 
     % To cal format for fast computations
     [sceneXYZcalFormat, nCols, mRows] = ImageToCalFormat(obj.sceneXYZmap);
@@ -31,7 +31,6 @@ function showLabeledsRGBImage(obj, clipLuminance, gammaValue)
     sRGBimage = sRGBimage .^ (1/gammaValue);   
  
     % Label reference object
-    outlineWidth = 4;
     [rowIndices, colIndices] = indicesForRedRectangle(obj, outlineWidth);
     for k = 1:numel(rowIndices)
         if (mod(k,10) < 5)
@@ -46,9 +45,11 @@ function showLabeledsRGBImage(obj, clipLuminance, gammaValue)
     end
     
     % Display it
-    figure(2); clf;
+    h = figure(2); clf;
+    set(h, 'Position', [580 270 1390 1075]);
     imshow(sRGBimage, 'Border','tight'); truesize;
-    title('sRGB image with reference object outlined in red');
+    titleText = sprintf('sRGB image (reference object outlined in red); viewingDistance: %2.2f m', obj.referenceObjectData.geometry.distanceToCamera);
+    title(titleText);
     
     % Keep a copy of it
     obj.sRGBimage = sRGBimage;

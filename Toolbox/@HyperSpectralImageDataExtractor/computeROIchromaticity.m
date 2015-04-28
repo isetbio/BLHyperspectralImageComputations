@@ -2,6 +2,14 @@
 function chromaticity = computeROIchromaticity(obj)
     cols = obj.referenceObjectData.geometry.roiXYpos(1) + (-obj.referenceObjectData.geometry.roiSize(1):obj.referenceObjectData.geometry.roiSize(1));
     rows = obj.referenceObjectData.geometry.roiXYpos(2) + (-obj.referenceObjectData.geometry.roiSize(2):obj.referenceObjectData.geometry.roiSize(2));
+    
+    % Make sure rows,cols are inside image limits
+    cols = cols(find(cols >= 1));
+    rows = rows(find(rows >= 1));
+    cols = cols(find(cols <= size(obj.sceneXYZmap,2)));
+    rows = rows(find(rows <= size(obj.sceneXYZmap,1)));
+    
+    
     X = squeeze(obj.sceneXYZmap(rows,cols,1));
     Y = squeeze(obj.sceneXYZmap(rows,cols,2));
     Z = squeeze(obj.sceneXYZmap(rows,cols,3));
