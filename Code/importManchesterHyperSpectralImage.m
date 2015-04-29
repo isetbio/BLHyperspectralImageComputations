@@ -5,9 +5,10 @@ function importManchesterHyperSpectralImage
     sceneName = 'scene2'; clipLuminance = 4000;  gammaValue = 1.7; outlineWidth = 1;
     sceneName = 'scene3'; clipLuminance = 4000;  gammaValue = 1.7; outlineWidth = 1;
     sceneName = 'scene4'; clipLuminance = 12000; gammaValue = 1.7; outlineWidth = 2;
-    
     sceneName = 'scene5'; clipLuminance = 4000; gammaValue = 1.7; outlineWidth = 2;  % this has discrepancy in the number of spectral bands
     sceneName = 'scene6'; clipLuminance = 14000; gammaValue = 1.7; outlineWidth = 2;
+    sceneName = 'scene7'; clipLuminance = 14000; gammaValue = 1.7; outlineWidth = 2;
+    sceneName = 'scene8'; clipLuminance = 14000; gammaValue = 1.7; outlineWidth = 1;
     
     % Instantiate a ManchesterHyperSpectralImageDataExtractor
     hyperSpectralImageDataHandler = ManchesterHyperSpectralImageDataExtractor(sceneName);
