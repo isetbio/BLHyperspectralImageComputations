@@ -16,7 +16,7 @@ function inconsistentSpectralData = generateRadianceDataStruct(obj)
     % make sure the wave sampling is consistent between illuminant and reflectanceMap
     if (numel(obj.illuminant.wave) ~= size(obj.reflectanceMap,3))
         inconsistentSpectralData = true;
-        fprintf(2,'Spectral bands of reflectanceMap (%d) does not agree with spectral samples (%d) of the illuminant.\n', size(obj.reflectanceMap,3), numel(wave));
+        fprintf(2,'Spectral bands of reflectanceMap (%d) does not agree with spectral samples (%d) of the illuminant.\n', size(obj.reflectanceMap,3), numel(obj.illuminant.wave));
         return
     end
     
