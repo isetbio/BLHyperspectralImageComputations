@@ -37,7 +37,7 @@ classdef ManchesterHyperSpectralImageDataExtractor < HyperSpectralImageDataExtra
             generateSceneDataStruct(obj,sceneName);
             obj.referenceObjectData = obj.sceneData.referenceObjectData;
             
-            % Call super-class method to generate the adianceStruct
+            % Call super-class method to generate the radianceStruct
             obj.inconsistentSpectralData = obj.generateRadianceDataStruct();
         end
     end

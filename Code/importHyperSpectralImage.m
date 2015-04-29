@@ -50,8 +50,7 @@ function showGeneratedIsetbioData(sceneObjectOrFileNameOfSceneObject)
     else
         scene = sceneObjectOrFileNameOfSceneObject;
     end
-    
-    whos 'scene'
+
     % display scene
     vcAddAndSelectObject(scene); sceneWindow;
     
