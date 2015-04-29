@@ -5,7 +5,7 @@ function exportFileName = exportIsetbioSceneObject(obj)
     scene = obj.isetbioSceneObject;
     
     % Assemble destination directory path
-    destinationDir = fullfile(getpref('HyperSpectralImageComputations', 'isetbioSceneDataBaseDir'), obj.sceneData.database);
+    destinationDir = fullfile(getpref('HyperSpectralImageIsetbioComputations', 'isetbioSceneDataBaseDir'), obj.sceneData.database);
     
     if (~exist(destinationDir, 'dir'))
         mkdir(destinationDir);

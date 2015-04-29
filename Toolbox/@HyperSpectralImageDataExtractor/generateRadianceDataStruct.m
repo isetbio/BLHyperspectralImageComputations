@@ -5,7 +5,7 @@
 function inconsistentSpectralData = generateRadianceDataStruct(obj)
     
     % Assemble sourceDirectory path
-    sourceDir = fullfile(getpref('HyperSpectralImageComputations', 'originalDataBaseDir'), obj.sceneData.database);
+    sourceDir = fullfile(getpref('HyperSpectralImageIsetbioComputations', 'originalDataBaseDir'), obj.sceneData.database);
 
     % Load the scene reflectance data ('reflectances');
     reflectances = [];

@@ -10,7 +10,7 @@ function generateSceneDataStruct(obj,sceneName)
         'spectralRadianceDataFileName', '' ...     % name of spectral radiance factor to convert scene reflectance to radiances in Watts/steradian/m^2/nm - akin to the scene illuminant
     );
 
-    sourceDir = fullfile(getpref('HyperSpectralImageComputations', 'originalDataBaseDir'), databaseName);
+    sourceDir = fullfile(getpref('HyperSpectralImageIsetbioComputations', 'originalDataBaseDir'), databaseName);
     
     
     switch sceneName
