@@ -2,7 +2,7 @@
 % the illuminant. This method also computes the luminance and xy chroma of
 % the reference object and contrasts this to the values measured and
 % catalogued in the database.
-function generateRadianceDataStruct(obj)
+function inconsistentSpectralData = generateRadianceDataStruct(obj)
     
     % Assemble sourceDirectory path
     sourceDir = fullfile(getpref('HyperSpectralImageComputations', 'originalDataBaseDir'), obj.sceneData.database);
@@ -29,14 +29,19 @@ function generateRadianceDataStruct(obj)
     wave       = squeeze(radiance(:,1));
     illuminant = squeeze(radiance(:,2));
     
+    inconsistentSpectralData = false;
     % make sure that wave numbers match for ref_n7, radiance
     if (any(abs(wave-obj.referenceObjectData.paintMaterial.wave) > 0))
-        error('wave numbers for scene radiance and refenence surface  do not match');
+        inconsistentSpectralData = true;
+        fprintf(2,'Wave numbers for scene radiance and refenence surface do not match.\n');
+        return;
     end
     
     % make sure the wave sampling is consistent between illuminant and reflectances
     if (numel(wave) ~= size(reflectances,3))
-        error('Spectral bands of reflectances (%d) does not agree with spectral samples (%d) of the illuminant', size(reflectances,3), numel(wave));
+        inconsistentSpectralData = true;
+        fprintf(2,'Spectral bands of reflectances (%d) does not agree with spectral samples (%d) of the illuminant.\n', size(reflectances,3), numel(wave));
+        return
     end
     
     % Compute radianceMap from reflectances and illuminant

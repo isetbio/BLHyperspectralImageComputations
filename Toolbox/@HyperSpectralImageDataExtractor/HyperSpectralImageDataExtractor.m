@@ -7,6 +7,7 @@ classdef HyperSpectralImageDataExtractor < handle
 %
     
     properties(SetAccess = private)
+        
         % Luminance map of hyperspectral image
         sceneLuminanceMap;
         
@@ -34,6 +35,11 @@ classdef HyperSpectralImageDataExtractor < handle
             'geometry',                  struct(), ...
             'info',                      ''...
         );  
+    
+        % flag indicating whether the spectral data contained in the scene
+        % files are inconsistent (e.g., different number of spectral bands
+        % in illuminant and reflectance data)
+        inconsistentSpectralData;
     end
     
     properties(SetAccess = private, Dependent = true)
@@ -97,14 +103,7 @@ classdef HyperSpectralImageDataExtractor < handle
         end
         
         % Method to plot the scene illuminnat
-        function plotSceneIlluminant(obj)
-            h = figure(1);
-            set(h, 'Position', [10 920 560 420]);
-            plot(obj.radianceData.wave, obj.radianceData.illuminant, 'ks-');
-            xlabel('wavelength (nm)');
-            ylabel('Energy (Watts/steradian/m^2/nm');
-            title('Scene illuminant');
-        end
+        plotSceneIlluminant(obj);
     end
     
     % Methods that must be implemented by the subclasses
@@ -120,7 +119,7 @@ classdef HyperSpectralImageDataExtractor < handle
         % the illuminant. This method also computes the luminance and xy chroma of
         % the reference object and contrasts this to the values measured and
         % catalogued in the database.
-        generateRadianceDataStruct(obj);
+        inconsistentSpectralData = generateRadianceDataStruct(obj);
         
         % Method to compute the mean luminance of the reference object ROI
         roiLuminance = computeROIluminance(obj);
