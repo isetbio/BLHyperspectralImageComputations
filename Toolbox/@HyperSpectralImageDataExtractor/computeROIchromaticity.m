@@ -1,5 +1,12 @@
 % Method to compute the mean chromaticity of the  the reference object ROI
 function chromaticity = computeROIchromaticity(obj)
+
+    if ((isempty(obj.referenceObjectData.geometry.roiXYpos)) || (isempty(obj.referenceObjectData.geometry.roiSize)))
+        chromaticity(1) = nan;
+        chromaticity(2) = nan;
+        return;
+    end
+    
     cols = obj.referenceObjectData.geometry.roiXYpos(1) + (-obj.referenceObjectData.geometry.roiSize(1):obj.referenceObjectData.geometry.roiSize(1));
     rows = obj.referenceObjectData.geometry.roiXYpos(2) + (-obj.referenceObjectData.geometry.roiSize(2):obj.referenceObjectData.geometry.roiSize(2));
     

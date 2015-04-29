@@ -59,6 +59,10 @@ function [rowIndices, colIndices] = indicesForRedRectangle(obj, outlineWidth)
     colIndices = [];
     rowIndices = [];
     
+    if ((isempty(obj.referenceObjectData.geometry.roiXYpos)) || (isempty(obj.referenceObjectData.geometry.roiSize)))
+        return;
+    end
+    
     for k = 1:outlineWidth
         newColIndices = obj.referenceObjectData.geometry.roiXYpos(1) + (-obj.referenceObjectData.geometry.roiSize(1)-outlineWidth:obj.referenceObjectData.geometry.roiSize(1)+outlineWidth);
         newRowIndices = ones(size(newColIndices)) * (obj.referenceObjectData.geometry.roiXYpos(2)-obj.referenceObjectData.geometry.roiSize(2)-k);

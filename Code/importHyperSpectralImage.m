@@ -1,13 +1,25 @@
 function importHyperSpectralImage(s)
 
     if (nargin == 0)
-        s = struct('databaseName', 'manchester_database', 'sceneName','scene4', 'clipLuminance',12000,  'gammaValue', 1.7, 'outlineWidth', 2, 'showIsetbioData', 'true');
+        whichDemo = 1;
+        if (whichDemo == 1)
+            s = struct('databaseName', 'manchester_database', 'sceneName','scene4', 'sceneCalibrationStruct',[],                     'clipLuminance',12000,  'gammaValue', 1.7, 'outlineWidth', 2, 'showIsetbioData', 'true');
+        else
+            % Demo 2
+            sceneCalibrationStruct = struct(...
+                'horizontalFieldOfViewInDegrees', 6.5, ...
+                'meanSceneLuminance', 1000, ...
+                'illuminantName', 'D65',...
+                'illuminantSampling', 410:10:710 ...
+            );
+            s = struct('databaseName', 'manchester_database', 'sceneName','scene9', 'sceneCalibrationStruct',sceneCalibrationStruct, 'clipLuminance',12000,  'gammaValue', 1.7, 'outlineWidth', 2, 'showIsetbioData', 'true');
+        end
     end
     
     switch (s.databaseName)
         case 'manchester_database'
             % Instantiate a ManchesterHyperSpectralImageDataExtractor
-            hyperSpectralImageDataHandler = ManchesterHyperSpectralImageDataExtractor(s.sceneName);
+            hyperSpectralImageDataHandler = ManchesterHyperSpectralImageDataExtractor(s.sceneName, s.sceneCalibrationStruct);
         otherwise
             fprintf(2, 'Unknown database name (''%s''). Skipping scene.\n', s.databaseName);
             return;

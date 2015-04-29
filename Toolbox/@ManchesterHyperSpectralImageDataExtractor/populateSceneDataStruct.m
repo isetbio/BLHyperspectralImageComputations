@@ -1,74 +1,69 @@
-function generateSceneDataStruct(obj,sceneName)
+% Manchester database - specific method to populate the sceneDataStruct
+function populateSceneDataStruct(obj)
 
-    databaseName = 'manchester_database';
+    % Assemble sourceDir
+    sourceDir = fullfile(getpref('HyperSpectralImageIsetbioComputations', 'originalDataBaseDir'), obj.sceneData.database);
     
-    obj.sceneData = struct(...
-        'database', databaseName, ...              % database directory
-        'name',     sceneName, ...                 % scene name (also subdirectory)
-        'referenceObjectData', struct(), ...       % struct with reference object data
-        'reflectanceDataFileName', '', ...         % name of scene reflectance data file
-        'spectralRadianceDataFileName', '' ...     % name of spectral radiance factor to convert scene reflectance to radiances in Watts/steradian/m^2/nm - akin to the scene illuminant
-    );
-
-    sourceDir = fullfile(getpref('HyperSpectralImageIsetbioComputations', 'originalDataBaseDir'), databaseName);
-    
-    
-    switch sceneName
+    switch obj.sceneData.name
         case 'scene1'
-            referencePaintMaterialFileName              = fullfile(sourceDir, sceneName, 'ref_n7.mat');
+            referencePaintMaterialFileName              = fullfile(sourceDir, obj.sceneData.name, 'ref_n7.mat');
             obj.sceneData.referenceObjectData           = generateReferenceObjectDataStructForManchesterScene1(referencePaintMaterialFileName);
             obj.sceneData.reflectanceDataFileName       = 'ref_crown3bb_reg1_lax.mat';
-            obj.sceneData.spectralRadianceDataFileName  = 'radiance_by_reflectance_crown3.mat';
+            obj.sceneData.spectralRadianceDataFileName  = 'radiance_by_reflectance_crown3.mat';  % illuminant info
             
         case 'scene2'
-            referencePaintMaterialFileName              = fullfile(sourceDir, sceneName, 'ref_n7.mat');
+            referencePaintMaterialFileName              = fullfile(sourceDir, obj.sceneData.name, 'ref_n7.mat');
             obj.sceneData.referenceObjectData           = generateReferenceObjectDataStructForManchesterScene2(referencePaintMaterialFileName);
             obj.sceneData.reflectanceDataFileName       = 'ref_ruivaes1bb_reg1_lax.mat';
-            obj.sceneData.spectralRadianceDataFileName  = 'radiance_by_reflectance_ruivaes1.mat';
+            obj.sceneData.spectralRadianceDataFileName  = 'radiance_by_reflectance_ruivaes1.mat';  % illuminant info
             
         case 'scene3'
-            referencePaintMaterialFileName              = fullfile(sourceDir, sceneName, 'ref_n7.mat');
+            referencePaintMaterialFileName              = fullfile(sourceDir, obj.sceneData.name, 'ref_n7.mat');
             obj.sceneData.referenceObjectData           = generateReferenceObjectDataStructForManchesterScene3(referencePaintMaterialFileName);
             obj.sceneData.reflectanceDataFileName       = 'ref_mosteiro4bb_reg1_lax.mat';
-            obj.sceneData.spectralRadianceDataFileName  = 'radiance_by_reflectance_mosteiro4.mat';
+            obj.sceneData.spectralRadianceDataFileName  = 'radiance_by_reflectance_mosteiro4.mat';  % illuminant info
             
         case 'scene4'
-            referencePaintMaterialFileName              = fullfile(sourceDir, sceneName, 'ref_n7.mat');
+            referencePaintMaterialFileName              = fullfile(sourceDir, obj.sceneData.name, 'ref_n7.mat');
             obj.sceneData.referenceObjectData           = generateReferenceObjectDataStructForManchesterScene4(referencePaintMaterialFileName);
             obj.sceneData.reflectanceDataFileName       = 'ref_cyflower1bb_reg1.mat';
-            obj.sceneData.spectralRadianceDataFileName  = 'radiance_by_reflectance_cyflower1.mat';
+            obj.sceneData.spectralRadianceDataFileName  = 'radiance_by_reflectance_cyflower1.mat';  % illuminant info
             
         case 'scene5'
-            referencePaintMaterialFileName              = fullfile(sourceDir, sceneName, 'ref_n7.mat');
+            referencePaintMaterialFileName              = fullfile(sourceDir, obj.sceneData.name, 'ref_n7.mat');
             obj.sceneData.referenceObjectData           = generateReferenceObjectDataStructForManchesterScene5(referencePaintMaterialFileName);
             obj.sceneData.reflectanceDataFileName       = 'ref_cbrufefields1bb_reg1.mat';
-            obj.sceneData.spectralRadianceDataFileName  = 'radiance_by_reflectance_cbrufefields.mat';
+            obj.sceneData.spectralRadianceDataFileName  = 'radiance_by_reflectance_cbrufefields.mat'; % illuminant info
        
         case 'scene6'
-            referencePaintMaterialFileName              = fullfile(sourceDir, sceneName, 'ref_n7.mat');
+            referencePaintMaterialFileName              = fullfile(sourceDir, obj.sceneData.name, 'ref_n7.mat');
             obj.sceneData.referenceObjectData           = generateReferenceObjectDataStructForManchesterScene6(referencePaintMaterialFileName);
             obj.sceneData.reflectanceDataFileName       = 'ref_braga1bb_reg1.mat';
-            obj.sceneData.spectralRadianceDataFileName  = 'radiance_by_reflectance_braga1.mat';
+            obj.sceneData.spectralRadianceDataFileName  = 'radiance_by_reflectance_braga1.mat';  % illuminant info
             
         case 'scene7'
-            referencePaintMaterialFileName              = fullfile(sourceDir, sceneName, 'ref_n7.mat');
+            referencePaintMaterialFileName              = fullfile(sourceDir, obj.sceneData.name, 'ref_n7.mat');
             obj.sceneData.referenceObjectData           = generateReferenceObjectDataStructForManchesterScene7(referencePaintMaterialFileName);
             obj.sceneData.reflectanceDataFileName       = 'ref_ribeira1bbb_reg1.mat';
-            obj.sceneData.spectralRadianceDataFileName  = 'radiance_by_reflectance_riebira1.mat';
+            obj.sceneData.spectralRadianceDataFileName  = 'radiance_by_reflectance_riebira1.mat';  % illuminant info
             
         case 'scene8'
-            referencePaintMaterialFileName              = fullfile(sourceDir, sceneName, 'ref_n7.mat');
+            referencePaintMaterialFileName              = fullfile(sourceDir, obj.sceneData.name, 'ref_n7.mat');
             obj.sceneData.referenceObjectData           = generateReferenceObjectDataStructForManchesterScene8(referencePaintMaterialFileName);
             obj.sceneData.reflectanceDataFileName       = 'ref_farme1bbbb_reg1.mat';
-            obj.sceneData.spectralRadianceDataFileName  = 'radiance_by_reflectance_farme1.mat';
+            obj.sceneData.spectralRadianceDataFileName  = 'radiance_by_reflectance_farme1.mat';  % illuminant info
+            
+        case 'scene9'
+            obj.sceneData.reflectanceDataFileName       = 'scene9.mat';
             
         otherwise
-            error('Unknown scene name (''%s'') for database ''%s''. ', sceneName, databaseName);   
+            error('Unknown scene name (''%s'') for database ''%s''. ', obj.sceneData.name, obj.sceneData.database);   
     end
     
 end
 
 
+% Method to generate a reference object data struct specific to scene1
 function referenceObjectData = generateReferenceObjectDataStructForManchesterScene1(referencePaintMaterialFileName)
     % Spectral data for reference paint material (variable: 'ref_n7')
     ref_n7 = [];

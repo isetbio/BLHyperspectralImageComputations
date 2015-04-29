@@ -4,54 +4,30 @@
 % catalogued in the database.
 function inconsistentSpectralData = generateRadianceDataStruct(obj)
     
-    % Assemble sourceDirectory path
-    sourceDir = fullfile(getpref('HyperSpectralImageIsetbioComputations', 'originalDataBaseDir'), obj.sceneData.database);
-
-    % Load the scene reflectance data ('reflectances');
-    reflectances = [];
-    load(fullfile(sourceDir, obj.sceneData.name, obj.sceneData.reflectanceDataFileName));
-    if (isempty(reflectances))
-        error('Data file does not contain the expected ''reflectances'' field.');
-    end
-    
-    % Note: The 'reflectances' were computed as the ratio of the recorded radiant spectrum to the recorded radiant spectrum from a neutral matt reference surface embedded in the scene, 
-    % multiplied by the known spectral reflectance of the reference surface. Although the reference surface is well illuminated, some portions of the scene may have higher radiance, 
-    % therefore the reflectances in those regions will exceed 1.   
-    
-    % Load the reflectanceToRadiance scaling factors ('radiance')
-    % Spectral radiance factors required to convert scene reflectance to radiances in Watts/steradian/m^2/nm
-    % This is the scene illuminant.
-    radiance = [];
-    load(fullfile(sourceDir, obj.sceneData.name, obj.sceneData.spectralRadianceDataFileName));
-    if (isempty(radiance))
-        error('Data file does not contain the expected ''radiance'' field.');
-    end
-    wave       = squeeze(radiance(:,1));
-    illuminant = squeeze(radiance(:,2));
-    
     inconsistentSpectralData = false;
-    % make sure that wave numbers match for ref_n7, radiance
-    if (any(abs(wave-obj.referenceObjectData.paintMaterial.wave) > 0))
+    obj.referenceObjectData
+    % make sure that wave numbers match for paint material and the radiance
+    if (~isempty(fieldnames(obj.referenceObjectData.paintMaterial))) && (any(abs(obj.illuminant.wave(:) - obj.referenceObjectData.paintMaterial.wave(:)) > 0))
         inconsistentSpectralData = true;
         fprintf(2,'Wave numbers for scene radiance and refenence surface do not match.\n');
         return;
     end
     
-    % make sure the wave sampling is consistent between illuminant and reflectances
-    if (numel(wave) ~= size(reflectances,3))
+    % make sure the wave sampling is consistent between illuminant and reflectanceMap
+    if (numel(obj.illuminant.wave) ~= size(obj.reflectanceMap,3))
         inconsistentSpectralData = true;
-        fprintf(2,'Spectral bands of reflectances (%d) does not agree with spectral samples (%d) of the illuminant.\n', size(reflectances,3), numel(wave));
+        fprintf(2,'Spectral bands of reflectanceMap (%d) does not agree with spectral samples (%d) of the illuminant.\n', size(obj.reflectanceMap,3), numel(wave));
         return
     end
     
-    % Compute radianceMap from reflectances and illuminant
-    radianceMap = bsxfun(@times, reflectances, reshape(illuminant, [1 1 numel(illuminant)]));
+    % Compute radianceMap from the reflectanceMap and the illuminant
+    radianceMap = bsxfun(@times, obj.reflectanceMap, reshape(obj.illuminant.spd, [1 1 numel(obj.illuminant.spd)]));
     
     % Divide power per nm by spectral bandwidth
-    radianceMap = radianceMap / (wave(2)-wave(1));
+    radianceMap = radianceMap / (obj.illuminant.wave(2)-obj.illuminant.wave(1));
      
     % Compute and store XYZ image
-    obj.sceneXYZmap = MultispectralToSensorImage(radianceMap, WlsToS(wave), obj.sensorXYZ.T, obj.sensorXYZ.S);
+    obj.sceneXYZmap = MultispectralToSensorImage(radianceMap, WlsToS(obj.illuminant.wave), obj.sensorXYZ.T, obj.sensorXYZ.S);
     
     % Compute and store luminance map
     obj.sceneLuminanceMap = obj.wattsToLumens * squeeze(obj.sceneXYZmap(:,:,2));
@@ -75,8 +51,8 @@ function inconsistentSpectralData = generateRadianceDataStruct(obj)
     % Return radianceData struct
     obj.radianceData = struct(...
         'sceneName',    obj.sceneData.name, ...
-        'wave',         wave, ...
-        'illuminant',   illuminant, ... 
+        'wave',         obj.illuminant.wave, ...
+        'illuminant',   obj.illuminant.spd, ... 
         'radianceMap',  radianceMap ...                                                
     );
 end

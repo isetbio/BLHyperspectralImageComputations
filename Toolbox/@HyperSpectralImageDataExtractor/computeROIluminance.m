@@ -1,9 +1,14 @@
 % Method to compute the mean luminance of the reference object ROI
 function roiLuminance = computeROIluminance(obj)
 
+    if ((isempty(obj.referenceObjectData.geometry.roiXYpos)) || (isempty(obj.referenceObjectData.geometry.roiSize)))
+        roiLuminance = nan;
+        return;
+    end
+    
     cols = obj.referenceObjectData.geometry.roiXYpos(1) + (-obj.referenceObjectData.geometry.roiSize(1):obj.referenceObjectData.geometry.roiSize(1));
     rows = obj.referenceObjectData.geometry.roiXYpos(2) + (-obj.referenceObjectData.geometry.roiSize(2):obj.referenceObjectData.geometry.roiSize(2));
-
+    
     % Make sure rows,cols are inside image limits
     cols = cols(find(cols >= 1));
     rows = rows(find(rows >= 1));

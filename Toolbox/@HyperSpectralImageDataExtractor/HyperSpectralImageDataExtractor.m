@@ -6,8 +6,7 @@ classdef HyperSpectralImageDataExtractor < handle
 %    4/28/2015   npc    Wrote it.
 %
     
-    properties(SetAccess = private)
-        
+    properties(SetAccess = private) 
         % Luminance map of hyperspectral image
         sceneLuminanceMap;
         
@@ -40,6 +39,12 @@ classdef HyperSpectralImageDataExtractor < handle
         % files are inconsistent (e.g., different number of spectral bands
         % in illuminant and reflectance data)
         inconsistentSpectralData;
+        
+        % the full reflectance map
+        reflectanceMap = [];
+        
+        % the illuminant SPD
+        illuminant = struct('wave', [], 'spd', []);
     end
     
     properties(SetAccess = private, Dependent = true)
@@ -69,12 +74,7 @@ classdef HyperSpectralImageDataExtractor < handle
     methods
         % Constructor
         function obj = HyperSpectralImageDataExtractor()
-            % Load CIE '31 CMFs
-            colorMatchingData = load('T_xyz1931.mat');
-            obj.sensorXYZ = struct;
-            obj.sensorXYZ.S = colorMatchingData.S_xyz1931;
-            obj.sensorXYZ.T = colorMatchingData.T_xyz1931;
-            clear 'colorMatchingData';
+            loadXYZCMFs(obj);
         end
         
         % Method to display an sRGB version of the hyperspectral image with the reference object outlined in red
@@ -89,8 +89,8 @@ classdef HyperSpectralImageDataExtractor < handle
             fprintf('<strong>Generating isetbio scene object.</strong>\n');
             scene = sceneFromHyperSpectralImageData(...
                 'sceneName',            obj.radianceData.sceneName, ...
-                'wave',                 obj.radianceData.wave, ...
-                'illuminantEnergy',     obj.radianceData.illuminant, ... 
+                'wave',                 obj.illuminant.wave, ...
+                'illuminantEnergy',     obj.illuminant.spd, ... 
                 'radianceEnergy',       obj.radianceData.radianceMap, ...
                 'sceneDistance',        obj.referenceObjectData.geometry.distanceToCamera, ...
                 'scenePixelsPerMeter',  obj.referenceObjectData.geometry.sizeInPixels/obj.referenceObjectData.geometry.sizeInMeters  ...
@@ -107,14 +107,31 @@ classdef HyperSpectralImageDataExtractor < handle
     end
     
     % Methods that must be implemented by the subclasses
-    methods (Abstract)
-        % Subclasses must implement the generateSceneDataStruct according to 
+    methods (Abstract, Access=protected)
+        % Subclasses must implement the populateSceneDataStruct according to 
         % the peculiarities of the associated database of hyperspectral images
-        generateSceneDataStruct(obj,sceneName);
+        populateSceneDataStruct(obj,sceneName);
+        
+        % Subclasses must implement the loadReflectanceMap according to 
+        % the peculiarities of the associated database of hyperspectral images
+        loadReflectanceMap(obj);
+        
+        % Subclasses must implement the loadIlluminant according to 
+        % the peculiarities of the associated database of hyperspectral images
+        loadIlluminant(obj);
     end
     
-    % Protected methods
+    % Protected methods so that our subclasses can call them
     methods (Access = protected)
+        
+        % Method to generate a reference object data struct for scenes with no
+        % reference objects, i.e., no size, viewing distance information
+        referenceObjectData = generateGenericReferenceObjectDataStruct(obj, sceneCalibrationStruct);
+        
+        % Method to generate an illuminant for scenes with no
+        % information about the illuminant
+        generateIlluminant(obj, sceneCalibrationStruct);
+        
         % Method that computes the radianceMap from the imported reflectance and
         % the illuminant. This method also computes the luminance and xy chroma of
         % the reference object and contrasts this to the values measured and
@@ -126,6 +143,11 @@ classdef HyperSpectralImageDataExtractor < handle
         
         % Method to compute the mean chromaticity of the  the reference object ROI
         chromaticity = computeROIchromaticity(obj);
+    end
+    
+    methods (Access = private)
+       % Method to load the CIE '31 XYZ CMFs
+       loadXYZCMFs(obj); 
     end
 end
 

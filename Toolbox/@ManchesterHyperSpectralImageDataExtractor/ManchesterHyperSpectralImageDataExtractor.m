@@ -29,21 +29,56 @@ classdef ManchesterHyperSpectralImageDataExtractor < HyperSpectralImageDataExtra
     end
     
     methods
-        function obj = ManchesterHyperSpectralImageDataExtractor(sceneName)
+        function obj = ManchesterHyperSpectralImageDataExtractor(sceneName, sceneCalibrationStruct)
             % Call the super-class constructor.
             obj = obj@HyperSpectralImageDataExtractor();
             
+            databaseName = 'manchester_database';
+    
+            obj.sceneData = struct(...
+                'database', databaseName, ...              % database directory
+                'name',     sceneName, ...                 % scene name (also subdirectory)
+                'referenceObjectData', struct(), ...       % struct with reference object data
+                'reflectanceDataFileName', '', ...         % name of scene reflectance data file
+                'spectralRadianceDataFileName', '' ...     % name of spectral radiance factor to convert scene reflectance to radiances in Watts/steradian/m^2/nm - akin to the scene illuminant
+            );
+
             % Generate the (database-specific) referenceObjectData
-            generateSceneDataStruct(obj,sceneName);
-            obj.referenceObjectData = obj.sceneData.referenceObjectData;
+            populateSceneDataStruct(obj);
+            
+            % Generate reference object data
+            if isempty(fieldnames(obj.sceneData.referenceObjectData))
+                % if the referenceObjectData is empty, generate a generic ne based on the passed sceneCalibrationStruct
+                obj.referenceObjectData = obj.generateGenericReferenceObjectDataStruct(sceneCalibrationStruct);
+            else
+                obj.referenceObjectData = obj.sceneData.referenceObjectData;
+            end
+            
+            % Load the reflectance map
+            loadReflectanceMap(obj);
+            
+            if (isempty(obj.sceneData.spectralRadianceDataFileName))
+                % if the spectralRadianceDataFileName is empty, generate an illuminant based on the passed sceneCalibrationStruct
+                obj.generateIlluminant(sceneCalibrationStruct);
+            else
+                loadIlluminant(obj);
+            end
             
             % Call super-class method to generate the radianceStruct
             obj.inconsistentSpectralData = obj.generateRadianceDataStruct();
         end
     end
     
-    methods (Access=public)
-        generateSceneDataStruct(obj,sceneName);
+    methods (Access=protected)
+        
+        % Manchester database-specific implementation of the populateSceneDataStruct
+        populateSceneDataStruct(obj,sceneName);
+        
+        % Manchester database-specific implementation of the loadReflectanceMap 
+        loadReflectanceMap(obj);
+        
+        % Manchester database-specific implementation of the loadIlluminant
+        loadIlluminant(obj);
     end
     
 end
