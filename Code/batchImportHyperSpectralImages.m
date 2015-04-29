@@ -18,7 +18,9 @@ function batchImportHyperSpectralImages
     % Start the batch import and process
     for k = 1:numel(set)
         s = set{k};
-        fprintf('%2d. Importing data files for scene ''%s'' of database ''%s''.\n', k, s.sceneName, s.databaseName);
+        fprintf('\n<strong>--------------------------------------------------------------------------------------------</strong>\n');
+        fprintf('<strong>%2d. Importing data files for scene ''%s'' of database ''%s''.</strong>\n', k, s.sceneName, s.databaseName);
+        fprintf('<strong>--------------------------------------------------------------------------------------------</strong>\n');
         importHyperSpectralImage(set{k});
     end
 end
