@@ -11,7 +11,7 @@ function exportFileName = exportIsetbioSceneObject(obj)
         mkdir(destinationDir);
     end
     
-    exportFileName = fullfile(destinationDir, sprintf('%s.mat',obj.radianceData.sceneName));
+    exportFileName = fullfile(destinationDir, sprintf('isetbioSceneFor_%s.mat',obj.radianceData.sceneName));
     save(exportFileName, 'scene');
     fprintf('Isetbio scene object for scene named ''%s'' was exported to ''%s''.\n', sceneGet(scene, 'name'), exportFileName);
 end
