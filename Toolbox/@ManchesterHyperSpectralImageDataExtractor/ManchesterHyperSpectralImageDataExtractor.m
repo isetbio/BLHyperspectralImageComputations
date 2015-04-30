@@ -29,7 +29,7 @@ classdef ManchesterHyperSpectralImageDataExtractor < HyperSpectralImageDataExtra
     end
     
     methods
-        function obj = ManchesterHyperSpectralImageDataExtractor(sceneName, sceneCalibrationStruct)
+        function obj = ManchesterHyperSpectralImageDataExtractor(sceneName)
             % Call the super-class constructor.
             obj = obj@HyperSpectralImageDataExtractor();
             
@@ -47,19 +47,14 @@ classdef ManchesterHyperSpectralImageDataExtractor < HyperSpectralImageDataExtra
             populateSceneDataStruct(obj);
             
             % Generate reference object data
-            if isempty(fieldnames(obj.sceneData.referenceObjectData))
-                % if the referenceObjectData is empty, generate a generic ne based on the passed sceneCalibrationStruct
-                obj.referenceObjectData = obj.generateGenericReferenceObjectDataStruct(sceneCalibrationStruct);
-            else
-                obj.referenceObjectData = obj.sceneData.referenceObjectData;
-            end
-            
+            obj.referenceObjectData = obj.sceneData.referenceObjectData;
+ 
             % Load the reflectance map
             loadReflectanceMap(obj);
             
             if (isempty(obj.sceneData.spectralRadianceDataFileName))
-                % if the spectralRadianceDataFileName is empty, generate an illuminant based on the passed sceneCalibrationStruct
-                obj.generateIlluminant(sceneCalibrationStruct);
+                % if the spectralRadianceDataFileName is empty, generate an illuminant based on the info at obj.sceneData.customIlluminant
+                obj.generateIlluminant();
             else
                 loadIlluminant(obj);
             end

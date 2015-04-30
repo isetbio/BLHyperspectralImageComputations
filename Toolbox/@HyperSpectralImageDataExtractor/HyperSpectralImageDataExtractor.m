@@ -123,13 +123,7 @@ classdef HyperSpectralImageDataExtractor < handle
     
     % Protected methods so that our subclasses can call them
     methods (Access = protected)
-        
-        % Method to generate a reference object data struct for scenes with no
-        % reference objects, i.e., no size, viewing distance information
-        referenceObjectData = generateGenericReferenceObjectDataStruct(obj, sceneCalibrationStruct);
-        
-        % Method to generate an illuminant for scenes with no
-        % information about the illuminant
+        % Method to generate an illuminant for scenes with no information about the illuminant
         generateIlluminant(obj, sceneCalibrationStruct);
         
         % Method that computes the radianceMap from the imported reflectance and

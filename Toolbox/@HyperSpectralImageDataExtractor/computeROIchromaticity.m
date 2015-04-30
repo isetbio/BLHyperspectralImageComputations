@@ -16,7 +16,6 @@ function chromaticity = computeROIchromaticity(obj)
     cols = cols(find(cols <= size(obj.sceneXYZmap,2)));
     rows = rows(find(rows <= size(obj.sceneXYZmap,1)));
     
-    
     X = squeeze(obj.sceneXYZmap(rows,cols,1));
     Y = squeeze(obj.sceneXYZmap(rows,cols,2));
     Z = squeeze(obj.sceneXYZmap(rows,cols,3));

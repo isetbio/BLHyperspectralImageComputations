@@ -21,7 +21,7 @@ function generatePreferenceGroup(p)
     end
     
     % generate and save the project-specific preferences
-    preferences = setdiff(fieldnames(p), 'projectName')
+    preferences = setdiff(fieldnames(p), 'projectName');
     for k = 1:numel(preferences)
         setpref(p.projectName, preferences{k}, p.(preferences{k}));
     end

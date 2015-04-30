@@ -53,14 +53,260 @@ function populateSceneDataStruct(obj)
             obj.sceneData.reflectanceDataFileName       = 'ref_farme1bbbb_reg1.mat';
             obj.sceneData.spectralRadianceDataFileName  = 'radiance_by_reflectance_farme1.mat';  % illuminant info
             
+            
+        % Scenes 9-16 in the Mancester database have no geometric or
+        % illuminant information. The generateReferenceObjectDataStructForManchesterScenes9Through16
+        % adds that missing information based on personal (Nicolas') beliefs.
         case 'scene9'
+            % generate custom referenceObjectData struct
+            obj.sceneData.referenceObjectData           = generateReferenceObjectDataStructForManchesterScenes9Through16(obj);
             obj.sceneData.reflectanceDataFileName       = 'scene9.mat';
+            obj.sceneData.spectralRadianceDataFileName  = '';
+      
+        case 'scene10'
+            % generate custom referenceObjectData struct
+            obj.sceneData.referenceObjectData           = generateReferenceObjectDataStructForManchesterScenes9Through16(obj);
+            obj.sceneData.reflectanceDataFileName       = 'scene10.mat';
+            obj.sceneData.spectralRadianceDataFileName  = '';
+            
+        case 'scene11'
+            % generate custom referenceObjectData struct
+            obj.sceneData.referenceObjectData           = generateReferenceObjectDataStructForManchesterScenes9Through16(obj);
+            obj.sceneData.reflectanceDataFileName       = 'scene11.mat';
+            obj.sceneData.spectralRadianceDataFileName  = '';
+            
+       case 'scene12'
+            % generate custom referenceObjectData struct
+            obj.sceneData.referenceObjectData           = generateReferenceObjectDataStructForManchesterScenes9Through16(obj);
+            obj.sceneData.reflectanceDataFileName       = 'scene12.mat';
+            obj.sceneData.spectralRadianceDataFileName  = '';
+            
+       case 'scene13'
+            % generate custom referenceObjectData struct
+            obj.sceneData.referenceObjectData           = generateReferenceObjectDataStructForManchesterScenes9Through16(obj);
+            obj.sceneData.reflectanceDataFileName       = 'scene13.mat';
+            obj.sceneData.spectralRadianceDataFileName  = '';
+         
+       case 'scene14'
+            % generate custom referenceObjectData struct
+            obj.sceneData.referenceObjectData           = generateReferenceObjectDataStructForManchesterScenes9Through16(obj);
+            obj.sceneData.reflectanceDataFileName       = 'scene14.mat';
+            obj.sceneData.spectralRadianceDataFileName  = '';
+            
+       case 'scene15'
+            % generate custom referenceObjectData struct
+            obj.sceneData.referenceObjectData           = generateReferenceObjectDataStructForManchesterScenes9Through16(obj);
+            obj.sceneData.reflectanceDataFileName       = 'scene15.mat';
+            obj.sceneData.spectralRadianceDataFileName  = '';
+            
+       case 'scene16'
+            % generate custom referenceObjectData struct
+            obj.sceneData.referenceObjectData           = generateReferenceObjectDataStructForManchesterScenes9Through16(obj);
+            obj.sceneData.reflectanceDataFileName       = 'scene16.mat';
+            obj.sceneData.spectralRadianceDataFileName  = '';
+            
             
         otherwise
             error('Unknown scene name (''%s'') for database ''%s''. ', obj.sceneData.name, obj.sceneData.database);   
     end
     
 end
+
+
+% Method to generate a reference object data struct specific to scenes9-16
+function referenceObjectData = generateReferenceObjectDataStructForManchesterScenes9Through16(obj)
+
+    % Enter custom geometry and illuminant settings as these images do not have such information.
+    switch obj.sceneData.name
+        case 'scene9'
+            % custom spatial calibration information  (pedal)
+            distanceToCamera = 2.0;                      % in meters
+            referenceObjectShape = 'flower pedal';
+            referenceObjectSizeInMeters = 2.5/100;         % in meters
+            referenceObjectSizeInPixels = 120;
+            referenceObjectXYpos = [367 463];
+            referenceObjectROI = [referenceObjectSizeInPixels/2 10];
+            
+            % custom illuminant
+            obj.sceneData.customIlluminant.name         = 'D65';
+            obj.sceneData.customIlluminant.wave         = 410:10:710;
+            obj.sceneData.customIlluminant.meanSceneLum = 1000;   % cd/m2  
+            
+            % custom clipping
+            obj.sceneData.clippingRegion.x1 = 1;
+            obj.sceneData.clippingRegion.x2 = Inf;
+            obj.sceneData.clippingRegion.y1 = 1;
+            obj.sceneData.clippingRegion.y2 = 747;
+            
+            
+        case 'scene10'
+            % custom spatial calibration information (tree branch)
+            distanceToCamera = 40.0;                      % in meters
+            referenceObjectShape = 'tree branch';
+            referenceObjectSizeInMeters = 50/100;         % in meters
+            referenceObjectSizeInPixels = 84;
+            referenceObjectXYpos = [713 422];
+            referenceObjectROI = [2 referenceObjectSizeInPixels/2];
+           
+            % custom illuminant
+            obj.sceneData.customIlluminant.name         = 'D65';
+            obj.sceneData.customIlluminant.wave         = 410:10:710;
+            obj.sceneData.customIlluminant.meanSceneLum = 300;   % cd/m2
+            
+            % custom clipping
+            obj.sceneData.clippingRegion.x1 = 1;
+            obj.sceneData.clippingRegion.x2 = Inf;
+            obj.sceneData.clippingRegion.y1 = 1;
+            obj.sceneData.clippingRegion.y2 = 700;
+            
+        case 'scene11'
+            % custom spatial calibration information (tree branch)
+            distanceToCamera = 40.0;                      % in meters
+            referenceObjectShape = 'tree branch';
+            referenceObjectSizeInMeters = 100/100;         % in meters
+            referenceObjectSizeInPixels = 84;
+            referenceObjectXYpos = [448 187];
+            referenceObjectROI = [2 referenceObjectSizeInPixels/2];
+           
+            % custom illuminant
+            obj.sceneData.customIlluminant.name         = 'D65';
+            obj.sceneData.customIlluminant.wave         = 410:10:710;
+            obj.sceneData.customIlluminant.meanSceneLum = 2000;   % cd/m2
+            
+            % custom clipping
+            obj.sceneData.clippingRegion.x1 = 1;
+            obj.sceneData.clippingRegion.x2 = Inf;
+            obj.sceneData.clippingRegion.y1 = 1;
+            obj.sceneData.clippingRegion.y2 = 750;
+            
+        case 'scene12'
+            % custom spatial calibration information (tree branch)
+            distanceToCamera = 80.0;                      % in meters
+            referenceObjectShape = 'tree branch';
+            referenceObjectSizeInMeters = 100/100;         % in meters
+            referenceObjectSizeInPixels = 84;
+            referenceObjectXYpos = [224 606];
+            referenceObjectROI = [2 referenceObjectSizeInPixels/2];
+           
+            % custom illuminant
+            obj.sceneData.customIlluminant.name         = 'D65';
+            obj.sceneData.customIlluminant.wave         = 410:10:710;
+            obj.sceneData.customIlluminant.meanSceneLum = 2000;   % cd/m2
+            
+            % custom clipping
+            obj.sceneData.clippingRegion.x1 = 97;
+            obj.sceneData.clippingRegion.x2 = Inf;
+            obj.sceneData.clippingRegion.y1 = 1;
+            obj.sceneData.clippingRegion.y2 = 664;
+         
+        case 'scene13'
+            % custom spatial calibration information (tree branch)
+            distanceToCamera = 7.0;                      % in meters
+            referenceObjectShape = 'basket ball';
+            referenceObjectSizeInMeters = 25/100;         % in meters
+            referenceObjectSizeInPixels = 224;
+            referenceObjectXYpos = [454 681];
+            referenceObjectROI = [2 referenceObjectSizeInPixels/2];
+           
+            % custom illuminant
+            obj.sceneData.customIlluminant.name         = 'D65';
+            obj.sceneData.customIlluminant.wave         = 410:10:710;
+            obj.sceneData.customIlluminant.meanSceneLum = 200;   % cd/m2
+            
+            % custom clipping
+            obj.sceneData.clippingRegion.x1 = 11;
+            obj.sceneData.clippingRegion.x2 = Inf;
+            obj.sceneData.clippingRegion.y1 = 1;
+            obj.sceneData.clippingRegion.y2 = inf;
+            
+        case 'scene14'
+            % custom spatial calibration information (tree branch)
+            distanceToCamera = 40.0;                      % in meters
+            referenceObjectShape = 'rail';
+            referenceObjectSizeInMeters = 100/100;         % in meters
+            referenceObjectSizeInPixels = 72;
+            referenceObjectXYpos = [324 324];
+            referenceObjectROI = [2 referenceObjectSizeInPixels/2];
+           
+            % custom illuminant
+            obj.sceneData.customIlluminant.name         = 'D65';
+            obj.sceneData.customIlluminant.wave         = 410:10:710;
+            obj.sceneData.customIlluminant.meanSceneLum = 2000;   % cd/m2
+            
+            % custom clipping
+            obj.sceneData.clippingRegion.x1 = 169;
+            obj.sceneData.clippingRegion.x2 = 536;
+            obj.sceneData.clippingRegion.y1 = 1;
+            obj.sceneData.clippingRegion.y2 = 755;
+            
+        
+        case 'scene15'
+            % custom spatial calibration information (tree branch)
+            distanceToCamera = 50.0;                      % in meters
+            referenceObjectShape = 'rail';
+            referenceObjectSizeInMeters = 90/100;         % in meters
+            referenceObjectSizeInPixels = 66;
+            referenceObjectXYpos = [194 257];
+            referenceObjectROI = [2 referenceObjectSizeInPixels/2];
+           
+            % custom illuminant
+            obj.sceneData.customIlluminant.name         = 'D65';
+            obj.sceneData.customIlluminant.wave         = 410:10:710;
+            obj.sceneData.customIlluminant.meanSceneLum = 2500;   % cd/m2
+            
+            % custom clipping
+            obj.sceneData.clippingRegion.x1 = 215;
+            obj.sceneData.clippingRegion.x2 = 632;
+            obj.sceneData.clippingRegion.y1 = 96;
+            obj.sceneData.clippingRegion.y2 = 776;
+            
+        case 'scene16'
+            % custom spatial calibration information (tree branch)
+            distanceToCamera = 400.0;                      % in meters
+            referenceObjectShape = 'rail';
+            referenceObjectSizeInMeters = 85/100;         % in meters
+            referenceObjectSizeInPixels = 10;
+            referenceObjectXYpos = [102 515];
+            referenceObjectROI = [2 referenceObjectSizeInPixels/2];
+           
+            % custom illuminant
+            obj.sceneData.customIlluminant.name         = 'D65';
+            obj.sceneData.customIlluminant.wave         = 410:10:710;
+            obj.sceneData.customIlluminant.meanSceneLum = 3000;   % cd/m2
+            
+            % custom clipping
+            obj.sceneData.clippingRegion.x1 = 213;
+            obj.sceneData.clippingRegion.x2 = Inf;
+            obj.sceneData.clippingRegion.y1 = 1;
+            obj.sceneData.clippingRegion.y2 = 700;
+            
+            
+        otherwise
+            error('Do not have any information fo scene named ''%s''.', sceneName);
+    end
+    
+    
+    
+    referenceObjectData = struct(...
+         'spectroRadiometerReadings', struct(...
+            'xChroma',      nan, ...              
+            'yChroma',      nan, ...              
+            'Yluma',        nan,  ...           
+            'CCT',          nan   ... 
+            ), ...
+         'paintMaterial', struct(), ...  % No paint material available
+         'geometry', struct( ...         % Geometry of the reference object
+            'shape',            referenceObjectShape, ...
+            'distanceToCamera', distanceToCamera, ...            % meters
+            'sizeInMeters',     referenceObjectSizeInMeters,...  % estimated manually from the picture
+            'sizeInPixels',     referenceObjectSizeInPixels,...  % estimated manually from the picture
+            'roiXYpos',         referenceObjectXYpos, ...        % pixels (center)
+            'roiSize',          referenceObjectROI ...           % pixels (halfwidth, halfheight)
+         ), ...
+         'info', [] ...
+    ); 
+end
+
 
 
 % Method to generate a reference object data struct specific to scene1

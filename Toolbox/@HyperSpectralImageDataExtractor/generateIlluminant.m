@@ -1,21 +1,20 @@
-function generateIlluminant(obj, sceneCalibrationStruct)
+function generateIlluminant(obj)
 
     % check wave vector 
-    if (size(obj.reflectanceMap,3) ~= numel(sceneCalibrationStruct.illuminantSampling))
+    if (size(obj.reflectanceMap,3) ~= numel(obj.sceneData.customIlluminant.wave))
         error('The spectral sampled of the reflectance map spectral samples (%d) does not match the one specified in the sceneCalibrationStruct', size(obj.reflectanceMap,3), numel(sceneCalibrationStruct.illuminantSampling));
     end
     
-    
-    
-    switch sceneCalibrationStruct.illuminantName
+    switch obj.sceneData.customIlluminant.name
         case 'D65'
             load('spd_D65.mat');
-            spd = SplineCmf(S_D65, spd_D65', WlsToS(reshape(sceneCalibrationStruct.illuminantSampling, [numel(sceneCalibrationStruct.illuminantSampling) 1])));
+            newS = WlsToS(reshape(obj.sceneData.customIlluminant.wave, [numel(obj.sceneData.customIlluminant.wave) 1]));
+            spd = SplineCmf(S_D65, spd_D65', newS);
             
         otherwise
-            error('Unknown illuminant: ''%s''', sceneCalibrationStruct.illuminantName);
+            error('Unknown illuminant: ''%s''', obj.sceneData.customIlluminant.name);
     end
     
-    obj.illuminant.wave = sceneCalibrationStruct.illuminantSampling';
+    obj.illuminant.wave = SToWls(newS);
     obj.illuminant.spd  = spd';
 end
