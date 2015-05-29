@@ -30,13 +30,14 @@ function batchImportHyperSpectralImages
     % Full set
     set = {set1MancesterUniv{:} set2MancesterUniv{:}};
     
+    exportIsetbioSceneObject = true;
     % Start the batch import and process
     for k = 1:numel(set)
         s = set{k};
         fprintf('\n<strong>--------------------------------------------------------------------------------------------</strong>\n');
         fprintf('<strong>%2d. Importing data files for scene ''%s'' of database ''%s''.</strong>\n', k, s.sceneName, s.databaseName);
         fprintf('<strong>--------------------------------------------------------------------------------------------</strong>\n');
-        importHyperSpectralImage(set{k});
+        importHyperSpectralImage(set{k}, exportIsetbioSceneObject);
     end
 end
 
