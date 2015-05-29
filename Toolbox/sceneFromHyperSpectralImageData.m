@@ -59,10 +59,6 @@ function scene = sceneFromHyperSpectralImageData(varargin)
     % Set the scene radiance (in photons/steradian/m^2/nm)
     scene = sceneSet(scene,'photons', Energy2Quanta(p.wave, p.radianceEnergy));
     
-    % Illuminant scaling must be done after photons are set. The multispectral data all have 
-    % an illuminant structure that is set, so they do not pass through this step.
-    %scene = sceneIlluminantScale(scene);
-    
     meanSceneLuminanceFromIsetbio = sceneGet(scene, 'mean luminance');
     fprintf('ISETBIO''s estimate of mean scene luminance: %2.2f cd/m2\n', meanSceneLuminanceFromIsetbio);
     
