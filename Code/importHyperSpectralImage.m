@@ -1,5 +1,10 @@
 function importHyperSpectralImage(varargin)
 
+    %% Get our project toolbox on the path
+    myDir = fileparts(mfilename('fullpath'));
+    pathDir = fullfile(myDir,'..','Toolbox','');
+    AddToMatlabPathDynamically(pathDir);
+
     if (nargin == 0)
         s = struct(...
             'databaseName', 'manchester_database', ...  % name of the database
@@ -28,7 +33,7 @@ function importHyperSpectralImage(varargin)
             return;
     end
       
-    % skip scene if it contains incosistent spectral data
+    % skip scene if it contains inconsistent spectral data
     if (hyperSpectralImageDataHandler.inconsistentSpectralData)
         fprintf(2,'Nothing exported for scene named ''%s''.\n',s.sceneName);
         return;
