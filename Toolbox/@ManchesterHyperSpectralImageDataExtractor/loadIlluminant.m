@@ -1,3 +1,4 @@
+% Manchester database - specific method to load the scene illuminant
 function loadIlluminant(obj)
 
     % Assemble sourceDirectory path
