@@ -1,0 +1,29 @@
+classdef HarvardHyperSpectralImageDataExtractor < HyperSpectralImageDataExtractor
+    %HARVARDHYPERSPECTRALIMAGEDATAEXTRACTOR A @HyperspectralImageDataExtractor subclass, specialized for the Harvard data base
+    
+    properties
+    end
+    
+    methods
+         function obj = HarvardHyperSpectralImageDataExtractor(sceneName)
+             % Call the super-class constructor.
+            obj = obj@HyperSpectralImageDataExtractor();
+            
+            databaseName = 'harvard_database';
+            subsetDirectory = '';
+            
+            obj.sceneData = struct(...
+                'database', databaseName, ...              % database directory
+                'subset',   subsetDirectory, ...           % subset directory name
+                'name',     sceneName, ...                 % scene name
+                'referenceObjectData', struct(), ...       % struct with reference object data
+                'reflectanceDataFileName', '', ...         % name of scene reflectance data file
+                'spectralRadianceDataFileName', '' ...     % name of spectral radiance factor to convert scene reflectance to radiances in Watts/steradian/m^2/nm - akin to the scene illuminant
+            );
+        
+         end
+         
+    end
+    
+end
+

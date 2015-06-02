@@ -26,7 +26,7 @@ function importHyperSpectralImage(varargin)
             hyperSpectralImageDataHandler = ManchesterHyperSpectralImageDataExtractor(s.sceneName);
         case 'harvard_database'
             % Instantiate a HarvardHyperSpectralImageDataExtractor
-            hyperSpectralImageDataHandler = HarvardHyperSpectralImageDataExtractor(s.sceneName);
+            hyperSpectralImageDataHandler = HarvardHyperSpectralImageDataExtractor(s.subsetDirectory,s.sceneName, s.applyMotionMask);
             
         otherwise
             fprintf(2, 'Unknown database name (''%s''). Skipping scene.\n', s.databaseName);
