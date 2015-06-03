@@ -22,8 +22,8 @@ function inconsistentSpectralData = generateRadianceDataStruct(obj)
     end
     
     % compute the radiance and adjust for mean luminance if so specified
-    redjustSceneLuminance = true;
-    while (redjustSceneLuminance)
+    adjustSceneLuminance = true;
+    while (adjustSceneLuminance)
         % Compute radianceMap from the reflectanceMap and the illuminant
         radianceMap = bsxfun(@times, obj.reflectanceMap, reshape(obj.illuminant.spd, [1 1 numel(obj.illuminant.spd)]));
         
@@ -41,7 +41,7 @@ function inconsistentSpectralData = generateRadianceDataStruct(obj)
         maxSceneLuminance  = max(obj.sceneLuminanceMap(:));
         meanSceneLuminance = mean(obj.sceneLuminanceMap(:));
     
-        redjustSceneLuminance = false;
+        adjustSceneLuminance = false;
         if (isfield(obj.sceneData, 'customIlluminant'))
             if (isfield(obj.sceneData.customIlluminant, 'meanSceneLum'))
                 if (abs(meanSceneLuminance - obj.sceneData.customIlluminant.meanSceneLum) > 0.05*obj.sceneData.customIlluminant.meanSceneLum)
@@ -49,11 +49,11 @@ function inconsistentSpectralData = generateRadianceDataStruct(obj)
                     % adjust illuminant spd
                     obj.illuminant.spd = obj.illuminant.spd * adjustmentFactor;
                     % and recompute everything
-                    redjustSceneLuminance = true;
+                    adjustSceneLuminance = true;
                 end
             end
         end
-    end  % while redjustSceneLuminance
+    end  % while adjustSceneLuminance
     
     
     % Compute luminance of reference object
@@ -65,7 +65,7 @@ function inconsistentSpectralData = generateRadianceDataStruct(obj)
     fprintf('\nReference object geometry:\n\tShape: ''%s''\n\tSize: %2.4f meters\n\tDistance to camera: %2.2f meters\n', obj.sceneData.referenceObjectData.geometry.shape, obj.sceneData.referenceObjectData.geometry.sizeInMeters, obj.sceneData.referenceObjectData.geometry.distanceToCamera);
     fprintf('\nReference object x,y chromaticities:\n\tcomputed: (%1.4f, %1.4f) \n\treported: (%1.4f, %1.4f)\n' , computedFromRadianceReferenceChromaticity(1), computedFromRadianceReferenceChromaticity(2), obj.referenceObjectData.spectroRadiometerReadings.xChroma, obj.referenceObjectData.spectroRadiometerReadings.yChroma);
     fprintf('\nReference object mean luminance (cd/m2):\n\tcomputed: %2.2f\n\treported: %2.2f\n' , computedfromRadianceReferenceLuminance, obj.referenceObjectData.spectroRadiometerReadings.Yluma);
-    fprintf('\nScene radiance  (Watts/steradian/m2/nm):\n\tMin: %2.2f\n\tMax: %2.2f\n', min(radianceMap(:)), max(radianceMap(:)));
+    fprintf('\nScene radiance  (Watts/steradian/m2/nm):\n\tMin: %2.6f\n\tMax: %2.6f\n', min(min(mean(radianceMap,3))), max(max(mean(radianceMap,3))));
     fprintf('\nScene luminance (cd/m2):\n\tMin  : %2.2f\n\tMax  : %2.2f\n\tMean : %2.2f\n\tRatio: %2.0f:1\n', minSceneLuminance, maxSceneLuminance, meanSceneLuminance, maxSceneLuminance/minSceneLuminance);
     
     % Return radianceData struct

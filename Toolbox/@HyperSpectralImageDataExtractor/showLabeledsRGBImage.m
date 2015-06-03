@@ -59,37 +59,68 @@ function [rowIndices, colIndices] = indicesForRedRectangle(obj, outlineWidth)
     colIndices = [];
     rowIndices = [];
     
-    if ((isempty(obj.referenceObjectData.geometry.roiXYpos)) || (isempty(obj.referenceObjectData.geometry.roiSize)))
-        return;
+    if (isfield(obj.sceneData, 'knownReflectionData'))
+        if (isfield(obj.sceneData.knownReflectionData, 'region')) && (~isempty(obj.sceneData.knownReflectionData.region))
+            for k = 1:outlineWidth
+                newColIndices = obj.sceneData.knownReflectionData.region(1)-outlineWidth : obj.sceneData.knownReflectionData.region(3)-outlineWidth;
+                newRowIndices = ones(size(newColIndices)) * obj.sceneData.knownReflectionData.region(2)-k;
+                colIndices = [colIndices newColIndices];
+                rowIndices = [rowIndices newRowIndices];
+            end
+
+            for k = 1:outlineWidth
+                newColIndices = obj.sceneData.knownReflectionData.region(1)-outlineWidth : obj.sceneData.knownReflectionData.region(3)-outlineWidth;
+                newRowIndices = ones(size(newColIndices)) * obj.sceneData.knownReflectionData.region(4)+k;
+                colIndices = [colIndices newColIndices];
+                rowIndices = [rowIndices newRowIndices];
+            end
+
+            for k = 1:outlineWidth
+                newRowIndices = obj.sceneData.knownReflectionData.region(2)-outlineWidth : obj.sceneData.knownReflectionData.region(4)-outlineWidth;
+                newColIndices = ones(size(newRowIndices)) * obj.sceneData.knownReflectionData.region(1)-k;
+                colIndices = [colIndices newColIndices];
+                rowIndices = [rowIndices newRowIndices];
+            end
+
+            for k = 1:outlineWidth
+                newRowIndices = obj.sceneData.knownReflectionData.region(2)-outlineWidth : obj.sceneData.knownReflectionData.region(4)-outlineWidth;
+                newColIndices = ones(size(newRowIndices)) * obj.sceneData.knownReflectionData.region(3)+k;
+                colIndices = [colIndices newColIndices];
+                rowIndices = [rowIndices newRowIndices];
+            end   
+        end
     end
     
-    for k = 1:outlineWidth
-        newColIndices = obj.referenceObjectData.geometry.roiXYpos(1) + (-obj.referenceObjectData.geometry.roiSize(1)-outlineWidth:obj.referenceObjectData.geometry.roiSize(1)+outlineWidth);
-        newRowIndices = ones(size(newColIndices)) * (obj.referenceObjectData.geometry.roiXYpos(2)-obj.referenceObjectData.geometry.roiSize(2)-k);
-        colIndices = [colIndices newColIndices];
-        rowIndices = [rowIndices newRowIndices];
+    if (~(isempty(obj.referenceObjectData.geometry.roiXYpos)) && (~isempty(obj.referenceObjectData.geometry.roiSize)))
+        for k = 1:outlineWidth
+            newColIndices = obj.referenceObjectData.geometry.roiXYpos(1) + (-obj.referenceObjectData.geometry.roiSize(1)-outlineWidth:obj.referenceObjectData.geometry.roiSize(1)+outlineWidth);
+            newRowIndices = ones(size(newColIndices)) * (obj.referenceObjectData.geometry.roiXYpos(2)-obj.referenceObjectData.geometry.roiSize(2)-k);
+            colIndices = [colIndices newColIndices];
+            rowIndices = [rowIndices newRowIndices];
+        end
+
+        for k = 1:outlineWidth
+            newColIndices = obj.referenceObjectData.geometry.roiXYpos(1) + (-obj.referenceObjectData.geometry.roiSize(1)-outlineWidth:obj.referenceObjectData.geometry.roiSize(1)+outlineWidth);
+            newRowIndices = ones(size(newColIndices)) * (obj.referenceObjectData.geometry.roiXYpos(2)+obj.referenceObjectData.geometry.roiSize(2)+k);
+            colIndices = [colIndices newColIndices];
+            rowIndices = [rowIndices newRowIndices];
+        end
+
+        for k = 1:outlineWidth
+            newRowIndices = obj.referenceObjectData.geometry.roiXYpos(2) + (-obj.referenceObjectData.geometry.roiSize(2)-outlineWidth:obj.referenceObjectData.geometry.roiSize(2)+outlineWidth);
+            newColIndices = ones(size(newRowIndices)) * (obj.referenceObjectData.geometry.roiXYpos(1)-obj.referenceObjectData.geometry.roiSize(1)-k);
+            colIndices = [colIndices newColIndices];
+            rowIndices = [rowIndices newRowIndices];
+        end
+
+        for k = 1:outlineWidth
+            newRowIndices = obj.referenceObjectData.geometry.roiXYpos(2) + (-obj.referenceObjectData.geometry.roiSize(2)-outlineWidth:obj.referenceObjectData.geometry.roiSize(2)+outlineWidth);
+            newColIndices = ones(size(newRowIndices)) * (obj.referenceObjectData.geometry.roiXYpos(1)+obj.referenceObjectData.geometry.roiSize(1)+k);
+            colIndices = [colIndices newColIndices];
+            rowIndices = [rowIndices newRowIndices];
+        end
     end
     
-    for k = 1:outlineWidth
-        newColIndices = obj.referenceObjectData.geometry.roiXYpos(1) + (-obj.referenceObjectData.geometry.roiSize(1)-outlineWidth:obj.referenceObjectData.geometry.roiSize(1)+outlineWidth);
-        newRowIndices = ones(size(newColIndices)) * (obj.referenceObjectData.geometry.roiXYpos(2)+obj.referenceObjectData.geometry.roiSize(2)+k);
-        colIndices = [colIndices newColIndices];
-        rowIndices = [rowIndices newRowIndices];
-    end
-    
-    for k = 1:outlineWidth
-        newRowIndices = obj.referenceObjectData.geometry.roiXYpos(2) + (-obj.referenceObjectData.geometry.roiSize(2)-outlineWidth:obj.referenceObjectData.geometry.roiSize(2)+outlineWidth);
-        newColIndices = ones(size(newRowIndices)) * (obj.referenceObjectData.geometry.roiXYpos(1)-obj.referenceObjectData.geometry.roiSize(1)-k);
-        colIndices = [colIndices newColIndices];
-        rowIndices = [rowIndices newRowIndices];
-    end
-    
-    for k = 1:outlineWidth
-        newRowIndices = obj.referenceObjectData.geometry.roiXYpos(2) + (-obj.referenceObjectData.geometry.roiSize(2)-outlineWidth:obj.referenceObjectData.geometry.roiSize(2)+outlineWidth);
-        newColIndices = ones(size(newRowIndices)) * (obj.referenceObjectData.geometry.roiXYpos(1)+obj.referenceObjectData.geometry.roiSize(1)+k);
-        colIndices = [colIndices newColIndices];
-        rowIndices = [rowIndices newRowIndices];
-    end
 end
 
 

@@ -37,6 +37,12 @@ classdef HarvardHyperSpectralImageDataExtractor < HyperSpectralImageDataExtracto
             % Load the reflectance map
             obj.loadReflectanceMap();
             
+            % Adjust the reflectance map if a region of known reflectance
+            % exists in the scene (e.g., imgg3)
+            if (~isempty(obj.sceneData.knownReflectionData))
+                obj.adjustSceneReflectanceBasedOnRegionOfKnownReflectance();
+            end
+            
             if (isempty(obj.sceneData.spectralRadianceDataFileName))
                 % if the spectralRadianceDataFileName is empty, generate an illuminant based on the info at obj.sceneData.customIlluminant
                 obj.generateIlluminant();

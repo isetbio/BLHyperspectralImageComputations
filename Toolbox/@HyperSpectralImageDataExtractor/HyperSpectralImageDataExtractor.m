@@ -126,6 +126,9 @@ classdef HyperSpectralImageDataExtractor < handle
         % Method to generate an illuminant for scenes with no information about the illuminant
         generateIlluminant(obj, sceneCalibrationStruct);
         
+        % Method to adjsut the scene reflectance based on a region of known reflectance
+        adjustSceneReflectanceBasedOnRegionOfKnownReflectance(obj);
+        
         % Method that computes the radianceMap from the imported reflectance and
         % the illuminant. This method also computes the luminance and xy chroma of
         % the reference object and contrasts this to the values measured and
