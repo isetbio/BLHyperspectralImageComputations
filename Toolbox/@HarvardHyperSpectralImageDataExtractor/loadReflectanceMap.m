@@ -17,6 +17,7 @@ function loadReflectanceMap(obj)
             obj.sceneData.clippingRegion.x2 = size(ref,2);
         end
         ref = ref(obj.sceneData.clippingRegion.y1:obj.sceneData.clippingRegion.y2, obj.sceneData.clippingRegion.x1:obj.sceneData.clippingRegion.x2, :);
+        lbl = lbl(obj.sceneData.clippingRegion.y1:obj.sceneData.clippingRegion.y2, obj.sceneData.clippingRegion.x1:obj.sceneData.clippingRegion.x2);
      end
     
     

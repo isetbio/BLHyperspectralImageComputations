@@ -161,7 +161,7 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
             
         case 'scene11'
             % custom spatial calibration information (tree branch)
-            distanceToCamera = 40.0;                      % in meters
+            distanceToCamera = 80.0;                      % in meters
             referenceObjectShape = 'tree branch';
             referenceObjectSizeInMeters = 100/100;         % in meters
             referenceObjectSizeInPixels = 84;
@@ -181,7 +181,7 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
             
         case 'scene12'
             % custom spatial calibration information (tree branch)
-            distanceToCamera = 80.0;                      % in meters
+            distanceToCamera = 130.0;                      % in meters
             referenceObjectShape = 'tree branch';
             referenceObjectSizeInMeters = 100/100;         % in meters
             referenceObjectSizeInPixels = 84;
@@ -201,7 +201,7 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
          
         case 'scene13'
             % custom spatial calibration information (tree branch)
-            distanceToCamera = 7.0;                      % in meters
+            distanceToCamera = 10.0;                      % in meters
             referenceObjectShape = 'basket ball';
             referenceObjectSizeInMeters = 25/100;         % in meters
             referenceObjectSizeInPixels = 224;
@@ -221,7 +221,7 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
             
         case 'scene14'
             % custom spatial calibration information (tree branch)
-            distanceToCamera = 40.0;                      % in meters
+            distanceToCamera = 80.0;                      % in meters
             referenceObjectShape = 'rail';
             referenceObjectSizeInMeters = 100/100;         % in meters
             referenceObjectSizeInPixels = 72;
@@ -242,7 +242,7 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
         
         case 'scene15'
             % custom spatial calibration information (tree branch)
-            distanceToCamera = 50.0;                      % in meters
+            distanceToCamera = 80.0;                      % in meters
             referenceObjectShape = 'rail';
             referenceObjectSizeInMeters = 90/100;         % in meters
             referenceObjectSizeInPixels = 66;
@@ -262,7 +262,7 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
             
         case 'scene16'
             % custom spatial calibration information (tree branch)
-            distanceToCamera = 400.0;                      % in meters
+            distanceToCamera = 600.0;                      % in meters
             referenceObjectShape = 'rail';
             referenceObjectSizeInMeters = 85/100;         % in meters
             referenceObjectSizeInPixels = 10;

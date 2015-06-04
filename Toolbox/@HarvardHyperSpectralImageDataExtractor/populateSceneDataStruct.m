@@ -142,7 +142,7 @@ function knownReflectionData = generateKnownReflectionDataStructForHarvardScenes
              
             case 'imgg8'
             % Xrite white balance card
-                knownReflectionData.region = [875 905  1024 1014];
+                knownReflectionData.region = [518 341  780 496];
                 knownReflectionData.nominalReflectanceSPD = reflectanceSPD;
                 knownReflectionData.wave = obj.sceneData.customIlluminant.wave;
                 
@@ -179,7 +179,10 @@ function referenceObjectData = generateReferenceObjectDataStructForHarvardScenes
     % is 31.3 degrees along the diagonal. This means that the horizontal
     % field of view is 25.07 degrees.
     % They used a 60 mm lens, which should translate to a 32.5 degree diagonal field of view 
-    % (for a standard DSLR / 35mm film camera). The sensor dimensions were
+    % (for a standard DSLR / 35mm film camera). 
+    %
+    % FOV = 2 atan(
+    % The sensor dimensions were
     % 6.71mm x 8.98mm (basically, at 6.45um per pixel). This gives a diagonal 
     % field of view of the sensor of 11.21 mm.
     % However, they also had a lens converter in front with a demagnifying element. 
@@ -217,13 +220,76 @@ function referenceObjectData = generateReferenceObjectDataStructForHarvardScenes
     obj.sceneData.clippingRegion.y1 = 1;
     obj.sceneData.clippingRegion.y2 = Inf;
     
+    if (strcmp(obj.sceneData.subset, 'CZ_hsdb'))
+        switch obj.sceneData.name 
+            case 'imgb4'
+                obj.sceneData.clippingRegion.x1 = 1;
+                obj.sceneData.clippingRegion.x2 = 600;
+                obj.sceneData.clippingRegion.y1 = 1;
+                obj.sceneData.clippingRegion.y2 = Inf;
+                
+            case 'imgb7'
+                obj.sceneData.clippingRegion.x1 = 1;
+                obj.sceneData.clippingRegion.x2 = Inf;
+                obj.sceneData.clippingRegion.y1 = 736;
+                obj.sceneData.clippingRegion.y2 = Inf;
+               
+            case 'imgb8'
+                obj.sceneData.clippingRegion.x1 = 1;
+                obj.sceneData.clippingRegion.x2 = 762;
+                obj.sceneData.clippingRegion.y1 = 1;
+                obj.sceneData.clippingRegion.y2 = Inf;
+                
+            case 'imgc9'
+                obj.sceneData.clippingRegion.x1 = 1;
+                obj.sceneData.clippingRegion.x2 = 976;
+                obj.sceneData.clippingRegion.y1 = 1;
+                obj.sceneData.clippingRegion.y2 = 855;
+                
+            case 'imge0'
+                obj.sceneData.clippingRegion.x1 = 306;
+                obj.sceneData.clippingRegion.x2 = Inf;
+                obj.sceneData.clippingRegion.y1 = 1;
+                obj.sceneData.clippingRegion.y2 = Inf;  
+                
+            case 'imge1'
+                obj.sceneData.clippingRegion.x1 = 472;
+                obj.sceneData.clippingRegion.x2 = 1144;
+                obj.sceneData.clippingRegion.y1 = 187;
+                obj.sceneData.clippingRegion.y2 = 983;  
+                
+            case 'imge2'
+                obj.sceneData.clippingRegion.x1 = 383;
+                obj.sceneData.clippingRegion.x2 = 1013;
+                obj.sceneData.clippingRegion.y1 = 1;
+                obj.sceneData.clippingRegion.y2 = Inf;  
+                
+            case 'imge7'
+                obj.sceneData.clippingRegion.x1 = 626;
+                obj.sceneData.clippingRegion.x2 = Inf;
+                obj.sceneData.clippingRegion.y1 = 1;
+                obj.sceneData.clippingRegion.y2 = Inf; 
+                
+            case 'imgf3'
+                obj.sceneData.clippingRegion.x1 = 791;
+                obj.sceneData.clippingRegion.x2 = Inf;
+                obj.sceneData.clippingRegion.y1 = 1;
+                obj.sceneData.clippingRegion.y2 = Inf; 
+                
+            case 'imgf8'
+                obj.sceneData.clippingRegion.x1 = 1;
+                obj.sceneData.clippingRegion.x2 = 1230;
+                obj.sceneData.clippingRegion.y1 = 1;
+                obj.sceneData.clippingRegion.y2 = Inf;     
+                
+        end
+    end
     
     % custom illuminant
     obj.sceneData.customIlluminant.name         = 'D65';
     obj.sceneData.customIlluminant.wave         = 420:10:720;
     obj.sceneData.customIlluminant.meanSceneLum = meanSceneLuminanceInCdPerM2;
 
-    
    
     referenceObjectData = struct(...
          'spectroRadiometerReadings', struct(...
