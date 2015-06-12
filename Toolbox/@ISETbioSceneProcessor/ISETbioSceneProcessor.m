@@ -17,6 +17,9 @@ classdef ISETbioSceneProcessor < handle
         % the sensor isetbio struct
         sensor;
         
+        % the eye movement isetbio struct
+        eyeMovement;
+        
         % the sensor activation image (volts)
         sensorActivationImage
     end
@@ -53,8 +56,12 @@ classdef ISETbioSceneProcessor < handle
         % Method to compute the optical image
         computeOpticalImage(obj,varargin);
         
-        % Method to compute the sensor image
-        computeSensorImage(obj,varargin);
+        % Method to compute the (time-varying) activation of a sensor mosaic
+        computeSensorActivation(obj,varargin);
+        
+        % Method to estimate the identity of each cone by analysis of their
+        % responses to a set of stimuli
+        estimateReceptorIdentities(obj, varargin);
     end
     
     
