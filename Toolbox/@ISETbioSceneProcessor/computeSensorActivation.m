@@ -68,7 +68,7 @@ function computeSensorActivation(obj,varargin)
                 
                 params.sz = round(sensorParams.conesAcross*[sensorParams.heightToWidthRatio 1.0]);
                 params.rgbDensities = [0.0 0.6 0.3 0.1];  % Empty (missing cone), L, M, S
-                params.coneAperture = [5 5]*1e-6;         % 5 microns, (specified in meters)
+                params.coneAperture = [1 1]*sensorParams.coneAperture;  
                 
                 % Generate sensor for human retina
                 pixel = [];
@@ -88,6 +88,9 @@ function computeSensorActivation(obj,varargin)
             % create em structure
             obj.eyeMovement = emCreate();
            
+            % set sample time to 10 mseconds
+            obj.eyeMovement  = emSet(obj.eyeMovement, 'sample time', 0.01);
+            
             % Attach it to the sensor
             obj.sensor = sensorSet(obj.sensor,'eyemove', obj.eyeMovement);
 
@@ -143,8 +146,7 @@ function computeSensorActivation(obj,varargin)
         obj.sensor = sensorSet(obj.sensor, 'noise flag', 0);
         obj.sensor = coneAbsorptions(obj.sensor, obj.opticalImage);
         obj.sensorActivationImage = sensorGet(obj.sensor, 'volts');
-        
-        
+
         % Save computed sensor
         sensor = obj.sensor;
         if (obj.verbosity > 2)
@@ -196,59 +198,196 @@ function VisualizeResults(obj, generateVideo)
     % allocate memory for spatiotemporal activation
     rgbImageXT = zeros(size(sensorNormalizedActivation,1)*size(sensorNormalizedActivation,2), size(sensorNormalizedActivation,3), 3);
 
-    h = figure();
-    set(h, 'Position', [10 100 1260 770], 'Color', [0 0 0]);
+    h = figure(123);
+    set(h, 'Position', [10 100 1440 770], 'Color', [0 0 0]);
 
-    % Show the optical image
-    subplot('Position', [0.42 0.30 0.59 0.68]);
-    imagesc(opticalImageXposInMicrons, opticalImageYposInMicrons, opticalImageRGBrendering);
-    hold on;
-    set(gca, 'XTick', [-2000:200:2000], 'YTick', [-2000:200:2000], 'XLim', [opticalImageXposInMicrons(1) opticalImageXposInMicrons(end)], 'YLim', [opticalImageYposInMicrons(1) opticalImageYposInMicrons(end)]);
-    set(gca, 'XColor', [0.8 0.8 0.6], 'YColor', [0.8 0.8 0.6], 'FontSize', 12);
-    xlabel('microns', 'FontSize', 14); ylabel('microns', 'FontSize', 14);
+    commonSquareSizeX = 0.14;
+    commonSquareSizeY = commonSquareSizeX * 1440/770;
+    opticalImageSubPlotPosition  = [0.03 0.30 0.47 0.68];
+    xtResponseSubPlotPosition    = [0.025 0.05 0.96 0.20];
+    
+    sensor2DactivationSubPlotPosition        = [0.525 0.51 commonSquareSizeX  commonSquareSizeY ];
+    
+    actualSensorMosaicSubPlotPosition        = [0.68 0.69 commonSquareSizeX  commonSquareSizeY ];
+    reconstructedSensorMosaicSubPlotPosition = [0.68 0.31 commonSquareSizeX commonSquareSizeY ];  
+    MDSDim2SubPlotPosition                   = [0.84 0.69 commonSquareSizeX  commonSquareSizeY ];
+    MDSDim3SubPlotPosition                   = [0.84 0.31 commonSquareSizeX commonSquareSizeY ];  
+    
+    
+    
 
     if (generateVideo)
         % Setup video stream
         writerObj = VideoWriter('SensorResponse.m4v', 'MPEG-4'); % H264 format
-        writerObj.FrameRate = 60; 
+        writerObj.FrameRate = 15; 
         writerObj.Quality = 100;
         % Open video stream
         open(writerObj); 
     end
 
+    MDSprojection = [];
+    
     % show the activation at each time step
     for k = 1:size(sensorNormalizedActivation,3)
 
+        clf;
+        % Show the optical image
+        subplot('Position', opticalImageSubPlotPosition);
+        selectXPosIndices = 1:2:size(opticalImageRGBrendering,2);
+        selectYPosIndices = 1:2:size(opticalImageRGBrendering,1);
+        
+       
+        imagesc(opticalImageXposInMicrons(selectXPosIndices), opticalImageYposInMicrons(selectYPosIndices), opticalImageRGBrendering(selectYPosIndices,selectXPosIndices,:));
+        set(gca, 'CLim', [0 1]);
+        hold on;
+        % plot the sensor position
+        mink = max([1 k-40]);
+        plot(-sensorPositionsInMicrons(mink:k,1), sensorPositionsInMicrons(mink:k,2), 'k.-');
+        plot(-sensorPositionsInMicrons(1:k,1), sensorPositionsInMicrons(1:k,2), 'k+');
+        plot(-sensorPositionsInMicrons(k,1) + sensorOutlineInMicrons(:,1), sensorPositionsInMicrons(k,2) + sensorOutlineInMicrons(:,2), 'w-', 'LineWidth', 2.0);
+        hold off;
+        axis 'image'
+        
+        set(gca, 'XTick', [-2000:200:2000], 'YTick', [-2000:200:2000], 'XLim', [opticalImageXposInMicrons(1) opticalImageXposInMicrons(end)], 'YLim', [opticalImageYposInMicrons(1) opticalImageYposInMicrons(end)]);
+        set(gca, 'XColor', [0.8 0.8 0.6], 'YColor', [0.8 0.8 0.6], 'FontSize', 12);
+        xlabel('microns', 'FontSize', 14); ylabel('microns', 'FontSize', 14);
+    
+        if (k > 30)
+           MDSprojection = obj.estimateReceptorIdentities('demoMode', false, 'selectTimeBins', [1:k]);
+           MDSprojectionCopy = MDSprojection;
+        end
+
         % 2D ensor activation 
-        subplot('Position', [0.05 0.30 0.30 0.68]);
-
-        imageAplitude = (squeeze(sensorNormalizedActivation(:,:,k))).^0.75;
-        rgbImage(:,:,1) = imageAplitude .* maskLcones;
-        rgbImage(:,:,2) = imageAplitude .* maskMcones;
-        rgbImage(:,:,3) = imageAplitude .* maskScones;
-        rgbImageXT(:,k,:) = reshape(rgbImage, [size(rgbImage,1)*size(rgbImage,2) 3]);
-        imagesc((1:sensorRowsCols(2))*sensorSampleSeparationInMicrons(1), (1:sensorRowsCols(1))*sensorSampleSeparationInMicrons(2), rgbImage, [0 1]);
-
-        set(gca, 'XTick', [0:50:1000], 'YTick', [0:50:1000]);
+        subplot('Position', sensor2DactivationSubPlotPosition);
+        imagesc((1:sensorRowsCols(2))*sensorSampleSeparationInMicrons(1), (1:sensorRowsCols(1))*sensorSampleSeparationInMicrons(2), sensorNormalizedActivation(:,:,k));
+        set(gca, 'CLim', [0 1]);
+        rgbImageXT(:,k) = reshape(squeeze(sensorNormalizedActivation(:,:,k)), [size(sensorNormalizedActivation,1)*size(sensorNormalizedActivation,2) 1]);
+         
+        
+        
+        set(gca, 'XTick', [0:5:1000], 'YTick', [0:5:1000]);
         set(gca, 'XColor', [0.8 0.8 0.6], 'YColor', [0.8 0.8 0.6], 'FontSize', 12);
         axis 'image'
         xlabel('microns', 'FontSize', 14); ylabel('microns', 'FontSize', 14);
+        title('sensor activation', 'FontSize', 14, 'Color', [0.8 0.8 0.6]);
         colormap(hot(512));
 
 
-        % Sensor location on the optical image
-        subplot('Position', [0.42 0.30 0.59 0.68]);
-        % plot the sensor position
-        plot(-sensorPositionsInMicrons(k,1) + sensorOutlineInMicrons(:,1), sensorPositionsInMicrons(k,2) + sensorOutlineInMicrons(:,2), 'k-');
-        axis 'image'
-
+        
         % Update the X-T response
-        subplot('Position', [0.05 0.05 0.92 0.20]);
+        subplot('Position', xtResponseSubPlotPosition);
         imagesc(rgbImageXT);
+        set(gca, 'Clim', [0 1]);
         set(gca, 'XColor', [0.8 0.8 0.6], 'YColor', [0.8 0.8 0.6], 'YTick', [], 'FontSize', 12);
-        xlabel('time', 'FontSize', 14); ylabel('mosaic activation', 'FontSize', 14);
-        drawnow;
+        xlabel('time', 'FontSize', 16, 'FontWeight', 'b'); ylabel('sensor activation', 'FontSize', 16, 'FontWeight', 'b');
 
+        conesToPlot = 20;
+        coneSize = 40;
+        whiteBackground = false;
+        [xyOriginal,coneType, support,spread,delta] = conePlotHelper(obj.sensor, conesToPlot, coneSize);
+        [support, spread, delta, coneMosaicImage] = conePlot(xyOriginal,coneType, support,spread,delta*3,whiteBackground);
+        
+        subplot('Position', actualSensorMosaicSubPlotPosition);
+        imshow(coneMosaicImage);
+        axis 'square';
+        title('cone mosaic (actual)', 'FontSize', 14, 'Color', [0.8 0.8 0.6]);
+        
+        subplot('Position', reconstructedSensorMosaicSubPlotPosition);
+        if (~isempty(MDSprojection))
+            % find optimal orientation of xy positions to match the
+            % original
+            dimA = 1; dimB = 2;
+            xy(:,1) =  MDSprojectionCopy(:,dimA);
+            xy(:,2) =  MDSprojectionCopy(:,dimB);
+            
+            rotateThisPlane = true;
+            if (rotateThisPlane) && (k > 200)
+                A = MDSprojectionCopy; A(:,3) = 0; 
+                B = A; B(:,dimA) = xyOriginal(:,1); B(:,dimB) = xyOriginal(:,2);
+                [ret_R, ret_t] = rigid_transform_3D(MDSprojectionCopy, B);
+                rotatedMDSprojection = (ret_R*A') + repmat(ret_t, 1, size(MDSprojectionCopy,1));
+                MDSprojection =  rotatedMDSprojection';
+                xy(:,1) =  MDSprojection(:,dimA);
+                xy(:,2) =  MDSprojection(:,dimB);
+            end
+            
+            xy = xy / max(abs(xy(:))) * max(abs(xyOriginal(:)));
+            [support, spread, delta, dim1vsdim2] = conePlot(xy,coneType, support,spread,delta,whiteBackground);
+            for channelIndex = 1:3
+                dim1vsdim2(:,:,channelIndex) = dim1vsdim2(:,:,channelIndex)/max(max(max(dim1vsdim2(:,:,channelIndex))));
+            end
+            
+            dim1vsdim2(dim1vsdim2>1) =1;
+            imshow(dim1vsdim2);
+        end
+        set(gca, 'Color', [0 0 0], 'XColor', [0.8 0.8 0.6], 'YColor', [0.8 0.8 0.6], 'XTick', [], 'YTick', []);
+        box on
+        axis 'equal';
+        title('d1 x d2', 'FontSize', 14, 'Color', [0.8 0.8 0.6]);
+        
+        subplot('Position', MDSDim2SubPlotPosition);
+        if (~isempty(MDSprojection))
+            dimA = 1; dimB = 3;
+            xy(:,1) =  MDSprojectionCopy(:,dimA);
+            xy(:,2) =  MDSprojectionCopy(:,dimB);
+            
+            rotateThisPlane = false;
+            if (rotateThisPlane)
+                A = MDSprojectionCopy; A(:,2) = 0; 
+                B = A; B(:,dimA) = xyOriginal(:,1); B(:,dimB) = xyOriginal(:,2);
+                [ret_R, ret_t] = rigid_transform_3D(MDSprojectionCopy, B);
+                rotatedMDSprojection = (ret_R*A') + repmat(ret_t, 1, size(MDSprojectionCopy,1));
+                MDSprojection =  rotatedMDSprojection';
+                xy(:,1) =  MDSprojection(:,dimA);
+                xy(:,2) =  MDSprojection(:,dimB);
+            end
+
+            xy = xy / max(abs(xy(:))) * max(abs(xyOriginal(:)));
+            [support, spread, delta, dim1vsdim3] = conePlot(xy,coneType, support,spread,delta,whiteBackground);
+            dim1vsdim3 = dim1vsdim3;
+            for channelIndex = 1:3
+                dim1vsdim3(:,:,channelIndex) = dim1vsdim3(:,:,channelIndex)/max(max(max(dim1vsdim3(:,:,channelIndex))));
+            end
+            dim1vsdim3(dim1vsdim3>1) =1;
+            imshow(dim1vsdim3);
+        end
+        set(gca, 'Color', [0 0 0], 'XColor', [0.8 0.8 0.6], 'YColor', [0.8 0.8 0.6], 'XTick', [], 'YTick', []);
+        box on
+        axis 'equal';
+        title('d1 x d3', 'FontSize', 14, 'Color', [0.8 0.8 0.6]);
+        
+        
+        subplot('Position', MDSDim3SubPlotPosition);
+        if (~isempty(MDSprojection))
+            dimA = 2; dimB = 3;
+            xy(:,1) =  MDSprojectionCopy(:,dimA);
+            xy(:,2) =  MDSprojectionCopy(:,dimB);
+            
+            rotateThisPlane = false;
+            if (rotateThisPlane)
+                A = MDSprojectionCopy; A(:,1) = 0; 
+                B = A; B(:,dimA) = xyOriginal(:,1); B(:,dimB) = xyOriginal(:,2);
+                [ret_R, ret_t] = rigid_transform_3D(MDSprojectionCopy, B);
+                rotatedMDSprojection = (ret_R*A') + repmat(ret_t, 1, size(MDSprojectionCopy,1));
+                MDSprojection = rotatedMDSprojection';
+                xy(:,1) =  MDSprojection(:,dimA);
+                xy(:,2) =  MDSprojection(:,dimB);
+            end
+            xy = xy / max(abs(xy(:))) * max(abs(xyOriginal(:)));
+            [support, spread, delta, dim2vsdim3] = conePlot(xy,coneType, support,spread,delta,whiteBackground);
+            for channelIndex = 1:3
+                dim2vsdim3(:,:,channelIndex) = dim2vsdim3(:,:,channelIndex)/max(max(max(dim2vsdim3(:,:,channelIndex))));
+            end
+            dim2vsdim3(dim2vsdim3>1) =1;
+            imshow(dim2vsdim3);
+        end
+        set(gca, 'Color', [0 0 0], 'XColor', [0.8 0.8 0.6], 'YColor', [0.8 0.8 0.6], 'XTick', [], 'YTick', []);
+        axis 'equal';
+        box on
+        title('d2 x d3', 'FontSize', 14, 'Color', [0.8 0.8 0.6]);
+        
+        drawnow;
+        
         if (generateVideo)
             % add a frame to the video stream
             frame = getframe(gcf);
@@ -261,3 +400,26 @@ function VisualizeResults(obj, generateVideo)
         close(writerObj);
     end
 end
+
+
+function [R,t] = rigid_transform_3D(A, B)
+    centroid_A = mean(A);
+    centroid_B = mean(B);
+
+    N = size(A,1);
+
+    H = (A - repmat(centroid_A, N, 1))' * (B - repmat(centroid_B, N, 1));
+
+    [U,S,V] = svd(H);
+
+    R = V*U';
+
+    if det(R) < 0
+        %fprintf('Reflection detected\n');
+        V(:,3) = V(:,3) * (-1);
+        R = V*U';
+    end
+
+    t = -R*centroid_A' + centroid_B';
+end
+

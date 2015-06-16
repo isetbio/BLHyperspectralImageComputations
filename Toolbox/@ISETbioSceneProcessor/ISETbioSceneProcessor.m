@@ -61,7 +61,7 @@ classdef ISETbioSceneProcessor < handle
         
         % Method to estimate the identity of each cone by analysis of their
         % responses to a set of stimuli
-        estimateReceptorIdentities(obj, varargin);
+        MDSprojection = estimateReceptorIdentities(obj, varargin);
     end
     
     
