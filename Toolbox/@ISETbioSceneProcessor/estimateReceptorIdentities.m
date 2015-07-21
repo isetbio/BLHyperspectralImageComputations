@@ -106,8 +106,7 @@ function MDSprojection = estimateReceptorIdentities(obj, varargin)
 
     end
     
-    fprintf('Computing MDS on correlation matrix');
-    tic
+
     dimensionsNum = 3;
     
     % ensure D is symmetric
@@ -117,8 +116,6 @@ function MDSprojection = estimateReceptorIdentities(obj, varargin)
     
     [MDSprojection,stress] = mdscale(D,dimensionsNum);
 
-    
-    toc;
 
     if (demoMode) 
         figure(4);

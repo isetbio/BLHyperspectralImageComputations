@@ -242,8 +242,8 @@ function VisualizeResults(obj, generateVideo)
         hold on;
         % plot the sensor position
         mink = max([1 k-40]);
-        plot(-sensorPositionsInMicrons(mink:k,1), sensorPositionsInMicrons(mink:k,2), 'k.-');
-        plot(-sensorPositionsInMicrons(1:k,1), sensorPositionsInMicrons(1:k,2), 'k+');
+        plot(-sensorPositionsInMicrons(mink:k,1), sensorPositionsInMicrons(mink:k,2), 'w.-');
+        plot(-sensorPositionsInMicrons(1:k,1), sensorPositionsInMicrons(1:k,2), 'k.');
         plot(-sensorPositionsInMicrons(k,1) + sensorOutlineInMicrons(:,1), sensorPositionsInMicrons(k,2) + sensorOutlineInMicrons(:,2), 'w-', 'LineWidth', 2.0);
         hold off;
         axis 'image'
@@ -389,9 +389,33 @@ function VisualizeResults(obj, generateVideo)
         drawnow;
         
         if (generateVideo)
-            % add a frame to the video stream
-            frame = getframe(gcf);
-            writeVideo(writerObj, frame);
+            
+            reason(1) = (k < 1000);
+            reason(2) = (mod(k-1, 20) == 0) && (k >= 1000);
+            reason(3) = (mod(k-1, 40) == 0) && (k >= 2000);
+            reason(4) = (mod(k-1, 60) == 0) && (k >= 4000);
+            reason(5) = (mod(k-1, 80) == 0) && (k >= 8000);
+            reason(6) = (mod(k-1, 100) == 0) && (k >= 10000);
+            reason(7) = (k == size(sensorNormalizedActivation,3));
+            
+            if (reason(6))
+                reason(1:5) = false;
+            elseif (reason(5))
+                reason(1:4) = false;
+            elseif (reason(4))
+                reason(1:3) = false;
+            elseif (reason(3))
+                reason(1:2) = false;
+            elseif (reason(2))
+                reason(1) = false;
+            end
+
+            if (any(reason))
+                % add a frame to the video stream
+                frame = getframe(gcf);
+                writeVideo(writerObj, frame);
+                fprintf('Added frame at k = %d\n', k);
+            end
         end
     end
 
