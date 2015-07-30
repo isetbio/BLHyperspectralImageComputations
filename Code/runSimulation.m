@@ -1,5 +1,14 @@
 function runSimulation
 
+    startup();
+    
+    [rootPath,~] = fileparts(which(mfilename));
+    cd(rootPath);
+    cd ..
+    cd 'Toolbox';
+    addpath(genpath(pwd));
+    cd(rootPath);
+    
     databaseName = 'manchester_database';
     sceneName = 'scene3';
     
@@ -42,20 +51,38 @@ function runSimulation
     eyeMovementParamsStruct = struct(...
         'name', 'fixationalEyeMovements', ...
         'samplesPerFixation', 20, ...% 80, ...
-        'overlapFactor', 1.0 ...  % 50 % overlap
+        'overlapFactor', 3.0 ...  % 50 % overlap
     );
 
+    intermediateVisualization = false;
+    
+    if (intermediateVisualization)
+        visualizeResultsAsIsetbioWindows = false;
+        visualizeResultsAsImages = true;
+        generateVideo = false;
+    else
+        visualizeResultsAsIsetbioWindows = false;
+        visualizeResultsAsImages = false;
+        generateVideo = false;
+    end
+    
     % Compute the time-varying activation of the sensor mosaic
     sceneProcessor.computeSensorActivation(...
         'forceRecompute', false, ...
-        'randomSeed',  47985654, ...   % pass empty to generate new sensor or some seed to generate same sensor
+        'randomSeed',  12385654, ...   % pass empty to generate new sensor or some seed to generate same sensor
         'sensorParams', sensorParamsStruct , ...
         'eyeMovementParams', eyeMovementParamsStruct, ...
-        'visualizeResultsAsIsetbioWindows', false, ...
-        'visualizeResultsAsImages', true, ...
-        'generateVideo', true ...
+        'visualizeResultsAsIsetbioWindows', visualizeResultsAsIsetbioWindows, ...
+        'visualizeResultsAsImages', visualizeResultsAsImages, ...
+        'generateVideo', generateVideo ...
     );
 
-
+    if (~intermediateVisualization)
+        MDSprojection = sceneProcessor.estimateReceptorIdentities('demoMode', false, 'selectTimeBins', []);
+        sensor = sceneProcessor.sensor;
+        save(sprintf('%s_results.mat',sceneName) ,'MDSprojection', 'sensor');
+    end
+   
+    estimateClusters();
 end
 

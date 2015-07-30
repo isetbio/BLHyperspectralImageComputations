@@ -66,14 +66,19 @@ function computeSensorActivation(obj,varargin)
             case 'humanLMS'
                 % unload custom sensor params
                 
-                params.sz = round(sensorParams.conesAcross*[sensorParams.heightToWidthRatio 1.0]);
-                params.rgbDensities = [0.0 0.6 0.3 0.1];  % Empty (missing cone), L, M, S
-                params.coneAperture = [1 1]*sensorParams.coneAperture;  
+                % Generate custom sensor for human retina
+                obj.sensor = sensorCreate('human');
+                pixel = sensorGet(obj.sensor,'pixel');
+                pixel = pixelSet(pixel, 'size', [1.0 1.0]*sensorParams.coneAperture);
+                obj.sensor  = sensorSet(obj.sensor, 'pixel', pixel);
                 
-                % Generate sensor for human retina
-                pixel = [];
-                obj.sensor = sensorCreate('human',pixel,params);
+                coneP = coneCreate();
+                coneP = coneSet(coneP, 'spatial density', [0.0 0.6 0.3 0.1]);  % Empty (missing cone), L, M, S
+                obj.sensor = sensorCreateConeMosaic(obj.sensor,coneP);
                 
+                % Set the sensor size
+                obj.sensor = sensorSet(obj.sensor, 'size', round(sensorParams.conesAcross*[sensorParams.heightToWidthRatio 1.0]));
+
                 % Set the sensor wavelength sampling to that of the opticalimage
                 obj.sensor = sensorSet(obj.sensor, 'wavelength', oiGet(obj.opticalImage, 'wavelength'));
                 
@@ -112,6 +117,7 @@ function computeSensorActivation(obj,varargin)
                     [gridXX,gridYY] = meshgrid(-xNodes:xNodes,-yNodes:yNodes); gridXX = gridXX(:); gridYY = gridYY(:);
                     % randomize positions
                     indices = randperm(numel(gridXX));
+                    %indices = 1:numel(gridXX);
                     fixationXpos = gridXX(indices); fixationYpos = gridYY(indices);
 
                     % Initialize positions
@@ -145,8 +151,9 @@ function computeSensorActivation(obj,varargin)
         % Compute the sensor activation
         obj.sensor = sensorSet(obj.sensor, 'noise flag', 0);
         obj.sensor = coneAbsorptions(obj.sensor, obj.opticalImage);
+        
         obj.sensorActivationImage = sensorGet(obj.sensor, 'volts');
-
+        
         % Save computed sensor
         sensor = obj.sensor;
         if (obj.verbosity > 2)
@@ -282,10 +289,10 @@ function VisualizeResults(obj, generateVideo)
         xlabel('time', 'FontSize', 16, 'FontWeight', 'b'); ylabel('sensor activation', 'FontSize', 16, 'FontWeight', 'b');
 
         conesToPlot = 20;
-        coneSize = 40;
+        coneSize = 30;
         whiteBackground = false;
         [xyOriginal,coneType, support,spread,delta] = conePlotHelper(obj.sensor, conesToPlot, coneSize);
-        [support, spread, delta, coneMosaicImage] = conePlot(xyOriginal,coneType, support,spread,delta*3,whiteBackground);
+        [support, spread, delta, coneMosaicImage] = conePlot(xyOriginal,coneType, support,spread,delta,whiteBackground);
         
         subplot('Position', actualSensorMosaicSubPlotPosition);
         imshow(coneMosaicImage);

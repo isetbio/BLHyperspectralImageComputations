@@ -3,7 +3,8 @@ function setPrefsForHyperspectralImageIsetbioComputations
     %originalDataBaseDir = '/Volumes/SDXC_64GB/Matlab/Analysis/HyperSpectralImages/ManchesterData';
     originalDataBaseDir = '/Volumes/ColorShare1/hyperspectral-images';
     isetbioDataBaseDir  = '/Users1/Shared/Matlab/Analysis/hyperspectral-images';
-    
+    isetbioDataBaseDir  = '/Volumes/Data/Users1/Shared/Matlab/Analysis/isetbioHyperspectralIimages';
+
     % Specify project-specific preferences
     p = struct( ...
         'projectName', 'HyperSpectralImageIsetbioComputations', ...
