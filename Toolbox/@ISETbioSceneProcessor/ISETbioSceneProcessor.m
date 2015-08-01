@@ -57,11 +57,7 @@ classdef ISETbioSceneProcessor < handle
         computeOpticalImage(obj,varargin);
         
         % Method to compute the (time-varying) activation of a sensor mosaic
-        computeSensorActivation(obj,varargin);
-        
-        % Method to estimate the identity of each cone by analysis of their
-        % responses to a set of stimuli
-        MDSprojection = estimateReceptorIdentities(obj, varargin);
+        XTresponse = computeSensorActivation(obj,varargin);
     end
     
     
@@ -71,5 +67,10 @@ classdef ISETbioSceneProcessor < handle
         
     end
     
+    methods (Static)
+        % Method to estimate the identity of each cone by analysis of their
+        % responses to a set of stimuli
+        MDSprojection = estimateReceptorIdentities(XTResponse, varargin)
+    end
 end
 

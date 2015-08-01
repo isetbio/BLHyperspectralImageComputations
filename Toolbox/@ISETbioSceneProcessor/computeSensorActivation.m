@@ -1,5 +1,5 @@
 % Method to compute the (time-varying) activation of a sensor mosaic
-function computeSensorActivation(obj,varargin)
+function XTresponse = computeSensorActivation(obj,varargin)
 
     if (isempty(varargin))
         forceRecompute = true;
@@ -64,8 +64,6 @@ function computeSensorActivation(obj,varargin)
                 [obj.sensor, actualFOVafter] = sensorSetSizeToFOV(obj.sensor, newFOV, obj.scene, obj.opticalImage);
                 
             case 'humanLMS'
-                % unload custom sensor params
-                
                 % Generate custom sensor for human retina
                 obj.sensor = sensorCreate('human');
                 pixel = sensorGet(obj.sensor,'pixel');
@@ -96,6 +94,9 @@ function computeSensorActivation(obj,varargin)
             % set sample time to 10 mseconds
             obj.eyeMovement  = emSet(obj.eyeMovement, 'sample time', 0.01);
             
+            % set tremor amplitude
+            obj.eyeMovement = emSet(obj.eyeMovement, 'tremor amplitude', eyeMovementParams.tremorAmplitude);     
+         
             % Attach it to the sensor
             obj.sensor = sensorSet(obj.sensor,'eyemove', obj.eyeMovement);
 
@@ -154,6 +155,10 @@ function computeSensorActivation(obj,varargin)
         
         obj.sensorActivationImage = sensorGet(obj.sensor, 'volts');
         
+        [coneRows, coneCols, timeBins] = size(obj.sensorActivationImage);
+        totalConesNum = coneRows * coneCols;
+        XTresponse = reshape(obj.sensorActivationImage, [totalConesNum timeBins]);
+    
         % Save computed sensor
         sensor = obj.sensor;
         if (obj.verbosity > 2)
@@ -161,6 +166,8 @@ function computeSensorActivation(obj,varargin)
         end
         save(obj.sensorCacheFileName, 'sensor');
         clear 'sensor'
+        
+        
     end
     
     if (visualizeResultsAsIsetbioWindows)
@@ -169,12 +176,12 @@ function computeSensorActivation(obj,varargin)
     end
     
     if (visualizeResultsAsImages) || (generateVideo)
-        VisualizeResults(obj, generateVideo);
+        VisualizeResults(obj, XTresponse, generateVideo);
     end    
 end
 
 
-function VisualizeResults(obj, generateVideo)
+function VisualizeResults(obj, XTresponse, generateVideo)
         
     activationRange = [min(obj.sensorActivationImage(:)) max(obj.sensorActivationImage(:))];
     sensorNormalizedActivation = obj.sensorActivationImage / max(activationRange);
@@ -260,7 +267,7 @@ function VisualizeResults(obj, generateVideo)
         xlabel('microns', 'FontSize', 14); ylabel('microns', 'FontSize', 14);
     
         if (k > 30)
-           MDSprojection = obj.estimateReceptorIdentities('demoMode', false, 'selectTimeBins', [1:k]);
+           MDSprojection = ISETbioSceneProcessor.estimateReceptorIdentities(XTresponse, 'demoMode', false, 'selectTimeBins', [1:k]);
            MDSprojectionCopy = MDSprojection;
         end
 
