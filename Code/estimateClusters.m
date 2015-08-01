@@ -50,7 +50,7 @@ function estimateClusters(varargin)
    
     
     figNum = 1000;
-    for argVal = 0.160 + 0.05*(-2:2)
+    for argVal = 0.160 + 0.01*(-2:2)
         for cVal = 0.15:0.15
             estimateClusters2(figNum,argVal, cVal,MDSprojection, trueConeXYLocations, trueConeTypes);
             figNum = figNum + 1;
