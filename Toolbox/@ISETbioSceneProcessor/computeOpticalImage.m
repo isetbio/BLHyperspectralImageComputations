@@ -32,7 +32,7 @@ function computeOpticalImage(obj,varargin)
         % Check if a cached optical image file exists in the path
         if (exist(obj.opticalImageCacheFileName, 'file'))
             if (obj.verbosity > 2)
-                fprintf('Loading computed optical image from cache file (''%s'').', obj.opticalImageCacheFileName);
+                fprintf('Loading computed optical image from cache file (''%s'').\n', obj.opticalImageCacheFileName);
             end
             load(obj.opticalImageCacheFileName, 'opticalImage');
             obj.opticalImage = opticalImage;
@@ -72,9 +72,12 @@ function computeOpticalImage(obj,varargin)
         oiWindow;
     end
     
-
-    obj.opticalImage
-    obj.opticalImage.spectrum
-    obj.opticalImage.optics
+    if (visualizeResultsAsImages)
+        figure(554);
+        imshow(oiGet(obj.opticalImage, 'rgb image'));
+        truesize;
+        drawnow;
+    end
+    
 end
 

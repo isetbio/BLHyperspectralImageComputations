@@ -16,6 +16,7 @@ function XTresponse = computeSensorActivation(obj,varargin)
         parser.addParamValue('visualizeResultsAsIsetbioWindows', false, @islogical);
         parser.addParamValue('visualizeResultsAsImages', false, @islogical);
         parser.addParamValue('generateVideo', false, @islogical);
+        parser.addParamValue('saveSensorToFile', false, @islogical);
         % Execute the parser
         parser.parse(varargin{:});
         % Create a standard Matlab structure from the parser results.
@@ -71,7 +72,7 @@ function XTresponse = computeSensorActivation(obj,varargin)
                 obj.sensor  = sensorSet(obj.sensor, 'pixel', pixel);
                 
                 coneP = coneCreate();
-                coneP = coneSet(coneP, 'spatial density', [0.0 0.6 0.3 0.1]);  % Empty (missing cone), L, M, S
+                coneP = coneSet(coneP, 'spatial density', [0.0 sensorParams.LMSdensities(1) sensorParams.LMSdensities(2) sensorParams.LMSdensities(3)]);  % Empty (missing cone), L, M, S
                 obj.sensor = sensorCreateConeMosaic(obj.sensor,coneP);
                 
                 % Set the sensor size
@@ -91,8 +92,8 @@ function XTresponse = computeSensorActivation(obj,varargin)
             % create em structure
             obj.eyeMovement = emCreate();
            
-            % set sample time to 10 mseconds
-            obj.eyeMovement  = emSet(obj.eyeMovement, 'sample time', 0.01);
+            % set sample time
+            obj.eyeMovement  = emSet(obj.eyeMovement, 'sample time', eyeMovementParams.sampleTime);
             
             % set tremor amplitude
             obj.eyeMovement = emSet(obj.eyeMovement, 'tremor amplitude', eyeMovementParams.tremorAmplitude);     
@@ -113,8 +114,8 @@ function XTresponse = computeSensorActivation(obj,varargin)
                case 'fixationalEyeMovements'  
                    % Compute number of fixational positions to cover the
                    % image with the desired overlap factor
-                    xNodes = floor(oiGet(obj.opticalImage, 'width', 'microns')/sensorGet(obj.sensor, 'width', 'microns')/2*0.7*eyeMovementParams.overlapFactor);
-                    yNodes = floor(oiGet(obj.opticalImage, 'height', 'microns')/sensorGet(obj.sensor, 'height', 'microns')/2*0.7*eyeMovementParams.overlapFactor);
+                    xNodes = floor(0.35*oiGet(obj.opticalImage, 'width', 'microns')/sensorGet(obj.sensor, 'width', 'microns')*eyeMovementParams.overlapFactor);
+                    yNodes = floor(0.35*oiGet(obj.opticalImage, 'height', 'microns')/sensorGet(obj.sensor, 'height', 'microns')*eyeMovementParams.overlapFactor);
                     [gridXX,gridYY] = meshgrid(-xNodes:xNodes,-yNodes:yNodes); gridXX = gridXX(:); gridYY = gridYY(:);
                     % randomize positions
                     indices = randperm(numel(gridXX));
@@ -131,13 +132,12 @@ function XTresponse = computeSensorActivation(obj,varargin)
                     
                     % Add the fixational part
                     fixationalSensorPositions = sensorGet(obj.sensor,'positions');
+                    fx = round(sensorParams.conesAcross/eyeMovementParams.overlapFactor);
                     for fixationIndex = 1:numel(fixationXpos)
-                        dX = fixationXpos(fixationIndex) * round(sensorParams.conesAcross/eyeMovementParams.overlapFactor);
-                        dY = fixationYpos(fixationIndex) * round(sensorParams.conesAcross/eyeMovementParams.overlapFactor);
                         i1 = (fixationIndex-1)*eyeMovementParams.samplesPerFixation + 1;
                         i2 = i1 + eyeMovementParams.samplesPerFixation - 1;
-                        fixationalSensorPositions(i1:i2,1) = fixationalSensorPositions(i1:i2,1)+dX;
-                        fixationalSensorPositions(i1:i2,2) = fixationalSensorPositions(i1:i2,2)+dY;
+                        fixationalSensorPositions(i1:i2,1) = fixationalSensorPositions(i1:i2,1) + fixationXpos(fixationIndex) * fx;
+                        fixationalSensorPositions(i1:i2,2) = fixationalSensorPositions(i1:i2,2) + fixationYpos(fixationIndex) * fx;
                     end
             
                     % update the sensor
@@ -150,7 +150,7 @@ function XTresponse = computeSensorActivation(obj,varargin)
         end
           
         % Compute the sensor activation
-        obj.sensor = sensorSet(obj.sensor, 'noise flag', 0);
+        obj.sensor = sensorSet(obj.sensor, 'noise flag', sensorParams.noiseFlag);
         obj.sensor = coneAbsorptions(obj.sensor, obj.opticalImage);
         
         obj.sensorActivationImage = sensorGet(obj.sensor, 'volts');
@@ -159,15 +159,18 @@ function XTresponse = computeSensorActivation(obj,varargin)
         totalConesNum = coneRows * coneCols;
         XTresponse = reshape(obj.sensorActivationImage, [totalConesNum timeBins]);
     
-        % Save computed sensor
-        sensor = obj.sensor;
-        if (obj.verbosity > 2)
-            fprintf('Saving computed sensor to cache file (''%s'').', obj.sensorCacheFileName);
+        computeEyeMovementCoverageImage(obj);
+        
+        if (saveSensorToFile)
+            % Save computed sensor
+            sensor = obj.sensor;
+            if (obj.verbosity > 2)
+                fprintf('Saving computed sensor to cache file (''%s'').', obj.sensorCacheFileName);
+            end
+            save(obj.sensorCacheFileName, 'sensor');
         end
-        save(obj.sensorCacheFileName, 'sensor');
-        clear 'sensor'
         
-        
+        clear 'sensor'  
     end
     
     if (visualizeResultsAsIsetbioWindows)
@@ -178,6 +181,51 @@ function XTresponse = computeSensorActivation(obj,varargin)
     if (visualizeResultsAsImages) || (generateVideo)
         VisualizeResults(obj, XTresponse, generateVideo);
     end    
+end
+
+
+function computeEyeMovementCoverageImage(obj)
+    opticalImageRGBrendering = oiGet(obj.opticalImage, 'rgb image');
+    selectXPosIndices = 1:2:size(opticalImageRGBrendering,2);
+    selectYPosIndices = 1:2:size(opticalImageRGBrendering,1);
+        
+    opticalImageRGBrendering = oiGet(obj.opticalImage, 'rgb image');
+    opticalSampleSeparation  = oiGet(obj.opticalImage, 'distPerSamp','microns');
+    % optical image axes in microns
+    opticalImageXposInMicrons = (0:size(opticalImageRGBrendering,2)-1) * opticalSampleSeparation(1);
+    opticalImageYposInMicrons = (0:size(opticalImageRGBrendering,1)-1) * opticalSampleSeparation(2);
+    opticalImageXposInMicrons = opticalImageXposInMicrons - round(opticalImageXposInMicrons(end)/2);
+    opticalImageYposInMicrons = opticalImageYposInMicrons - round(opticalImageYposInMicrons(end)/2);
+    
+    sensorRowsCols = sensorGet(obj.sensor, 'size');
+    sensorPositions = sensorGet(obj.sensor,'positions');
+    sensorSampleSeparationInMicrons = sensorGet(obj.sensor,'pixel size','um');
+    sensorPositionsInMicrons(:,1) = sensorPositions(:,1) * sensorSampleSeparationInMicrons(1);
+    sensorPositionsInMicrons(:,2) = sensorPositions(:,2) * sensorSampleSeparationInMicrons(2);
+
+    sensorOutlineInMicrons(:,1) = [-1 -1 1 1 -1] * sensorRowsCols(2)/2 * sensorSampleSeparationInMicrons(1);
+    sensorOutlineInMicrons(:,2) = [-1 1 1 -1 -1] * sensorRowsCols(1)/2 * sensorSampleSeparationInMicrons(2);
+    
+    h = figure(555);
+    set(h, 'Position', [10 10 1200 970], 'Color', [0 0 0]);
+    clf;
+    imagesc(opticalImageXposInMicrons(selectXPosIndices), opticalImageYposInMicrons(selectYPosIndices), opticalImageRGBrendering(selectYPosIndices,selectXPosIndices,:));
+    set(gca, 'CLim', [0 1]);    
+    hold on;
+    k = 1;
+    % plot the sensor positions
+    plot(-sensorPositionsInMicrons(:,1), sensorPositionsInMicrons(:,2), 'k.');
+    for k = 1:size(sensorPositionsInMicrons,1)
+        plot(-sensorPositionsInMicrons(k,1) + sensorOutlineInMicrons(:,1), sensorPositionsInMicrons(k,2) + sensorOutlineInMicrons(:,2), 'w-', 'LineWidth', 2.0);
+    end
+    hold off;
+    axis 'image'
+
+    set(gca, 'XTick', [-2000:200:2000], 'YTick', [-2000:200:2000], 'XLim', [opticalImageXposInMicrons(1) opticalImageXposInMicrons(end)], 'YLim', [opticalImageYposInMicrons(1) opticalImageYposInMicrons(end)]);
+    set(gca, 'XColor', [0.8 0.8 0.6], 'YColor', [0.8 0.8 0.6], 'FontSize', 12);
+    xlabel('microns', 'FontSize', 14); ylabel('microns', 'FontSize', 14);
+    drawnow;
+    pause(1.0)
 end
 
 
@@ -250,7 +298,6 @@ function VisualizeResults(obj, XTresponse, generateVideo)
         selectXPosIndices = 1:2:size(opticalImageRGBrendering,2);
         selectYPosIndices = 1:2:size(opticalImageRGBrendering,1);
         
-       
         imagesc(opticalImageXposInMicrons(selectXPosIndices), opticalImageYposInMicrons(selectYPosIndices), opticalImageRGBrendering(selectYPosIndices,selectXPosIndices,:));
         set(gca, 'CLim', [0 1]);
         hold on;
@@ -286,8 +333,6 @@ function VisualizeResults(obj, XTresponse, generateVideo)
         title('sensor activation', 'FontSize', 14, 'Color', [0.8 0.8 0.6]);
         colormap(hot(512));
 
-
-        
         % Update the X-T response
         subplot('Position', xtResponseSubPlotPosition);
         imagesc(rgbImageXT);
