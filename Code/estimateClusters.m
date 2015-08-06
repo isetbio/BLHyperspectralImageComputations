@@ -8,12 +8,12 @@ function estimateClusters(varargin)
         addpath(genpath(pwd));
         cd(rootPath);
     
-        load('results_20x20.mat');
+        load('results_10x10.mat');
 
         aggregateXTresponse = [];
         for sceneIndex = 1:numel(allSceneNames)
             % aggregate across all scenes
-            XTresponse = XTresponses{currentSceneIndex};
+            XTresponse = XTresponses{sceneIndex};
             % Critical: Normalize XTresponse for each scene
             aggregateXTresponse = [aggregateXTresponse XTresponse/max(abs(XTresponse(:)))];
         end
@@ -224,16 +224,16 @@ function estimateClusters2(figNum, argVal, cVal,MDSprojection, trueConeXYLocatio
         if (trueConeTypes(k) == 2)
             plot(trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'rs', 'MarkerFaceColor', 'r');
             plot([trueConeXYLocations(k,1) MDSprojection(k,3)], ...
-                 [trueConeXYLocations(k,2) MDSprojection(k,2)], 'r-');
+                 [trueConeXYLocations(k,2) -MDSprojection(k,2)], 'r-');
             
         elseif (trueConeTypes(k) == 3)
             plot(trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'gs', 'MarkerFaceColor', 'g');
             plot([trueConeXYLocations(k,1) MDSprojection(k,3)], ...
-                 [trueConeXYLocations(k,2) MDSprojection(k,2)], 'g-');
+                 [trueConeXYLocations(k,2) -MDSprojection(k,2)], 'g-');
         elseif (trueConeTypes(k) == 4)
             plot(trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'bs', 'MarkerFaceColor', 'b');
             plot([trueConeXYLocations(k,1) MDSprojection(k,3)], ...
-                 [trueConeXYLocations(k,2) MDSprojection(k,2)], 'b-');
+                 [trueConeXYLocations(k,2) -MDSprojection(k,2)], 'b-');
         end
         end
         set(gca, 'XLim', [-15 15], 'YLim', [-15 15], 'FontSize', 12);
