@@ -13,9 +13,9 @@ function ReconstructMosaicFromXTresponses2
 end
 
 function GenerateResultsFigure(resultsFile)
-    disp('Loading the data');
+    disp('Loading the raw data');
     load(resultsFile);
-    whos
+    
     disp('Computing aggregate XT response');
     aggregateXTresponse = [];
     for sceneIndex = 1:numel(allSceneNames)
@@ -32,6 +32,9 @@ function GenerateResultsFigure(resultsFile)
     disp('Computing MDS');
     dimensionsNum = 3;
     [MDSprojection,stress] = mdscale(D,dimensionsNum);
+    
+    disp('Saving MDS data');
+    save(sprintf('MDS_%s', resultsFile), 'MDSprojection', 'stress', 'trueConeXYLocations', 'trueConeTypes');
     
     % Step1: Identify S-cone positions
     [SconeIndices, LMconeIndices] = DetermineSconeIndices(MDSprojection);
@@ -202,11 +205,10 @@ function GenerateResultsFigure(resultsFile)
             plot(trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'bs', 'MarkerFaceColor', 'b');
             plot([trueConeXYLocations(k,1) rotatedMDSprojection(k,3)*scaleF], ...
                  [trueConeXYLocations(k,2) -rotatedMDSprojection(k,2)*scaleF], 'b-');
-        end
-        
-        
+        end  
     end
-        
+    axis 'square'
+    
     drawnow;
 end
 
