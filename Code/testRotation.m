@@ -2,22 +2,28 @@ function testRotation
 
     load('MDS.mat')
     whos
-
-    %X,Y range for plotting the planes
-    x = [-0.02 0.08];  % spectral dimension
-    y = [-0.1 0.1];    % spatial dimension-1
-    
     
     % Step1: Identify S-cone positions
     [SconeIndices, LMconeIndices] = DetermineSconeIndices(MDSprojection);
+    
+    % Identify line connecting centroids of S and LM
     cS    = mean(MDSprojection(SconeIndices,:),1);
     cLM   = mean(MDSprojection(LMconeIndices,:),1); 
     pivot = (cS + cLM)/2;
     
     % these need to be determined online
-    rotationYaxis = 3.5;
-    rotationZaxis = 1;
-    rotationXaxis = 2;
+    % undo rotation of S-LM line along Y and Z axes
+    S_LM_Line = cS-cLM;
+    
+    u = [S_LM_Line(1) S_LM_Line(3)];
+    v = [1 0];
+    rotationYaxis = acos(dot(u,v)/(norm(u)*norm(v))) /pi*180;
+    u = [S_LM_Line(1) S_LM_Line(2)];
+    rotationZaxis = acos(dot(u,v)/(norm(u)*norm(v))) /pi*180;
+    
+    % This is arbitary so as to make the spatialdim1, spatialdim2 as close
+    % to original mosaic
+    rotationXaxis = 92;
     
     cosTheta = cos(rotationYaxis/180*pi);
     sinTheta = sin(rotationYaxis/180*pi);
@@ -47,20 +53,21 @@ function testRotation
     cLMprime = cLMprime * rotationMatrixAroundYaxis*rotationMatrixAroundZaxis;
     cSprime = cSprime + pivot;
     cLMprime = cLMprime + pivot;
- 
+    pivotPrime = pivot;
     
     % center on yz origin
     for k = 2:3
         rotatedMDSprojection(:,k) = rotatedMDSprojection(:,k) - pivot(k);
         cSprime(k) = cSprime(k) - pivot(k);
         cLMprime(k) = cLMprime(k) - pivot(k);
-        pivot(k) = 0;
+        pivotPrime(k) = 0;
     end
     
     [LconeIndices, MconeIndices] = DetermineLMconeIndices(rotatedMDSprojection, LMconeIndices, SconeIndices);
     
     coneIndices = {LMconeIndices(1:10), LMconeIndices(11:end), SconeIndices};
     coneColors = [0 0 0; 0 0 0; 0 0 1];
+    
     
     % Plot the result
     h = figure(1); clf;
@@ -80,7 +87,6 @@ function testRotation
     axis 'square'
     
     subplot(2,2,2);
-    % Draw the best fitting S-cone plane
     hold on
     % Draw the cone positions
     DrawConePositions(MDSprojection, coneIndices, coneColors);
@@ -94,7 +100,6 @@ function testRotation
     
     
     subplot(2,2,3);
-    % Draw the best fitting S-cone plane
     hold on
     % Draw the cone positions
     DrawConePositions(MDSprojection, coneIndices, coneColors);
@@ -107,12 +112,10 @@ function testRotation
     drawnow;
     
     
-    % Step 2: Unrotate all data so that S-cone plane is normal to the spectral dimension
+    
     h = figure(2); clf;
     set(h, 'Position', [200 10 710 620], 'Name', 'Step2: Rotated');
     subplot(2,2,1);
-    
-    % Draw the best fitting S-cone plane
      hold on
     % Draw the cone positions
     coneColors = [1 0 0; 0 1 0; 0 0 1];
@@ -120,33 +123,31 @@ function testRotation
     DrawConePositions(rotatedMDSprojection, coneIndices, coneColors);
     scatter3(cLMprime(1), cLMprime(2), cLMprime(3), 'ms', 'filled');
     scatter3(cSprime(1), cSprime(2), cSprime(3), 'cs', 'filled');
-    scatter3(pivot(1), pivot(2), pivot(3), 'ks', 'filled');
+    scatter3(pivotPrime(1), pivotPrime(2), pivotPrime(3), 'ks', 'filled');
     plot3([cLMprime(1) cSprime(1)],[cLMprime(2) cSprime(2)], [cLMprime(3) cSprime(3)], 'k-');
     view([0,0]);
     axis 'square'
     
     subplot(2,2,2);
-    % Draw the best fitting S-cone plane
      hold on
     % Draw the cone positions
     DrawConePositions(rotatedMDSprojection, coneIndices, coneColors);
     DrawConePositions(rotatedMDSprojection, coneIndices, coneColors);
     scatter3(cLMprime(1), cLMprime(2), cLMprime(3), 'ms', 'filled');
     scatter3(cSprime(1), cSprime(2), cSprime(3), 'cs', 'filled');
-    scatter3(pivot(1), pivot(2), pivot(3), 'ks', 'filled');
+    scatter3(pivotPrime(1), pivotPrime(2), pivotPrime(3), 'ks', 'filled');
     plot3([cLMprime(1) cSprime(1)],[cLMprime(2) cSprime(2)], [cLMprime(3) cSprime(3)], 'k-');
     view([0,90]);
     axis 'square'
     
     subplot(2,2,3);
-    % Draw the best fitting S-cone plane
      hold on
     % Draw the cone positions
     DrawConePositions(rotatedMDSprojection, coneIndices, coneColors);
     DrawConePositions(rotatedMDSprojection, coneIndices, coneColors);
     scatter3(cLMprime(1), cLMprime(2), cLMprime(3), 'ms', 'filled');
     scatter3(cSprime(1), cSprime(2), cSprime(3), 'cs', 'filled');
-    scatter3(pivot(1), pivot(2), pivot(3), 'ks', 'filled');
+    scatter3(pivotPrime(1), pivotPrime(2), pivotPrime(3), 'ks', 'filled');
     plot3([cLMprime(1) cSprime(1)],[cLMprime(2) cSprime(2)], [cLMprime(3) cSprime(3)], 'k-');
     view([90,0]);
     axis 'square'
@@ -175,58 +176,8 @@ function DrawConePositions(MDSprojection, coneIndices, coneColors)
     zlabel('z');
 end
 
-function DrawPlane(x,y, plane, planeColor)
-    [X,Y] = meshgrid(x,y);
-    Z = -(plane.delta + plane.alpha * X + plane.beta * Y)/plane.gamma;
-    surf(X,Y,Z)
-    colormap(planeColor)
-    shading flat
-end
-
-function angle = AngleBetweenPlaneAndLine(plane, f, g, h)
-% line given by following equations:
-% x = x0+ft 
-% y = y0 + gt
-% z = z0 + ht
-
-    norm1 = sqrt ( plane.alpha^2 + plane.beta^2 + plane.gamma^2 );
-    if (norm1 == 0.0 )
-        angle = Inf;
-        return 
-    end
-    norm2 = sqrt ( f * f + g *g + h * h );
-    if ( norm2 == 0.0 )
-        angle = Inf;
-        return 
-    end
-    cosine = ( plane.alpha * f + plane.beta * g + plane.gamma * h) / ( norm1 * norm2 );
-    angle = pi/2 - acos(cosine);
-end
 
 
-function p = FitPlaneTo3Ddata(x,y,z)
-    % z = x * C(1) + y*C(2) + C(3);
-    % c(1) * x + c(2) * y + (-1)  * z + c(3) = 0
-    % alpha* x + beta * y + gamma * z + delta = 0
-
-    xx = x(:);
-    yy = y(:);
-    zz = z(:);
-    N = length(xx);
-    O = ones(N,1);
-
-    C = [xx yy O]\zz;
-    p.alpha = C(1);
-    p.beta = C(2);
-    p.gamma = -1;
-    p.delta = C(3);
-    
-    lengthV = sqrt(p.alpha^2 + p.beta^2 + p.gamma^2);
-    p.alpha = p.alpha/lengthV;
-    p.beta = p.beta/lengthV;
-    p.gamma = p.gamma/lengthV;
-    p.delta = p.delta/lengthV;
-end
 
 function [LconeIndices, MconeIndices] = DetermineLMconeIndices(rotatedMDSprojection, LMconeIndices, SconeIndices)
     
