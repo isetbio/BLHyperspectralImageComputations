@@ -98,11 +98,17 @@ function GenerateResultsFigure(resultsFile)
     
     [LconeIndices, MconeIndices] = DetermineLMconeIndices(rotatedMDSprojection, LMconeIndices, SconeIndices);
     
+    scaleF = max(max(abs(trueConeXYLocations))) / max(max(abs(rotatedMDSprojection(:,2:3))));
+    
+    
+    
+    
+    
+    % Plot the result of stage 1
+    
     coneIndices = {LMconeIndices(1:10), LMconeIndices(11:end), SconeIndices};
     coneColors = [0 0 0; 0 0 0; 0 0 1];
     
-    
-    % Plot the result
     h = figure(1); clf;
     set(h, 'Position', [100 10 710 620], 'Name', 'Step1: Identify S-cone positions');
     subplot(2,2,1);
@@ -145,7 +151,7 @@ function GenerateResultsFigure(resultsFile)
     drawnow;
     
     
-    
+    % Plot the result of stage2
     h = figure(2); clf;
     set(h, 'Position', [200 10 710 620], 'Name', 'Step2: Rotated');
     subplot(2,2,1);
@@ -162,7 +168,7 @@ function GenerateResultsFigure(resultsFile)
     axis 'square'
     
     subplot(2,2,2);
-     hold on
+    hold on
     % Draw the cone positions
     DrawConePositions(rotatedMDSprojection, coneIndices, coneColors);
     DrawConePositions(rotatedMDSprojection, coneIndices, coneColors);
@@ -174,7 +180,7 @@ function GenerateResultsFigure(resultsFile)
     axis 'square'
     
     subplot(2,2,3);
-     hold on
+    hold on
     % Draw the cone positions
     DrawConePositions(rotatedMDSprojection, coneIndices, coneColors);
     DrawConePositions(rotatedMDSprojection, coneIndices, coneColors);
@@ -184,8 +190,6 @@ function GenerateResultsFigure(resultsFile)
     plot3([cLMprime(1) cSprime(1)],[cLMprime(2) cSprime(2)], [cLMprime(3) cSprime(3)], 'k-');
     view([90,0]);
     axis 'square'
-    
-    scaleF = max(max(abs(trueConeXYLocations))) / max(max(abs(rotatedMDSprojection(:,2:3))));
     
     subplot(2,2,4)
     hold on
