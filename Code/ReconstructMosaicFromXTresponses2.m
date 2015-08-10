@@ -26,12 +26,15 @@ function GenerateVideoFile(resultsFile)
         end
     end
 
-    fixationsPerSceneRotation = 20;
+    fixationsPerSceneRotation = 15;
     eyeMovementsPerSceneRotation = fixationsPerSceneRotation * eyeMovementParamsStruct.samplesPerFixation;
-    fullSceneRotations = floor(minEyeMovements / eyeMovementsPerSceneRotation);
-        
+    fullSceneRotations = floor(minEyeMovements / eyeMovementsPerSceneRotation)
+    totalFixationsNum = fullSceneRotations*fixationsPerSceneRotation
+    
+    % Initialize
     aggregateXTresponse = [];
     eyeMovementIndex = 1;
+    minSteps = 5;
     
     % Setup video stream
     writerObj = VideoWriter('NewMosaicReconstruction.m4v', 'MPEG-4'); % H264 format
@@ -51,23 +54,40 @@ function GenerateVideoFile(resultsFile)
     MDSdims = {'MDS-x', 'MDS-y', 'MDS-z'};
     
     kSteps = 0;
+    performance = [];
+    
+    hFig = figure(1); clf;
+    set(hFig, 'unit','pixel', 'menubar','none', 'Position', [10 20 1280 800], 'Color', [0 0 0]);
+    axesStruct.opticalImageAxes = axes('parent',hFig,'unit','pixel','position',[10 408 640 390], 'Color', [0 0 0]);
+    axesStruct.xtResponseAxes   = axes('parent',hFig,'unit','pixel','position',[10 2 230 400], 'Color', [0 0 0]);
+    axesStruct.dispMatrixAxes   = axes('parent',hFig,'unit','pixel','position',[265 2 400 400], 'Color', [0 0 0]);
+    axesStruct.performanceAxes1  = axes('parent',hFig,'unit','pixel','position',[705 130 560 120], 'Color', [0 0 0]);
+    axesStruct.performanceAxes2  = axes('parent',hFig,'unit','pixel','position',[705 4 560 120], 'Color', [0 0 0]);
+    axesStruct.xyMDSAxes = axes('parent',hFig,'unit','pixel','position',[710 540 256 256], 'Color', [0 0 0]);
+    axesStruct.xzMDSAxes = axes('parent',hFig,'unit','pixel','position',[1000 540 256 256], 'Color', [0 0 0]);
+    axesStruct.yzMDSAxes = axes('parent',hFig,'unit','pixel','position',[710 275 256 256], 'Color', [0 0 0]);
+    axesStruct.mosaicAxes = axes('parent',hFig,'unit','pixel','position',[1000 275 256 256], 'Color', [0 0 0]);
+    
     for rotationIndex = 1:fullSceneRotations
-        timeBins = eyeMovementIndex + [0:eyeMovementsPerSceneRotation-1];
+        
+        timeBins = eyeMovementIndex + (0:eyeMovementsPerSceneRotation-1);
 
         for sceneIndex = 1:numel(allSceneNames)
+            
             aggregateXTresponse = [aggregateXTresponse XTresponses{sceneIndex}(:,timeBins)];
 
-            for timeBin = 1:eyeMovementsPerSceneRotation 
+            for timeBinIndex = 1:eyeMovementsPerSceneRotation 
 
                 disp('Updating correlation matrix');
-                correlationMatrix = corrcoef((aggregateXTresponse(:,1:end-eyeMovementsPerSceneRotation+timeBin))');
+                binRange = 1:size(aggregateXTresponse,2)-eyeMovementsPerSceneRotation+timeBinIndex;
+                correlationMatrix = corrcoef((aggregateXTresponse(:,binRange))');
                 D = -log((correlationMatrix+1.0)/2.0);
                 if ~issymmetric(D)
                     D = 0.5*(D+D');
                 end
                 
                 kSteps = kSteps + 1;
-                if (kSteps < 5)
+                if (kSteps < minSteps)
                     disp('Skipping MDS');
                     continue;
                 end
@@ -93,9 +113,10 @@ function GenerateVideoFile(resultsFile)
                     mdsProcessor.estimateConeMosaicFromMDSprojection(MDSprojection);
     
                 % For comparison to true spatial mosaic determine optimal scaling and
-                % rotation (around the spectral (X) axis) of the MDS embedding so that 
-                % the spatial enbedding best matches the original mosaic
-                [d,Z,transform] = procrustes(trueConeXYLocations(LMconeIndices,:), rotatedMDSprojection(LMconeIndices,2:3));
+                % rotation (around the spectral (X) axis) of the MDS embedding
+                %coneIndices = LMconeIndices;
+                coneIndices = (1:size(trueConeXYLocations,1));
+                [d,Z,transform] = procrustes(trueConeXYLocations(coneIndices,:), rotatedMDSprojection(coneIndices,2:3));
 
                 % Form the rotation matrix around X-axis
                 rotationMatrixAroundXaxis = ...
@@ -119,8 +140,41 @@ function GenerateVideoFile(resultsFile)
                 disp('Drawing');
                 % Plot the result of stage-2: Rotation and Separation of L from M
                 coneIndices = {LconeIndices, MconeIndices, SconeIndices};
-                coneColors = [1 0 0; 0 1 0; 0 0 1];
+                coneColors = [1 0 0; 0 1 0; 0 1 1];
                 spatialExtent = max(trueConeXYLocations(:)) * 1.2;
+                
+                % Update cone mosaic estimation performance
+                performance = mdsProcessor.ComputePerformance(trueConeTypes, trueConeXYLocations, rotatedMDSprojection, coneIndices, performance, kSteps-(minSteps-1), eyeMovementParamsStruct.samplesPerFixation);
+                
+                RenderFrame(axesStruct, binRange(end)/eyeMovementParamsStruct.samplesPerFixation, performance, D, ...
+                    rotatedMDSprojection, coneIndices, coneColors, cLMPrime, cSPrime, pivotPrime, spatialExtent, trueConeTypes, trueConeXYLocations);
+                
+                if (1==2)
+                hh = figure(1); clf;
+                    subplot(2,1,1);
+                    plot(performance.fixationsNum, performance.correctlyIdentifiedLMcones, 'rs-');
+                    hold on;
+                    plot(performance.fixationsNum, performance.correctlyIdentifiedScones, 'bs-');
+                    hold off;
+                    set(gca, 'FontSize', 12);
+                    xlabel('fixations no', 'FontSize', 14);
+                    ylabel('correctly identified cone types', 'FontSize', 14);
+                    legend('L/M cones', 'S cones');
+                    box on; grid on;
+                
+                    subplot(2,1,2);
+                    plot(performance.fixationsNum, performance.meanDistanceLMmosaic ,'rs-');
+                    hold on;
+                    plot(performance.fixationsNum, performance.meanDistanceSmosaic, 'bs-');
+                    hold off;
+                    set(gca, 'FontSize', 12);
+                    xlabel('fixations no', 'FontSize', 14);
+                    ylabel('spatial misplacement', 'FontSize', 14);
+                    legend('L/M cones', 'S cones');
+                drawnow;
+                end
+                
+                if (1==2)
                 h = figure(2); clf;
                 set(h, 'Position', [200 10 760 700], 'Name', 'Step2: Rotated');
                     subplot('Position', subplotPosVector(1,1).v);
@@ -134,9 +188,10 @@ function GenerateVideoFile(resultsFile)
 
                     % Finally, plot correspondence between true and recovered cone mosaic
                     subplot('Position', subplotPosVector(2,2).v);
-                    mdsProcessor.DrawTrueAndEstimatedConeMosaics(trueConeTypes, trueConeXYLocations, rotatedMDSprojection, spatialExtent);
+                    mdsProcessor.DrawTrueAndEstimatedConeMosaics(trueConeTypes, trueConeXYLocations, rotatedMDSprojection, coneIndices, spatialExtent);
                     title(sprintf('Eye movements: %d\n', kSteps));
                 drawnow;
+                end
                 
                 if (~isempty(writerObj))
                     frame = getframe(gcf);
@@ -144,16 +199,151 @@ function GenerateVideoFile(resultsFile)
                 end
         
             end % timeBin
-        end% sceneIndex
+        end % sceneIndex
         
         eyeMovementIndex = eyeMovementIndex + eyeMovementsPerSceneRotation;
-        
     end% rotationIndex
     
     % close video stream and save movie
     close(writerObj);
-        
 end
+
+function RenderFrame(axesStruct, fixationNo,performance, D, MDSprojection, coneIndices, coneColors, cLM, cS, pivot, spatialExtent, trueConeTypes, trueConeXYLocations)
+
+    opticalImageAxes = axesStruct.opticalImageAxes; 
+    xtResponseAxes = axesStruct.xtResponseAxes;
+    dispMatrixAxes   = axesStruct.dispMatrixAxes;
+    performanceAxes1  = axesStruct.performanceAxes1 ;
+    performanceAxes2  = axesStruct.performanceAxes2;
+    xyMDSAxes = axesStruct.xyMDSAxes;
+    xzMDSAxes = axesStruct.xzMDSAxes;
+    yzMDSAxes = axesStruct.yzMDSAxes;
+    mosaicAxes = axesStruct.mosaicAxes;
+    
+    LconeIndices = coneIndices{1};
+    MconeIndices = coneIndices{2};
+    SconeIndices = coneIndices{3};
+    
+    for viewIndex = 1:3
+        switch viewIndex
+            case 1
+                drawingAxes = xyMDSAxes;
+                viewingAngles = [0 90];
+                XLims = [];
+                YLims = spatialExtent*[-1 1];
+            case 2
+                drawingAxes = xzMDSAxes;
+                viewingAngles = [0 0];
+                XLims = [];
+                YLims = spatialExtent*[-1 1];
+            case 3
+                drawingAxes = yzMDSAxes;
+                viewingAngles = [90 0];
+                XLims = spatialExtent*[-1 1];
+                YLims = spatialExtent*[-1 1];
+        end
+        
+        for coneType = 1:numel(coneIndices)
+            scatter3(drawingAxes, ...
+                MDSprojection(coneIndices{coneType},1), ...
+                MDSprojection(coneIndices{coneType},2), ...
+                MDSprojection(coneIndices{coneType},3), ...
+                'filled', ...
+                'MarkerFaceColor',coneColors(coneType,:)...
+                );  
+            hold(drawingAxes, 'on');
+        end
+        scatter3(drawingAxes, cLM(1), cLM(2), cLM(3), 'ms', 'filled');
+        scatter3(drawingAxes, cS(1), cS(2), cS(3), 'cs', 'filled');
+        scatter3(drawingAxes, pivot(1), pivot(2), pivot(3), 'ws', 'filled');
+        plot3(drawingAxes, [cLM(1) cS(1)],[cLM(2) cS(2)], [cLM(3) cS(3)], 'w-');
+        hold(drawingAxes, 'off');
+        grid(drawingAxes, 'on'); 
+        box(drawingAxes, 'on'); 
+        axis(drawingAxes, 'square')
+        axis(drawingAxes, 'off')
+        view(drawingAxes, viewingAngles);
+        set(drawingAxes, 'XColor', [1 1 1], 'YColor', [1 1 1], 'Color', [0 0 0]);
+        set(drawingAxes, 'XTickLabel', {}, 'YTickLabel', {});
+        if (~isempty(XLims))
+            set(drawingAxes, 'XLim', XLims);
+        end
+        set(drawingAxes, 'YLim', YLims);
+    end % viewIndex
+    
+    
+    for k = 1:size(trueConeXYLocations,1)
+        if (trueConeTypes(k) == 2) && (ismember(k, LconeIndices))
+            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'rs', 'MarkerFaceColor', 'r');
+            hold(mosaicAxes,'on')
+            plot(mosaicAxes,[trueConeXYLocations(k,1) MDSprojection(k,2)], ...
+                 [trueConeXYLocations(k,2) MDSprojection(k,3)], 'r-');
+        elseif (trueConeTypes(k) == 3) && (ismember(k, MconeIndices))
+            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'gs', 'MarkerFaceColor', 'g');
+            hold(mosaicAxes,'on')
+            plot(mosaicAxes, [trueConeXYLocations(k,1) MDSprojection(k,2)], ...
+                 [trueConeXYLocations(k,2) MDSprojection(k,3)], 'g-');
+        elseif (trueConeTypes(k) == 4) && (ismember(k, SconeIndices))
+            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'cs', 'MarkerFaceColor', 'c');
+            hold(mosaicAxes,'on')
+            plot(mosaicAxes, [trueConeXYLocations(k,1) MDSprojection(k,2)], ...
+                 [trueConeXYLocations(k,2) MDSprojection(k,3)], 'c-');
+        else
+            % incorrectly indentified cone
+            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'ws', 'MarkerFaceColor', 'w');
+            hold(mosaicAxes,'on')
+            plot(mosaicAxes, [trueConeXYLocations(k,1) MDSprojection(k,2)], ...
+                 [trueConeXYLocations(k,2) MDSprojection(k,3)], 'w-');
+        end  
+    end
+    hold(mosaicAxes,'off')
+    set(mosaicAxes, 'XLim', spatialExtent*[-1 1], 'YLim', spatialExtent*[-1 1]);
+    set(mosaicAxes, 'XTick', [-100:5:100], 'YTick', [-100:5:100]);
+    set(mosaicAxes, 'XTickLabel', {}, 'YTickLabel', {});
+    set(mosaicAxes, 'XColor', [1 1 1], 'YColor', [1 1 1], 'Color', [0 0 0]);
+    grid(mosaicAxes, 'on'); 
+    box(mosaicAxes, 'on'); 
+    axis(mosaicAxes, 'square')
+    axis(mosaicAxes, 'off')
+    
+    % Disparity matrix
+    pcolor(dispMatrixAxes, D);
+    colormap(hot);
+    box(dispMatrixAxes, 'on'); 
+    axis(dispMatrixAxes, 'square');
+    axis(dispMatrixAxes, 'ij')
+    set(dispMatrixAxes, 'CLim', [0 max(D(:))]);
+    set(dispMatrixAxes, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XTickLabel', {}, 'YTickLabel', {});
+    
+    
+    % Performance as a function of time
+    plot(performanceAxes1, performance.fixationsNum, performance.correctlyIdentifiedLMcones, 'y-', 'LineWidth', 2.0);
+    hold(performanceAxes1,'on')
+    plot(performanceAxes1, performance.fixationsNum, performance.correctlyIdentifiedScones, 'c-', 'LineWidth', 2.0);
+    hold(performanceAxes1,'off')
+    set(performanceAxes1, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'YLim', [0 1.05], 'XTickLabel', {}, 'YTickLabel', {});
+    ylabel(performanceAxes1, '% correct', 'FontSize', 14);
+    hLeg = legend(performanceAxes1, 'L/M', 'S');
+    set(hLeg, 'Color', [0 0 0], 'FontSize', 14, 'TextColor',[1 1 1], 'Location', 'southwest');
+    box(performanceAxes1, 'off'); 
+    grid(performanceAxes1, 'on');
+    title(performanceAxes1, sprintf('fixations: %2.1f\n', fixationNo), 'FontSize', 16, 'Color', [1 1 1]);
+    
+    
+    plot(performanceAxes2, performance.fixationsNum, performance.meanDistanceLMmosaic, 'y-', 'LineWidth', 2.0);
+    hold(performanceAxes2,'on')
+    plot(performanceAxes2, performance.fixationsNum, performance.meanDistanceSmosaic, 'c-', 'LineWidth', 2.0);
+    hold(performanceAxes2,'off')
+    set(performanceAxes2, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'YLim', [0 15], 'XTickLabel', {}, 'YTickLabel', {});
+    hLeg = legend(performanceAxes2, 'L/M', 'S');
+    ylabel(performanceAxes2, 'spatial jitter', 'FontSize', 14);
+    set(hLeg, 'Color', [0 0 0], 'FontSize', 14, 'TextColor',[1 1 1], 'Location', 'northeast');
+    box(performanceAxes2, 'off'); 
+    grid(performanceAxes2, 'on');
+    
+    drawnow
+end
+
 
 function GenerateResultsFigure(resultsFile)
     disp('Loading the raw data');
@@ -199,7 +389,9 @@ function GenerateResultsFigure(resultsFile)
     % For comparison to true spatial mosaic determine optimal scaling and
     % rotation (around the spectral (X) axis) of the MDS embedding so that 
     % the spatial enbedding best matches the original mosaic
-    [d,Z,transform] = procrustes(trueConeXYLocations(LMconeIndices,:), rotatedMDSprojection(LMconeIndices,2:3));
+    %coneIndices = LMconeIndices;
+    coneIndices = (1:size(trueConeXYLocations,1));
+    [d,Z,transform] = procrustes(trueConeXYLocations(coneIndices,:), rotatedMDSprojection(coneIndices,2:3));
     
     % Form the rotation matrix around X-axis
     rotationMatrixAroundXaxis = ...
@@ -264,7 +456,7 @@ function GenerateResultsFigure(resultsFile)
     
         % Finally, plot correspondence between true and recovered cone mosaic
         subplot('Position', subplotPosVector(2,2).v);
-        mdsProcessor.DrawTrueAndEstimatedConeMosaics(trueConeTypes, trueConeXYLocations, rotatedMDSprojection, spatialExtent);
+        mdsProcessor.DrawTrueAndEstimatedConeMosaics(trueConeTypes, trueConeXYLocations, rotatedMDSprojection, coneIndices, spatialExtent);
     drawnow;
     NicePlot.exportFigToPDF('Rotated.pdf',h,300);
 
@@ -306,17 +498,21 @@ end
             timeBins = eyeMovementIndex + [0:eyeMovementsPerSceneRotation-1];
 
             for sceneIndex = 1:numel(allSceneNames)
+                
                 aggregateXTresponse = [aggregateXTresponse XTresponses{sceneIndex}(:,timeBins)];
                 
-                for timeBin = 1:eyeMovementsPerSceneRotation 
+                for timeBinIndex = 1:eyeMovementsPerSceneRotation 
                     
-                    correlationMatrix = corrcoef((aggregateXTresponse(:,1:end-eyeMovementsPerSceneRotation+timeBin))');
+                    binRange = (1:size(aggregateXTresponse,2)-(eyeMovementsPerSceneRotation-timeBinIndex));
+                    
+                    correlationMatrix = corrcoef((aggregateXTresponse(:,binRange))');
                     D = -log((correlationMatrix+1.0)/2.0);
                     if ~issymmetric(D)
                         D = 0.5*(D+D');
                     end
                     
-                    disparityMatrices{timeBin} = D;
+                    disparityMatrices{timeBinIndex} = D;
+                    
                     RenderResults(initialPass, trueConeTypes, disparityMatrices, previousXTresponse, XTresponses{sceneIndex}(:,timeBins), opticalImageRGBrendering{sceneIndex}, opticalSampleSeparation{sceneIndex}, eyeMovements{sceneIndex}(timeBins,:), ...
                         sensorSampleSeparation, sensorRowsCols, writerObj)
                     %VisualizeResultsOLD(initialPass, trueConeTypes, disparityMatrices, previousXTresponse, XTresponses{sceneIndex}(:,timeBins), opticalImageRGBrendering{sceneIndex}, opticalSampleSeparation{sceneIndex}, eyeMovements{sceneIndex}(timeBins,:), ...
