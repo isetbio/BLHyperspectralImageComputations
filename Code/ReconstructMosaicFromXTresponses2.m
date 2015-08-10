@@ -1,15 +1,158 @@
 function ReconstructMosaicFromXTresponses2
 
-    generateVideo = false;
+    generateVideo = true;
     
-    mosaicWidth = 10;
-    resultsFile = sprintf('results_%dx%d.mat', mosaicWidth, mosaicWidth);
+    conesAcross = 10;
+    resultsFile = sprintf('results_%dx%d.mat', conesAcross,conesAcross);
     
     if (generateVideo)
         GenerateVideoFile(resultsFile);
     else
         GenerateResultsFigure(resultsFile);
     end
+end
+
+function GenerateVideoFile(resultsFile)
+    load(resultsFile);
+    
+    % find minimal number of eye movements across all scenes
+    minEyeMovements = 10*1000*1000;
+    totalEyeMovementsNum = 0;
+    for sceneIndex = 1:numel(allSceneNames)
+        eyeMovementsNum = size(XTresponses{sceneIndex},2);
+        totalEyeMovementsNum = totalEyeMovementsNum + eyeMovementsNum;
+        if (eyeMovementsNum < minEyeMovements)
+            minEyeMovements = eyeMovementsNum;
+        end
+    end
+
+    fixationsPerSceneRotation = 20;
+    eyeMovementsPerSceneRotation = fixationsPerSceneRotation * eyeMovementParamsStruct.samplesPerFixation;
+    fullSceneRotations = floor(minEyeMovements / eyeMovementsPerSceneRotation);
+        
+    aggregateXTresponse = [];
+    eyeMovementIndex = 1;
+    
+    % Setup video stream
+    writerObj = VideoWriter('NewMosaicReconstruction.m4v', 'MPEG-4'); % H264 format
+    writerObj.FrameRate = 15; 
+    writerObj.Quality = 100;
+    % Open video stream
+    open(writerObj); 
+        
+    subplotPosVector = NicePlot.getSubPlotPosVectors(...
+        'rowsNum',      2, ...
+        'colsNum',      2, ...
+        'widthMargin',  0.07, ...
+        'leftMargin',   0.06, ...
+        'bottomMargin', 0.06, ...
+        'heightMargin', 0.09, ...
+        'topMargin',    0.01);
+    MDSdims = {'MDS-x', 'MDS-y', 'MDS-z'};
+    
+    kSteps = 0;
+    for rotationIndex = 1:fullSceneRotations
+        timeBins = eyeMovementIndex + [0:eyeMovementsPerSceneRotation-1];
+
+        for sceneIndex = 1:numel(allSceneNames)
+            aggregateXTresponse = [aggregateXTresponse XTresponses{sceneIndex}(:,timeBins)];
+
+            for timeBin = 1:eyeMovementsPerSceneRotation 
+
+                disp('Updating correlation matrix');
+                correlationMatrix = corrcoef((aggregateXTresponse(:,1:end-eyeMovementsPerSceneRotation+timeBin))');
+                D = -log((correlationMatrix+1.0)/2.0);
+                if ~issymmetric(D)
+                    D = 0.5*(D+D');
+                end
+                
+                kSteps = kSteps + 1;
+                if (kSteps < 5)
+                    disp('Skipping MDS');
+                    continue;
+                end
+                
+                disp('Computing MDS');
+                dimensionsNum = 3;
+                [MDSprojection,stress] = mdscale(D,dimensionsNum);
+    
+                disp('Post MDS processing');
+                swapMDSdimsYZ = true;
+                if (swapMDSdimsYZ)
+                    % swap MDS dimension Y with MDS dimension Z
+                    MDSdimensionForXspatialDim = 3;
+                    MDSdimensionForYspatialDim = 2;
+                    tmp_MDSprojection = MDSprojection;
+                    tmp_MDSprojection(:,2) = MDSprojection(:,MDSdimensionForXspatialDim);
+                    tmp_MDSprojection(:,3) = MDSprojection(:,MDSdimensionForYspatialDim);
+                    MDSprojection = tmp_MDSprojection;
+                end
+
+                [rotatedMDSprojection, LconeIndices, MconeIndices, SconeIndices, LMconeIndices,...
+                    cLM, cS, pivot, cLMPrime, cSPrime, pivotPrime] = ...
+                    mdsProcessor.estimateConeMosaicFromMDSprojection(MDSprojection);
+    
+                % For comparison to true spatial mosaic determine optimal scaling and
+                % rotation (around the spectral (X) axis) of the MDS embedding so that 
+                % the spatial enbedding best matches the original mosaic
+                [d,Z,transform] = procrustes(trueConeXYLocations(LMconeIndices,:), rotatedMDSprojection(LMconeIndices,2:3));
+
+                % Form the rotation matrix around X-axis
+                rotationMatrixAroundXaxis = ...
+                    [1 0                0; ...
+                     0 transform.T(1,1) transform.T(1,2); ...
+                     0 transform.T(2,1) transform.T(2,2) ...
+                     ];
+
+                MDSspatialScalingFactor = transform.b;
+
+                % apply rotation and scaling
+                rotatedMDSprojection = rotatedMDSprojection * rotationMatrixAroundXaxis;
+                rotatedMDSprojection = rotatedMDSprojection * MDSspatialScalingFactor;
+
+                cSPrime = cSPrime * MDSspatialScalingFactor;
+                cLMPrime = cLMPrime * MDSspatialScalingFactor;
+                pivotPrime = pivotPrime * MDSspatialScalingFactor; 
+    
+                
+                
+                disp('Drawing');
+                % Plot the result of stage-2: Rotation and Separation of L from M
+                coneIndices = {LconeIndices, MconeIndices, SconeIndices};
+                coneColors = [1 0 0; 0 1 0; 0 0 1];
+                spatialExtent = max(trueConeXYLocations(:)) * 1.2;
+                h = figure(2); clf;
+                set(h, 'Position', [200 10 760 700], 'Name', 'Step2: Rotated');
+                    subplot('Position', subplotPosVector(1,1).v);
+                    mdsProcessor.DrawConePositions(rotatedMDSprojection, coneIndices, coneColors, cLMPrime, cSPrime, pivotPrime, {[],spatialExtent, spatialExtent}, MDSdims, [0 90]);
+
+                    subplot('Position', subplotPosVector(1,2).v);
+                    mdsProcessor.DrawConePositions(rotatedMDSprojection, coneIndices, coneColors, cLMPrime, cSPrime, pivotPrime, {[],spatialExtent, spatialExtent}, MDSdims, [0 0]);
+
+                    subplot('Position', subplotPosVector(2,1).v);
+                    mdsProcessor.DrawConePositions(rotatedMDSprojection, coneIndices, coneColors, cLMPrime, cSPrime, pivotPrime, {[],spatialExtent, spatialExtent}, MDSdims, [90 0]);
+
+                    % Finally, plot correspondence between true and recovered cone mosaic
+                    subplot('Position', subplotPosVector(2,2).v);
+                    mdsProcessor.DrawTrueAndEstimatedConeMosaics(trueConeTypes, trueConeXYLocations, rotatedMDSprojection, spatialExtent);
+                    title(sprintf('Eye movements: %d\n', kSteps));
+                drawnow;
+                
+                if (~isempty(writerObj))
+                    frame = getframe(gcf);
+                    writeVideo(writerObj, frame);
+                end
+        
+            end % timeBin
+        end% sceneIndex
+        
+        eyeMovementIndex = eyeMovementIndex + eyeMovementsPerSceneRotation;
+        
+    end% rotationIndex
+    
+    % close video stream and save movie
+    close(writerObj);
+        
 end
 
 function GenerateResultsFigure(resultsFile)
@@ -36,253 +179,98 @@ function GenerateResultsFigure(resultsFile)
     disp('Saving MDS data');
     save(sprintf('MDS_%s', resultsFile), 'MDSprojection', 'stress', 'trueConeXYLocations', 'trueConeTypes');
     
-    % Step1: Identify S-cone positions
-    [SconeIndices, LMconeIndices] = DetermineSconeIndices(MDSprojection);
     
-    % Identify line connecting centroids of S and LM
-    cS    = mean(MDSprojection(SconeIndices,:),1);
-    cLM   = mean(MDSprojection(LMconeIndices,:),1); 
-    pivot = (cS + cLM)/2;
-    
-    % undo rotation of S-LM line along Y and Z axes
-    S_LM_Line = cS-cLM;
-    
-    u = [S_LM_Line(1) S_LM_Line(3)];
-    v = [1 0];
-    rotationYaxis = acos(dot(u,v)/(norm(u)*norm(v))) /pi*180;
-    u = [S_LM_Line(1) S_LM_Line(2)];
-    v = [1 0];
-    rotationZaxis = acos(dot(u,v)/(norm(u)*norm(v))) /pi*180;
-    
-    % This is arbitary so as to make the spatialdim1, spatialdim2 as close
-    % to original mosaic
-    rotationXaxis = 2;
-    
-    cosTheta = cos(rotationYaxis/180*pi);
-    sinTheta = sin(rotationYaxis/180*pi);
-    rotationMatrixAroundYaxis = [cosTheta 0 sinTheta; 0 1 0; -sinTheta 0 cosTheta];
-    
-    cosTheta = cos(rotationZaxis/180*pi);
-    sinTheta = sin(rotationZaxis/180*pi);
-    rotationMatrixAroundZaxis = [cosTheta -sinTheta 0; sinTheta cosTheta 0; 0 0 1];
-    
-    cosTheta = cos(rotationXaxis/180*pi);
-    sinTheta = sin(rotationXaxis/180*pi);
-    rotationMatrixAroundXaxis = [1 0 0; 0 cosTheta -sinTheta ; 0 sinTheta cosTheta];
-    
-    
-    rotatedMDSprojection(SconeIndices,:) = bsxfun(@minus, MDSprojection(SconeIndices,:), pivot);
-    rotatedMDSprojection(SconeIndices,:) = rotatedMDSprojection(SconeIndices,:) * rotationMatrixAroundYaxis*rotationMatrixAroundZaxis*rotationMatrixAroundXaxis;
-    rotatedMDSprojection(SconeIndices,:) = bsxfun(@plus, rotatedMDSprojection(SconeIndices,:), pivot);
-    
-    
-    rotatedMDSprojection(LMconeIndices,:) = bsxfun(@minus, MDSprojection(LMconeIndices,:), pivot);
-    rotatedMDSprojection(LMconeIndices,:) = rotatedMDSprojection(LMconeIndices,:) * rotationMatrixAroundYaxis*rotationMatrixAroundZaxis*rotationMatrixAroundXaxis;
-    rotatedMDSprojection(LMconeIndices,:) = bsxfun(@plus, rotatedMDSprojection(LMconeIndices,:), pivot);
-    
-    cSprime    = cS - pivot;
-    cLMprime   = cLM - pivot;
-    cSprime = cSprime * rotationMatrixAroundYaxis*rotationMatrixAroundZaxis;
-    cLMprime = cLMprime * rotationMatrixAroundYaxis*rotationMatrixAroundZaxis;
-    cSprime = cSprime + pivot;
-    cLMprime = cLMprime + pivot;
-    pivotPrime = pivot;
-    
-    % center on yz origin
-    for k = 2:3
-        rotatedMDSprojection(:,k) = rotatedMDSprojection(:,k) - pivot(k);
-        cSprime(k) = cSprime(k) - pivot(k);
-        cLMprime(k) = cLMprime(k) - pivot(k);
-        pivotPrime(k) = 0;
+    swapMDSdimsYZ = true;
+    if (swapMDSdimsYZ)
+        % swap MDS dimension Y with MDS dimension Z
+        MDSdimensionForXspatialDim = 3;
+        MDSdimensionForYspatialDim = 2;
+        tmp_MDSprojection = MDSprojection;
+        tmp_MDSprojection(:,2) = MDSprojection(:,MDSdimensionForXspatialDim);
+        tmp_MDSprojection(:,3) = MDSprojection(:,MDSdimensionForYspatialDim);
+        MDSprojection = tmp_MDSprojection;
     end
     
-    [LconeIndices, MconeIndices] = DetermineLMconeIndices(rotatedMDSprojection, LMconeIndices, SconeIndices);
-    
-    scaleF = max(max(abs(trueConeXYLocations))) / max(max(abs(rotatedMDSprojection(:,2:3))));
-    
-    
+    [rotatedMDSprojection, LconeIndices, MconeIndices, SconeIndices, LMconeIndices,...
+        cLM, cS, pivot, cLMPrime, cSPrime, pivotPrime] = ...
+        mdsProcessor.estimateConeMosaicFromMDSprojection(MDSprojection);
     
     
+    % For comparison to true spatial mosaic determine optimal scaling and
+    % rotation (around the spectral (X) axis) of the MDS embedding so that 
+    % the spatial enbedding best matches the original mosaic
+    [d,Z,transform] = procrustes(trueConeXYLocations(LMconeIndices,:), rotatedMDSprojection(LMconeIndices,2:3));
     
-    % Plot the result of stage 1
+    % Form the rotation matrix around X-axis
+    rotationMatrixAroundXaxis = ...
+        [1 0                0; ...
+         0 transform.T(1,1) transform.T(1,2); ...
+         0 transform.T(2,1) transform.T(2,2) ...
+         ];
+
+    MDSspatialScalingFactor = transform.b;
     
+    % apply rotation and scaling
+    rotatedMDSprojection = rotatedMDSprojection * rotationMatrixAroundXaxis;
+    rotatedMDSprojection = rotatedMDSprojection * MDSspatialScalingFactor;
+
+    cSPrime = cSPrime * MDSspatialScalingFactor;
+    cLMPrime = cLMPrime * MDSspatialScalingFactor;
+    pivotPrime = pivotPrime * MDSspatialScalingFactor;    
+    
+    
+    subplotPosVector = NicePlot.getSubPlotPosVectors(...
+        'rowsNum',      2, ...
+        'colsNum',      2, ...
+        'widthMargin',  0.07, ...
+        'leftMargin',   0.06, ...
+        'bottomMargin', 0.06, ...
+        'heightMargin', 0.09, ...
+        'topMargin',    0.01);
+    
+    MDSdims = {'MDS-x', 'MDS-y', 'MDS-z'};
+    
+    % Plot the result of stage-1: Separation of S and L/M
     coneIndices = {LMconeIndices(1:10), LMconeIndices(11:end), SconeIndices};
-    coneColors = [0 0 0; 0 0 0; 0 0 1];
-    
+    coneColors  = [0 0 0; 0 0 0; 0 0 1];
+    spatialExtent = {[], [], []};
     h = figure(1); clf;
-    set(h, 'Position', [100 10 710 620], 'Name', 'Step1: Identify S-cone positions');
-    subplot(2,2,1);
-    
-    % Draw the best fitting S-cone plane
-    hold on
-    % Draw the cone positions
-    DrawConePositions(MDSprojection, coneIndices, coneColors);
-    % Draw segment connecting centers
-    scatter3(cLM(1), cLM(2), cLM(3), 'ms', 'filled');
-    scatter3(cS(1), cS(2), cS(3), 'cs', 'filled');
-    scatter3(pivot(1), pivot(2), pivot(3), 'ks', 'filled');
-    plot3([cLM(1) cS(1)],[cLM(2) cS(2)], [cLM(3) cS(3)], 'k-');
-    view([0,0]);
-    axis 'square'
-    
-    subplot(2,2,2);
-    hold on
-    % Draw the cone positions
-    DrawConePositions(MDSprojection, coneIndices, coneColors);
-    scatter3(cLM(1), cLM(2), cLM(3), 'ms', 'filled');
-    scatter3(cS(1), cS(2), cS(3), 'cs', 'filled');
-    scatter3(pivot(1), pivot(2), pivot(3), 'ks', 'filled');
-    plot3([cLM(1) cS(1)],[cLM(2) cS(2)], [cLM(3) cS(3)], 'k-');
-    view([0,90]);
-    axis 'square'
+    set(h, 'Position', [100 10 760 700], 'Name', 'Step1: Identify S-cone positions');
+        subplot('Position', subplotPosVector(1,1).v);
+        mdsProcessor.DrawConePositions(MDSprojection, coneIndices, coneColors, cLM, cS, pivot, spatialExtent, MDSdims, [0 90]);
+
+        subplot('Position', subplotPosVector(1,2).v);
+        mdsProcessor.DrawConePositions(MDSprojection, coneIndices, coneColors, cLM, cS, pivot, spatialExtent, MDSdims, [0 0]);
+
+        subplot('Position', subplotPosVector(2,1).v);
+        mdsProcessor.DrawConePositions(MDSprojection, coneIndices, coneColors, cLM, cS, pivot, spatialExtent, MDSdims, [90 0]);
     drawnow;
+    NicePlot.exportFigToPDF('Raw.pdf',h,300);
     
-    
-    subplot(2,2,3);
-    hold on
-    % Draw the cone positions
-    DrawConePositions(MDSprojection, coneIndices, coneColors);
-    scatter3(cLM(1), cLM(2), cLM(3), 'ms', 'filled');
-    scatter3(cS(1), cS(2), cS(3), 'cs', 'filled');
-    scatter3(pivot(1), pivot(2), pivot(3), 'ks', 'filled');
-    plot3([cLM(1) cS(1)],[cLM(2) cS(2)], [cLM(3) cS(3)], 'k-');
-    view([90,0]);
-    axis 'square'
-    drawnow;
-    
-    
-    % Plot the result of stage2
-    h = figure(2); clf;
-    set(h, 'Position', [200 10 710 620], 'Name', 'Step2: Rotated');
-    subplot(2,2,1);
-     hold on
-    % Draw the cone positions
-    coneColors = [1 0 0; 0 1 0; 0 0 1];
+    % Plot the result of stage-2: Rotation and Separation of L from M
     coneIndices = {LconeIndices, MconeIndices, SconeIndices};
-    DrawConePositions(rotatedMDSprojection, coneIndices, coneColors);
-    scatter3(cLMprime(1), cLMprime(2), cLMprime(3), 'ms', 'filled');
-    scatter3(cSprime(1), cSprime(2), cSprime(3), 'cs', 'filled');
-    scatter3(pivotPrime(1), pivotPrime(2), pivotPrime(3), 'ks', 'filled');
-    plot3([cLMprime(1) cSprime(1)],[cLMprime(2) cSprime(2)], [cLMprime(3) cSprime(3)], 'k-');
-    view([0,0]);
-    axis 'square'
+    coneColors = [1 0 0; 0 1 0; 0 0 1];
+    spatialExtent = max(trueConeXYLocations(:)) * 1.2;
+    h = figure(2); clf;
+    set(h, 'Position', [200 10 760 700], 'Name', 'Step2: Rotated');
+        subplot('Position', subplotPosVector(1,1).v);
+        mdsProcessor.DrawConePositions(rotatedMDSprojection, coneIndices, coneColors, cLMPrime, cSPrime, pivotPrime, {[],spatialExtent, spatialExtent}, MDSdims, [0 90]);
     
-    subplot(2,2,2);
-    hold on
-    % Draw the cone positions
-    DrawConePositions(rotatedMDSprojection, coneIndices, coneColors);
-    DrawConePositions(rotatedMDSprojection, coneIndices, coneColors);
-    scatter3(cLMprime(1), cLMprime(2), cLMprime(3), 'ms', 'filled');
-    scatter3(cSprime(1), cSprime(2), cSprime(3), 'cs', 'filled');
-    scatter3(pivotPrime(1), pivotPrime(2), pivotPrime(3), 'ks', 'filled');
-    plot3([cLMprime(1) cSprime(1)],[cLMprime(2) cSprime(2)], [cLMprime(3) cSprime(3)], 'k-');
-    view([0,90]);
-    axis 'square'
+        subplot('Position', subplotPosVector(1,2).v);
+        mdsProcessor.DrawConePositions(rotatedMDSprojection, coneIndices, coneColors, cLMPrime, cSPrime, pivotPrime, {[],spatialExtent, spatialExtent}, MDSdims, [0 0]);
     
-    subplot(2,2,3);
-    hold on
-    % Draw the cone positions
-    DrawConePositions(rotatedMDSprojection, coneIndices, coneColors);
-    DrawConePositions(rotatedMDSprojection, coneIndices, coneColors);
-    scatter3(cLMprime(1), cLMprime(2), cLMprime(3), 'ms', 'filled');
-    scatter3(cSprime(1), cSprime(2), cSprime(3), 'cs', 'filled');
-    scatter3(pivotPrime(1), pivotPrime(2), pivotPrime(3), 'ks', 'filled');
-    plot3([cLMprime(1) cSprime(1)],[cLMprime(2) cSprime(2)], [cLMprime(3) cSprime(3)], 'k-');
-    view([90,0]);
-    axis 'square'
+        subplot('Position', subplotPosVector(2,1).v);
+        mdsProcessor.DrawConePositions(rotatedMDSprojection, coneIndices, coneColors, cLMPrime, cSPrime, pivotPrime, {[],spatialExtent, spatialExtent}, MDSdims, [90 0]);
     
-    subplot(2,2,4)
-    hold on
-    for k = 1:size(trueConeXYLocations,1)
-        
-        if (trueConeTypes(k) == 2)
-            plot(trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'rs', 'MarkerFaceColor', 'r');
-            plot([trueConeXYLocations(k,1) rotatedMDSprojection(k,3)*scaleF], ...
-                 [trueConeXYLocations(k,2) -rotatedMDSprojection(k,2)*scaleF], 'r-');
- 
-        elseif (trueConeTypes(k) == 3)
-            plot(trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'gs', 'MarkerFaceColor', 'g');
-            plot([trueConeXYLocations(k,1) rotatedMDSprojection(k,3)*scaleF], ...
-                 [trueConeXYLocations(k,2) -rotatedMDSprojection(k,2)*scaleF], 'g-');
-             
-        elseif (trueConeTypes(k) == 4)
-            plot(trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'bs', 'MarkerFaceColor', 'b');
-            plot([trueConeXYLocations(k,1) rotatedMDSprojection(k,3)*scaleF], ...
-                 [trueConeXYLocations(k,2) -rotatedMDSprojection(k,2)*scaleF], 'b-');
-        end  
-    end
-    axis 'square'
-    
+        % Finally, plot correspondence between true and recovered cone mosaic
+        subplot('Position', subplotPosVector(2,2).v);
+        mdsProcessor.DrawTrueAndEstimatedConeMosaics(trueConeTypes, trueConeXYLocations, rotatedMDSprojection, spatialExtent);
     drawnow;
+    NicePlot.exportFigToPDF('Rotated.pdf',h,300);
+
 end
 
-function DrawConePositions(MDSprojection, coneIndices, coneColors)
-    
-    for coneType = 1:numel(coneIndices)
-
-        scatter3(...
-            MDSprojection(coneIndices{coneType},1), ...
-            MDSprojection(coneIndices{coneType},2), ...
-            MDSprojection(coneIndices{coneType},3), ...
-            'filled', ...
-            'MarkerFaceColor',coneColors(coneType,:)...
-            );  
-    end
-    set(gca, 'YLim', 0.03*[-1 1], 'ZLim', 0.03*[-1 1]);
-    grid on;
-    box on;
-    xlabel('x');
-    ylabel('y');
-    zlabel('z');
-end
-
-
-
-
-function [LconeIndices, MconeIndices] = DetermineLMconeIndices(rotatedMDSprojection, LMconeIndices, SconeIndices)
-    
-    xComponents = rotatedMDSprojection(LMconeIndices,1);
-    
-    rng(1); % For reproducibility
-    %k-means with 2 clusters to find S cones
-    [idx,~] = kmeans(xComponents,2);
-    LconeIndices = LMconeIndices(find(idx==1));
-    MconeIndices = LMconeIndices(find(idx==2));
-    
-    % Make sure that M cones closer to S than L cones to S
-    xL = mean(squeeze(rotatedMDSprojection(LconeIndices,1)));
-    xM = mean(squeeze(rotatedMDSprojection(MconeIndices,1)));
-    xS = mean(squeeze(rotatedMDSprojection(SconeIndices,1)));
-    
-    if (abs(xL-xS) < abs(xM-xS))
-        tmp = LconeIndices;
-        LconeIndices = MconeIndices;
-        MconeIndices = tmp;
-    end
-end
-
-function [SconeIndices, LMconeIndices] = DetermineSconeIndices(MDSprojection)
-        
-    rng(1); % For reproducibility
-    %k-means with 2 clusters to find S cones
-    [idx,~] = kmeans(MDSprojection,2);
-    coneAindices = find(idx==1);
-    coneBindices = find(idx==2);
-
-    if (numel(coneAindices) < numel(coneBindices))
-        SconeIndices = coneAindices;
-        LMconeIndices = coneBindices;
-    else
-        SconeIndices = coneBindices;
-        LMconeIndices = coneAindices;
-    end
-end
-
-
-
-
-
- function GenerateVideoFile(resultsFile)
+ function GenerateVideoFileOLD(resultsFile)
         
         load(resultsFile);
     
@@ -299,7 +287,7 @@ end
     
         fixationsPerSceneRotation = 20;
         eyeMovementsPerSceneRotation = fixationsPerSceneRotation * eyeMovementParamsStruct.samplesPerFixation
-        fullSceneRotations = floor(minEyeMovements / eyeMovementsPerSceneRotation)
+        fullSceneRotations = floor(minEyeMovements / eyeMovementsPerSceneRotation);
     
         fprintf('Total eye movements: %d. Eye movements with equal visits across all scenes: %d\n', totalEyeMovementsNum, fullSceneRotations*eyeMovementsPerSceneRotation)
         initialPass = true;
@@ -320,19 +308,22 @@ end
             for sceneIndex = 1:numel(allSceneNames)
                 aggregateXTresponse = [aggregateXTresponse XTresponses{sceneIndex}(:,timeBins)];
                 
-                for timeBin = 1:eyeMovementsPerSceneRotation    
+                for timeBin = 1:eyeMovementsPerSceneRotation 
+                    
                     correlationMatrix = corrcoef((aggregateXTresponse(:,1:end-eyeMovementsPerSceneRotation+timeBin))');
                     D = -log((correlationMatrix+1.0)/2.0);
                     if ~issymmetric(D)
                         D = 0.5*(D+D');
                     end
+                    
                     disparityMatrices{timeBin} = D;
-
-                VisualizeResults(initialPass, trueConeTypes, disparityMatrices, previousXTresponse, XTresponses{sceneIndex}(:,timeBins), opticalImageRGBrendering{sceneIndex}, opticalSampleSeparation{sceneIndex}, eyeMovements{sceneIndex}(timeBins,:), ...
-                    sensorSampleSeparation, sensorRowsCols, writerObj);
+                    RenderResults(initialPass, trueConeTypes, disparityMatrices, previousXTresponse, XTresponses{sceneIndex}(:,timeBins), opticalImageRGBrendering{sceneIndex}, opticalSampleSeparation{sceneIndex}, eyeMovements{sceneIndex}(timeBins,:), ...
+                        sensorSampleSeparation, sensorRowsCols, writerObj)
+                    %VisualizeResultsOLD(initialPass, trueConeTypes, disparityMatrices, previousXTresponse, XTresponses{sceneIndex}(:,timeBins), opticalImageRGBrendering{sceneIndex}, opticalSampleSeparation{sceneIndex}, eyeMovements{sceneIndex}(timeBins,:), ...
+                %        sensorSampleSeparation, sensorRowsCols, writerObj);
                 
-                previousXTresponse = XTresponses{sceneIndex}(:,timeBins);
-                initialPass = false;
+                    previousXTresponse = XTresponses{sceneIndex}(:,timeBins);
+                    initialPass = false;
                 end
             end
             eyeMovementIndex = eyeMovementIndex + eyeMovementsPerSceneRotation;
@@ -341,8 +332,30 @@ end
         close(writerObj);
 end        
 
+function RenderResultsOLD(initialPass, trueConeTypes, trueConeXYLocations, disparityMatrices, previousXTresponse, XTresponse, opticalImage, opticalSampleSeparation, eyeMovements, sensorSampleSeparation, sensorRowsCols, writerObj)
 
-function VisualizeResults(initialPass, trueConeTypes, disparityMatrices, previousXTresponse, XTresponse, opticalImage, opticalSampleSeparation, eyeMovements, sensorSampleSeparation, sensorRowsCols, writerObj)
+    % optical image axes in microns
+    opticalImageXposInMicrons = (0:size(opticalImage,2)-1) * opticalSampleSeparation(1);
+    opticalImageYposInMicrons = (0:size(opticalImage,1)-1) * opticalSampleSeparation(2);
+    opticalImageXposInMicrons = opticalImageXposInMicrons - round(opticalImageXposInMicrons(end)/2);
+    opticalImageYposInMicrons = opticalImageYposInMicrons - round(opticalImageYposInMicrons(end)/2);
+    selectXPosIndices = 1:2:size(opticalImage,2);
+    selectYPosIndices = 1:2:size(opticalImage,1);
+    
+    eyeMovementsInMicrons(:,1) = eyeMovements(:,1) * sensorSampleSeparation(1);
+    eyeMovementsInMicrons(:,2) = eyeMovements(:,2) * sensorSampleSeparation(2);
+
+    sensorOutlineInMicrons(:,1) = [-1 -1 1 1 -1] * sensorRowsCols(2)/2 * sensorSampleSeparation(1);
+    sensorOutlineInMicrons(:,2) = [-1 1 1 -1 -1] * sensorRowsCols(1)/2 * sensorSampleSeparation(2);
+    
+    
+    for eyeMovementIndex = 1:size(eyeMovementsInMicrons,1)
+    end
+    
+end
+
+
+function VisualizeResultsOLD(initialPass, trueConeTypes, disparityMatrices, previousXTresponse, XTresponse, opticalImage, opticalSampleSeparation, eyeMovements, sensorSampleSeparation, sensorRowsCols, writerObj)
 
     % optical image axes in microns
     opticalImageXposInMicrons = (0:size(opticalImage,2)-1) * opticalSampleSeparation(1);
