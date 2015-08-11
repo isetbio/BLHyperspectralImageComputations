@@ -26,7 +26,7 @@ function GenerateVideoFile(resultsFile)
         end
     end
 
-    fixationsPerSceneRotation = 11;
+    fixationsPerSceneRotation = 6;
     eyeMovementsPerSceneRotation = fixationsPerSceneRotation * eyeMovementParamsStruct.samplesPerFixation;
     fullSceneRotations = floor(minEyeMovements / eyeMovementsPerSceneRotation)
     totalFixationsNum = fullSceneRotations*fixationsPerSceneRotation
@@ -60,9 +60,12 @@ function GenerateVideoFile(resultsFile)
     
     hFig = figure(1); clf;
     set(hFig, 'unit','pixel', 'menubar','none', 'Position', [10 20 1280 800], 'Color', [0 0 0]);
-    axesStruct.opticalImageAxes = axes('parent',hFig,'unit','pixel','position',[10 408 640 390], 'Color', [0 0 0]);
-    axesStruct.xtResponseAxes   = axes('parent',hFig,'unit','pixel','position',[10 2 220 400], 'Color', [0 0 0]);
+    axesStruct.opticalImageAxes = axes('parent',hFig,'unit','pixel','position',[2 408 640 390], 'Color', [0 0 0]);
+    axesStruct.current2DResponseAxes = axes('parent',hFig,'unit','pixel','position',[590 550 100 100], 'Color', [0 0 0]);
+    
     axesStruct.dispMatrixAxes   = axes('parent',hFig,'unit','pixel','position',[265 2 400 400], 'Color', [0 0 0]);
+    axesStruct.xtResponseAxes   = axes('parent',hFig,'unit','pixel','position',[10 2 220 400], 'Color', [0 0 0]);
+    
     axesStruct.performanceAxes1  = axes('parent',hFig,'unit','pixel','position',[705 130 560 120], 'Color', [0 0 0]);
     axesStruct.performanceAxes2  = axes('parent',hFig,'unit','pixel','position',[705 4 560 120], 'Color', [0 0 0]);
     axesStruct.xyMDSAxes = axes('parent',hFig,'unit','pixel','position',[710 540 256 256], 'Color', [0 0 0]);
@@ -70,16 +73,46 @@ function GenerateVideoFile(resultsFile)
     axesStruct.yzMDSAxes = axes('parent',hFig,'unit','pixel','position',[710 275 256 256], 'Color', [0 0 0]);
     axesStruct.mosaicAxes = axes('parent',hFig,'unit','pixel','position',[1000 275 256 256], 'Color', [0 0 0]);
     
+    shortHistoryXTResponse = zeros(prod(sensorRowsCols), eyeMovementsPerSceneRotation);
+    
     for rotationIndex = 1:fullSceneRotations
         
         timeBins = eyeMovementIndex + (0:eyeMovementsPerSceneRotation-1);
 
         for sceneIndex = 1:numel(allSceneNames)
             
+            % get optical/sensor params for this scene
+            opticalImage = opticalImageRGBrendering{sceneIndex};
+            opticalImageXposInMicrons = (0:size(opticalImage,2)-1) * opticalSampleSeparation{sceneIndex}(1);
+            opticalImageYposInMicrons = (0:size(opticalImage,1)-1) * opticalSampleSeparation{sceneIndex}(2);
+            opticalImageXposInMicrons = opticalImageXposInMicrons - round(opticalImageXposInMicrons(end)/2);
+            opticalImageYposInMicrons = opticalImageYposInMicrons - round(opticalImageYposInMicrons(end)/2);
+            selectXPosIndices = 1:2:size(opticalImage,2);
+            selectYPosIndices = 1:2:size(opticalImage,1);
+            opticalImage = opticalImage(selectYPosIndices, selectXPosIndices,:);
+            opticalImageXposInMicrons = opticalImageXposInMicrons(selectXPosIndices);
+            opticalImageYposInMicrons = opticalImageYposInMicrons(selectYPosIndices);
+            
+            % Get eye movements for this scene scan
+            currentEyeMovements = eyeMovements{sceneIndex}(timeBins,:);
+            currentEyeMovementsInMicrons(:,1) = currentEyeMovements(:,1) * sensorSampleSeparation(1);
+            currentEyeMovementsInMicrons(:,2) = currentEyeMovements(:,2) * sensorSampleSeparation(2);
+
+            sensorOutlineInMicrons(:,1) = [-1 -1 1 1 -1] * sensorRowsCols(2)/2 * sensorSampleSeparation(1);
+            sensorOutlineInMicrons(:,2) = [-1 1 1 -1 -1] * sensorRowsCols(1)/2 * sensorSampleSeparation(2);
+    
+
+            % aggregate response
             aggregateXTresponse = [aggregateXTresponse XTresponses{sceneIndex}(:,timeBins)];
 
             for timeBinIndex = 1:eyeMovementsPerSceneRotation 
 
+                currentResponse = XTresponses{sceneIndex}(:,timeBinIndex);
+                shortHistoryXTResponse = circshift(shortHistoryXTResponse, -1, 2);
+                shortHistoryXTResponse(:,end) = currentResponse;
+                current2DResponse = reshape(currentResponse, [sensorRowsCols(1) sensorRowsCols(2)]);
+                
+                
                 disp('Updating correlation matrix');
                 binRange = 1:size(aggregateXTresponse,2)-eyeMovementsPerSceneRotation+timeBinIndex;
                 correlationMatrix = corrcoef((aggregateXTresponse(:,binRange))');
@@ -148,7 +181,10 @@ function GenerateVideoFile(resultsFile)
                 % Update cone mosaic estimation performance
                 performance = mdsProcessor.ComputePerformance(trueConeTypes, trueConeXYLocations, rotatedMDSprojection, coneIndices, performance, kSteps-(minSteps-1), eyeMovementParamsStruct.samplesPerFixation);
                 
-                RenderFrame(axesStruct, binRange(end)/eyeMovementParamsStruct.samplesPerFixation, performance, D, ...
+                RenderFrame(axesStruct, binRange(end)/eyeMovementParamsStruct.samplesPerFixation, ...
+                    opticalImage, opticalImageXposInMicrons, opticalImageYposInMicrons, ...
+                    timeBinIndex, currentEyeMovementsInMicrons, sensorOutlineInMicrons, ...
+                    shortHistoryXTResponse, current2DResponse, performance, D, ...
                     rotatedMDSprojection, coneIndices, coneColors, cLMPrime, cSPrime, pivotPrime, spatialExtent, trueConeTypes, trueConeXYLocations);
                 
                 if (1==2)
@@ -210,10 +246,11 @@ function GenerateVideoFile(resultsFile)
     close(writerObj);
 end
 
-function RenderFrame(axesStruct, fixationNo,performance, D, MDSprojection, coneIndices, coneColors, cLM, cS, pivot, spatialExtent, trueConeTypes, trueConeXYLocations)
+function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMicrons, opticalImageYposInMicrons, eyeMovementIndex, eyeMovementsInMicrons, sensorOutlineInMicrons, shortHistoryXTresponse, current2DResponse, performance, D, MDSprojection, coneIndices, coneColors, cLM, cS, pivot, spatialExtent, trueConeTypes, trueConeXYLocations)
 
     opticalImageAxes = axesStruct.opticalImageAxes; 
     xtResponseAxes = axesStruct.xtResponseAxes;
+    current2DResponseAxes = axesStruct.current2DResponseAxes;
     dispMatrixAxes   = axesStruct.dispMatrixAxes;
     performanceAxes1  = axesStruct.performanceAxes1 ;
     performanceAxes2  = axesStruct.performanceAxes2;
@@ -221,6 +258,19 @@ function RenderFrame(axesStruct, fixationNo,performance, D, MDSprojection, coneI
     xzMDSAxes = axesStruct.xzMDSAxes;
     yzMDSAxes = axesStruct.yzMDSAxes;
     mosaicAxes = axesStruct.mosaicAxes;
+    
+   
+    imagesc(opticalImageXposInMicrons, opticalImageYposInMicrons, opticalImage, 'parent', opticalImageAxes);
+    hold(opticalImageAxes, 'on');
+    plot(opticalImageAxes,-eyeMovementsInMicrons(1:eyeMovementIndex,1), eyeMovementsInMicrons(1:eyeMovementIndex,2), 'w.-');
+    plot(opticalImageAxes,-eyeMovementsInMicrons(1:eyeMovementIndex,1), eyeMovementsInMicrons(1:eyeMovementIndex,2), 'k.');
+    plot(opticalImageAxes,-eyeMovementsInMicrons(eyeMovementIndex,1) + sensorOutlineInMicrons(:,1), eyeMovementsInMicrons(eyeMovementIndex,2) + sensorOutlineInMicrons(:,2), 'w-', 'LineWidth', 2.0);
+    hold(opticalImageAxes, 'off');
+    axis(opticalImageAxes,'image');
+    set(opticalImageAxes, 'CLim', [0 1]); 
+    set(opticalImageAxes, 'XLim', [opticalImageXposInMicrons(1) opticalImageXposInMicrons(end)]*0.81, 'YLim', [opticalImageYposInMicrons(1) opticalImageYposInMicrons(end)]*0.81);
+    
+    
     
     LconeIndices = coneIndices{1};
     MconeIndices = coneIndices{2};
@@ -313,15 +363,36 @@ function RenderFrame(axesStruct, fixationNo,performance, D, MDSprojection, coneI
     axis(mosaicAxes, 'square')
     axis(mosaicAxes, 'off')
     
+    % Short history XT response
+    hXTrespPlot = pcolor(xtResponseAxes,shortHistoryXTresponse);
+    set(hXTrespPlot, 'EdgeColor', 'none');
+    colormap(hot);
+    box(xtResponseAxes, 'on'); 
+    axis(xtResponseAxes, 'ij')
+    set(xtResponseAxes, 'CLim', [0 1]);
+    set(xtResponseAxes, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XTickLabel', {}, 'YTickLabel', {});
+    
+    
+    hCurrRespPlot = pcolor(current2DResponseAxes, current2DResponse);
+    set(hCurrRespPlot, 'EdgeColor', 'none');
+    colormap(hot);
+    box(current2DResponseAxes, 'on'); 
+    axis(current2DResponseAxes, 'square');
+    axis(current2DResponseAxes, 'ij')
+    set(current2DResponseAxes, 'CLim', [0 1]);
+    set(current2DResponseAxes, 'Color', [1 1 1], 'XColor', [1 1 1], 'YColor', [0 0 0], 'XTick', [], 'YTick', [], 'XTickLabel', {}, 'YTickLabel', {});
+    
+    
     % Disparity matrix
-    hdensityPlot = pcolor(dispMatrixAxes, D.*tril(ones(size(D))));
+    visD = D.*tril(ones(size(D)));
+    hdensityPlot = pcolor(dispMatrixAxes, visD);
     set(hdensityPlot, 'EdgeColor', 'none');
     colormap(hot);
     box(dispMatrixAxes, 'off'); 
     axis(dispMatrixAxes, 'square');
     axis(dispMatrixAxes, 'ij')
     set(dispMatrixAxes, 'CLim', [0 max(D(:))]);
-    set(dispMatrixAxes, 'Color', [0 0 0], 'XColor', [0 0 0], 'YColor', [0 0 0], 'XTickLabel', {}, 'YTickLabel', {});
+    set(dispMatrixAxes, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XTick', [], 'YTick', [],'XTickLabel', {}, 'YTickLabel', {});
     
     
     % Performance as a function of time
@@ -679,8 +750,6 @@ function VisualizeResultsOLD(initialPass, trueConeTypes, disparityMatrices, prev
         end
         
         colormap(hot(512));
-    
-        
         drawnow;
         
         if (~isempty(writerObj))
