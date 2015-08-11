@@ -60,18 +60,18 @@ function GenerateVideoFile(resultsFile)
     
     hFig = figure(1); clf;
     set(hFig, 'unit','pixel', 'menubar','none', 'Position', [10 20 1280 800], 'Color', [0 0 0]);
-    axesStruct.opticalImageAxes = axes('parent',hFig,'unit','pixel','position',[-55 409 640 390], 'Color', [0 0 0]);
-    axesStruct.current2DResponseAxes = axes('parent',hFig,'unit','pixel','position',[590+1-60 550 140 140], 'Color', [0 0 0]);
+    axesStruct.opticalImageAxes = axes('parent',hFig,'unit','pixel','position',[-55+10 409 640 390], 'Color', [0 0 0]);
+    axesStruct.current2DResponseAxes = axes('parent',hFig,'unit','pixel','position',[590+1-60+10 550 140 140], 'Color', [0 0 0]);
     
-    axesStruct.dispMatrixAxes   = axes('parent',hFig,'unit','pixel','position',[265 4 400 400], 'Color', [0 0 0]);
-    axesStruct.xtResponseAxes   = axes('parent',hFig,'unit','pixel','position',[10 4 220 400], 'Color', [0 0 0]);
+    axesStruct.dispMatrixAxes   = axes('parent',hFig,'unit','pixel','position',[265+10 4 400 400], 'Color', [0 0 0]);
+    axesStruct.xtResponseAxes   = axes('parent',hFig,'unit','pixel','position',[10+10 4 220 400], 'Color', [0 0 0]);
     
-    axesStruct.performanceAxes1  = axes('parent',hFig,'unit','pixel','position',[705 130 560 120], 'Color', [0 0 0]);
-    axesStruct.performanceAxes2  = axes('parent',hFig,'unit','pixel','position',[705 4 560 120], 'Color', [0 0 0]);
-    axesStruct.xyMDSAxes = axes('parent',hFig,'unit','pixel','position',[710+1 540+20 256 226], 'Color', [0 0 0]);
-    axesStruct.xzMDSAxes = axes('parent',hFig,'unit','pixel','position',[1000 540+20 256 226], 'Color', [0 0 0]);
-    axesStruct.yzMDSAxes = axes('parent',hFig,'unit','pixel','position',[710+1 275+10 256 256], 'Color', [0 0 0]);
-    axesStruct.mosaicAxes = axes('parent',hFig,'unit','pixel','position',[1000 275+10 256 256], 'Color', [0 0 0]);
+    axesStruct.performanceAxes1  = axes('parent',hFig,'unit','pixel','position',[705+10 130 560 120], 'Color', [0 0 0]);
+    axesStruct.performanceAxes2  = axes('parent',hFig,'unit','pixel','position',[705+10 4 560 120], 'Color', [0 0 0]);
+    axesStruct.xyMDSAxes = axes('parent',hFig,'unit','pixel','position',[710+1+10 540+20 256 226], 'Color', [0 0 0]);
+    axesStruct.xzMDSAxes = axes('parent',hFig,'unit','pixel','position',[1000+10 540+20 256 226], 'Color', [0 0 0]);
+    axesStruct.yzMDSAxes = axes('parent',hFig,'unit','pixel','position',[710+1+10 275+10 256 256], 'Color', [0 0 0]);
+    axesStruct.mosaicAxes = axes('parent',hFig,'unit','pixel','position',[1000+10 275+10 256 256], 'Color', [0 0 0]);
     
     shortHistoryXTResponse = zeros(prod(sensorRowsCols), eyeMovementsPerSceneRotation);
     
