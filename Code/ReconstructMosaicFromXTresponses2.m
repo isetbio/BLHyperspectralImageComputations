@@ -60,18 +60,18 @@ function GenerateVideoFile(resultsFile)
     
     hFig = figure(1); clf;
     set(hFig, 'unit','pixel', 'menubar','none', 'Position', [10 20 1280 800], 'Color', [0 0 0]);
-    axesStruct.opticalImageAxes = axes('parent',hFig,'unit','pixel','position',[2 408 640 390], 'Color', [0 0 0]);
-    axesStruct.current2DResponseAxes = axes('parent',hFig,'unit','pixel','position',[590 550 100 100], 'Color', [0 0 0]);
+    axesStruct.opticalImageAxes = axes('parent',hFig,'unit','pixel','position',[-55 409 640 390], 'Color', [0 0 0]);
+    axesStruct.current2DResponseAxes = axes('parent',hFig,'unit','pixel','position',[590+1-60 550 140 140], 'Color', [0 0 0]);
     
-    axesStruct.dispMatrixAxes   = axes('parent',hFig,'unit','pixel','position',[265 2 400 400], 'Color', [0 0 0]);
-    axesStruct.xtResponseAxes   = axes('parent',hFig,'unit','pixel','position',[10 2 220 400], 'Color', [0 0 0]);
+    axesStruct.dispMatrixAxes   = axes('parent',hFig,'unit','pixel','position',[265 4 400 400], 'Color', [0 0 0]);
+    axesStruct.xtResponseAxes   = axes('parent',hFig,'unit','pixel','position',[10 4 220 400], 'Color', [0 0 0]);
     
     axesStruct.performanceAxes1  = axes('parent',hFig,'unit','pixel','position',[705 130 560 120], 'Color', [0 0 0]);
     axesStruct.performanceAxes2  = axes('parent',hFig,'unit','pixel','position',[705 4 560 120], 'Color', [0 0 0]);
-    axesStruct.xyMDSAxes = axes('parent',hFig,'unit','pixel','position',[710 540 256 256], 'Color', [0 0 0]);
-    axesStruct.xzMDSAxes = axes('parent',hFig,'unit','pixel','position',[1000 540 256 256], 'Color', [0 0 0]);
-    axesStruct.yzMDSAxes = axes('parent',hFig,'unit','pixel','position',[710 275 256 256], 'Color', [0 0 0]);
-    axesStruct.mosaicAxes = axes('parent',hFig,'unit','pixel','position',[1000 275 256 256], 'Color', [0 0 0]);
+    axesStruct.xyMDSAxes = axes('parent',hFig,'unit','pixel','position',[710+1 540+20 256 226], 'Color', [0 0 0]);
+    axesStruct.xzMDSAxes = axes('parent',hFig,'unit','pixel','position',[1000 540+20 256 226], 'Color', [0 0 0]);
+    axesStruct.yzMDSAxes = axes('parent',hFig,'unit','pixel','position',[710+1 275+10 256 256], 'Color', [0 0 0]);
+    axesStruct.mosaicAxes = axes('parent',hFig,'unit','pixel','position',[1000 275+10 256 256], 'Color', [0 0 0]);
     
     shortHistoryXTResponse = zeros(prod(sensorRowsCols), eyeMovementsPerSceneRotation);
     
@@ -175,7 +175,7 @@ function GenerateVideoFile(resultsFile)
                 disp('Drawing');
                 % Plot the result of stage-2: Rotation and Separation of L from M
                 coneIndices = {LconeIndices, MconeIndices, SconeIndices};
-                coneColors = [1 0 0; 0 1 0; 0 1 1];
+                coneColors = [1 0 0; 0 1 0; 0 0.5 1.0];
                 spatialExtent = max(trueConeXYLocations(:)) * 1.2;
                 
                 % Update cone mosaic estimation performance
@@ -252,7 +252,7 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     xtResponseAxes = axesStruct.xtResponseAxes;
     current2DResponseAxes = axesStruct.current2DResponseAxes;
     dispMatrixAxes   = axesStruct.dispMatrixAxes;
-    performanceAxes1  = axesStruct.performanceAxes1 ;
+    performanceAxes1  = axesStruct.performanceAxes1;
     performanceAxes2  = axesStruct.performanceAxes2;
     xyMDSAxes = axesStruct.xyMDSAxes;
     xzMDSAxes = axesStruct.xzMDSAxes;
@@ -267,6 +267,7 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     plot(opticalImageAxes,-eyeMovementsInMicrons(eyeMovementIndex,1) + sensorOutlineInMicrons(:,1), eyeMovementsInMicrons(eyeMovementIndex,2) + sensorOutlineInMicrons(:,2), 'w-', 'LineWidth', 2.0);
     hold(opticalImageAxes, 'off');
     axis(opticalImageAxes,'image');
+    axis(opticalImageAxes,'off');
     set(opticalImageAxes, 'CLim', [0 1]); 
     set(opticalImageAxes, 'XLim', [opticalImageXposInMicrons(1) opticalImageXposInMicrons(end)]*0.81, 'YLim', [opticalImageYposInMicrons(1) opticalImageYposInMicrons(end)]*0.81);
    
@@ -281,8 +282,10 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     minX = min(xx);
     maxX = max(xx);
     margin = 100 - (maxX - minX);
+    if (margin < 0)
+        margin = 0;
+    end
     XLims = [minX-margin/2 maxX+margin/2];
-
     YLims = spatialExtent*[-1 1];
     ZLims = spatialExtent*[-1 1];
                 
@@ -307,16 +310,21 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
                 'filled', ...
                 'MarkerFaceColor',coneColors(coneType,:)...
                 );  
-            hold(drawingAxes, 'on');
+            if (coneType == 1)
+                hold(drawingAxes, 'on');
+            end
         end
         scatter3(drawingAxes, cLM(1), cLM(2), cLM(3), 'ms', 'filled');
         scatter3(drawingAxes, cS(1), cS(2), cS(3), 'cs', 'filled');
         scatter3(drawingAxes, pivot(1), pivot(2), pivot(3), 'ws', 'filled');
         plot3(drawingAxes, [cLM(1) cS(1)],[cLM(2) cS(2)], [cLM(3) cS(3)], 'w-');
+        if (viewIndex == 3)
+            plot3(drawingAxes, [0 0], spatialExtent*[-1 1], [0 0], 'w-', 'LineWidth', 1);
+            plot3(drawingAxes, [0 0], [0 0], spatialExtent*[-1 1], 'w-', 'LineWidth', 1);
+        end
         hold(drawingAxes, 'off');
         grid(drawingAxes, 'on'); 
-        box(drawingAxes, 'on'); 
-        axis(drawingAxes, 'square')
+        box(drawingAxes, 'off'); 
         axis(drawingAxes, 'off')
         view(drawingAxes, viewingAngles);
         set(drawingAxes, 'XColor', [1 1 1], 'YColor', [1 1 1], 'Color', [0 0 0]);
@@ -333,6 +341,7 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
             case 2
                 
             case 3
+                axis(drawingAxes, 'square');
                 title(drawingAxes, 'reconstructed mosaic', 'Color', [1 1 1], 'FontSize', 14);
         end
         
@@ -351,25 +360,27 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
             plot(mosaicAxes, [trueConeXYLocations(k,1) MDSprojection(k,2)], ...
                  [trueConeXYLocations(k,2) MDSprojection(k,3)], 'g-');
         elseif (trueConeTypes(k) == 4) && (ismember(k, SconeIndices))
-            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'cs', 'MarkerFaceColor', 'c');
+            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'cs', 'MarkerFaceColor', [0 0.5 1.0]);
             hold(mosaicAxes,'on')
             plot(mosaicAxes, [trueConeXYLocations(k,1) MDSprojection(k,2)], ...
                  [trueConeXYLocations(k,2) MDSprojection(k,3)], 'c-');
         else
             % incorrectly indentified cone
-            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'ws', 'MarkerFaceColor', 'w');
+            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 's', 'MarkerEdgeColor', [0.8 0.8 0.8], 'MarkerFaceColor', [0.8 0.8 0.8]);
             hold(mosaicAxes,'on')
             plot(mosaicAxes, [trueConeXYLocations(k,1) MDSprojection(k,2)], ...
-                 [trueConeXYLocations(k,2) MDSprojection(k,3)], 'w-');
+                 [trueConeXYLocations(k,2) MDSprojection(k,3)], '-', 'Color', [0.8 0.8 0.8]);
         end  
     end
+    plot(mosaicAxes, [0 0], spatialExtent*[-1 1], 'w-', 'LineWidth', 1);
+    plot(mosaicAxes, spatialExtent*[-1 1], [0 0], 'w-', 'LineWidth', 1);
     hold(mosaicAxes,'off')
     set(mosaicAxes, 'XLim', spatialExtent*[-1 1], 'YLim', spatialExtent*[-1 1]);
     set(mosaicAxes, 'XTick', [-100:5:100], 'YTick', [-100:5:100]);
     set(mosaicAxes, 'XTickLabel', {}, 'YTickLabel', {});
     set(mosaicAxes, 'XColor', [1 1 1], 'YColor', [1 1 1], 'Color', [0 0 0]);
     grid(mosaicAxes, 'on'); 
-    box(mosaicAxes, 'on'); 
+    box(mosaicAxes, 'off'); 
     axis(mosaicAxes, 'square')
     axis(mosaicAxes, 'off')
     title(mosaicAxes, 'actual mosaic', 'Color', [1 1 1], 'FontSize', 14);
@@ -387,9 +398,10 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     hCurrRespPlot = pcolor(current2DResponseAxes, current2DResponse);
     set(hCurrRespPlot, 'EdgeColor', 'none');
     colormap(hot);
-    box(current2DResponseAxes, 'on'); 
+    box(current2DResponseAxes, 'off'); 
     axis(current2DResponseAxes, 'square');
-    axis(current2DResponseAxes, 'ij')
+    axis(current2DResponseAxes, 'xy');
+    axis(current2DResponseAxes, 'off');
     set(current2DResponseAxes, 'CLim', [0 1]);
     set(current2DResponseAxes, 'XLim', [0 size(current2DResponse,2)+1], 'YLim', [0 size(current2DResponse,1)+1]);
     set(current2DResponseAxes, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [0 0 0], 'XTick', [], 'YTick', [], 'XTickLabel', {}, 'YTickLabel', {});
@@ -400,7 +412,7 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     hdensityPlot = pcolor(dispMatrixAxes, visD);
     set(hdensityPlot, 'EdgeColor', 'none');
     colormap(hot);
-    box(dispMatrixAxes, 'off'); 
+    box(dispMatrixAxes, 'on'); 
     axis(dispMatrixAxes, 'square');
     axis(dispMatrixAxes, 'ij')
     set(dispMatrixAxes, 'CLim', [0 max(D(:))]);
@@ -408,14 +420,14 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     
     
     % Performance as a function of time
-    plot(performanceAxes1, performance.fixationsNum, performance.correctlyIdentifiedLMcones, 'y-', 'LineWidth', 2.0);
+    plot(performanceAxes1, performance.fixationsNum, 1-performance.correctlyIdentifiedLMcones, 'y-', 'LineWidth', 2.0);
     hold(performanceAxes1,'on')
-    plot(performanceAxes1, performance.fixationsNum, performance.correctlyIdentifiedScones, 'c-', 'LineWidth', 2.0);
+    plot(performanceAxes1, performance.fixationsNum, 1-performance.correctlyIdentifiedScones, '-', 'Color', [0 0.6 1.0], 'LineWidth', 2.0);
     hold(performanceAxes1,'off')
-    set(performanceAxes1, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XLim', [0 max([10 max(performance.fixationsNum)])], 'YLim', [0 1.02], 'XTickLabel', {}, 'YTickLabel', {});
-    ylabel(performanceAxes1, '% correct', 'FontSize', 14);
+    set(performanceAxes1, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XLim', [0 max([10 max(performance.fixationsNum)])], 'YLim', [0 1.0], 'XTickLabel', {}, 'YTickLabel', {});
+    ylabel(performanceAxes1, 'cone type error', 'FontSize', 16);
     hLeg = legend(performanceAxes1, 'L/M', 'S');
-    set(hLeg, 'Color', [0.3 0.3 0.3], 'FontSize', 14, 'TextColor',[1 1 1], 'Location', 'southeast');
+    set(hLeg, 'Color', [0.3 0.3 0.3], 'FontSize', 14, 'TextColor',[1 1 1], 'Location', 'northeast');
     box(performanceAxes1, 'off'); 
     grid(performanceAxes1, 'on');
     title(performanceAxes1, sprintf('fixations: %2.1f\n', fixationNo), 'FontSize', 16, 'Color', [1 1 1]);
@@ -423,10 +435,10 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     
     plot(performanceAxes2, performance.fixationsNum, performance.meanDistanceLMmosaic, 'y-', 'LineWidth', 2.0);
     hold(performanceAxes2,'on')
-    plot(performanceAxes2, performance.fixationsNum, performance.meanDistanceSmosaic, 'c-', 'LineWidth', 2.0);
+    plot(performanceAxes2, performance.fixationsNum, performance.meanDistanceSmosaic, '-', 'Color', [0 0.6 1.0], 'LineWidth', 2.0);
     hold(performanceAxes2,'off')
     set(performanceAxes2, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XLim', [0 max([10 max(performance.fixationsNum)])], 'YLim', [0 20], 'XTickLabel', {}, 'YTickLabel', {});
-    ylabel(performanceAxes2, 'spatial jitter', 'FontSize', 14);
+    ylabel(performanceAxes2, 'cone pos. error', 'FontSize', 16);
     hLeg = legend(performanceAxes2, 'L/M', 'S');
     set(hLeg, 'Color', [0.3 0.3 0.3], 'FontSize', 14, 'TextColor',[1 1 1], 'Location', 'northeast');
     box(performanceAxes2, 'off'); 
