@@ -314,13 +314,14 @@ function RenderFrame(axesStruct, fixationNo,performance, D, MDSprojection, coneI
     axis(mosaicAxes, 'off')
     
     % Disparity matrix
-    pcolor(dispMatrixAxes, D.*tril(ones(size(D))));
+    hdensityPlot = pcolor(dispMatrixAxes, D.*tril(ones(size(D))));
+    set(hdensityPlot, 'EdgeColor', 'none');
     colormap(hot);
-    box(dispMatrixAxes, 'on'); 
+    box(dispMatrixAxes, 'off'); 
     axis(dispMatrixAxes, 'square');
     axis(dispMatrixAxes, 'ij')
     set(dispMatrixAxes, 'CLim', [0 max(D(:))]);
-    set(dispMatrixAxes, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XTickLabel', {}, 'YTickLabel', {});
+    set(dispMatrixAxes, 'Color', [0 0 0], 'XColor', [0 0 0], 'YColor', [0 0 0], 'XTickLabel', {}, 'YTickLabel', {});
     
     
     % Performance as a function of time
