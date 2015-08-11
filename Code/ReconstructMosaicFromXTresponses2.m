@@ -26,10 +26,12 @@ function GenerateVideoFile(resultsFile)
         end
     end
 
-    fixationsPerSceneRotation = 15;
+    fixationsPerSceneRotation = 11;
     eyeMovementsPerSceneRotation = fixationsPerSceneRotation * eyeMovementParamsStruct.samplesPerFixation;
     fullSceneRotations = floor(minEyeMovements / eyeMovementsPerSceneRotation)
     totalFixationsNum = fullSceneRotations*fixationsPerSceneRotation
+    
+    fullSceneRotations = input('Enter desired scene rotations: ');
     
     % Initialize
     aggregateXTresponse = [];
@@ -59,7 +61,7 @@ function GenerateVideoFile(resultsFile)
     hFig = figure(1); clf;
     set(hFig, 'unit','pixel', 'menubar','none', 'Position', [10 20 1280 800], 'Color', [0 0 0]);
     axesStruct.opticalImageAxes = axes('parent',hFig,'unit','pixel','position',[10 408 640 390], 'Color', [0 0 0]);
-    axesStruct.xtResponseAxes   = axes('parent',hFig,'unit','pixel','position',[10 2 230 400], 'Color', [0 0 0]);
+    axesStruct.xtResponseAxes   = axes('parent',hFig,'unit','pixel','position',[10 2 220 400], 'Color', [0 0 0]);
     axesStruct.dispMatrixAxes   = axes('parent',hFig,'unit','pixel','position',[265 2 400 400], 'Color', [0 0 0]);
     axesStruct.performanceAxes1  = axes('parent',hFig,'unit','pixel','position',[705 130 560 120], 'Color', [0 0 0]);
     axesStruct.performanceAxes2  = axes('parent',hFig,'unit','pixel','position',[705 4 560 120], 'Color', [0 0 0]);
