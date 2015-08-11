@@ -57,19 +57,22 @@ function GenerateVideoFile(resultsFile)
     
     kSteps = 0;
     performance = [];
+    fixationNo = 0;
+    fixationsThreshold1 = 10; %00;
+    fixationsThreshold2 = 30; %00;
     
     hFig = figure(1); clf;
     set(hFig, 'unit','pixel', 'menubar','none', 'Position', [10 20 1280 800], 'Color', [0 0 0]);
     axesStruct.opticalImageAxes = axes('parent',hFig,'unit','pixel','position',[-50+10 409 640 390], 'Color', [0 0 0]);
     axesStruct.current2DResponseAxes = axes('parent',hFig,'unit','pixel','position',[590+1-60+10 550 140 140], 'Color', [0 0 0]);
     
-    axesStruct.dispMatrixAxes   = axes('parent',hFig,'unit','pixel','position',[265+10 4 400 400], 'Color', [0 0 0]);
+    axesStruct.dispMatrixAxes   = axes('parent',hFig,'unit','pixel','position',[265 4 400 400], 'Color', [0 0 0]);
     axesStruct.xtResponseAxes   = axes('parent',hFig,'unit','pixel','position',[10+10 4 220 400], 'Color', [0 0 0]);
     
-    axesStruct.performanceAxes1  = axes('parent',hFig,'unit','pixel','position',[705+10 130 560 120], 'Color', [0 0 0]);
-    axesStruct.performanceAxes2  = axes('parent',hFig,'unit','pixel','position',[705+10 4 560 120], 'Color', [0 0 0]);
-    axesStruct.xyMDSAxes = axes('parent',hFig,'unit','pixel','position',[710+1+10 540+20 256 226], 'Color', [0 0 0]);
-    axesStruct.xzMDSAxes = axes('parent',hFig,'unit','pixel','position',[1000+10 540+20 256 226], 'Color', [0 0 0]);
+    axesStruct.performanceAxes1  = axes('parent',hFig,'unit','pixel','position',[705 130 560 110], 'Color', [0 0 0]);
+    axesStruct.performanceAxes2  = axes('parent',hFig,'unit','pixel','position',[705 4 560 110], 'Color', [0 0 0]);
+    axesStruct.xyMDSAxes = axes('parent',hFig,'unit','pixel','position',[710+1+10 540+30 256 226], 'Color', [0 0 0]);
+    axesStruct.xzMDSAxes = axes('parent',hFig,'unit','pixel','position',[1000+10 540+30 256 226], 'Color', [0 0 0]);
     axesStruct.yzMDSAxes = axes('parent',hFig,'unit','pixel','position',[710+1+10 275+10 256 256], 'Color', [0 0 0]);
     axesStruct.mosaicAxes = axes('parent',hFig,'unit','pixel','position',[1000+10 275+10 256 256], 'Color', [0 0 0]);
     
@@ -90,8 +93,8 @@ function GenerateVideoFile(resultsFile)
             opticalImageYposInMicrons = (0:size(opticalImage,1)-1) * opticalSampleSeparation{sceneIndex}(2);
             opticalImageXposInMicrons = opticalImageXposInMicrons - round(opticalImageXposInMicrons(end)/2);
             opticalImageYposInMicrons = opticalImageYposInMicrons - round(opticalImageYposInMicrons(end)/2);
-            selectXPosIndices = 1:2:size(opticalImage,2);
-            selectYPosIndices = 1:2:size(opticalImage,1);
+            selectXPosIndices = 1:1:size(opticalImage,2);
+            selectYPosIndices = 1:1:size(opticalImage,1);
             opticalImage = opticalImage(selectYPosIndices, selectXPosIndices,:);
             opticalImageXposInMicrons = opticalImageXposInMicrons(selectXPosIndices);
             opticalImageYposInMicrons = opticalImageYposInMicrons(selectYPosIndices);
@@ -110,21 +113,25 @@ function GenerateVideoFile(resultsFile)
 
             for timeBinIndex = 1:eyeMovementsPerSceneRotation 
 
-                currentResponse = XTresponses{sceneIndex}(:,timeBinIndex);
+                currentResponse = XTresponses{sceneIndex}(:,timeBins(timeBinIndex));
                 shortHistoryXTResponse = circshift(shortHistoryXTResponse, -1, 2);
                 shortHistoryXTResponse(:,end) = currentResponse;
                 current2DResponse = reshape(currentResponse, [sensorRowsCols(1) sensorRowsCols(2)]);
                 
                 kSteps = kSteps + 1;
                 
-                if (mod(timeBinIndex-1,eyeMovementParamsStruct.samplesPerFixation) < eyeMovementParamsStruct.samplesPerFixation-1)
-                    continue;
-                end
                 
-%                 if (timeBinIndex < eyeMovementsPerSceneRotation)
-%                     disp('Skipping all but last eye position');
-%                     continue;
-%                 end
+                % check if we need to accelerate
+                if (fixationNo >= fixationsThreshold2)
+                    if (timeBinIndex < eyeMovementsPerSceneRotation)
+                        continue;
+                    end
+                elseif (fixationNo >= fixationsThreshold1)
+                    if (mod(timeBinIndex-1,eyeMovementParamsStruct.samplesPerFixation) < eyeMovementParamsStruct.samplesPerFixation-1)
+                        continue;
+                    end
+                end
+                    
                 
                 disp('Updating correlation matrix');
                 binRange = 1:size(aggregateXTresponse,2)-eyeMovementsPerSceneRotation+timeBinIndex;
@@ -194,11 +201,14 @@ function GenerateVideoFile(resultsFile)
                 % Update cone mosaic estimation performance
                 performance = mdsProcessor.ComputePerformance(trueConeTypes, trueConeXYLocations, rotatedMDSprojection, coneIndices, performance, kSteps-(minSteps-1), eyeMovementParamsStruct.samplesPerFixation);
                 
-                RenderFrame(axesStruct, binRange(end)/eyeMovementParamsStruct.samplesPerFixation, ...
+                fixationNo = binRange(end)/eyeMovementParamsStruct.samplesPerFixation;
+                
+                RenderFrame(axesStruct, fixationNo, ...
                     opticalImage, opticalImageXposInMicrons, opticalImageYposInMicrons, ...
                     timeBinIndex, currentEyeMovementsInMicrons, sensorOutlineInMicrons, ...
                     shortHistoryXTResponse, current2DResponse, performance, D, ...
                     rotatedMDSprojection, coneIndices, coneColors, cLMPrime, cSPrime, pivotPrime, spatialExtent, trueConeTypes, trueConeXYLocations);
+                
                 
                 if (1==2)
                 hh = figure(1); clf;
@@ -282,7 +292,7 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     axis(opticalImageAxes,'image');
     axis(opticalImageAxes,'off');
     set(opticalImageAxes, 'CLim', [0 1]); 
-    set(opticalImageAxes, 'XLim', [opticalImageXposInMicrons(1) opticalImageXposInMicrons(end)]*0.81, 'YLim', [opticalImageYposInMicrons(1) opticalImageYposInMicrons(end)]*0.81);
+    set(opticalImageAxes, 'XLim', [opticalImageXposInMicrons(1) opticalImageXposInMicrons(end)]*(0.81), 'YLim', [opticalImageYposInMicrons(1) opticalImageYposInMicrons(end)]*(0.81));
    
     
     
@@ -363,20 +373,20 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     
     for k = 1:size(trueConeXYLocations,1)
         if (trueConeTypes(k) == 2) && (ismember(k, LconeIndices))
-            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'rs', 'MarkerFaceColor', 'r');
+            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 's', 'MarkerFaceColor', 'r');
             hold(mosaicAxes,'on')
             plot(mosaicAxes,[trueConeXYLocations(k,1) MDSprojection(k,2)], ...
                  [trueConeXYLocations(k,2) MDSprojection(k,3)], 'r-', 'LineWidth', 2);
         elseif (trueConeTypes(k) == 3) && (ismember(k, MconeIndices))
-            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'gs', 'MarkerFaceColor', 'g');
+            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 's', 'MarkerFaceColor', 'g');
             hold(mosaicAxes,'on')
             plot(mosaicAxes, [trueConeXYLocations(k,1) MDSprojection(k,2)], ...
                  [trueConeXYLocations(k,2) MDSprojection(k,3)], 'g-', 'LineWidth', 2);
         elseif (trueConeTypes(k) == 4) && (ismember(k, SconeIndices))
-            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'cs', 'MarkerFaceColor', [0 0.5 1.0]);
+            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 's', 'MarkerFaceColor', [0 0.5 1.0]);
             hold(mosaicAxes,'on')
             plot(mosaicAxes, [trueConeXYLocations(k,1) MDSprojection(k,2)], ...
-                 [trueConeXYLocations(k,2) MDSprojection(k,3)], 'c-', 'LineWidth', 2);
+                 [trueConeXYLocations(k,2) MDSprojection(k,3)], '-', 'LineWidth', 2, 'Color', [0 0.5 1.0]);
         else
             % incorrectly indentified cone
             plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 's', 'MarkerEdgeColor', [0.8 0.8 0.8], 'MarkerFaceColor', [0.8 0.8 0.8]);
@@ -413,7 +423,7 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     colormap(hot);
     box(current2DResponseAxes, 'off'); 
     axis(current2DResponseAxes, 'square');
-    axis(current2DResponseAxes, 'xy');
+    axis(current2DResponseAxes, 'ij');
     axis(current2DResponseAxes, 'off');
     set(current2DResponseAxes, 'CLim', [0 1]);
     set(current2DResponseAxes, 'XLim', [0 size(current2DResponse,2)+1], 'YLim', [0 size(current2DResponse,1)+1]);
@@ -437,8 +447,8 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     hold(performanceAxes1,'on')
     plot(performanceAxes1, performance.fixationsNum, 1-performance.correctlyIdentifiedScones, '-', 'Color', [0 0.6 1.0], 'LineWidth', 2.0);
     hold(performanceAxes1,'off')
-    set(performanceAxes1, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XLim', [0 max([10 max(performance.fixationsNum)])], 'YLim', [0 1.0], 'XTickLabel', {}, 'YTickLabel', {});
-    ylabel(performanceAxes1, 'cone type error', 'FontSize', 16);
+    set(performanceAxes1, 'Color', [0 0 0], 'XColor', [0 0 0], 'YColor', [1 1 1], 'XLim', [0 max([10 max(performance.fixationsNum)])], 'YLim', [0 1.0], 'XTickLabel', {}, 'YTickLabel', {});
+    ylabel(performanceAxes1, 'type error', 'FontSize', 16);
     hLeg = legend(performanceAxes1, 'L/M', 'S');
     set(hLeg, 'Color', [0.3 0.3 0.3], 'FontSize', 14, 'TextColor',[1 1 1], 'Location', 'northeast');
     box(performanceAxes1, 'off'); 
@@ -450,8 +460,8 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     hold(performanceAxes2,'on')
     plot(performanceAxes2, performance.fixationsNum, performance.meanDistanceSmosaic, '-', 'Color', [0 0.6 1.0], 'LineWidth', 2.0);
     hold(performanceAxes2,'off')
-    set(performanceAxes2, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XLim', [0 max([10 max(performance.fixationsNum)])], 'YLim', [0 20], 'XTickLabel', {}, 'YTickLabel', {});
-    ylabel(performanceAxes2, 'cone pos. error', 'FontSize', 16);
+    set(performanceAxes2, 'Color', [0 0 0], 'XColor', [0 0 0], 'YColor', [1 1 1], 'XLim', [0 max([10 max(performance.fixationsNum)])], 'YLim', [0 20], 'XTickLabel', {}, 'YTickLabel', {});
+    ylabel(performanceAxes2, 'positional error', 'FontSize', 16);
     hLeg = legend(performanceAxes2, 'L/M', 'S');
     set(hLeg, 'Color', [0.3 0.3 0.3], 'FontSize', 14, 'TextColor',[1 1 1], 'Location', 'northeast');
     box(performanceAxes2, 'off'); 
