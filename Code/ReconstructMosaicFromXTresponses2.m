@@ -321,7 +321,7 @@ function RenderFrame(axesStruct, fixationNo,performance, D, MDSprojection, coneI
     hold(performanceAxes1,'on')
     plot(performanceAxes1, performance.fixationsNum, performance.correctlyIdentifiedScones, 'c-', 'LineWidth', 2.0);
     hold(performanceAxes1,'off')
-    set(performanceAxes1, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XLim', [1 max(performance.fixationsNum)], 'YLim', [0 1.05], 'XTickLabel', {}, 'YTickLabel', {});
+    set(performanceAxes1, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XLim', [1 max([10 max(performance.fixationsNum)])], 'YLim', [0 1.05], 'XTickLabel', {}, 'YTickLabel', {});
     ylabel(performanceAxes1, '% correct', 'FontSize', 14);
     hLeg = legend(performanceAxes1, 'L/M', 'S');
     set(hLeg, 'Color', [0 0 0], 'FontSize', 14, 'TextColor',[1 1 1], 'Location', 'southwest');
@@ -334,7 +334,7 @@ function RenderFrame(axesStruct, fixationNo,performance, D, MDSprojection, coneI
     hold(performanceAxes2,'on')
     plot(performanceAxes2, performance.fixationsNum, performance.meanDistanceSmosaic, 'c-', 'LineWidth', 2.0);
     hold(performanceAxes2,'off')
-    set(performanceAxes2, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XLim', [1 max(performance.fixationsNum)], 'YLim', [0 15], 'XTickLabel', {}, 'YTickLabel', {});
+    set(performanceAxes2, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XLim', [1 max([10 max(performance.fixationsNum)])], 'YLim', [0 15], 'XTickLabel', {}, 'YTickLabel', {});
     hLeg = legend(performanceAxes2, 'L/M', 'S');
     ylabel(performanceAxes2, 'spatial jitter', 'FontSize', 14);
     set(hLeg, 'Color', [0 0 0], 'FontSize', 14, 'TextColor',[1 1 1], 'Location', 'northeast');
