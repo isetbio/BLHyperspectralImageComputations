@@ -224,23 +224,27 @@ function RenderFrame(axesStruct, fixationNo,performance, D, MDSprojection, coneI
     MconeIndices = coneIndices{2};
     SconeIndices = coneIndices{3};
     
+    % Determine specral range
+    xx = squeeze(MDSprojection(:,1));
+    minX = min(xx);
+    maxX = max(xx);
+    margin = 100 - (maxX - minX);
+    XLims = [minX-margin/2 maxX+margin/2];
+
+    YLims = spatialExtent*[-1 1];
+    ZLims = spatialExtent*[-1 1];
+                
     for viewIndex = 1:3
         switch viewIndex
             case 1
                 drawingAxes = xyMDSAxes;
                 viewingAngles = [0 90];
-                XLims = [];
-                YLims = spatialExtent*[-1 1];
             case 2
                 drawingAxes = xzMDSAxes;
                 viewingAngles = [0 0];
-                XLims = [];
-                YLims = spatialExtent*[-1 1];
             case 3
                 drawingAxes = yzMDSAxes;
                 viewingAngles = [90 0];
-                XLims = spatialExtent*[-1 1];
-                YLims = spatialExtent*[-1 1];
         end
         
         for coneType = 1:numel(coneIndices)
@@ -269,6 +273,7 @@ function RenderFrame(axesStruct, fixationNo,performance, D, MDSprojection, coneI
             set(drawingAxes, 'XLim', XLims);
         end
         set(drawingAxes, 'YLim', YLims);
+        set(drawingAxes, 'ZLim', ZLims);
     end % viewIndex
     
     
@@ -307,7 +312,7 @@ function RenderFrame(axesStruct, fixationNo,performance, D, MDSprojection, coneI
     axis(mosaicAxes, 'off')
     
     % Disparity matrix
-    pcolor(dispMatrixAxes, D);
+    pcolor(dispMatrixAxes, D.*tril(ones(size(D))));
     colormap(hot);
     box(dispMatrixAxes, 'on'); 
     axis(dispMatrixAxes, 'square');
@@ -321,10 +326,10 @@ function RenderFrame(axesStruct, fixationNo,performance, D, MDSprojection, coneI
     hold(performanceAxes1,'on')
     plot(performanceAxes1, performance.fixationsNum, performance.correctlyIdentifiedScones, 'c-', 'LineWidth', 2.0);
     hold(performanceAxes1,'off')
-    set(performanceAxes1, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XLim', [1 max([10 max(performance.fixationsNum)])], 'YLim', [0 1.05], 'XTickLabel', {}, 'YTickLabel', {});
+    set(performanceAxes1, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XLim', [0 max([10 max(performance.fixationsNum)])], 'YLim', [0 1.02], 'XTickLabel', {}, 'YTickLabel', {});
     ylabel(performanceAxes1, '% correct', 'FontSize', 14);
     hLeg = legend(performanceAxes1, 'L/M', 'S');
-    set(hLeg, 'Color', [0 0 0], 'FontSize', 14, 'TextColor',[1 1 1], 'Location', 'southwest');
+    set(hLeg, 'Color', [0.3 0.3 0.3], 'FontSize', 14, 'TextColor',[1 1 1], 'Location', 'southeast');
     box(performanceAxes1, 'off'); 
     grid(performanceAxes1, 'on');
     title(performanceAxes1, sprintf('fixations: %2.1f\n', fixationNo), 'FontSize', 16, 'Color', [1 1 1]);
@@ -334,10 +339,10 @@ function RenderFrame(axesStruct, fixationNo,performance, D, MDSprojection, coneI
     hold(performanceAxes2,'on')
     plot(performanceAxes2, performance.fixationsNum, performance.meanDistanceSmosaic, 'c-', 'LineWidth', 2.0);
     hold(performanceAxes2,'off')
-    set(performanceAxes2, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XLim', [1 max([10 max(performance.fixationsNum)])], 'YLim', [0 15], 'XTickLabel', {}, 'YTickLabel', {});
-    hLeg = legend(performanceAxes2, 'L/M', 'S');
+    set(performanceAxes2, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XLim', [0 max([10 max(performance.fixationsNum)])], 'YLim', [0 20], 'XTickLabel', {}, 'YTickLabel', {});
     ylabel(performanceAxes2, 'spatial jitter', 'FontSize', 14);
-    set(hLeg, 'Color', [0 0 0], 'FontSize', 14, 'TextColor',[1 1 1], 'Location', 'northeast');
+    hLeg = legend(performanceAxes2, 'L/M', 'S');
+    set(hLeg, 'Color', [0.3 0.3 0.3], 'FontSize', 14, 'TextColor',[1 1 1], 'Location', 'northeast');
     box(performanceAxes2, 'off'); 
     grid(performanceAxes2, 'on');
     
