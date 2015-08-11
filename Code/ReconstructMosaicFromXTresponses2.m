@@ -26,7 +26,7 @@ function GenerateVideoFile(resultsFile)
         end
     end
 
-    fixationsPerSceneRotation = 6;
+    fixationsPerSceneRotation = 12;
     eyeMovementsPerSceneRotation = fixationsPerSceneRotation * eyeMovementParamsStruct.samplesPerFixation;
     fullSceneRotations = floor(minEyeMovements / eyeMovementsPerSceneRotation)
     totalFixationsNum = fullSceneRotations*fixationsPerSceneRotation
@@ -60,7 +60,7 @@ function GenerateVideoFile(resultsFile)
     
     hFig = figure(1); clf;
     set(hFig, 'unit','pixel', 'menubar','none', 'Position', [10 20 1280 800], 'Color', [0 0 0]);
-    axesStruct.opticalImageAxes = axes('parent',hFig,'unit','pixel','position',[-55+10 409 640 390], 'Color', [0 0 0]);
+    axesStruct.opticalImageAxes = axes('parent',hFig,'unit','pixel','position',[-50+10 409 640 390], 'Color', [0 0 0]);
     axesStruct.current2DResponseAxes = axes('parent',hFig,'unit','pixel','position',[590+1-60+10 550 140 140], 'Color', [0 0 0]);
     
     axesStruct.dispMatrixAxes   = axes('parent',hFig,'unit','pixel','position',[265+10 4 400 400], 'Color', [0 0 0]);
@@ -81,6 +81,9 @@ function GenerateVideoFile(resultsFile)
 
         for sceneIndex = 1:numel(allSceneNames)
             
+            if (sceneIndex == 25)
+               continue; 
+            end
             % get optical/sensor params for this scene
             opticalImage = opticalImageRGBrendering{sceneIndex};
             opticalImageXposInMicrons = (0:size(opticalImage,2)-1) * opticalSampleSeparation{sceneIndex}(1);
@@ -112,6 +115,16 @@ function GenerateVideoFile(resultsFile)
                 shortHistoryXTResponse(:,end) = currentResponse;
                 current2DResponse = reshape(currentResponse, [sensorRowsCols(1) sensorRowsCols(2)]);
                 
+                kSteps = kSteps + 1;
+                
+                if (mod(timeBinIndex-1,eyeMovementParamsStruct.samplesPerFixation) < eyeMovementParamsStruct.samplesPerFixation-1)
+                    continue;
+                end
+                
+%                 if (timeBinIndex < eyeMovementsPerSceneRotation)
+%                     disp('Skipping all but last eye position');
+%                     continue;
+%                 end
                 
                 disp('Updating correlation matrix');
                 binRange = 1:size(aggregateXTresponse,2)-eyeMovementsPerSceneRotation+timeBinIndex;
@@ -121,7 +134,7 @@ function GenerateVideoFile(resultsFile)
                     D = 0.5*(D+D');
                 end
                 
-                kSteps = kSteps + 1;
+                
                 if (kSteps < minSteps)
                     disp('Skipping MDS');
                     continue;
@@ -353,23 +366,23 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
             plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'rs', 'MarkerFaceColor', 'r');
             hold(mosaicAxes,'on')
             plot(mosaicAxes,[trueConeXYLocations(k,1) MDSprojection(k,2)], ...
-                 [trueConeXYLocations(k,2) MDSprojection(k,3)], 'r-');
+                 [trueConeXYLocations(k,2) MDSprojection(k,3)], 'r-', 'LineWidth', 2);
         elseif (trueConeTypes(k) == 3) && (ismember(k, MconeIndices))
             plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'gs', 'MarkerFaceColor', 'g');
             hold(mosaicAxes,'on')
             plot(mosaicAxes, [trueConeXYLocations(k,1) MDSprojection(k,2)], ...
-                 [trueConeXYLocations(k,2) MDSprojection(k,3)], 'g-');
+                 [trueConeXYLocations(k,2) MDSprojection(k,3)], 'g-', 'LineWidth', 2);
         elseif (trueConeTypes(k) == 4) && (ismember(k, SconeIndices))
             plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'cs', 'MarkerFaceColor', [0 0.5 1.0]);
             hold(mosaicAxes,'on')
             plot(mosaicAxes, [trueConeXYLocations(k,1) MDSprojection(k,2)], ...
-                 [trueConeXYLocations(k,2) MDSprojection(k,3)], 'c-');
+                 [trueConeXYLocations(k,2) MDSprojection(k,3)], 'c-', 'LineWidth', 2);
         else
             % incorrectly indentified cone
             plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 's', 'MarkerEdgeColor', [0.8 0.8 0.8], 'MarkerFaceColor', [0.8 0.8 0.8]);
             hold(mosaicAxes,'on')
             plot(mosaicAxes, [trueConeXYLocations(k,1) MDSprojection(k,2)], ...
-                 [trueConeXYLocations(k,2) MDSprojection(k,3)], '-', 'Color', [0.8 0.8 0.8]);
+                 [trueConeXYLocations(k,2) MDSprojection(k,3)], '-', 'LineWidth', 2, 'Color', [0.8 0.8 0.8]);
         end  
     end
     plot(mosaicAxes, [0 0], spatialExtent*[-1 1], 'w-', 'LineWidth', 1);
