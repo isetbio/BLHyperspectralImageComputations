@@ -259,7 +259,7 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     yzMDSAxes = axesStruct.yzMDSAxes;
     mosaicAxes = axesStruct.mosaicAxes;
     
-   
+    % Render the current scene and eye movement
     imagesc(opticalImageXposInMicrons, opticalImageYposInMicrons, opticalImage, 'parent', opticalImageAxes);
     hold(opticalImageAxes, 'on');
     plot(opticalImageAxes,-eyeMovementsInMicrons(1:eyeMovementIndex,1), eyeMovementsInMicrons(1:eyeMovementIndex,2), 'w.-');
@@ -269,7 +269,7 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     axis(opticalImageAxes,'image');
     set(opticalImageAxes, 'CLim', [0 1]); 
     set(opticalImageAxes, 'XLim', [opticalImageXposInMicrons(1) opticalImageXposInMicrons(end)]*0.81, 'YLim', [opticalImageYposInMicrons(1) opticalImageYposInMicrons(end)]*0.81);
-    
+   
     
     
     LconeIndices = coneIndices{1};
@@ -326,6 +326,16 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
         end
         set(drawingAxes, 'YLim', YLims);
         set(drawingAxes, 'ZLim', ZLims);
+        
+        switch viewIndex
+            case 1
+                
+            case 2
+                
+            case 3
+                title(drawingAxes, 'reconstructed mosaic', 'Color', [1 1 1], 'FontSize', 14);
+        end
+        
     end % viewIndex
     
     
@@ -362,6 +372,7 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     box(mosaicAxes, 'on'); 
     axis(mosaicAxes, 'square')
     axis(mosaicAxes, 'off')
+    title(mosaicAxes, 'actual mosaic', 'Color', [1 1 1], 'FontSize', 14);
     
     % Short history XT response
     hXTrespPlot = pcolor(xtResponseAxes,shortHistoryXTresponse);
@@ -372,7 +383,7 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     set(xtResponseAxes, 'CLim', [0 1]);
     set(xtResponseAxes, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XTickLabel', {}, 'YTickLabel', {});
     
-    
+    % Current 2d respose
     hCurrRespPlot = pcolor(current2DResponseAxes, current2DResponse);
     set(hCurrRespPlot, 'EdgeColor', 'none');
     colormap(hot);
@@ -380,8 +391,9 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     axis(current2DResponseAxes, 'square');
     axis(current2DResponseAxes, 'ij')
     set(current2DResponseAxes, 'CLim', [0 1]);
-    set(current2DResponseAxes, 'Color', [1 1 1], 'XColor', [1 1 1], 'YColor', [0 0 0], 'XTick', [], 'YTick', [], 'XTickLabel', {}, 'YTickLabel', {});
-    
+    set(current2DResponseAxes, 'XLim', [0 size(current2DResponse,2)+1], 'YLim', [0 size(current2DResponse,1)+1]);
+    set(current2DResponseAxes, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [0 0 0], 'XTick', [], 'YTick', [], 'XTickLabel', {}, 'YTickLabel', {});
+    title(current2DResponseAxes, sprintf('mosaic\nactivation'), 'Color', [1 1 1], 'FontSize', 14);
     
     % Disparity matrix
     visD = D.*tril(ones(size(D)));
