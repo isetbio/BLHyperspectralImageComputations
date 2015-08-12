@@ -105,10 +105,10 @@ function GenerateVideoFile(resultsFile)
     
     hFig = figure(1); clf;
     set(hFig, 'unit','pixel', 'menubar','none', 'Position', [10 20 1280 800], 'Color', [0 0 0]);
-    axesStruct.opticalImageAxes = axes('parent',hFig,'unit','pixel','position',[-50+10 409 640 390], 'Color', [0 0 0]);
-    axesStruct.current2DResponseAxes = axes('parent',hFig,'unit','pixel','position',[590+1-60+10 550 140 140], 'Color', [0 0 0]);
+    axesStruct.opticalImageAxes = axes('parent',hFig,'unit','pixel','position',[-52+10 409 640 390], 'Color', [0 0 0]);
+    axesStruct.current2DResponseAxes = axes('parent',hFig,'unit','pixel','position',[590+1-60+15 550 140 140], 'Color', [0 0 0]);
     
-    axesStruct.dispMatrixAxes   = axes('parent',hFig,'unit','pixel','position',[265 4 400 400], 'Color', [0 0 0]);
+    axesStruct.dispMatrixAxes   = axes('parent',hFig,'unit','pixel','position',[255 4 400 400], 'Color', [0 0 0]);
     axesStruct.xtResponseAxes   = axes('parent',hFig,'unit','pixel','position',[10+10 4 220 400], 'Color', [0 0 0]);
     
     axesStruct.performanceAxes1  = axes('parent',hFig,'unit','pixel','position',[705 130 560 110], 'Color', [0 0 0]);
@@ -333,9 +333,10 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     plot(opticalImageAxes,-eyeMovementsInMicrons(eyeMovementIndex,1) + sensorOutlineInMicrons(:,1), eyeMovementsInMicrons(eyeMovementIndex,2) + sensorOutlineInMicrons(:,2), 'w-', 'LineWidth', 2.0);
     hold(opticalImageAxes, 'off');
     axis(opticalImageAxes,'image');
-    axis(opticalImageAxes,'off');
-    set(opticalImageAxes, 'CLim', [0 1]); 
-    set(opticalImageAxes, 'XLim', [opticalImageXposInMicrons(1) opticalImageXposInMicrons(end)]*(0.81), 'YLim', [opticalImageYposInMicrons(1) opticalImageYposInMicrons(end)]*(0.81));
+    axis(opticalImageAxes,'on');
+    box(opticalImageAxes,'on');
+    set(opticalImageAxes, 'CLim', [0 1], 'XColor', [1 1 1], 'YColor', [1 1 1]); 
+    set(opticalImageAxes, 'XLim', [opticalImageXposInMicrons(1) opticalImageXposInMicrons(end)]*(0.81), 'YLim', [opticalImageYposInMicrons(1) opticalImageYposInMicrons(end)]*(0.81), 'XTick', [], 'YTick', []);
    
     
     
@@ -471,13 +472,14 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     hCurrRespPlot = pcolor(current2DResponseAxes, current2DResponse);
     set(hCurrRespPlot, 'EdgeColor', 'none');
     colormap(hot);
-    box(current2DResponseAxes, 'off'); 
+     
     axis(current2DResponseAxes, 'square');
     axis(current2DResponseAxes, 'ij');
-    axis(current2DResponseAxes, 'off');
+    axis(current2DResponseAxes, 'on');
+    box(current2DResponseAxes, 'on');
     set(current2DResponseAxes, 'CLim', [0 1]);
-    set(current2DResponseAxes, 'XLim', [0 size(current2DResponse,2)+1], 'YLim', [0 size(current2DResponse,1)+1]);
-    set(current2DResponseAxes, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [0 0 0], 'XTick', [], 'YTick', [], 'XTickLabel', {}, 'YTickLabel', {});
+    set(current2DResponseAxes, 'XLim', [1 size(current2DResponse,2)], 'YLim', [1 size(current2DResponse,1)]);
+    set(current2DResponseAxes, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XTick', [], 'YTick', [], 'XTickLabel', {}, 'YTickLabel', {});
     title(current2DResponseAxes, sprintf('mosaic\nactivation'), 'Color', [1 1 1], 'FontSize', 14);
     
     % Disparity matrix
