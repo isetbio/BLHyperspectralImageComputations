@@ -15,10 +15,53 @@ end
 function GenerateVideoFile(resultsFile)
     load(resultsFile);
     
+    fixationsPerSceneRotation = 12;
+    fixationsThreshold1 = 1000;
+    fixationsThreshold2 = ceil(4000/fixationsPerSceneRotation)*fixationsPerSceneRotation;
+    
     % find minimal number of eye movements across all scenes
     minEyeMovements = 10*1000*1000;
     totalEyeMovementsNum = 0;
+    
+    scenesToExclude = [25];
+    
+    % permute eyemovements and XT response indices
+    % this only works when adaptaion is off
+    
     for sceneIndex = 1:numel(allSceneNames)
+        
+        if (ismember(sceneIndex, scenesToExclude))
+            continue;
+        end
+        
+        fprintf('Permuting eye movements and XT responses for scene %d\n', sceneIndex);
+        
+        fixationsNum = size(XTresponses{sceneIndex},2) / eyeMovementParamsStruct.samplesPerFixation;
+        permutedFixationIndices = randperm(fixationsNum);
+        
+        tmp1 = XTresponses{sceneIndex}*0;
+        tmp2 = eyeMovements{sceneIndex}*0;
+
+        kk = 1:eyeMovementParamsStruct.samplesPerFixation;
+        
+        for fixationIndex = 1:fixationsNum
+            
+            sourceIndices = (permutedFixationIndices(fixationIndex)-1)*eyeMovementParamsStruct.samplesPerFixation + kk;
+            destIndices = (fixationIndex-1)*eyeMovementParamsStruct.samplesPerFixation+kk;
+            tmp1(:,destIndices) = XTresponses{sceneIndex}(:, sourceIndices);
+            tmp2(destIndices,:) = eyeMovements{sceneIndex}(sourceIndices,:);
+            
+        end
+        
+        XTresponses{sceneIndex} = tmp1;
+        eyeMovements{sceneIndex} = tmp2;
+    end
+    
+    
+    for sceneIndex = 1:numel(allSceneNames)
+        if (ismember(sceneIndex, scenesToExclude))
+            continue;
+        end
         eyeMovementsNum = size(XTresponses{sceneIndex},2);
         totalEyeMovementsNum = totalEyeMovementsNum + eyeMovementsNum;
         if (eyeMovementsNum < minEyeMovements)
@@ -26,10 +69,10 @@ function GenerateVideoFile(resultsFile)
         end
     end
 
-    fixationsPerSceneRotation = 12;
+    
     eyeMovementsPerSceneRotation = fixationsPerSceneRotation * eyeMovementParamsStruct.samplesPerFixation;
     fullSceneRotations = floor(minEyeMovements / eyeMovementsPerSceneRotation)
-    totalFixationsNum = fullSceneRotations*fixationsPerSceneRotation
+    totalFixationsNum = (numel(allSceneNames)-numel(scenesToExclude))*fullSceneRotations*fixationsPerSceneRotation
     
     fullSceneRotations = input('Enter desired scene rotations: ');
     
@@ -58,8 +101,7 @@ function GenerateVideoFile(resultsFile)
     kSteps = 0;
     performance = [];
     fixationNo = 0;
-    fixationsThreshold1 = 10; %00;
-    fixationsThreshold2 = 30; %00;
+    
     
     hFig = figure(1); clf;
     set(hFig, 'unit','pixel', 'menubar','none', 'Position', [10 20 1280 800], 'Color', [0 0 0]);
@@ -84,7 +126,7 @@ function GenerateVideoFile(resultsFile)
 
         for sceneIndex = 1:numel(allSceneNames)
             
-            if (sceneIndex == 25)
+            if (ismember(sceneIndex, scenesToExclude))
                continue; 
             end
             % get optical/sensor params for this scene
@@ -641,8 +683,6 @@ end
                     
                     RenderResults(initialPass, trueConeTypes, disparityMatrices, previousXTresponse, XTresponses{sceneIndex}(:,timeBins), opticalImageRGBrendering{sceneIndex}, opticalSampleSeparation{sceneIndex}, eyeMovements{sceneIndex}(timeBins,:), ...
                         sensorSampleSeparation, sensorRowsCols, writerObj)
-                    %VisualizeResultsOLD(initialPass, trueConeTypes, disparityMatrices, previousXTresponse, XTresponses{sceneIndex}(:,timeBins), opticalImageRGBrendering{sceneIndex}, opticalSampleSeparation{sceneIndex}, eyeMovements{sceneIndex}(timeBins,:), ...
-                %        sensorSampleSeparation, sensorRowsCols, writerObj);
                 
                     previousXTresponse = XTresponses{sceneIndex}(:,timeBins);
                     initialPass = false;
