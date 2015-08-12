@@ -16,7 +16,7 @@ function GenerateVideoFile(resultsFile)
     load(resultsFile);
     
     fixationsPerSceneRotation = 12;
-    fixationsThreshold1 = 1000;
+    fixationsThreshold1 = ceil(500/fixationsPerSceneRotation)*fixationsPerSceneRotation;
     fixationsThreshold2 = ceil(4000/fixationsPerSceneRotation)*fixationsPerSceneRotation;
     
     % find minimal number of eye movements across all scenes
