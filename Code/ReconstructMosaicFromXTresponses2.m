@@ -238,6 +238,7 @@ function GenerateVideoFile(resultsFile)
                 % Plot the result of stage-2: Rotation and Separation of L from M
                 coneIndices = {LconeIndices, MconeIndices, SconeIndices};
                 coneColors = [1 0 0; 0 1 0; 0 0.5 1.0];
+                coneColors2 = [1 0.5 0.5; 0.5 1 0.5; 0.3 0.7 1.0];
                 spatialExtent = max(trueConeXYLocations(:)) * 1.2;
                 
                 % Update cone mosaic estimation performance
@@ -249,7 +250,7 @@ function GenerateVideoFile(resultsFile)
                     opticalImage, opticalImageXposInMicrons, opticalImageYposInMicrons, ...
                     timeBinIndex, currentEyeMovementsInMicrons, sensorOutlineInMicrons, ...
                     shortHistoryXTResponse, current2DResponse, performance, D, ...
-                    rotatedMDSprojection, coneIndices, coneColors, cLMPrime, cSPrime, pivotPrime, spatialExtent, trueConeTypes, trueConeXYLocations);
+                    rotatedMDSprojection, coneIndices, coneColors, coneColors2, cLMPrime, cSPrime, pivotPrime, spatialExtent, trueConeTypes, trueConeXYLocations);
                 
                 
                 if (1==2)
@@ -311,7 +312,7 @@ function GenerateVideoFile(resultsFile)
     close(writerObj);
 end
 
-function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMicrons, opticalImageYposInMicrons, eyeMovementIndex, eyeMovementsInMicrons, sensorOutlineInMicrons, shortHistoryXTresponse, current2DResponse, performance, D, MDSprojection, coneIndices, coneColors, cLM, cS, pivot, spatialExtent, trueConeTypes, trueConeXYLocations)
+function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMicrons, opticalImageYposInMicrons, eyeMovementIndex, eyeMovementsInMicrons, sensorOutlineInMicrons, shortHistoryXTresponse, current2DResponse, performance, D, MDSprojection, coneIndices, coneColors, coneColors2, cLM, cS, pivot, spatialExtent, trueConeTypes, trueConeXYLocations)
 
     opticalImageAxes = axesStruct.opticalImageAxes; 
     xtResponseAxes = axesStruct.xtResponseAxes;
@@ -354,7 +355,7 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     YLims = spatialExtent*[-1 1];
     ZLims = spatialExtent*[-1 1];
                 
-    coneMarkerSize = 12;
+    coneMarkerSize = 9;
     
     for viewIndex = 1:3
         switch viewIndex
@@ -374,8 +375,10 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
                 MDSprojection(coneIndices{coneType},1), ...
                 MDSprojection(coneIndices{coneType},2), ...
                 MDSprojection(coneIndices{coneType},3), ...
-                coneMarkerSize, 'filled',  ...
-                'MarkerFaceColor',coneColors(coneType,:) ...
+                70, 'filled',  ...
+                'MarkerFaceColor',coneColors2(coneType,:), ...
+                'MarkerEdgeColor',coneColors(coneType,:), ...
+                'LineWidth', 1 ...
                 );  
             if (coneType == 1)
                 hold(drawingAxes, 'on');
@@ -417,26 +420,29 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     
     for k = 1:size(trueConeXYLocations,1)
         if (trueConeTypes(k) == 2) && (ismember(k, LconeIndices))
-            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'o', 'MarkerSize', coneMarkerSize, 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r');
-            hold(mosaicAxes,'on')
             plot(mosaicAxes,[trueConeXYLocations(k,1) MDSprojection(k,2)], ...
-                 [trueConeXYLocations(k,2) MDSprojection(k,3)], 'r-', 'LineWidth', 2);
+                 [trueConeXYLocations(k,2) MDSprojection(k,3)], '-', 'Color', coneColors(trueConeTypes(k)-1,:), 'LineWidth', 2);
+            hold(mosaicAxes,'on')
+            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'o', 'MarkerSize', coneMarkerSize, 'MarkerFaceColor', coneColors2(trueConeTypes(k)-1,:), 'MarkerEdgeColor', coneColors(trueConeTypes(k)-1,:), 'LineWIdth', 1); 
+            
         elseif (trueConeTypes(k) == 3) && (ismember(k, MconeIndices))
-            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'o', 'MarkerSize', coneMarkerSize, 'MarkerFaceColor', 'g', 'MarkerEdgeColor', 'g');
-            hold(mosaicAxes,'on')
             plot(mosaicAxes, [trueConeXYLocations(k,1) MDSprojection(k,2)], ...
-                 [trueConeXYLocations(k,2) MDSprojection(k,3)], 'g-', 'LineWidth', 2);
+                 [trueConeXYLocations(k,2) MDSprojection(k,3)], '-', 'Color', coneColors(trueConeTypes(k)-1,:), 'LineWidth', 2);
+            hold(mosaicAxes,'on')
+            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'o', 'MarkerSize', coneMarkerSize, 'MarkerFaceColor', coneColors2(trueConeTypes(k)-1,:), 'MarkerEdgeColor', coneColors(trueConeTypes(k)-1,:), 'LineWIdth', 1);
+            
         elseif (trueConeTypes(k) == 4) && (ismember(k, SconeIndices))
-            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'o', 'MarkerSize', coneMarkerSize, 'MarkerFaceColor', [0 0.5 1.0], 'MarkerEdgeColor', [0 0.5 1.0]);
-            hold(mosaicAxes,'on')
             plot(mosaicAxes, [trueConeXYLocations(k,1) MDSprojection(k,2)], ...
-                 [trueConeXYLocations(k,2) MDSprojection(k,3)], '-', 'LineWidth', 2, 'Color', [0 0.5 1.0]);
+                 [trueConeXYLocations(k,2) MDSprojection(k,3)], '-', 'LineWidth', 2, 'Color', coneColors(trueConeTypes(k)-1,:));
+            hold(mosaicAxes,'on')
+            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'o', 'MarkerSize', coneMarkerSize, 'MarkerFaceColor', coneColors2(trueConeTypes(k)-1,:), 'MarkerEdgeColor', coneColors(trueConeTypes(k)-1,:), 'LineWIdth', 1);
+
         else
             % incorrectly indentified cone
-            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'o', 'MarkerSize', coneMarkerSize, 'MarkerEdgeColor', [0.8 0.8 0.8], 'MarkerFaceColor', [0.8 0.8 0.8]);
-            hold(mosaicAxes,'on')
             plot(mosaicAxes, [trueConeXYLocations(k,1) MDSprojection(k,2)], ...
                  [trueConeXYLocations(k,2) MDSprojection(k,3)], '-', 'LineWidth', 2, 'Color', [0.8 0.8 0.8]);
+            hold(mosaicAxes,'on')
+            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'o', 'MarkerSize', coneMarkerSize, 'MarkerEdgeColor', [0.7 0.7 0.7], 'MarkerFaceColor', [0.8 0.8 0.8], 'LineWIdth', 1);
         end  
     end
     plot(mosaicAxes, [0 0], spatialExtent*[-1 1], 'w-', 'LineWidth', 1);
