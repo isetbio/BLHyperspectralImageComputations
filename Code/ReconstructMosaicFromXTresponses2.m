@@ -485,7 +485,7 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     hdensityPlot = pcolor(dispMatrixAxes, visD);
     set(hdensityPlot, 'EdgeColor', 'none');
     colormap(hot);
-    box(dispMatrixAxes, 'on'); 
+    box(dispMatrixAxes, 'off'); 
     axis(dispMatrixAxes, 'square');
     axis(dispMatrixAxes, 'ij')
     set(dispMatrixAxes, 'CLim', [0 max(D(:))]);
@@ -510,7 +510,7 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     hold(performanceAxes2,'on')
     plot(performanceAxes2, performance.fixationsNum, performance.meanDistanceSmosaic, '-', 'Color', [0 0.6 1.0], 'LineWidth', 2.0);
     hold(performanceAxes2,'off')
-    set(performanceAxes2, 'Color', [0 0 0], 'XColor', [0 0 0], 'YColor', [1 1 1], 'XLim', [0 max([10 max(performance.fixationsNum)])], 'YLim', [0 20], 'XTickLabel', {}, 'YTickLabel', {});
+    set(performanceAxes2, 'Color', [0 0 0], 'XColor', [0 0 0], 'YColor', [1 1 1], 'XLim', [0 max([10 max(performance.fixationsNum)])], 'YLim', [0 25], 'XTickLabel', {}, 'YTickLabel', {});
     ylabel(performanceAxes2, 'positional error', 'FontSize', 16);
     hLeg = legend(performanceAxes2, 'L/M', 'S');
     set(hLeg, 'Color', [0.3 0.3 0.3], 'FontSize', 14, 'TextColor',[1 1 1], 'Location', 'northeast');
