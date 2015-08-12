@@ -116,7 +116,7 @@ function GenerateVideoFile(resultsFile)
     axesStruct.xyMDSAxes         = axes('parent',hFig,'unit','pixel','position',[10   130  256 226], 'Color', [0 0 0]);
     axesStruct.xzMDSAxes         = axes('parent',hFig,'unit','pixel','position',[290  130  256 226], 'Color', [0 0 0]);
     axesStruct.yzMDSAxes         = axes('parent',hFig,'unit','pixel','position',[720  130  256 256], 'Color', [0 0 0]);
-    axesStruct.mosaicAxes        = axes('parent',hFig,'unit','pixel','position',[1020 130  256 256], 'Color', [0 0 0]);
+    axesStruct.mosaicAxes        = axes('parent',hFig,'unit','pixel','position',[1010 130  256 256], 'Color', [0 0 0]);
     
     % bottom row
     axesStruct.performanceAxes1  = axes('parent',hFig,'unit','pixel','position',[30   10 600 110], 'Color', [0 0 0]);
