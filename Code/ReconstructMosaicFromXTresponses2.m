@@ -107,16 +107,16 @@ function GenerateVideoFile(resultsFile)
     set(hFig, 'unit','pixel', 'menubar','none', 'Position', [10 20 1280 800], 'Color', [0 0 0]);
     
     % top row
-    axesStruct.opticalImageAxes      = axes('parent',hFig,'unit','pixel','position',[-30 400 620 400], 'Color', [0 0 0]);
+    axesStruct.opticalImageAxes      = axes('parent',hFig,'unit','pixel','position',[-30 395 620 400], 'Color', [0 0 0]);
     axesStruct.current2DResponseAxes = axes('parent',hFig,'unit','pixel','position',[560 525 140 140], 'Color', [0 0 0]);
-    axesStruct.xtResponseAxes        = axes('parent',hFig,'unit','pixel','position',[720 400 144 400], 'Color', [0 0 0]);
-    axesStruct.dispMatrixAxes        = axes('parent',hFig,'unit','pixel','position',[870 400 400 400], 'Color', [0 0 0]);
+    axesStruct.xtResponseAxes        = axes('parent',hFig,'unit','pixel','position',[720 395 144 400], 'Color', [0 0 0]);
+    axesStruct.dispMatrixAxes        = axes('parent',hFig,'unit','pixel','position',[870 395 400 400], 'Color', [0 0 0]);
      
     % mid row
-    axesStruct.xyMDSAxes         = axes('parent',hFig,'unit','pixel','position',[10    135  256 226], 'Color', [0 0 0]);
-    axesStruct.xzMDSAxes         = axes('parent',hFig,'unit','pixel','position',[290  135  256 226], 'Color', [0 0 0]);
-    axesStruct.yzMDSAxes         = axes('parent',hFig,'unit','pixel','position',[720  135  256 256], 'Color', [0 0 0]);
-    axesStruct.mosaicAxes        = axes('parent',hFig,'unit','pixel','position',[1020 135  256 256], 'Color', [0 0 0]);
+    axesStruct.xyMDSAxes         = axes('parent',hFig,'unit','pixel','position',[10   130  256 226], 'Color', [0 0 0]);
+    axesStruct.xzMDSAxes         = axes('parent',hFig,'unit','pixel','position',[290  130  256 226], 'Color', [0 0 0]);
+    axesStruct.yzMDSAxes         = axes('parent',hFig,'unit','pixel','position',[720  130  256 256], 'Color', [0 0 0]);
+    axesStruct.mosaicAxes        = axes('parent',hFig,'unit','pixel','position',[1020 130  256 256], 'Color', [0 0 0]);
     
     % bottom row
     axesStruct.performanceAxes1  = axes('parent',hFig,'unit','pixel','position',[30   10 600 110], 'Color', [0 0 0]);
