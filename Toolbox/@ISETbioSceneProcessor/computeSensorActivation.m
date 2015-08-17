@@ -96,8 +96,8 @@ function XTresponse = computeSensorActivation(obj,varargin)
             obj.eyeMovement  = emSet(obj.eyeMovement, 'sample time', eyeMovementParams.sampleTime);
             
             % set tremor amplitude
-            obj.eyeMovement = emSet(obj.eyeMovement, 'tremor amplitude', eyeMovementParams.tremorAmplitude);     
-         
+            obj.eyeMovement = emSet(obj.eyeMovement, 'tremor amplitude', eyeMovementParams.tremorAmplitude); 
+            
             % Attach it to the sensor
             obj.sensor = sensorSet(obj.sensor,'eyemove', obj.eyeMovement);
 
@@ -149,6 +149,20 @@ function XTresponse = computeSensorActivation(obj,varargin)
             
         end
           
+        drawFirst500millisecondsOfEyeMovements = false;
+        if (drawFirst500millisecondsOfEyeMovements)
+            figure(99);
+            clf;
+            positions = sensorGet(obj.sensor,'positions');
+            time = [1:size(positions,1)]*sensorGet(obj.sensor, 'time interval');
+            plot(time, positions(:,1), 'r.'); hold on;
+            plot(time, positions(:,2), 'b.'); hold on;
+            set(gca, 'XLim', [0 500*sensorGet(obj.sensor, 'time interval')]);
+            xlabel('time (ms)');
+            title('first 500 mseconds of eye movements');
+            drawnow;
+        end
+        
         % Compute the sensor activation
         obj.sensor = sensorSet(obj.sensor, 'noise flag', sensorParams.noiseFlag);
         obj.sensor = coneAbsorptions(obj.sensor, obj.opticalImage);

@@ -129,7 +129,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponses
     % Initialize
     aggregateXTresponse = [];
     eyeMovementIndex = 1;
-    minSteps = 1*1000*60 + 2*1000 + 500;  % 1 minute + 2 seconds + 500 milliseconds
+    minSteps = 50;  % 1 minute + 2 seconds + 500 milliseconds
     
     for rotationIndex = 1:fullSceneRotations
         
@@ -220,7 +220,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponses
                 
                 
                 if (kSteps < minSteps)
-                    disp('Skipping MDS');
+                    fprintf('Skipping MDS for step %d (%d)\n', kSteps, minSteps);
                     continue;
                 end
                 
