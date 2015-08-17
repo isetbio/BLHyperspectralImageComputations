@@ -1,24 +1,26 @@
 function ReconstructMosaicFromXTresponses2
 
     conesAcross = 10;
-    noiseFlag = 'noNoise';   %noNoise or RiekeNoise
-    resultsFile = sprintf('results_%dx%d_%s.mat', conesAcross,conesAcross, noiseFlag);
+    
+    resultsFile = sprintf('results_%dx%d.mat', conesAcross,conesAcross);
       
     normalizeResponsesForEachScene = true;
+    
     adaptationModelToUse = 'linear';  % choose from 'none' or 'linear'
+    noiseFlag = 'noNoise';       % 'noNoise' or 'RiekeNoise'
     
     randomSeedForEyeMovementsOnDifferentScenes = 234823568;
     indicesOfScenesToExclude = [25];
      
     generateVideo = true;
     if (generateVideo)
-        GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude);
+        GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude);
     else
-        GenerateResultsFigure(resultsFile, adaptationModelToUse, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude);
+        GenerateResultsFigure(resultsFile, adaptationModelToUse, noiseFlag, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude);
     end
 end
 
-function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude)
+function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude)
     load(resultsFile, '-mat');
     
     fixationsPerSceneRotation = 12;
@@ -173,7 +175,13 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponses
                 initialState = riekeInit;
                 initialState.timeInterval  = sensorTimeInterval;
                 initialState.Compress = false;
-                aggregateAdaptedXTresponse = reshape(riekeLinearCone(photonRate, initialState), ...
+                adaptedXYTresponse = riekeLinearCone(photonRate, initialState);
+                if (strcmp(noiseFlag, 'RiekeNoise'))
+                    params.seed = 349573409;
+                    params.sampTime = sensorTimeInterval;
+                    [adaptedXYTresponse, ~] = riekeAddNoise(adaptedXYTresponse, params);
+                end
+                aggregateAdaptedXTresponse = reshape(adaptedXYTresponse, ...
                              [size(photonRate,1)*size(photonRate,2) size(photonRate,3)]);
                 % normalize
                 aggregateAdaptedXTresponse = aggregateAdaptedXTresponse / max(abs(aggregateAdaptedXTresponse(:)));
@@ -526,7 +534,7 @@ function RenderFrame(axesStruct, fixationNo, fixationTimeInMilliseconds, optical
 end
 
 
-function GenerateResultsFigure(resultsFile, adaptationModelToUse, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude)
+function GenerateResultsFigure(resultsFile, adaptationModelToUse, noiseFlag, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude)
     disp('Loading the raw data');
     load(resultsFile);
     
@@ -574,7 +582,13 @@ function GenerateResultsFigure(resultsFile, adaptationModelToUse, normalizeRespo
         initialState = riekeInit;
         initialState.timeInterval  = sensorTimeInterval;
         initialState.Compress = false;
-        aggregateXTresponse = reshape(riekeLinearCone(photonRate, initialState), ...
+        adaptedXYTresponse = riekeLinearCone(photonRate, initialState);
+        if (strcmp(noiseFlag, 'RiekeNoise'))
+            params.seed = 349573409;
+            params.sampTime = sensorTimeInterval;
+            [adaptedXYTresponse, ~] = riekeAddNoise(adaptedXYTresponse, params);
+        end
+        aggregateXTresponse = reshape(adaptedXYTresponse, ...
                              [size(photonRate,1)*size(photonRate,2) size(photonRate,3)]);
     end
     
