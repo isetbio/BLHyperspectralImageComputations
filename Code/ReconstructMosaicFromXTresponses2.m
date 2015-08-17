@@ -201,7 +201,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponses
                 end
                     
                 
-                disp('Updating correlation matrix');
+                
                 binRange = 1:size(aggregateXTresponse,2)-eyeMovementsPerSceneRotation+timeBinIndex;
                 
                 if (strcmp(adaptationModelToUse, 'none'))
@@ -220,11 +220,15 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponses
                     continue;
                 end
                 
-                disp('Computing MDS');
+                
                 dimensionsNum = 3;
-                [MDSprojection,stress] = mdscale(D,dimensionsNum);
-    
-                disp('Post MDS processing');
+                try
+                    [MDSprojection,stress] = mdscale(D,dimensionsNum);
+                catch err
+                    fprintf(2,'Problem with mdscale. Skipping this time bin (%d)', aggegateXTResponseOffset + timeBins(timeBinIndex));
+                    continue;
+                end
+                
                 swapMDSdimsYZ = true;
                 if (swapMDSdimsYZ)
                     % swap MDS dimension Y with MDS dimension Z
@@ -263,9 +267,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponses
                 cLMPrime = cLMPrime * MDSspatialScalingFactor;
                 pivotPrime = pivotPrime * MDSspatialScalingFactor; 
     
-                
-                
-                disp('Drawing');
+               
                 % Plot the result of stage-2: Rotation and Separation of L from M
                 coneIndices = {LconeIndices, MconeIndices, SconeIndices};
                 coneColors = [1 0 0; 0 1 0; 0 0.5 1.0];
