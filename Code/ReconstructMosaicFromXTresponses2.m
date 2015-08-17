@@ -3,16 +3,18 @@ function ReconstructMosaicFromXTresponses2
     conesAcross = 10;
     resultsFile = sprintf('results_%dx%d.mat', conesAcross,conesAcross);
       
+    normalizeResponsesForEachScene = true;
     adaptationModelToUse = 'linear';  % choose from 'none' or 'linear'
+    
     generateVideo = false;
     if (generateVideo)
-        GenerateVideoFile(resultsFile);
+        GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponsesForEachScene);
     else
-        GenerateResultsFigure(resultsFile, adaptationModelToUse);
+        GenerateResultsFigure(resultsFile, adaptationModelToUse, normalizeResponsesForEachScene);
     end
 end
 
-function GenerateVideoFile(resultsFile)
+function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponsesForEachScene)
     load(resultsFile);
     
     fixationsPerSceneRotation = 12;
@@ -26,15 +28,8 @@ function GenerateVideoFile(resultsFile)
     
     scenesToExclude = [25];
     
-    % permute eyemovements and XT response indices
-    % this only works when adaptaion is off
-    
+    % permute eyemovements and XT response indices 
     for sceneIndex = 1:numel(allSceneNames)
-        
-        % normalize XT responses for each scene
-        tmp = XTresponses{sceneIndex};
-        XTresponses{sceneIndex} = tmp / max(abs(tmp(:)));
-        clear 'tmp'
         
         if (ismember(sceneIndex, scenesToExclude))
             continue;
@@ -56,22 +51,22 @@ function GenerateVideoFile(resultsFile)
             tmp2(destIndices,:) = eyeMovements{sceneIndex}(sourceIndices,:);
         end
         
+        if (normalizeResponsesForEachScene)
+            % normalize XT responses for each scene
+            tmp1 = tmp1 / max(abs(tmp1(:)));
+        end
+        
         XTresponses{sceneIndex} = tmp1;
         eyeMovements{sceneIndex} = tmp2;
-    end
-    
-    
-    for sceneIndex = 1:numel(allSceneNames)
-        if (ismember(sceneIndex, scenesToExclude))
-            continue;
-        end
-        eyeMovementsNum = size(XTresponses{sceneIndex},2);
+        
+        eyeMovementsNum = size(eyeMovements{sceneIndex},2);
         totalEyeMovementsNum = totalEyeMovementsNum + eyeMovementsNum;
         if (eyeMovementsNum < minEyeMovements)
             minEyeMovements = eyeMovementsNum;
-        end
+        end        
     end
-
+    
+    
     
     eyeMovementsPerSceneRotation = fixationsPerSceneRotation * eyeMovementParamsStruct.samplesPerFixation;
     fullSceneRotations = floor(minEyeMovements / eyeMovementsPerSceneRotation)
@@ -79,10 +74,7 @@ function GenerateVideoFile(resultsFile)
     
     fullSceneRotations = input('Enter desired scene rotations: ');
     
-    % Initialize
-    aggregateXTresponse = [];
-    eyeMovementIndex = 1;
-    minSteps = 5;
+    
     
     % Setup video stream
     writerObj = VideoWriter('NewMosaicReconstruction.m4v', 'MPEG-4'); % H264 format
@@ -128,6 +120,11 @@ function GenerateVideoFile(resultsFile)
     
     shortHistoryXTResponse = zeros(prod(sensorRowsCols), eyeMovementsPerSceneRotation);
     
+    % Initialize
+    aggregateXTresponse = [];
+    eyeMovementIndex = 1;
+    minSteps = 5;
+    
     for rotationIndex = 1:fullSceneRotations
         
         timeBins = eyeMovementIndex + (0:eyeMovementsPerSceneRotation-1);
@@ -159,17 +156,32 @@ function GenerateVideoFile(resultsFile)
     
 
             % aggregate response
+            aggegateXTResponseOffset = size(aggregateXTresponse,2);
             aggregateXTresponse = [aggregateXTresponse XTresponses{sceneIndex}(:,timeBins)];
 
+            if (strcmp(adaptationModelToUse, 'linear'))
+                disp('Computing aggregate adapted XT response - linear adaptation');
+                photonRate = reshape(aggregateXTresponse, [sensorRowsCols(1) sensorRowsCols(2) size(aggregateXTresponse,2)]) / ...
+                     sensorConversionGain/sensorExposureTime;
+                initialState.timeInterval  = sensorTimeInterval;
+                aggregateAdaptedXTresponse = reshape(riekeLinearCone(photonRate, initialState), ...
+                             [size(photonRate,1)*size(photonRate,2) size(photonRate,3)]);
+            end
+        
             for timeBinIndex = 1:eyeMovementsPerSceneRotation 
 
-                currentResponse = XTresponses{sceneIndex}(:,timeBins(timeBinIndex));
+                if (strcmp(adaptationModelToUse, 'none'))
+                    %currentResponse = XTresponses{sceneIndex}(:,timeBins(timeBinIndex));
+                    currentResponse = aggregateXTresponse(:, aggegateXTResponseOffset + timeBins(timeBinIndex));
+                elseif (strcmp(adaptationModelToUse, 'linear'))
+                    currentResponse = aggregateAdaptedXTresponse(:, aggegateXTResponseOffset + timeBins(timeBinIndex));
+                end
+                
                 shortHistoryXTResponse = circshift(shortHistoryXTResponse, -1, 2);
                 shortHistoryXTResponse(:,end) = currentResponse;
                 current2DResponse = reshape(currentResponse, [sensorRowsCols(1) sensorRowsCols(2)]);
                 
                 kSteps = kSteps + 1;
-                
                 
                 % check if we need to accelerate
                 if (fixationNo >= fixationsThreshold2)
@@ -185,7 +197,12 @@ function GenerateVideoFile(resultsFile)
                 
                 disp('Updating correlation matrix');
                 binRange = 1:size(aggregateXTresponse,2)-eyeMovementsPerSceneRotation+timeBinIndex;
-                correlationMatrix = corrcoef((aggregateXTresponse(:,binRange))');
+                
+                if (strcmp(adaptationModelToUse, 'none'))
+                    correlationMatrix = corrcoef((aggregateXTresponse(:,binRange))');
+                elseif (strcmp(adaptationModelToUse, 'linear'))
+                    correlationMatrix = corrcoef((aggregateAdaptedXTresponse(:,binRange))');
+                end
                 D = -log((correlationMatrix+1.0)/2.0);
                 if ~issymmetric(D)
                     D = 0.5*(D+D');
@@ -533,7 +550,7 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
 end
 
 
-function GenerateResultsFigure(resultsFile, adaptationModelToUse)
+function GenerateResultsFigure(resultsFile, adaptationModelToUse, normalizeResponsesForEachScene)
     disp('Loading the raw data');
     load(resultsFile);
     
@@ -541,12 +558,12 @@ function GenerateResultsFigure(resultsFile, adaptationModelToUse)
     disp('Computing aggregate XT response - voltage');
     aggregateXTresponse = [];
     for sceneIndex = 1:numel(allSceneNames)
-        
-        
+        if (normalizeResponsesForEachScene)
         % normalize XT responses for each scene
-        %tmp = XTresponses{currentSceneIndex};
-        %XTresponses{currentSceneIndex} = tmp / max(abs(tmp(:)));
-        
+            tmp = XTresponses{sceneIndex};
+            XTresponses{sceneIndex} = tmp / max(abs(tmp(:)));
+            clear 'tmp'
+        end
         aggregateXTresponse = [aggregateXTresponse XTresponses{sceneIndex}];
     end
     
