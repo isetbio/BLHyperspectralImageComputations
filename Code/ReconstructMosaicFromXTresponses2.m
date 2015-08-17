@@ -1,15 +1,14 @@
 function ReconstructMosaicFromXTresponses2
 
-    generateVideo = false;
-    
-    useLineaAdaptionModel = true;
     conesAcross = 10;
     resultsFile = sprintf('results_%dx%d.mat', conesAcross,conesAcross);
-    
+      
+    adaptationModelToUse = 'linear';  % choose from 'none' or 'linear'
+    generateVideo = false;
     if (generateVideo)
         GenerateVideoFile(resultsFile);
     else
-        GenerateResultsFigure(resultsFile, useLineaAdaptionModel);
+        GenerateResultsFigure(resultsFile, adaptationModelToUse);
     end
 end
 
@@ -532,7 +531,7 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
 end
 
 
-function GenerateResultsFigure(resultsFile, useLineaAdaptionModel)
+function GenerateResultsFigure(resultsFile, adaptationModelToUse)
     disp('Loading the raw data');
     load(resultsFile);
     
@@ -543,7 +542,10 @@ function GenerateResultsFigure(resultsFile, useLineaAdaptionModel)
         aggregateXTresponse = [aggregateXTresponse XTresponses{sceneIndex}];
     end
     
-    if (useLineaAdaptionModel)
+    if (strcmp(adaptationModelToUse, 'none'))
+        disp('Will employ no cone adaptation model');
+    elseif (strcmp(adaptationModelToUse, 'linear'))
+        disp('Will employ the linear Rieke cone adaptation model');
         disp('Computing aggregate adapted XT response - linear adaptation');
         photonRate = reshape(aggregateXTresponse, [sensorRowsCols(1) sensorRowsCols(2) size(aggregateXTresponse,2)]) / ...
                      sensorConversionGain/sensorExposureTime;
