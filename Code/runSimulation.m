@@ -47,12 +47,12 @@ function runSimulation
     
    currentSceneIndex = 0;
 
-   for databaseIndex = 1:1
+   for databaseIndex = 1:2
        
         if (databaseIndex == 1)
            databaseName = 'manchester_database';
            sceneNames = {'scene1', 'scene2', 'scene3', 'scene4', 'scene6', 'scene7', 'scene8'};
-        
+            
         elseif (databaseIndex == 2)
            databaseName = 'harvard_database';
            % all scenes available
@@ -126,9 +126,15 @@ function runSimulation
                 opticalSampleSeparation{currentSceneIndex}  = oiGet(sceneProcessor.opticalImage, 'distPerSamp','microns');
                 
                 sensorSampleSeparation = sensorGet(sceneProcessor.sensor,'pixel size','um');
-                sensorRowsCols = sensorGet(sceneProcessor.sensor, 'size');
-                trueConeXYLocations = sensorGet(sceneProcessor.sensor, 'xy');
-                trueConeTypes = sensorGet(sceneProcessor.sensor, 'cone type');
+                sensorRowsCols         = sensorGet(sceneProcessor.sensor, 'size');
+                trueConeXYLocations    = sensorGet(sceneProcessor.sensor, 'xy');
+                trueConeTypes          = sensorGet(sceneProcessor.sensor, 'cone type');
+                
+                % information for computing linear cone adaptation signal
+                sensorConversionGain = pixelGet(sensorGet(sceneProcessor.sensor,'pixel'),'conversionGain');
+                sensorExposureTime   = sensorGet(sceneProcessor.sensor,'exposure time');   
+                sensorTimeInterval   = sensorGet(sceneProcessor.sensor, 'time interval');
+        
             else
                fprintf('Skipping scene ''%s''\n', sceneName); 
             end
@@ -144,10 +150,11 @@ function runSimulation
         'allSceneNames', 'XTresponses', 'eyeMovements', ...
         'opticalImageRGBrendering', 'opticalSampleSeparation', ...
         'trueConeXYLocations', 'trueConeTypes', 'sensorRowsCols','sensorSampleSeparation', ...
+        'sensorConversionGain', 'sensorExposureTime', 'sensorTimeInterval', ...
         'randomSeedForSensor',  'sensorParamsStruct', 'eyeMovementParamsStruct', ...
         '-v7.3');
-end
-
+end        
+        
 
 
 
