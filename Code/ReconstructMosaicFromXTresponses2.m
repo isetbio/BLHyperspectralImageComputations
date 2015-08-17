@@ -21,12 +21,12 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponses
     load(resultsFile, '-mat');
     
     fixationsPerSceneRotation = 12;
-    fixationsThreshold1 = ceil(350/fixationsPerSceneRotation)*fixationsPerSceneRotation;
-   % when conesAcross = 20 use: fixationsThreshold1 = ceil(1000/fixationsPerSceneRotation)*fixationsPerSceneRotation;
-    fixationsThreshold2 = ceil(4000/fixationsPerSceneRotation)*fixationsPerSceneRotation;
+    fixationsThreshold1 = ceil(100/fixationsPerSceneRotation)*fixationsPerSceneRotation;
+    % when conesAcross = 20 use: fixationsThreshold1 = ceil(1000/fixationsPerSceneRotation)*fixationsPerSceneRotation;
+    fixationsThreshold2 = ceil(1000/fixationsPerSceneRotation)*fixationsPerSceneRotation;
     
     % find minimal number of eye movements across all scenes
-    minEyeMovements = 10*1000*1000;
+    minEyeMovements = 1000*1000*1000;
     totalEyeMovementsNum = 0;
     
     
@@ -84,7 +84,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponses
     
     % Setup video stream
     writerObj = VideoWriter('NewMosaicReconstruction.m4v', 'MPEG-4'); % H264 format
-    writerObj.FrameRate = 15; 
+    writerObj.FrameRate = 60; 
     writerObj.Quality = 100;
     % Open video stream
     open(writerObj); 
@@ -129,7 +129,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponses
     % Initialize
     aggregateXTresponse = [];
     eyeMovementIndex = 1;
-    minSteps = 5;
+    minSteps = 1*1000*60 + 2*1000 + 500;  % 1 minute + 2 seconds + 500 milliseconds
     
     for rotationIndex = 1:fullSceneRotations
         
@@ -230,7 +230,6 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponses
                     [MDSprojection,stress] = mdscale(D,dimensionsNum);
                 catch err
                     fprintf(2,'Problem with mdscale. Skipping this time bin (%d).\n', aggegateXTResponseOffset + timeBins(timeBinIndex));
-                    
                 end
                 
                 swapMDSdimsYZ = true;
@@ -281,9 +280,10 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponses
                 % Update cone mosaic estimation performance
                 performance = mdsProcessor.ComputePerformance(trueConeTypes, trueConeXYLocations, rotatedMDSprojection, coneIndices, performance, kSteps-(minSteps-1), eyeMovementParamsStruct.samplesPerFixation);
                 
-                fixationNo = binRange(end)/eyeMovementParamsStruct.samplesPerFixation;
+                fixationNo = (binRange(end)-1)/eyeMovementParamsStruct.samplesPerFixation;
+                fixationTimeInMilliseconds = binRange(end)-1;
                 
-                RenderFrame(axesStruct, fixationNo, ...
+                RenderFrame(axesStruct, fixationNo, fixationTimeInMilliseconds, ...
                     opticalImage, opticalImageXposInMicrons, opticalImageYposInMicrons, ...
                     timeBinIndex, currentEyeMovementsInMicrons, sensorOutlineInMicrons, ...
                     shortHistoryXTResponse, current2DResponse, performance, D, ...
@@ -304,7 +304,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponses
     close(writerObj);
 end
 
-function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMicrons, opticalImageYposInMicrons, eyeMovementIndex, eyeMovementsInMicrons, sensorOutlineInMicrons, shortHistoryXTresponse, current2DResponse, performance, D, MDSprojection, coneIndices, coneColors, coneColors2, cLM, cS, pivot, spatialExtent, trueConeTypes, trueConeXYLocations)
+function RenderFrame(axesStruct, fixationNo, fixationTimeInMilliseconds, opticalImage, opticalImageXposInMicrons, opticalImageYposInMicrons, eyeMovementIndex, eyeMovementsInMicrons, sensorOutlineInMicrons, shortHistoryXTresponse, current2DResponse, performance, D, MDSprojection, coneIndices, coneColors, coneColors2, cLM, cS, pivot, spatialExtent, trueConeTypes, trueConeXYLocations)
 
     opticalImageAxes = axesStruct.opticalImageAxes; 
     xtResponseAxes = axesStruct.xtResponseAxes;
@@ -473,7 +473,15 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
     set(current2DResponseAxes, 'CLim', [0 1]);
     set(current2DResponseAxes, 'XLim', [1 size(current2DResponse,2)], 'YLim', [1 size(current2DResponse,1)]);
     set(current2DResponseAxes, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XTick', [], 'YTick', [], 'XTickLabel', {}, 'YTickLabel', {});
-    title(current2DResponseAxes,  sprintf('fixation #%2.1f\n(%2.2f hrs)', fixationNo, fixationNo/(3*60*60)), 'FontSize', 16, 'Color', [1 .8 .4]);
+    currentTimeHours = floor(fixationTimeInMilliseconds/(1000*60*60));
+    currentTimeMinutes = floor((fixationTimeInMilliseconds - currentTimeHours*(1000*60*60)) / (1000*60));
+    currentTimeSeconds = floor((fixationTimeInMilliseconds - currentTimeHours*(1000*60*60) - currentTimeMinutes*(1000*60))/1000);
+    currentTimeMilliSeconds = fixationTimeInMilliseconds - currentTimeHours*(1000*60*60) - currentTimeMinutes*(1000*60) - currentTimeSeconds*1000;
+    if (fixationNo < 1000)
+        title(current2DResponseAxes,  sprintf('fixation #%03.2f\n(%02.0f : %02.0f : %02.0f : %03.0f)', fixationNo, currentTimeHours, currentTimeMinutes, currentTimeSeconds, currentTimeMilliSeconds), 'FontSize', 16, 'Color', [1 .8 .4]);
+    else
+        title(current2DResponseAxes,  sprintf('fixation #%03.0f\n(%02.0f : %02.0f : %02.0f : %03.0f)', fixationNo, currentTimeHours, currentTimeMinutes, currentTimeSeconds, currentTimeMilliSeconds), 'FontSize', 16, 'Color', [1 .8 .4]);
+    end
     %xlabel(current2DResponseAxes, sprintf('mosaic activation'), 'Color', [1 1 1], 'FontSize', 16);
     
     % Disparity matrix

@@ -10,9 +10,9 @@ function runSimulation
     
     conesAcross = 10;
     if (conesAcross == 10)
-        eyeMovementOverlapFactor = 0.6;
+        eyeMovementOverlapFactor = 0.4;
     elseif (conesAcross == 20)
-        eyeMovementOverlapFactor = 0.9;
+        eyeMovementOverlapFactor = 0.6;
     end
     
     % Specify major simulations params
@@ -30,8 +30,8 @@ function runSimulation
     % Eye movement params
     eyeMovementParamsStruct = struct(...
         'name', 'fixationalEyeMovements', ...
-        'samplesPerFixation', 10, ...% 80, ...
-        'sampleTime', 0.01, ...  % 10 milliseconds
+        'samplesPerFixation', 100, ...% 80, ...
+        'sampleTime', 0.001, ...  % 1 milliseconds
         'tremorAmplitude', 0.0073*2, ...  % double the default value
         'overlapFactor', eyeMovementOverlapFactor ...  % 50 % overlap
     );
@@ -57,7 +57,6 @@ function runSimulation
         if (databaseIndex == 1)
            databaseName = 'manchester_database';
            sceneNames = {'scene1', 'scene2', 'scene3', 'scene4', 'scene6', 'scene7', 'scene8'};
-            
         elseif (databaseIndex == 2)
            databaseName = 'harvard_database';
            % all scenes available
@@ -126,7 +125,7 @@ function runSimulation
                 % save XT responses and eye movements for each scene
                 XTresponses{currentSceneIndex}  = single(XTresponse);
                 eyeMovements{currentSceneIndex} = single(sensorGet(sceneProcessor.sensor,'positions'));
-                 
+                
                 % extract other information for saving
                 opticalImageRGBrendering{currentSceneIndex} = oiGet(sceneProcessor.opticalImage, 'rgb image');
                 opticalSampleSeparation{currentSceneIndex}  = oiGet(sceneProcessor.opticalImage, 'distPerSamp','microns');
