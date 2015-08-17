@@ -124,7 +124,7 @@ function runSimulation
                 ); 
                 
                 % save XT responses and eye movements for each scene
-                XTresponses{currentSceneIndex}  = single(XTresponse/max(abs(XTresponse(:))));
+                XTresponses{currentSceneIndex}  = single(XTresponse);
                 eyeMovements{currentSceneIndex} = single(sensorGet(sceneProcessor.sensor,'positions'));
                  
                 % extract other information for saving
