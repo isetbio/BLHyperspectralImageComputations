@@ -6,15 +6,18 @@ function ReconstructMosaicFromXTresponses2
     normalizeResponsesForEachScene = true;
     adaptationModelToUse = 'linear';  % choose from 'none' or 'linear'
     
+    randomSeedForEyeMovementsOnDifferentScenes = 2489234823568;
+    indicesOfScenesToExclude = [25];
+     
     generateVideo = true;
     if (generateVideo)
-        GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponsesForEachScene);
+        GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude);
     else
-        GenerateResultsFigure(resultsFile, adaptationModelToUse, normalizeResponsesForEachScene);
+        GenerateResultsFigure(resultsFile, adaptationModelToUse, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude);
     end
 end
 
-function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponsesForEachScene)
+function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude)
     load(resultsFile, '-mat');
     
     fixationsPerSceneRotation = 12;
@@ -27,14 +30,13 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponses
     totalEyeMovementsNum = 0;
     
     
-    scenesToExclude = [25];
-    
-    
+    % Set the rng for repeatable eye movements
+    rng(randomSeedForEyeMovementsOnDifferentScenes);
     
     % permute eyemovements and XT response indices 
     for sceneIndex = 1:numel(allSceneNames)
         
-        if (ismember(sceneIndex, scenesToExclude))
+        if (ismember(sceneIndex, indicesOfScenesToExclude))
             continue;
         end
         
@@ -225,8 +227,8 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponses
                 try
                     [MDSprojection,stress] = mdscale(D,dimensionsNum);
                 catch err
-                    fprintf(2,'Problem with mdscale. Skipping this time bin (%d)', aggegateXTResponseOffset + timeBins(timeBinIndex));
-                    continue;
+                    fprintf(2,'Problem with mdscale. Skipping this time bin (%d).\n', aggegateXTResponseOffset + timeBins(timeBinIndex));
+                    
                 end
                 
                 swapMDSdimsYZ = true;
@@ -558,20 +560,39 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
 end
 
 
-function GenerateResultsFigure(resultsFile, adaptationModelToUse, normalizeResponsesForEachScene)
+function GenerateResultsFigure(resultsFile, adaptationModelToUse, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude)
     disp('Loading the raw data');
     load(resultsFile);
     
+    % Set the rng for repeatable eye movements
+    rng(randomSeedForEyeMovementsOnDifferentScenes);
     
     disp('Computing aggregate XT response - voltage');
     aggregateXTresponse = [];
+    
     for sceneIndex = 1:numel(allSceneNames)
-        if (normalizeResponsesForEachScene)
-        % normalize XT responses for each scene
-            tmp = XTresponses{sceneIndex};
-            XTresponses{sceneIndex} = tmp / max(abs(tmp(:)));
-            clear 'tmp'
+        
+        if (ismember(sceneIndex, indicesOfScenesToExclude))
+            continue;
         end
+        
+        fprintf('Permuting eye movements and XT responses for scene %d\n', sceneIndex);
+        fixationsNum = size(XTresponses{sceneIndex},2) / eyeMovementParamsStruct.samplesPerFixation;
+        permutedFixationIndices = randperm(fixationsNum);
+        
+        tmp = XTresponses{sceneIndex}*0;
+        for fixationIndex = 1:fixationsNum
+            sourceIndices = (permutedFixationIndices(fixationIndex)-1)*eyeMovementParamsStruct.samplesPerFixation + kk;
+            destIndices = (fixationIndex-1)*eyeMovementParamsStruct.samplesPerFixation+kk;
+            tmp(:,destIndices) = XTresponses{sceneIndex}(:, sourceIndices);
+        end
+        
+        if (normalizeResponsesForEachScene)
+            % normalize XT responses for each scene
+            tmp = tmp / max(abs(tmp(:)));
+        end
+        
+        XTresponses{sceneIndex} = tmp;
         aggregateXTresponse = [aggregateXTresponse XTresponses{sceneIndex}];
     end
     
