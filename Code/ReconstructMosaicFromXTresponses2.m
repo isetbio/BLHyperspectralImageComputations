@@ -581,6 +581,8 @@ function GenerateResultsFigure(resultsFile, adaptationModelToUse, normalizeRespo
         permutedFixationIndices = randperm(fixationsNum);
         
         tmp = XTresponses{sceneIndex}*0;
+        
+        kk = 1:eyeMovementParamsStruct.samplesPerFixation;
         for fixationIndex = 1:fixationsNum
             sourceIndices = (permutedFixationIndices(fixationIndex)-1)*eyeMovementParamsStruct.samplesPerFixation + kk;
             destIndices = (fixationIndex-1)*eyeMovementParamsStruct.samplesPerFixation+kk;
