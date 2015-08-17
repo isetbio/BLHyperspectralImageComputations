@@ -542,9 +542,10 @@ function GenerateResultsFigure(resultsFile, adaptationModelToUse)
     aggregateXTresponse = [];
     for sceneIndex = 1:numel(allSceneNames)
         
+        
         % normalize XT responses for each scene
-        tmp = XTresponses{currentSceneIndex};
-        XTresponses{currentSceneIndex} = tmp / max(abs(tmp(:)));
+        %tmp = XTresponses{currentSceneIndex};
+        %XTresponses{currentSceneIndex} = tmp / max(abs(tmp(:)));
         
         aggregateXTresponse = [aggregateXTresponse XTresponses{sceneIndex}];
     end
