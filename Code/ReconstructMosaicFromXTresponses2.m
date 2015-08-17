@@ -6,7 +6,7 @@ function ReconstructMosaicFromXTresponses2
     normalizeResponsesForEachScene = true;
     adaptationModelToUse = 'linear';  % choose from 'none' or 'linear'
     
-    generateVideo = false;
+    generateVideo = true;
     if (generateVideo)
         GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponsesForEachScene);
     else
@@ -15,10 +15,10 @@ function ReconstructMosaicFromXTresponses2
 end
 
 function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponsesForEachScene)
-    load(resultsFile);
+    load(resultsFile, '-mat');
     
     fixationsPerSceneRotation = 12;
-    fixationsThreshold1 = ceil(500/fixationsPerSceneRotation)*fixationsPerSceneRotation;
+    fixationsThreshold1 = ceil(350/fixationsPerSceneRotation)*fixationsPerSceneRotation;
    % when conesAcross = 20 use: fixationsThreshold1 = ceil(1000/fixationsPerSceneRotation)*fixationsPerSceneRotation;
     fixationsThreshold2 = ceil(4000/fixationsPerSceneRotation)*fixationsPerSceneRotation;
     
