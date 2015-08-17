@@ -159,7 +159,8 @@ function XTresponse = computeSensorActivation(obj,varargin)
         totalConesNum = coneRows * coneCols;
         XTresponse = reshape(obj.sensorActivationImage, [totalConesNum timeBins]);
     
-        computeEyeMovementCoverageImage(obj);
+        % uncomment to show coverage of eye movements
+        %computeEyeMovementCoverageImage(obj);
         
         if (saveSensorToFile)
             % Save computed sensor
