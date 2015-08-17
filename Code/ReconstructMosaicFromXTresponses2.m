@@ -26,7 +26,10 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponses
     minEyeMovements = 10*1000*1000;
     totalEyeMovementsNum = 0;
     
+    
     scenesToExclude = [25];
+    
+    
     
     % permute eyemovements and XT response indices 
     for sceneIndex = 1:numel(allSceneNames)
@@ -59,16 +62,17 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponses
         XTresponses{sceneIndex} = tmp1;
         eyeMovements{sceneIndex} = tmp2;
         
-        eyeMovementsNum = size(eyeMovements{sceneIndex},2);
+        eyeMovementsNum = size(eyeMovements{sceneIndex},1);
+        
         totalEyeMovementsNum = totalEyeMovementsNum + eyeMovementsNum;
         if (eyeMovementsNum < minEyeMovements)
             minEyeMovements = eyeMovementsNum;
-        end        
+        end   
     end
     
     
     
-    eyeMovementsPerSceneRotation = fixationsPerSceneRotation * eyeMovementParamsStruct.samplesPerFixation;
+    eyeMovementsPerSceneRotation = fixationsPerSceneRotation * eyeMovementParamsStruct.samplesPerFixation
     fullSceneRotations = floor(minEyeMovements / eyeMovementsPerSceneRotation)
     totalFixationsNum = (numel(allSceneNames)-numel(scenesToExclude))*fullSceneRotations*fixationsPerSceneRotation
     
@@ -166,6 +170,8 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponses
                 initialState.timeInterval  = sensorTimeInterval;
                 aggregateAdaptedXTresponse = reshape(riekeLinearCone(photonRate, initialState), ...
                              [size(photonRate,1)*size(photonRate,2) size(photonRate,3)]);
+                % normalize
+                aggregateAdaptedXTresponse = aggregateAdaptedXTresponse / max(abs(aggregateAdaptedXTresponse(:)));
             end
         
             for timeBinIndex = 1:eyeMovementsPerSceneRotation 
