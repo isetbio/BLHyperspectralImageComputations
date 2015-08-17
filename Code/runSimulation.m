@@ -8,13 +8,18 @@ function runSimulation
     addpath(genpath(pwd));
     cd(rootPath);
     
-    verbosity = 10;
+    conesAcross = 10;
+    if (conesAcross == 10)
+        eyeMovementOverlapFactor = 0.8;
+    elseif (conesAcross == 20)
+        eyeMovementOverlapFactor = 1.2;
+    end
     
     % Specify major simulations params
     % Sensor params
     sensorParamsStruct = struct(...
             'name', 'humanLMS', ...
-            'conesAcross', 10, ...
+            'conesAcross', conesAcross, ...
             'coneAperture', 3*1e-6, ... % specified in meters
             'LMSdensities', [0.6 0.3 0.1], ...
             'heightToWidthRatio', 1.0, ...
@@ -28,7 +33,7 @@ function runSimulation
         'samplesPerFixation', 10, ...% 80, ...
         'sampleTime', 0.01, ...  % 10 milliseconds
         'tremorAmplitude', 0.0073*2, ...  % double the default value
-        'overlapFactor', 0.4 ...  % 50 % overlap
+        'overlapFactor', eyeMovementOverlapFactor ...  % 50 % overlap
     );
 
     
@@ -87,6 +92,7 @@ function runSimulation
             fprintf('\nProcessing scene %s\n', sceneName);
         
             % Instantiate a new sceneProcessor
+            verbosity = 10;
             sceneProcessor = ISETbioSceneProcessor(databaseName, sceneName, verbosity);
             
             % Compute optical image (if necessary)
