@@ -6,10 +6,10 @@ function ReconstructMosaicFromXTresponses2
     normalizeResponsesForEachScene = true;
     adaptationModelToUse = 'linear';  % choose from 'none' or 'linear'
     
-    randomSeedForEyeMovementsOnDifferentScenes = 2489234823568;
+    randomSeedForEyeMovementsOnDifferentScenes = 234823568;
     indicesOfScenesToExclude = [25];
      
-    generateVideo = true;
+    generateVideo = false;
     if (generateVideo)
         GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude);
     else
