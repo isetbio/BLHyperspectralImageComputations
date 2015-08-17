@@ -9,7 +9,7 @@ function ReconstructMosaicFromXTresponses2
     randomSeedForEyeMovementsOnDifferentScenes = 234823568;
     indicesOfScenesToExclude = [25];
      
-    generateVideo = false;
+    generateVideo = true;
     if (generateVideo)
         GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude);
     else
@@ -169,7 +169,9 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponses
                 disp('Computing aggregate adapted XT response - linear adaptation');
                 photonRate = reshape(aggregateXTresponse, [sensorRowsCols(1) sensorRowsCols(2) size(aggregateXTresponse,2)]) / ...
                      sensorConversionGain/sensorExposureTime;
+                initialState = riekeInit;
                 initialState.timeInterval  = sensorTimeInterval;
+                initialState.Compress = false;
                 aggregateAdaptedXTresponse = reshape(riekeLinearCone(photonRate, initialState), ...
                              [size(photonRate,1)*size(photonRate,2) size(photonRate,3)]);
                 % normalize
@@ -560,7 +562,9 @@ function GenerateResultsFigure(resultsFile, adaptationModelToUse, normalizeRespo
         disp('Computing aggregate adapted XT response - linear adaptation');
         photonRate = reshape(aggregateXTresponse, [sensorRowsCols(1) sensorRowsCols(2) size(aggregateXTresponse,2)]) / ...
                      sensorConversionGain/sensorExposureTime;
+        initialState = riekeInit;
         initialState.timeInterval  = sensorTimeInterval;
+        initialState.Compress = false;
         aggregateXTresponse = reshape(riekeLinearCone(photonRate, initialState), ...
                              [size(photonRate,1)*size(photonRate,2) size(photonRate,3)]);
     end
