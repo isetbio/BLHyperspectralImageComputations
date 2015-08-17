@@ -9,7 +9,7 @@ function ReconstructMosaicFromXTresponses2
     randomSeedForEyeMovementsOnDifferentScenes = 234823568;
     indicesOfScenesToExclude = [25];
      
-    generateVideo = false;
+    generateVideo = true;
     if (generateVideo)
         GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude);
     else
@@ -76,7 +76,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponses
     
     eyeMovementsPerSceneRotation = fixationsPerSceneRotation * eyeMovementParamsStruct.samplesPerFixation
     fullSceneRotations = floor(minEyeMovements / eyeMovementsPerSceneRotation)
-    totalFixationsNum = (numel(allSceneNames)-numel(scenesToExclude))*fullSceneRotations*fixationsPerSceneRotation
+    totalFixationsNum = (numel(allSceneNames)-numel(indicesOfScenesToExclude))*fullSceneRotations*fixationsPerSceneRotation
     
     fullSceneRotations = input('Enter desired scene rotations: ');
     
@@ -137,7 +137,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponses
 
         for sceneIndex = 1:numel(allSceneNames)
             
-            if (ismember(sceneIndex, scenesToExclude))
+            if (ismember(sceneIndex, indicesOfScenesToExclude))
                continue; 
             end
             % get optical/sensor params for this scene
