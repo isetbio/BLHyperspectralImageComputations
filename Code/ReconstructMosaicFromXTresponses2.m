@@ -1,14 +1,15 @@
 function ReconstructMosaicFromXTresponses2
 
-    generateVideo = true;
+    generateVideo = false;
     
+    useLineaAdaptionModel = true;
     conesAcross = 10;
     resultsFile = sprintf('results_%dx%d.mat', conesAcross,conesAcross);
     
     if (generateVideo)
         GenerateVideoFile(resultsFile);
     else
-        GenerateResultsFigure(resultsFile);
+        GenerateResultsFigure(resultsFile, useLineaAdaptionModel);
     end
 end
 
@@ -17,6 +18,7 @@ function GenerateVideoFile(resultsFile)
     
     fixationsPerSceneRotation = 12;
     fixationsThreshold1 = ceil(500/fixationsPerSceneRotation)*fixationsPerSceneRotation;
+   % when conesAcross = 20 use: fixationsThreshold1 = ceil(1000/fixationsPerSceneRotation)*fixationsPerSceneRotation;
     fixationsThreshold2 = ceil(4000/fixationsPerSceneRotation)*fixationsPerSceneRotation;
     
     % find minimal number of eye movements across all scenes
@@ -530,14 +532,24 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
 end
 
 
-function GenerateResultsFigure(resultsFile)
+function GenerateResultsFigure(resultsFile, useLineaAdaptionModel)
     disp('Loading the raw data');
     load(resultsFile);
     
-    disp('Computing aggregate XT response');
+    
+    disp('Computing aggregate XT response - voltage');
     aggregateXTresponse = [];
     for sceneIndex = 1:numel(allSceneNames)
         aggregateXTresponse = [aggregateXTresponse XTresponses{sceneIndex}];
+    end
+    
+    if (useLineaAdaptionModel)
+        disp('Computing aggregate adapted XT response - linear adaptation');
+        photonRate = reshape(aggregateXTresponse, [sensorRowsCols(1) sensorRowsCols(2) size(aggregateXTresponse,2)]) / ...
+                     sensorConversionGain/sensorExposureTime;
+        initialState.timeInterval  = sensorTimeInterval;
+        aggregateXTresponse = reshape(riekeLinearCone(photonRate, initialState), ...
+                             [size(photonRate,1)*size(photonRate,2) size(photonRate,3)]);
     end
     
     disp('Computing correlation matrix');
