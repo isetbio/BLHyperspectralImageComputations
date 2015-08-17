@@ -1,7 +1,8 @@
 function ReconstructMosaicFromXTresponses2
 
     conesAcross = 10;
-    resultsFile = sprintf('results_%dx%d.mat', conesAcross,conesAcross);
+    noiseFlag = 'noNoise';   %noNoise or RiekeNoise
+    resultsFile = sprintf('results_%dx%d_%s.mat', conesAcross,conesAcross, noiseFlag);
       
     normalizeResponsesForEachScene = true;
     adaptationModelToUse = 'linear';  % choose from 'none' or 'linear'
