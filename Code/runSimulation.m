@@ -10,9 +10,9 @@ function runSimulation
     
     conesAcross = 10;
     if (conesAcross == 10)
-        eyeMovementOverlapFactor = 0.8;
+        eyeMovementOverlapFactor = 0.6;
     elseif (conesAcross == 20)
-        eyeMovementOverlapFactor = 1.2;
+        eyeMovementOverlapFactor = 0.9;
     end
     
     % Specify major simulations params
