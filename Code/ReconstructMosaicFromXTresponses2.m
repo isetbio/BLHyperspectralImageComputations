@@ -9,7 +9,7 @@ function ReconstructMosaicFromXTresponses2
     randomSeedForEyeMovementsOnDifferentScenes = 234823568;
     indicesOfScenesToExclude = [25];
      
-    generateVideo = true;
+    generateVideo = false;
     if (generateVideo)
         GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude);
     else
@@ -287,51 +287,6 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, normalizeResponses
                     shortHistoryXTResponse, current2DResponse, performance, D, ...
                     rotatedMDSprojection, coneIndices, coneColors, coneColors2, cLMPrime, cSPrime, pivotPrime, spatialExtent, trueConeTypes, trueConeXYLocations);
                 
-                
-                if (1==2)
-                hh = figure(1); clf;
-                    subplot(2,1,1);
-                    plot(performance.fixationsNum, performance.correctlyIdentifiedLMcones, 'rs-');
-                    hold on;
-                    plot(performance.fixationsNum, performance.correctlyIdentifiedScones, 'bs-');
-                    hold off;
-                    set(gca, 'FontSize', 12);
-                    xlabel('fixations no', 'FontSize', 14);
-                    ylabel('correctly identified cone types', 'FontSize', 14);
-                    legend('L/M cones', 'S cones');
-                    box on; grid on;
-                
-                    subplot(2,1,2);
-                    plot(performance.fixationsNum, performance.meanDistanceLMmosaic ,'rs-');
-                    hold on;
-                    plot(performance.fixationsNum, performance.meanDistanceSmosaic, 'bs-');
-                    hold off;
-                    set(gca, 'FontSize', 12);
-                    xlabel('fixations no', 'FontSize', 14);
-                    ylabel('spatial misplacement', 'FontSize', 14);
-                    legend('L/M cones', 'S cones');
-                drawnow;
-                end
-                
-                if (1==2)
-                h = figure(2); clf;
-                set(h, 'Position', [200 10 760 700], 'Name', 'Step2: Rotated');
-                    subplot('Position', subplotPosVector(1,1).v);
-                    mdsProcessor.DrawConePositions(rotatedMDSprojection, coneIndices, coneColors, cLMPrime, cSPrime, pivotPrime, {[],spatialExtent, spatialExtent}, MDSdims, [0 90]);
-
-                    subplot('Position', subplotPosVector(1,2).v);
-                    mdsProcessor.DrawConePositions(rotatedMDSprojection, coneIndices, coneColors, cLMPrime, cSPrime, pivotPrime, {[],spatialExtent, spatialExtent}, MDSdims, [0 0]);
-
-                    subplot('Position', subplotPosVector(2,1).v);
-                    mdsProcessor.DrawConePositions(rotatedMDSprojection, coneIndices, coneColors, cLMPrime, cSPrime, pivotPrime, {[],spatialExtent, spatialExtent}, MDSdims, [90 0]);
-
-                    % Finally, plot correspondence between true and recovered cone mosaic
-                    subplot('Position', subplotPosVector(2,2).v);
-                    mdsProcessor.DrawTrueAndEstimatedConeMosaics(trueConeTypes, trueConeXYLocations, rotatedMDSprojection, coneIndices, spatialExtent);
-                    title(sprintf('Eye movements: %d\n', kSteps));
-                drawnow;
-                end
-                
                 if (~isempty(writerObj))
                     frame = getframe(gcf);
                     writeVideo(writerObj, frame);
@@ -460,26 +415,26 @@ function RenderFrame(axesStruct, fixationNo, opticalImage, opticalImageXposInMic
             plot(mosaicAxes,[trueConeXYLocations(k,1) MDSprojection(k,2)], ...
                  [trueConeXYLocations(k,2) MDSprojection(k,3)], '-', 'Color', coneColors(trueConeTypes(k)-1,:), 'LineWidth', 2);
             hold(mosaicAxes,'on')
-            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'o', 'MarkerSize', coneMarkerSize, 'MarkerFaceColor', coneColors2(trueConeTypes(k)-1,:), 'MarkerEdgeColor', coneColors(trueConeTypes(k)-1,:), 'LineWIdth', 1); 
+            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'o', 'MarkerSize', coneMarkerSize, 'MarkerFaceColor', coneColors2(trueConeTypes(k)-1,:), 'MarkerEdgeColor', coneColors(trueConeTypes(k)-1,:), 'LineWidth', 1); 
             
         elseif (trueConeTypes(k) == 3) && (ismember(k, MconeIndices))
             plot(mosaicAxes, [trueConeXYLocations(k,1) MDSprojection(k,2)], ...
                  [trueConeXYLocations(k,2) MDSprojection(k,3)], '-', 'Color', coneColors(trueConeTypes(k)-1,:), 'LineWidth', 2);
             hold(mosaicAxes,'on')
-            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'o', 'MarkerSize', coneMarkerSize, 'MarkerFaceColor', coneColors2(trueConeTypes(k)-1,:), 'MarkerEdgeColor', coneColors(trueConeTypes(k)-1,:), 'LineWIdth', 1);
+            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'o', 'MarkerSize', coneMarkerSize, 'MarkerFaceColor', coneColors2(trueConeTypes(k)-1,:), 'MarkerEdgeColor', coneColors(trueConeTypes(k)-1,:), 'LineWidth', 1);
             
         elseif (trueConeTypes(k) == 4) && (ismember(k, SconeIndices))
             plot(mosaicAxes, [trueConeXYLocations(k,1) MDSprojection(k,2)], ...
                  [trueConeXYLocations(k,2) MDSprojection(k,3)], '-', 'LineWidth', 2, 'Color', coneColors(trueConeTypes(k)-1,:));
             hold(mosaicAxes,'on')
-            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'o', 'MarkerSize', coneMarkerSize, 'MarkerFaceColor', coneColors2(trueConeTypes(k)-1,:), 'MarkerEdgeColor', coneColors(trueConeTypes(k)-1,:), 'LineWIdth', 1);
+            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'o', 'MarkerSize', coneMarkerSize, 'MarkerFaceColor', coneColors2(trueConeTypes(k)-1,:), 'MarkerEdgeColor', coneColors(trueConeTypes(k)-1,:), 'LineWidth', 1);
 
         else
             % incorrectly indentified cone
             plot(mosaicAxes, [trueConeXYLocations(k,1) MDSprojection(k,2)], ...
                  [trueConeXYLocations(k,2) MDSprojection(k,3)], '-', 'LineWidth', 2, 'Color', [0.8 0.8 0.8]);
             hold(mosaicAxes,'on')
-            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'o', 'MarkerSize', coneMarkerSize, 'MarkerEdgeColor', [0.7 0.7 0.7], 'MarkerFaceColor', [0.8 0.8 0.8], 'LineWIdth', 1);
+            plot(mosaicAxes, trueConeXYLocations(k,1), trueConeXYLocations(k,2), 'o', 'MarkerSize', coneMarkerSize, 'MarkerEdgeColor', [0.7 0.7 0.7], 'MarkerFaceColor', [0.8 0.8 0.8], 'LineWidth', 1);
         end  
     end
     plot(mosaicAxes, [0 0], spatialExtent*[-1 1], 'w-', 'LineWidth', 1);
@@ -679,39 +634,42 @@ function GenerateResultsFigure(resultsFile, adaptationModelToUse, normalizeRespo
     
     % Plot the result of stage-1: Separation of S and L/M
     coneIndices = {LMconeIndices(1:10), LMconeIndices(11:end), SconeIndices};
-    coneColors  = [0 0 0; 0 0 0; 0 0 1];
+    coneColors = [0 0 0; 0 0 0; 0 0 1];
+    coneColors2 = [0.5 0.5 0.5; 0.5 0.5 0.5; 0.3 0.7 1.0];
+    
     spatialExtent = {[], [], []};
     h = figure(1); clf;
-    set(h, 'Position', [100 10 760 700], 'Name', 'Step1: Identify S-cone positions');
+    set(h, 'Position', [100 10 760 700], 'Name', 'Step1: Identify S-cone positions', 'Color', [1 1 1]);
         subplot('Position', subplotPosVector(1,1).v);
-        mdsProcessor.DrawConePositions(MDSprojection, coneIndices, coneColors, cLM, cS, pivot, spatialExtent, MDSdims, [0 90]);
+        mdsProcessor.DrawConePositions(MDSprojection, coneIndices, coneColors, coneColors2, cLM, cS, pivot, spatialExtent, MDSdims, [0 90]);
 
         subplot('Position', subplotPosVector(1,2).v);
-        mdsProcessor.DrawConePositions(MDSprojection, coneIndices, coneColors, cLM, cS, pivot, spatialExtent, MDSdims, [0 0]);
+        mdsProcessor.DrawConePositions(MDSprojection, coneIndices, coneColors, coneColors2, cLM, cS, pivot, spatialExtent, MDSdims, [0 0]);
 
         subplot('Position', subplotPosVector(2,1).v);
-        mdsProcessor.DrawConePositions(MDSprojection, coneIndices, coneColors, cLM, cS, pivot, spatialExtent, MDSdims, [90 0]);
+        mdsProcessor.DrawConePositions(MDSprojection, coneIndices, coneColors, coneColors2, cLM, cS, pivot, spatialExtent, MDSdims, [90 0]);
     drawnow;
     NicePlot.exportFigToPDF('Raw.pdf',h,300);
     
     % Plot the result of stage-2: Rotation and Separation of L from M
     coneIndices = {LconeIndices, MconeIndices, SconeIndices};
-    coneColors = [1 0 0; 0 1 0; 0 0 1];
+    coneColors = [1 0 0; 0 1 0; 0 0.5 1.0];
+    coneColors2 = [1 0.5 0.5; 0.5 1 0.5; 0.3 0.7 1.0];
     spatialExtent = max(trueConeXYLocations(:)) * 1.2;
     h = figure(2); clf;
-    set(h, 'Position', [200 10 760 700], 'Name', 'Step2: Rotated');
+    set(h, 'Position', [200 10 760 700], 'Name', 'Step2: Rotated', 'Color', [1 1 1]);
         subplot('Position', subplotPosVector(1,1).v);
-        mdsProcessor.DrawConePositions(rotatedMDSprojection, coneIndices, coneColors, cLMPrime, cSPrime, pivotPrime, {[],spatialExtent, spatialExtent}, MDSdims, [0 90]);
+        mdsProcessor.DrawConePositions(rotatedMDSprojection, coneIndices, coneColors, coneColors2, cLMPrime, cSPrime, pivotPrime, {[],spatialExtent, spatialExtent}, MDSdims, [0 90]);
     
         subplot('Position', subplotPosVector(1,2).v);
-        mdsProcessor.DrawConePositions(rotatedMDSprojection, coneIndices, coneColors, cLMPrime, cSPrime, pivotPrime, {[],spatialExtent, spatialExtent}, MDSdims, [0 0]);
+        mdsProcessor.DrawConePositions(rotatedMDSprojection, coneIndices, coneColors, coneColors2, cLMPrime, cSPrime, pivotPrime, {[],spatialExtent, spatialExtent}, MDSdims, [0 0]);
     
         subplot('Position', subplotPosVector(2,1).v);
-        mdsProcessor.DrawConePositions(rotatedMDSprojection, coneIndices, coneColors, cLMPrime, cSPrime, pivotPrime, {[],spatialExtent, spatialExtent}, MDSdims, [90 0]);
+        mdsProcessor.DrawConePositions(rotatedMDSprojection, coneIndices, coneColors, coneColors2, cLMPrime, cSPrime, pivotPrime, {[],spatialExtent, spatialExtent}, MDSdims, [90 0]);
     
         % Finally, plot correspondence between true and recovered cone mosaic
         subplot('Position', subplotPosVector(2,2).v);
-        mdsProcessor.DrawTrueAndEstimatedConeMosaics(trueConeTypes, trueConeXYLocations, rotatedMDSprojection, coneIndices, spatialExtent);
+        mdsProcessor.DrawTrueAndEstimatedConeMosaics(trueConeTypes, trueConeXYLocations, rotatedMDSprojection, coneIndices, coneColors, coneColors2, spatialExtent);
     drawnow;
     NicePlot.exportFigToPDF('Rotated.pdf',h,300);
 
