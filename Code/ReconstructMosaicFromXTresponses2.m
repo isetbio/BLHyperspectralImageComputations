@@ -7,12 +7,12 @@ function ReconstructMosaicFromXTresponses2
     normalizeResponsesForEachScene = true;
     
     adaptationModelToUse = 'linear';  % choose from 'none' or 'linear'
-    noiseFlag = 'noNoise';       % 'noNoise' or 'RiekeNoise'
+    noiseFlag = 'RiekeNoise';       % 'noNoise' or 'RiekeNoise'
     
     randomSeedForEyeMovementsOnDifferentScenes = 234823568;
     indicesOfScenesToExclude = [25];
      
-    generateVideo = true;
+    generateVideo = false;
     if (generateVideo)
         GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude);
     else
@@ -86,7 +86,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
     
     
     % Setup video stream
-    writerObj = VideoWriter('NewMosaicReconstruction.m4v', 'MPEG-4'); % H264 format
+    writerObj = VideoWriter(sprintf('MosaicReconstruction_%s_%s.m4v',adaptationModelToUse, noiseFlag), 'MPEG-4'); % H264 format
     writerObj.FrameRate = 60; 
     writerObj.Quality = 100;
     % Open video stream
@@ -177,6 +177,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
                 initialState.Compress = false;
                 adaptedXYTresponse = riekeLinearCone(photonRate, initialState);
                 if (strcmp(noiseFlag, 'RiekeNoise'))
+                    disp('Adding noise to adapted responses');
                     params.seed = 349573409;
                     params.sampTime = sensorTimeInterval;
                     [adaptedXYTresponse, ~] = riekeAddNoise(adaptedXYTresponse, params);
@@ -584,6 +585,7 @@ function GenerateResultsFigure(resultsFile, adaptationModelToUse, noiseFlag, nor
         initialState.Compress = false;
         adaptedXYTresponse = riekeLinearCone(photonRate, initialState);
         if (strcmp(noiseFlag, 'RiekeNoise'))
+            disp('Adding noise to adapted responses');
             params.seed = 349573409;
             params.sampTime = sensorTimeInterval;
             [adaptedXYTresponse, ~] = riekeAddNoise(adaptedXYTresponse, params);
