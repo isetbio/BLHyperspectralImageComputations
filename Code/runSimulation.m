@@ -8,7 +8,7 @@ function runSimulation
     addpath(genpath(pwd));
     cd(rootPath);
     
-    conesAcross = 10;
+    conesAcross = 20;
     if (conesAcross == 10)
         eyeMovementOverlapFactor = 0.4;
     elseif (conesAcross == 20)
@@ -38,7 +38,7 @@ function runSimulation
 
     
     
-    intermediateVisualization = false;
+    intermediateVisualization = true;
     if (intermediateVisualization)
         visualizeResultsAsIsetbioWindows = false;
         visualizeResultsAsImages = true;
@@ -52,11 +52,13 @@ function runSimulation
     
    currentSceneIndex = 0;
 
-   for databaseIndex = 1:2
+   for databaseIndex = 1:1
        
         if (databaseIndex == 1)
            databaseName = 'manchester_database';
            sceneNames = {'scene1', 'scene2', 'scene3', 'scene4', 'scene6', 'scene7', 'scene8'};
+           %sceneNames = {'scene7', 'scene1', 'scene2'}; % used for demo video of opticalImage->eyemovement->2DmosaicActivation->AdaptedResponse
+           sceneNames = {'scene1'}
         elseif (databaseIndex == 2)
            databaseName = 'harvard_database';
            % all scenes available
@@ -98,9 +100,10 @@ function runSimulation
             sceneProcessor.computeOpticalImage(...
                 'forceRecompute', false, ...
                 'visualizeResultsAsIsetbioWindows', false, ...
-                'visualizeResultsAsImages', false ...
+                'visualizeResultsAsImages', true ...
             );
-    
+            pause;
+            
             acceptScene = 'y'; %input('Is this scene acceptable ? [y/n] ', 's');
             
             if (strcmp(acceptScene, 'y')) 
