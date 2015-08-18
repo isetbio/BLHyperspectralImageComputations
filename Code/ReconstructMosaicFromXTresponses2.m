@@ -3,22 +3,424 @@ function ReconstructMosaicFromXTresponses2
     conesAcross = 10;
     
     resultsFile = sprintf('results_%dx%d.mat', conesAcross,conesAcross);
-      
+    resultsFile1 = sprintf('results_%dx%d_ForDemoVideo1.mat', conesAcross,conesAcross);
+    resultsFile2 = sprintf('results_%dx%d_ForDemoVideo2.mat', conesAcross,conesAcross);
+    
     normalizeResponsesForEachScene = true;
     
     adaptationModelToUse = 'linear';  % choose from 'none' or 'linear'
-    noiseFlag = 'RiekeNoise';       % 'noNoise' or 'RiekeNoise'
+    noiseFlag = 'noNoise';       % 'noNoise' or 'RiekeNoise'
     
     randomSeedForEyeMovementsOnDifferentScenes = 234823568;
     indicesOfScenesToExclude = [25];
      
-    generateVideo = false;
+    generateVideo = true;
     if (generateVideo)
-        GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude);
+        %GeneratePartsVideoFile(resultsFile1, adaptationModelToUse, noiseFlag, normalizeResponsesForEachScene, round(randomSeedForEyeMovementsOnDifferentScenes*17.4), indicesOfScenesToExclude);
+        GeneratePartsVideo2File(resultsFile2, adaptationModelToUse, noiseFlag, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude);
+        %GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude);
     else
         GenerateResultsFigure(resultsFile, adaptationModelToUse, noiseFlag, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude);
     end
 end
+
+
+function GeneratePartsVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude)
+    load(resultsFile, '-mat');
+    
+    fixationsPerSceneRotation = 12;
+    
+    % find minimal number of eye movements across all scenes
+    minEyeMovements = 1000*1000*1000;
+    totalEyeMovementsNum = 0;
+    
+    
+    % Set the rng for repeatable eye movements
+    rng(randomSeedForEyeMovementsOnDifferentScenes);
+    
+    % permute eyemovements and XT response indices 
+    for sceneIndex = 1:numel(allSceneNames)
+        
+        if (ismember(sceneIndex, indicesOfScenesToExclude))
+            continue;
+        end
+        
+        fprintf('Permuting eye movements and XT responses for scene %d\n', sceneIndex);
+        fixationsNum = size(XTresponses{sceneIndex},2) / eyeMovementParamsStruct.samplesPerFixation;
+        permutedFixationIndices = randperm(fixationsNum);
+        
+        tmp1 = XTresponses{sceneIndex}*0;
+        tmp2 = eyeMovements{sceneIndex}*0;
+
+        kk = 1:eyeMovementParamsStruct.samplesPerFixation;
+        
+        for fixationIndex = 1:fixationsNum
+            sourceIndices = (permutedFixationIndices(fixationIndex)-1)*eyeMovementParamsStruct.samplesPerFixation + kk;
+            destIndices = (fixationIndex-1)*eyeMovementParamsStruct.samplesPerFixation+kk;
+            tmp1(:,destIndices) = XTresponses{sceneIndex}(:, sourceIndices);
+            tmp2(destIndices,:) = eyeMovements{sceneIndex}(sourceIndices,:);
+        end
+        
+        if (normalizeResponsesForEachScene)
+            % normalize XT responses for each scene
+            tmp1 = tmp1 / max(abs(tmp1(:)));
+        end
+        
+        XTresponses{sceneIndex} = tmp1;
+        eyeMovements{sceneIndex} = tmp2;
+        
+        eyeMovementsNum = size(eyeMovements{sceneIndex},1);
+        
+        totalEyeMovementsNum = totalEyeMovementsNum + eyeMovementsNum;
+        if (eyeMovementsNum < minEyeMovements)
+            minEyeMovements = eyeMovementsNum;
+        end   
+    end
+    
+    eyeMovementsPerSceneRotation = fixationsPerSceneRotation * eyeMovementParamsStruct.samplesPerFixation
+    fullSceneRotations = floor(minEyeMovements / eyeMovementsPerSceneRotation)
+    totalFixationsNum = (numel(allSceneNames)-numel(indicesOfScenesToExclude))*fullSceneRotations*fixationsPerSceneRotation
+    
+    fullSceneRotations = 1;
+    
+    % Setup video stream
+    writerObj = VideoWriter(sprintf('OpticalImageEyeMovementMosaicActivationAdaptedResponse.m4v'), 'MPEG-4'); % H264 format
+    writerObj.FrameRate = 60; 
+    writerObj.Quality = 100;
+    % Open video stream
+    open(writerObj); 
+    
+    kSteps = 0;
+    performance = [];
+    fixationNo = 0;
+    
+    hFig = figure(1); clf;
+    set(hFig, 'unit','pixel', 'menubar','none', 'Position', [10 20 1280 800], 'Color', [0 0 0]);
+    
+    % top row
+    axesStruct.opticalImageAxes      = axes('parent',hFig,'unit','pixel','position',[30 45 900 700], 'Color', [0 0 0]);
+    axesStruct.current2DResponseAxes = axes('parent',hFig,'unit','pixel','position',[950 435 300 300], 'Color', [0 0 0]);
+    axesStruct.current2DAdaptedResponseAxes     = axes('parent',hFig,'unit','pixel','position',[950 55 300 300], 'Color', [0 0 0]);
+    % Initialize
+    aggregateXTresponse = [];
+    eyeMovementIndex = 1;
+    minSteps = 10;  % 1 minute + 2 seconds + 500 milliseconds
+    
+    for rotationIndex = 1:fullSceneRotations
+        
+        timeBins = eyeMovementIndex + (0:eyeMovementsPerSceneRotation-1);
+
+        for sceneIndex = 1:numel(allSceneNames)
+
+            % get optical/sensor params for this scene
+            opticalImage = opticalImageRGBrendering{sceneIndex};
+            opticalImageXposInMicrons = (0:size(opticalImage,2)-1) * opticalSampleSeparation{sceneIndex}(1);
+            opticalImageYposInMicrons = (0:size(opticalImage,1)-1) * opticalSampleSeparation{sceneIndex}(2);
+            opticalImageXposInMicrons = opticalImageXposInMicrons - round(opticalImageXposInMicrons(end)/2);
+            opticalImageYposInMicrons = opticalImageYposInMicrons - round(opticalImageYposInMicrons(end)/2);
+            selectXPosIndices = 1:1:size(opticalImage,2);
+            selectYPosIndices = 1:1:size(opticalImage,1);
+            opticalImage = opticalImage(selectYPosIndices, selectXPosIndices,:);
+            opticalImageXposInMicrons = opticalImageXposInMicrons(selectXPosIndices);
+            opticalImageYposInMicrons = opticalImageYposInMicrons(selectYPosIndices);
+            
+            % Get eye movements for this scene scan
+            currentEyeMovements = eyeMovements{sceneIndex}(timeBins,:);
+            currentEyeMovementsInMicrons(:,1) = currentEyeMovements(:,1) * sensorSampleSeparation(1);
+            currentEyeMovementsInMicrons(:,2) = currentEyeMovements(:,2) * sensorSampleSeparation(2);
+
+            sensorOutlineInMicrons(:,1) = [-1 -1 1 1 -1] * sensorRowsCols(2)/2 * sensorSampleSeparation(1);
+            sensorOutlineInMicrons(:,2) = [-1 1 1 -1 -1] * sensorRowsCols(1)/2 * sensorSampleSeparation(2);
+   
+            % aggregate response
+            aggegateXTResponseOffset = size(aggregateXTresponse,2);
+            aggregateXTresponse = [aggregateXTresponse XTresponses{sceneIndex}(:,timeBins)];
+
+            if (strcmp(adaptationModelToUse, 'linear'))
+                disp('Computing aggregate adapted XT response - linear adaptation');
+                photonRate = reshape(aggregateXTresponse, [sensorRowsCols(1) sensorRowsCols(2) size(aggregateXTresponse,2)]) / ...
+                     sensorConversionGain/sensorExposureTime;
+                initialState = riekeInit;
+                initialState.timeInterval  = sensorTimeInterval;
+                initialState.Compress = false;
+                adaptedXYTresponse = riekeLinearCone(photonRate, initialState);
+                if (strcmp(noiseFlag, 'RiekeNoise'))
+                    disp('Adding noise to adapted responses');
+                    params.seed = 349573409;
+                    params.sampTime = sensorTimeInterval;
+                    [adaptedXYTresponse, ~] = riekeAddNoise(adaptedXYTresponse, params);
+                end
+                aggregateAdaptedXTresponse = reshape(adaptedXYTresponse, ...
+                             [size(photonRate,1)*size(photonRate,2) size(photonRate,3)]);
+                % normalize
+                aggregateAdaptedXTresponse = aggregateAdaptedXTresponse / max(abs(aggregateAdaptedXTresponse(:)));
+            end
+        
+            for timeBinIndex = 1:eyeMovementsPerSceneRotation 
+
+               tt = aggegateXTResponseOffset + timeBins(timeBinIndex);
+               currentResponse        = aggregateXTresponse(:, tt); 
+               currentAdaptedResponse = aggregateAdaptedXTresponse(:, tt);
+                
+               current2DResponse        = reshape(currentResponse,        [sensorRowsCols(1) sensorRowsCols(2)]);
+               current2DAdaptedResponse = reshape(currentAdaptedResponse, [sensorRowsCols(1) sensorRowsCols(2)]);
+               kSteps = kSteps + 1;
+                    
+                
+                
+                binRange = 1:size(aggregateXTresponse,2)-eyeMovementsPerSceneRotation+timeBinIndex;
+                fixationNo = (binRange(end))/eyeMovementParamsStruct.samplesPerFixation;
+                
+                RenderPartsFrame(axesStruct, fixationNo,  ...
+                    opticalImage, opticalImageXposInMicrons, opticalImageYposInMicrons, ...
+                    timeBinIndex, currentEyeMovementsInMicrons, sensorOutlineInMicrons, ...
+                    current2DResponse, current2DAdaptedResponse);
+                
+                if (~isempty(writerObj))
+                    frame = getframe(gcf);
+                    writeVideo(writerObj, frame);
+                end
+        
+            end % timeBin
+        end % sceneIndex
+        
+        eyeMovementIndex = eyeMovementIndex + eyeMovementsPerSceneRotation;
+    end% rotationIndex
+    
+    % close video stream and save movie
+    close(writerObj);
+end
+
+
+
+function GeneratePartsVideo2File(resultsFile, adaptationModelToUse, noiseFlag, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude)
+    load(resultsFile, '-mat');
+     
+    fixationsPerSceneRotation = 12;
+     
+    % find minimal number of eye movements across all scenes
+    minEyeMovements = 1000*1000*1000;
+    totalEyeMovementsNum = 0;
+    
+    
+    % Set the rng for repeatable eye movements
+    rng(randomSeedForEyeMovementsOnDifferentScenes);
+    
+    % permute eyemovements and XT response indices 
+    for sceneIndex = 1:numel(allSceneNames)
+        fprintf('Permuting eye movements and XT responses for scene %d\n', sceneIndex);
+        fixationsNum = size(XTresponses{sceneIndex},2) / eyeMovementParamsStruct.samplesPerFixation;
+        permutedFixationIndices = randperm(fixationsNum);
+        
+        tmp1 = XTresponses{sceneIndex}*0;
+        tmp2 = eyeMovements{sceneIndex}*0;
+
+        kk = 1:eyeMovementParamsStruct.samplesPerFixation;
+        
+        for fixationIndex = 1:fixationsNum
+            sourceIndices = (permutedFixationIndices(fixationIndex)-1)*eyeMovementParamsStruct.samplesPerFixation + kk;
+            destIndices = (fixationIndex-1)*eyeMovementParamsStruct.samplesPerFixation+kk;
+            tmp1(:,destIndices) = XTresponses{sceneIndex}(:, sourceIndices);
+            tmp2(destIndices,:) = eyeMovements{sceneIndex}(sourceIndices,:);
+        end
+        
+        if (normalizeResponsesForEachScene)
+            % normalize XT responses for each scene
+            tmp1 = tmp1 / max(abs(tmp1(:)));
+        end
+        
+        XTresponses{sceneIndex} = tmp1;
+        eyeMovements{sceneIndex} = tmp2;
+        
+        eyeMovementsNum = size(eyeMovements{sceneIndex},1);
+        
+        totalEyeMovementsNum = totalEyeMovementsNum + eyeMovementsNum;
+        if (eyeMovementsNum < minEyeMovements)
+            minEyeMovements = eyeMovementsNum;
+        end   
+        
+    end % sceneIndex
+    
+    eyeMovementsPerSceneRotation = fixationsPerSceneRotation * eyeMovementParamsStruct.samplesPerFixation
+    fullSceneRotations = floor(minEyeMovements / eyeMovementsPerSceneRotation)
+    totalFixationsNum = (numel(allSceneNames)-numel(indicesOfScenesToExclude))*fullSceneRotations*fixationsPerSceneRotation
+    
+    fullSceneRotations = input('Enter desired scene rotations: ');
+    
+    % Setup video stream
+    writerObj = VideoWriter(sprintf('DispatiryMatrixBuildUp.m4v'), 'MPEG-4'); % H264 format
+    writerObj.FrameRate = 60; 
+    writerObj.Quality = 100;
+    % Open video stream
+    open(writerObj); 
+    
+    kSteps = 0;
+    performance = [];
+    fixationNo = 0;
+    
+    
+    hFig = figure(1); clf;
+    set(hFig, 'unit','pixel', 'menubar','none', 'Position', [10 20 1280 800], 'Color', [0 0 0]);
+    
+    axesStruct.current2DResponseAxes = axes('parent',hFig,'unit','pixel','position',[20 270 200 200], 'Color', [0 0 0]);
+    axesStruct.xtResponseAxes        = axes('parent',hFig,'unit','pixel','position',[250 200 600 400], 'Color', [0 0 0]);
+    axesStruct.dispMatrixAxes        = axes('parent',hFig,'unit','pixel','position',[860 200 400 400], 'Color', [0 0 0]);
+    
+    shortHistoryXTResponse = zeros(prod(sensorRowsCols), eyeMovementsPerSceneRotation);
+    
+    % Initialize
+    aggregateXTresponse = [];
+    eyeMovementIndex = 1;
+    minSteps = 10;  % 1 minute + 2 seconds + 500 milliseconds
+    
+    for rotationIndex = 1:fullSceneRotations
+        
+        timeBins = eyeMovementIndex + (0:eyeMovementsPerSceneRotation-1);
+
+        for sceneIndex = 1:numel(allSceneNames)
+            
+            % aggregate response
+            aggegateXTResponseOffset = size(aggregateXTresponse,2);
+            aggregateXTresponse = [aggregateXTresponse XTresponses{sceneIndex}(:,timeBins)];
+            
+            if (strcmp(adaptationModelToUse, 'linear'))
+                disp('Computing aggregate adapted XT response - linear adaptation');
+                photonRate = reshape(aggregateXTresponse, [sensorRowsCols(1) sensorRowsCols(2) size(aggregateXTresponse,2)]) / ...
+                     sensorConversionGain/sensorExposureTime;
+                initialState = riekeInit;
+                initialState.timeInterval  = sensorTimeInterval;
+                initialState.Compress = false;
+                adaptedXYTresponse = riekeLinearCone(photonRate, initialState);
+                if (strcmp(noiseFlag, 'RiekeNoise'))
+                    disp('Adding noise to adapted responses');
+                    params.seed = 349573409;
+                    params.sampTime = sensorTimeInterval;
+                    [adaptedXYTresponse, ~] = riekeAddNoise(adaptedXYTresponse, params);
+                end
+                aggregateAdaptedXTresponse = reshape(adaptedXYTresponse, ...
+                             [size(photonRate,1)*size(photonRate,2) size(photonRate,3)]);
+                % normalize
+                aggregateAdaptedXTresponse = aggregateAdaptedXTresponse / max(abs(aggregateAdaptedXTresponse(:)));
+            end
+            
+            
+            for timeBinIndex = 1:eyeMovementsPerSceneRotation 
+
+                
+                
+                if (strcmp(adaptationModelToUse, 'none'))
+                    %currentResponse = XTresponses{sceneIndex}(:,timeBins(timeBinIndex));
+                    currentResponse = aggregateXTresponse(:, aggegateXTResponseOffset + timeBins(timeBinIndex));
+                    %currentMax = max(max(abs(aggregateXTresponse(:, aggegateXTResponseOffset + 1:timeBins(timeBinIndex)))));
+                elseif (strcmp(adaptationModelToUse, 'linear'))
+                    currentResponse = aggregateAdaptedXTresponse(:, aggegateXTResponseOffset + timeBins(timeBinIndex));
+                    %currentMax = max(max(abs(aggregateAdaptedXTresponse(:, aggegateXTResponseOffset + 1:timeBins(timeBinIndex)))));
+                end
+                
+                
+                
+                shortHistoryXTResponse = circshift(shortHistoryXTResponse, -1, 2);
+                shortHistoryXTResponse(:,end) = currentResponse;
+                current2DResponse = reshape(currentResponse, [sensorRowsCols(1) sensorRowsCols(2)]);
+                
+                kSteps = kSteps + 1;
+                
+                
+                binRange = 1:size(aggregateXTresponse,2)-eyeMovementsPerSceneRotation+timeBinIndex;
+                
+                if (strcmp(adaptationModelToUse, 'none'))
+                    correlationMatrix = corrcoef((aggregateXTresponse(:,binRange))');
+                elseif (strcmp(adaptationModelToUse, 'linear'))
+                    correlationMatrix = corrcoef((aggregateAdaptedXTresponse(:,binRange))');
+                end
+                D = -log((correlationMatrix+1.0)/2.0);
+                if ~issymmetric(D)
+                    D = 0.5*(D+D');
+                end
+                
+                
+                if (kSteps < minSteps)
+                    fprintf('Skipping MDS for step %d (%d)\n', kSteps, minSteps);
+                    continue;
+                end
+                
+                fixationNo = (binRange(end)-1)/eyeMovementParamsStruct.samplesPerFixation;
+                fixationTimeInMilliseconds = binRange(end)-1;
+                
+                RenderParts2Frame(axesStruct, fixationNo, fixationTimeInMilliseconds, timeBinIndex, ...
+                    shortHistoryXTResponse, current2DResponse, D );
+                
+                if (~isempty(writerObj))
+                    frame = getframe(gcf);
+                    writeVideo(writerObj, frame);
+                end
+           end % timeBin
+        end % sceneIndex
+        
+        eyeMovementIndex = eyeMovementIndex + eyeMovementsPerSceneRotation;
+    end% rotationIndex
+    
+    % close video stream and save movie
+    close(writerObj);
+            
+end
+
+function  RenderParts2Frame(axesStruct, fixationNo, fixationTimeInMilliseconds, eyeMovementIndex, ...
+                    shortHistoryXTResponse, current2DResponse, D )
+                
+    xtResponseAxes = axesStruct.xtResponseAxes;
+    current2DResponseAxes = axesStruct.current2DResponseAxes;
+    dispMatrixAxes   = axesStruct.dispMatrixAxes;
+    
+    % Current 2d respose
+    hCurrRespPlot = pcolor(current2DResponseAxes, current2DResponse);
+    set(hCurrRespPlot, 'EdgeColor', 'none');
+    axis(current2DResponseAxes, 'square');
+    axis(current2DResponseAxes, 'ij');
+    axis(current2DResponseAxes, 'on');
+    box(current2DResponseAxes, 'on');
+    set(current2DResponseAxes, 'CLim', [0 1]);
+    set(current2DResponseAxes, 'XLim', [1 size(current2DResponse,2)], 'YLim', [1 size(current2DResponse,1)]);
+    set(current2DResponseAxes, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XTick', [], 'YTick', [], 'XTickLabel', {}, 'YTickLabel', {});
+    currentTimeHours = floor(fixationTimeInMilliseconds/(1000*60*60));
+    currentTimeMinutes = floor((fixationTimeInMilliseconds - currentTimeHours*(1000*60*60)) / (1000*60));
+    currentTimeSeconds = floor((fixationTimeInMilliseconds - currentTimeHours*(1000*60*60) - currentTimeMinutes*(1000*60))/1000);
+    currentTimeMilliSeconds = fixationTimeInMilliseconds - currentTimeHours*(1000*60*60) - currentTimeMinutes*(1000*60) - currentTimeSeconds*1000;
+    if (fixationNo < 1000)
+        title(current2DResponseAxes,  sprintf('fixation #%03.2f\n(%02.0f : %02.0f : %02.0f : %03.0f)', fixationNo, currentTimeHours, currentTimeMinutes, currentTimeSeconds, currentTimeMilliSeconds), 'FontSize', 20, 'Color', [1 .8 .4]);
+    else
+        title(current2DResponseAxes,  sprintf('fixation #%03.0f\n(%02.0f : %02.0f : %02.0f : %03.0f)', fixationNo, currentTimeHours, currentTimeMinutes, currentTimeSeconds, currentTimeMilliSeconds), 'FontSize', 20, 'Color', [1 .8 .4]);
+    end
+    %xlabel(current2DResponseAxes, sprintf('mosaic activation'), 'Color', [1 1 1], 'FontSize', 16);
+    
+    
+    % Short history XT response
+    hXTrespPlot = pcolor(xtResponseAxes, shortHistoryXTResponse);
+    set(hXTrespPlot, 'EdgeColor', 'none');
+    box(xtResponseAxes, 'on'); 
+    axis(xtResponseAxes, 'ij')
+    set(xtResponseAxes, 'CLim', [0 1]);
+    set(xtResponseAxes, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XTick', (0.0 : 200 : 1200), 'YTick', [0:100:400], 'XTickLabel', {}, 'YTickLabel', {}, 'FontSize', 16);
+    grid(xtResponseAxes, 'on');
+    title(xtResponseAxes, sprintf('spatiotemporal adapted response (%2.1f seconds)', size(shortHistoryXTResponse,2)/1000), 'FontSize', 20, 'Color', [1 .8 .4]);
+    
+    % Disparity matrix
+    visD = D.*tril(ones(size(D)));
+    hdensityPlot = pcolor(dispMatrixAxes, visD);
+    set(hdensityPlot, 'EdgeColor', 'none');
+    colormap(hot);
+    box(dispMatrixAxes, 'off'); 
+    axis(dispMatrixAxes, 'square');
+    axis(dispMatrixAxes, 'ij')
+    set(dispMatrixAxes, 'CLim', [0 max(D(:))]);
+    set(dispMatrixAxes, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XTick', [], 'YTick', [],'XTickLabel', {}, 'YTickLabel', {});
+    title(dispMatrixAxes, sprintf('disparity matrix'), 'FontSize', 20, 'Color', [1 .8 .4]);
+    
+    colormap(hot);
+    
+    drawnow
+end
+
 
 function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude)
     load(resultsFile, '-mat');
@@ -92,15 +494,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
     % Open video stream
     open(writerObj); 
         
-    subplotPosVector = NicePlot.getSubPlotPosVectors(...
-        'rowsNum',      2, ...
-        'colsNum',      2, ...
-        'widthMargin',  0.07, ...
-        'leftMargin',   0.06, ...
-        'bottomMargin', 0.06, ...
-        'heightMargin', 0.09, ...
-        'topMargin',    0.01);
-    MDSdims = {'MDS-x', 'MDS-y', 'MDS-z'};
+    
     
     kSteps = 0;
     performance = [];
@@ -132,7 +526,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
     % Initialize
     aggregateXTresponse = [];
     eyeMovementIndex = 1;
-    minSteps = 50;  % 1 minute + 2 seconds + 500 milliseconds
+    minSteps = 10;  % 1 minute + 2 seconds + 500 milliseconds
     
     for rotationIndex = 1:fullSceneRotations
         
@@ -314,6 +708,67 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
     close(writerObj);
 end
 
+
+
+function RenderPartsFrame(axesStruct, fixationNo, ...
+                    opticalImage, opticalImageXposInMicrons, opticalImageYposInMicrons, ...
+                    eyeMovementIndex, eyeMovementsInMicrons, sensorOutlineInMicrons, ...
+                    current2DResponse, current2DAdaptedResponse)
+                
+    opticalImageAxes = axesStruct.opticalImageAxes; 
+    current2DResponseAxes = axesStruct.current2DResponseAxes;
+    current2DAdaptedResponseAxes = axesStruct.current2DAdaptedResponseAxes;
+    
+     % Render the current scene and eye movement
+    imagesc(opticalImageXposInMicrons, opticalImageYposInMicrons, opticalImage, 'parent', opticalImageAxes);
+    hold(opticalImageAxes, 'on');
+    plot(opticalImageAxes,-eyeMovementsInMicrons(1:eyeMovementIndex,1), eyeMovementsInMicrons(1:eyeMovementIndex,2), 'w.-', 'LineWidth', 2.0);
+    plot(opticalImageAxes,-eyeMovementsInMicrons(1:eyeMovementIndex,1), eyeMovementsInMicrons(1:eyeMovementIndex,2), 'k.');
+    plot(opticalImageAxes,-eyeMovementsInMicrons(eyeMovementIndex,1) + sensorOutlineInMicrons(:,1), eyeMovementsInMicrons(eyeMovementIndex,2) + sensorOutlineInMicrons(:,2), 'w-', 'LineWidth', 3.0);
+    hold(opticalImageAxes, 'off');
+    axis(opticalImageAxes,'image');
+    axis(opticalImageAxes,'off');
+    box(opticalImageAxes,'off');
+    set(opticalImageAxes, 'CLim', [0 1], 'XColor', [1 1 1], 'YColor', [1 1 1]); 
+    set(opticalImageAxes, 'XLim', [opticalImageXposInMicrons(1) opticalImageXposInMicrons(end)]*(0.81), 'YLim', [opticalImageYposInMicrons(1) opticalImageYposInMicrons(end)]*(0.81), 'XTick', [], 'YTick', []);
+    if (fixationNo < 1000)
+        title(opticalImageAxes,  sprintf('fixation #%03.2f', fixationNo), 'FontSize', 20, 'Color', [1 .8 .4]);
+    else
+        title(opticalImageAxes,  sprintf('fixation #%03.0f', fixationNo), 'FontSize', 20, 'Color', [1 .8 .4]);
+    end
+    
+    % mosaic activation 
+    hCurrRespPlot = pcolor(current2DResponseAxes, current2DResponse);
+    set(hCurrRespPlot, 'EdgeColor', 'none');
+    
+    axis(current2DResponseAxes, 'square');
+    axis(current2DResponseAxes, 'ij');
+    axis(current2DResponseAxes, 'on');
+    box(current2DResponseAxes, 'on');
+    set(current2DResponseAxes, 'CLim', [0 1]);
+    set(current2DResponseAxes, 'XLim', [1 size(current2DResponse,2)], 'YLim', [1 size(current2DResponse,1)]);
+    set(current2DResponseAxes, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XTick', [], 'YTick', [], 'XTickLabel', {}, 'YTickLabel', {});
+    title(current2DResponseAxes, 'mosaic activation', 'FontSize', 20, 'Color', [1 .8 .4]);
+    
+    % Adapted respose
+    hCurrRespPlot2 = pcolor(current2DAdaptedResponseAxes, current2DAdaptedResponse);
+    set(hCurrRespPlot2, 'EdgeColor', 'none');
+    
+    axis(current2DAdaptedResponseAxes, 'square');
+    axis(current2DAdaptedResponseAxes, 'ij');
+    axis(current2DAdaptedResponseAxes, 'on');
+    box(current2DAdaptedResponseAxes, 'on');
+    set(current2DAdaptedResponseAxes, 'CLim', [0 1]);
+    set(current2DAdaptedResponseAxes, 'XLim', [1 size(current2DResponse,2)], 'YLim', [1 size(current2DResponse,1)]);
+    set(current2DAdaptedResponseAxes, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XTick', [], 'YTick', [], 'XTickLabel', {}, 'YTickLabel', {});
+    title(current2DAdaptedResponseAxes,  sprintf('adapted response'), 'FontSize', 20, 'Color', [1 .8 .4]);
+
+    
+    colormap(hot);
+end
+
+
+                
 function RenderFrame(axesStruct, fixationNo, fixationTimeInMilliseconds, opticalImage, opticalImageXposInMicrons, opticalImageYposInMicrons, eyeMovementIndex, eyeMovementsInMicrons, sensorOutlineInMicrons, shortHistoryXTresponse, current2DResponse, performance, D, MDSprojection, coneIndices, coneColors, coneColors2, cLM, cS, pivot, spatialExtent, trueConeTypes, trueConeXYLocations)
 
     opticalImageAxes = axesStruct.opticalImageAxes; 
@@ -474,8 +929,6 @@ function RenderFrame(axesStruct, fixationNo, fixationTimeInMilliseconds, optical
     % Current 2d respose
     hCurrRespPlot = pcolor(current2DResponseAxes, current2DResponse);
     set(hCurrRespPlot, 'EdgeColor', 'none');
-    colormap(hot);
-     
     axis(current2DResponseAxes, 'square');
     axis(current2DResponseAxes, 'ij');
     axis(current2DResponseAxes, 'on');
@@ -504,6 +957,8 @@ function RenderFrame(axesStruct, fixationNo, fixationTimeInMilliseconds, optical
     axis(dispMatrixAxes, 'ij')
     set(dispMatrixAxes, 'CLim', [0 max(D(:))]);
     set(dispMatrixAxes, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XTick', [], 'YTick', [],'XTickLabel', {}, 'YTickLabel', {});
+    
+    colormap(hot);
     
     
     % Performance as a function of time
