@@ -124,7 +124,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
     % Initialize
     aggregateXTresponse = [];
     eyeMovementIndex = 1;
-    minSteps = 50;  % 1 minute + 2 seconds + 500 milliseconds
+    minSteps = 10;  % 1 minute + 2 seconds + 500 milliseconds
     
     try
         
