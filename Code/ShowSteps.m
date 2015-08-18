@@ -38,7 +38,8 @@ function ShowSteps
     
     eyeMovementInMicrons = [...
             0    0; ...
-            99 505 ...
+            99 505; ...
+            193 339
         ];
     
     
@@ -81,19 +82,19 @@ function ShowSteps
         sensorPositionInCones(kPos,2) =  eyeMovementInMicrons(kPos,2) / (coneAperture*1e6);
     end
     
-    % create eye movement struct
-    eyeMovement = emCreate();
-    % Attach it to the sensor
-    sensor = sensorSet(sensor,'eyemove', eyeMovement);
-            
-    sensor = sensorSet(sensor,'positions', sensorPositionInCones*0);
-    sensor = emGenSequence(sensor);
+    % Update the sensor        
     sensor = sensorSet(sensor,'positions', sensorPositionInCones);
     
+    % Compute sensor activation at each eye movement
     sensor = coneAbsorptions(sensor, sceneProcessor.opticalImage);
         
+    % Extract the sensor activation
     sensorActivationImage = sensorGet(sensor, 'volts');
 
+    
+    % Which position to show
+    kPos = 3;
+    
     coneXYLocations    = sensorGet(sensor, 'xy');
     coneTypes          = sensorGet(sensor, 'cone type');
                 
@@ -112,7 +113,7 @@ function ShowSteps
     subplot('Position', [0.56 0.07 0.43 0.90]);
     imagesc(opticalImageXaxis, opticalImageYaxis, opticalImageRGBmatrix);
     hold on;
-    kPos = 2;
+    
     xL = eyeMovementInMicrons(kPos,1) - sensorWidth/2;
     xR = xL + sensorWidth;
     y1 = eyeMovementInMicrons(kPos,2) - sensorHeight/2;
@@ -149,14 +150,13 @@ function ShowSteps
     imagesc(opticalImageXaxis, opticalImageYaxis, opticalImageRGBmatrix);
     axis 'image'
     hold on;
-    kPos = 2;
     xL = eyeMovementInMicrons(kPos,1) - sensorWidth/2;
     xR = xL + sensorWidth;
     y1 = eyeMovementInMicrons(kPos,2) - sensorHeight/2;
     y2 = y1 + sensorHeight;
     plot([xL xL xR xR xL], [y1 y2 y2 y1 y1], 'w-');
     hold off;
-    set(gca, 'XLim', 100 + [-100 100], 'YLim', 505+[-100 100]);
+    set(gca, 'XLim', eyeMovementInMicrons(kPos,1) + [-100 100], 'YLim', eyeMovementInMicrons(kPos,2)+[-100 100]);
     
     xlabel('retinal microns',  'Color', [1 1 0.8]); ylabel('retinal microns',  'Color', [1 1 0.8]);
     set(gca, 'XColor', [1 1 0.8], 'YColor', [1 1 0.8]);
