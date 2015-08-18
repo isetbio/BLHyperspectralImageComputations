@@ -426,9 +426,11 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
     load(resultsFile, '-mat');
     
     fixationsPerSceneRotation = 12;
-    fixationsThreshold1 = ceil(100/fixationsPerSceneRotation)*fixationsPerSceneRotation;
+    scenesNumForThreshold1 = 10;
+    scenesNumForThreshold2 = 30;
+    fixationsThreshold1 = ceil((fixationsPerSceneRotation*scenesNumForThreshold1)/fixationsPerSceneRotation)*fixationsPerSceneRotation;
     % when conesAcross = 20 use: fixationsThreshold1 = ceil(1000/fixationsPerSceneRotation)*fixationsPerSceneRotation;
-    fixationsThreshold2 = ceil(1000/fixationsPerSceneRotation)*fixationsPerSceneRotation;
+    fixationsThreshold2 = ceil((fixationsPerSceneRotation*scenesNumForThreshold2)/fixationsPerSceneRotation)*fixationsPerSceneRotation;
     
     % find minimal number of eye movements across all scenes
     minEyeMovements = 1000*1000*1000;
@@ -493,7 +495,6 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
     writerObj.Quality = 100;
     % Open video stream
     open(writerObj); 
-        
     
     
     kSteps = 0;
@@ -528,6 +529,8 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
     eyeMovementIndex = 1;
     minSteps = 10;  % 1 minute + 2 seconds + 500 milliseconds
     
+    try
+        
     for rotationIndex = 1:fullSceneRotations
         
         timeBins = eyeMovementIndex + (0:eyeMovementsPerSceneRotation-1);
@@ -584,11 +587,20 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
         
             for timeBinIndex = 1:eyeMovementsPerSceneRotation 
 
+                relevantTimeBins = aggegateXTResponseOffset + timeBins(timeBinIndex);
+                
                 if (strcmp(adaptationModelToUse, 'none'))
                     %currentResponse = XTresponses{sceneIndex}(:,timeBins(timeBinIndex));
-                    currentResponse = aggregateXTresponse(:, aggegateXTResponseOffset + timeBins(timeBinIndex));
+                    if (max(relevantTimeBins) > size(aggregateXTresponse,2))
+                        relevantTimeBins = size(aggregateXTresponse,2);
+                    end
+                    currentResponse = aggregateXTresponse(:, relevantTimeBins);
                 elseif (strcmp(adaptationModelToUse, 'linear'))
-                    currentResponse = aggregateAdaptedXTresponse(:, aggegateXTResponseOffset + timeBins(timeBinIndex));
+                    if (max(relevantTimeBins) > size(aggregateAdaptedXTresponse,2))
+                        fprintf(2, 'requested up to bin %d, but only got up to %d (full length)\n', max(relevantTimeBins), size(aggregateAdaptedXTresponse,2));
+                        relevantTimeBins = size(aggregateAdaptedXTresponse,2);
+                    end
+                    currentResponse = aggregateAdaptedXTresponse(:, relevantTimeBins);
                 end
                 
                 shortHistoryXTResponse = circshift(shortHistoryXTResponse, -1, 2);
@@ -684,7 +696,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
                 % Update cone mosaic estimation performance
                 performance = mdsProcessor.ComputePerformance(trueConeTypes, trueConeXYLocations, rotatedMDSprojection, coneIndices, performance, kSteps-(minSteps-1), eyeMovementParamsStruct.samplesPerFixation);
                 
-                fixationNo = (binRange(end)-1)/eyeMovementParamsStruct.samplesPerFixation;
+                fixationNo = (binRange(end))/eyeMovementParamsStruct.samplesPerFixation;
                 fixationTimeInMilliseconds = binRange(end)-1;
                 
                 RenderFrame(axesStruct, fixationNo, fixationTimeInMilliseconds, ...
@@ -703,6 +715,15 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
         
         eyeMovementIndex = eyeMovementIndex + eyeMovementsPerSceneRotation;
     end% rotationIndex
+    
+    catch err
+         fprintf(2, 'Encountered error. Will attempt to save movie now.\n');
+         % close video stream and save movie
+         close(writerObj);
+         
+         fprintf('Saved movie. Rethrowing the error now.\n');
+         rethrow(err);
+    end
     
     % close video stream and save movie
     close(writerObj);
