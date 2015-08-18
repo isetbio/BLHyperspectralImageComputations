@@ -1,10 +1,17 @@
 function ReconstructMosaicFromXTresponses2
 
-    conesAcross = 10;
+    selectedDemo = input('Full reconstruction video (1), Demo1 short video (2), Demo2 short video (3) : ');
     
-    resultsFile = sprintf('results_%dx%d.mat', conesAcross,conesAcross);
-    resultsFile1 = sprintf('results_%dx%d_ForDemoVideo1.mat', conesAcross,conesAcross);
-    resultsFile2 = sprintf('results_%dx%d_ForDemoVideo2.mat', conesAcross,conesAcross);
+    if (selectedDemo == 1)
+        conesAcross = 10;
+        resultsFile = sprintf('results_%dx%d.mat', conesAcross,conesAcross);
+    elseif (selectedDemo == 2)
+        conesAcross = 20;
+        resultsFile1 = sprintf('results_%dx%d_ForDemoVideo1.mat', conesAcross,conesAcross);
+    elseif (selectedDemo == 3)
+        conesAcross = 20;
+        resultsFile2 = sprintf('results_%dx%d_ForDemoVideo2.mat', conesAcross,conesAcross);
+    end
     
     normalizeResponsesForEachScene = true;
     
@@ -16,9 +23,18 @@ function ReconstructMosaicFromXTresponses2
      
     generateVideo = true;
     if (generateVideo)
-        %GeneratePartsVideoFile(resultsFile1, adaptationModelToUse, noiseFlag, normalizeResponsesForEachScene, round(randomSeedForEyeMovementsOnDifferentScenes*17.4), indicesOfScenesToExclude);
-        GeneratePartsVideo2File(resultsFile2, adaptationModelToUse, noiseFlag, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude);
-        %GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude);
+        if (selectedDemo == 1)
+            GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude);
+        end
+        
+        if (selectedDemo == 2)
+            GeneratePartsVideoFile(resultsFile1, adaptationModelToUse, noiseFlag, normalizeResponsesForEachScene, round(randomSeedForEyeMovementsOnDifferentScenes*17.4), indicesOfScenesToExclude);
+        end
+        
+        if (selectedDemo == 3)
+            GeneratePartsVideo2File(resultsFile2, adaptationModelToUse, noiseFlag, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude);
+        end
+        
     else
         GenerateResultsFigure(resultsFile, adaptationModelToUse, noiseFlag, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude);
     end
