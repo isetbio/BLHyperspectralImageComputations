@@ -1053,7 +1053,9 @@ function GenerateResultsFigure(resultsFile, adaptationModelToUse, noiseFlag, nor
     
     % use this for running on computers with low memory
     fixationsPerSceneToUse = inf;  % use all
-    fixationsPerSceneToUse = 24;  % use some
+    %fixationsPerSceneToUse = 24;  % use some
+    
+    kk = 1:eyeMovementParamsStruct.samplesPerFixation;
     
     for sceneIndex = 1:numel(allSceneNames)
         
@@ -1065,14 +1067,15 @@ function GenerateResultsFigure(resultsFile, adaptationModelToUse, noiseFlag, nor
         fixationsNum = size(XTresponses{sceneIndex},2) / eyeMovementParamsStruct.samplesPerFixation;
         permutedFixationIndices = randperm(fixationsNum);
         
-        tmp = XTresponses{sceneIndex}*0;
-        
-        kk = 1:eyeMovementParamsStruct.samplesPerFixation;
+        if (fixationsPerSceneToUse > fixationsNum)
+            fixationsPerSceneToUse = fixationsNum;
+        end
         
         if (~isinf(fixationsPerSceneToUse))
             fixationsNum = fixationsPerSceneToUse;
         end
         
+        tmp = XTresponses{sceneIndex}*0;
         for fixationIndex = 1:fixationsNum
             sourceIndices = (permutedFixationIndices(fixationIndex)-1)*eyeMovementParamsStruct.samplesPerFixation + kk;
             destIndices = (fixationIndex-1)*eyeMovementParamsStruct.samplesPerFixation+kk;
