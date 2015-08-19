@@ -1,16 +1,23 @@
 function ReconstructMosaicFromXTresponses2
 
-    selectedDemo = input('Full reconstruction video (1), Demo1 short video (2), Demo2 short video (3) : ');
-    
-    if (selectedDemo == 1)
-        conesAcross = 10;
-        resultsFile = sprintf('results_%dx%d.mat', conesAcross,conesAcross);
-    elseif (selectedDemo == 2)
-        conesAcross = 20;
-        resultsFile1 = sprintf('results_%dx%d_ForDemoVideo1.mat', conesAcross,conesAcross);
-    elseif (selectedDemo == 3)
-        conesAcross = 20;
-        resultsFile2 = sprintf('results_%dx%d_ForDemoVideo2.mat', conesAcross,conesAcross);
+    generateVideo = false;
+
+    conesAcross = 10;
+    resultsFile = sprintf('results_%dx%d.mat', conesAcross,conesAcross);
+            
+    if (generateVideo)
+        selectedDemo = input('Full reconstruction video (1), Demo1 short video (2), Demo2 short video (3) : ');
+
+        if (selectedDemo == 1)
+            conesAcross = 10;
+            resultsFile = sprintf('results_%dx%d.mat', conesAcross,conesAcross);
+        elseif (selectedDemo == 2)
+            conesAcross = 20;
+            resultsFile1 = sprintf('results_%dx%d_ForDemoVideo1.mat', conesAcross,conesAcross);
+        elseif (selectedDemo == 3)
+            conesAcross = 20;
+            resultsFile2 = sprintf('results_%dx%d_ForDemoVideo2.mat', conesAcross,conesAcross);
+        end
     end
     
     normalizeResponsesForEachScene = true;
@@ -21,7 +28,7 @@ function ReconstructMosaicFromXTresponses2
     randomSeedForEyeMovementsOnDifferentScenes = 234823568;
     indicesOfScenesToExclude = [25];
      
-    generateVideo = true;
+    
     if (generateVideo)
         if (selectedDemo == 1)
             GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude);
@@ -1029,13 +1036,24 @@ end
 
 function GenerateResultsFigure(resultsFile, adaptationModelToUse, noiseFlag, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude)
     disp('Loading the raw data');
-    load(resultsFile);
+    %whos('-file', resultsFile)
+    
+    % load all but the opticalImageRGBrendering
+    load(resultsFile, 'XTresponses',  'allSceneNames', 'eyeMovementParamsStruct', 'eyeMovements', ...               
+         'opticalSampleSeparation', 'randomSeedForSensor', ...
+          'sensorConversionGain', 'sensorExposureTime', 'sensorParamsStruct', ...
+          'sensorRowsCols', 'sensorSampleSeparation', 'sensorTimeInterval', ...
+          'trueConeTypes', 'trueConeXYLocations');
     
     % Set the rng for repeatable eye movements
     rng(randomSeedForEyeMovementsOnDifferentScenes);
     
     disp('Computing aggregate XT response - voltage');
     aggregateXTresponse = [];
+    
+    % use this for running on computers with low memory
+    fixationsPerSceneToUse = inf;  % use all
+    fixationsPerSceneToUse = 24;  % use some
     
     for sceneIndex = 1:numel(allSceneNames)
         
@@ -1050,6 +1068,11 @@ function GenerateResultsFigure(resultsFile, adaptationModelToUse, noiseFlag, nor
         tmp = XTresponses{sceneIndex}*0;
         
         kk = 1:eyeMovementParamsStruct.samplesPerFixation;
+        
+        if (~isinf(fixationsPerSceneToUse))
+            fixationsNum = fixationsPerSceneToUse;
+        end
+        
         for fixationIndex = 1:fixationsNum
             sourceIndices = (permutedFixationIndices(fixationIndex)-1)*eyeMovementParamsStruct.samplesPerFixation + kk;
             destIndices = (fixationIndex-1)*eyeMovementParamsStruct.samplesPerFixation+kk;
@@ -1061,8 +1084,9 @@ function GenerateResultsFigure(resultsFile, adaptationModelToUse, noiseFlag, nor
             tmp = tmp / max(abs(tmp(:)));
         end
         
-        XTresponses{sceneIndex} = tmp;
-        aggregateXTresponse = [aggregateXTresponse XTresponses{sceneIndex}];
+        % empty to save space
+        XTresponses{sceneIndex} = [];
+        aggregateXTresponse = [aggregateXTresponse tmp]; 
     end
     
     if (strcmp(adaptationModelToUse, 'none'))
@@ -1070,20 +1094,19 @@ function GenerateResultsFigure(resultsFile, adaptationModelToUse, noiseFlag, nor
     elseif (strcmp(adaptationModelToUse, 'linear'))
         disp('Will employ the linear Rieke cone adaptation model');
         disp('Computing aggregate adapted XT response - linear adaptation');
-        photonRate = reshape(aggregateXTresponse, [sensorRowsCols(1) sensorRowsCols(2) size(aggregateXTresponse,2)]) / ...
-                     sensorConversionGain/sensorExposureTime;
+        % covert to photonRate
+        aggregateXTresponse = aggregateXTresponse / sensorConversionGain/sensorExposureTime;
         initialState = riekeInit;
         initialState.timeInterval  = sensorTimeInterval;
         initialState.Compress = false;
-        adaptedXYTresponse = riekeLinearCone(photonRate, initialState);
+        % adapted response (linear filter)
+        aggregateXTresponse = riekeLinearCone(aggregateXTresponse, initialState);
         if (strcmp(noiseFlag, 'RiekeNoise'))
             disp('Adding noise to adapted responses');
             params.seed = 349573409;
             params.sampTime = sensorTimeInterval;
-            [adaptedXYTresponse, ~] = riekeAddNoise(adaptedXYTresponse, params);
+            [aggregateXTresponse, ~] = riekeAddNoise(aggregateXTresponse, params);
         end
-        aggregateXTresponse = reshape(adaptedXYTresponse, ...
-                             [size(photonRate,1)*size(photonRate,2) size(photonRate,3)]);
     end
     
     disp('Computing correlation matrix');
