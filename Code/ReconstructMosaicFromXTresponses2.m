@@ -1,6 +1,6 @@
 function ReconstructMosaicFromXTresponses2
 
-    generateVideo = false;
+    generateVideo = true;
 
     conesAcross = 15;
     resultsFile = sprintf('results_%dx%d.mat', conesAcross,conesAcross);
