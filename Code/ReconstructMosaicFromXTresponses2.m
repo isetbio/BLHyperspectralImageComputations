@@ -2,7 +2,7 @@ function ReconstructMosaicFromXTresponses2
 
     generateVideo = true;
 
-    conesAcross = 15;
+    conesAcross = 10;
     resultsFile = sprintf('results_%dx%d.mat', conesAcross,conesAcross);
             
     if (generateVideo)
@@ -551,7 +551,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
     % Initialize
     aggregateXTresponse = [];
     eyeMovementIndex = 1;
-    minSteps = 10;  % 1 minute + 2 seconds + 500 milliseconds
+    minSteps = 20;  % 1 minute + 2 seconds + 500 milliseconds
     
     try
         
@@ -594,7 +594,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
                 initialState = riekeInit;
                 initialState.timeInterval  = sensorTimeInterval;
                 initialState.Compress = false;
-                aaggregateAdaptedXTresponse = ...
+                aggregateAdaptedXTresponse = ...
                     riekeLinearCone(aggregateXTresponse/sensorConversionGain/sensorExposureTime, initialState);
                 if (strcmp(noiseFlag, 'RiekeNoise'))
                     disp('Adding noise to adapted responses');
