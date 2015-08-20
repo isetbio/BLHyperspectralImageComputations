@@ -591,20 +591,17 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
 
             if (strcmp(adaptationModelToUse, 'linear'))
                 disp('Computing aggregate adapted XT response - linear adaptation');
-                photonRate = reshape(aggregateXTresponse, [sensorRowsCols(1) sensorRowsCols(2) size(aggregateXTresponse,2)]) / ...
-                     sensorConversionGain/sensorExposureTime;
                 initialState = riekeInit;
                 initialState.timeInterval  = sensorTimeInterval;
                 initialState.Compress = false;
-                adaptedXYTresponse = riekeLinearCone(photonRate, initialState);
+                aaggregateAdaptedXTresponse = ...
+                    riekeLinearCone(aggregateXTresponse/sensorConversionGain/sensorExposureTime, initialState);
                 if (strcmp(noiseFlag, 'RiekeNoise'))
                     disp('Adding noise to adapted responses');
                     params.seed = 349573409;
                     params.sampTime = sensorTimeInterval;
-                    [adaptedXYTresponse, ~] = riekeAddNoise(adaptedXYTresponse, params);
+                    [aggregateAdaptedXTresponse, ~] = riekeAddNoise(aggregateAdaptedXTresponse, params);
                 end
-                aggregateAdaptedXTresponse = reshape(adaptedXYTresponse, ...
-                             [size(photonRate,1)*size(photonRate,2) size(photonRate,3)]);
                 % normalize
                 aggregateAdaptedXTresponse = aggregateAdaptedXTresponse / max(abs(aggregateAdaptedXTresponse(:)));
             end
