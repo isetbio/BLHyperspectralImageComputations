@@ -2,14 +2,14 @@ function ReconstructMosaicFromXTresponses2
 
     generateVideo = false;
 
-    conesAcross = 10;
+    conesAcross = 15;
     resultsFile = sprintf('results_%dx%d.mat', conesAcross,conesAcross);
             
     if (generateVideo)
         selectedDemo = input('Full reconstruction video (1), Demo1 short video (2), Demo2 short video (3) : ');
 
         if (selectedDemo == 1)
-            conesAcross = 10;
+            conesAcross = 15;
             resultsFile = sprintf('results_%dx%d.mat', conesAcross,conesAcross);
         elseif (selectedDemo == 2)
             conesAcross = 20;
@@ -19,6 +19,7 @@ function ReconstructMosaicFromXTresponses2
             resultsFile2 = sprintf('results_%dx%d_ForDemoVideo2.mat', conesAcross,conesAcross);
         end
     end
+    fprintf('Using %s file.\n', resultsFile);
     
     normalizeResponsesForEachScene = true;
     
