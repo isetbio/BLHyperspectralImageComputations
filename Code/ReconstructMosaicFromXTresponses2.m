@@ -1,5 +1,7 @@
 function ReconstructMosaicFromXTresponses2
 
+    warning('off','stats:mdscale:IterOrEvalLimit');
+    
     generateVideo = false;
 
     conesAcross = 15;
@@ -24,7 +26,7 @@ function ReconstructMosaicFromXTresponses2
     normalizeResponsesForEachScene = true;
     
     adaptationModelToUse = 'linear';  % choose from 'none' or 'linear'
-    noiseFlag = 'RiekeNoise';       % 'noNoise' or 'RiekeNoise'
+    noiseFlag = 'noNoise';       % 'noNoise' or 'RiekeNoise'
     
     randomSeedForEyeMovementsOnDifferentScenes = 234823568;
     indicesOfScenesToExclude = [25];
