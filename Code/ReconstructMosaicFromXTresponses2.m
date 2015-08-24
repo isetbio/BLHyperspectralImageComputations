@@ -2,7 +2,7 @@ function ReconstructMosaicFromXTresponses2
 
     generateVideo = false;
 
-    conesAcross = 15;
+    conesAcross = 10;
     resultsFile = sprintf('results_%dx%d.mat', conesAcross,conesAcross);
             
     if (generateVideo)
@@ -406,7 +406,7 @@ function  RenderParts2Frame(axesStruct, fixationNo, fixationTimeInMilliseconds, 
     set(current2DResponseAxes, 'CLim', [0 1]);
     set(current2DResponseAxes, 'XLim', [1 size(current2DResponse,2)], 'YLim', [1 size(current2DResponse,1)]);
     set(current2DResponseAxes, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XTick', [], 'YTick', [], 'XTickLabel', {}, 'YTickLabel', {});
-    currentTimeHours = floor(fixationTimeInMilliseconds/(1000*60*60));
+    currentTimeHours   = floor(fixationTimeInMilliseconds/(1000*60*60));
     currentTimeMinutes = floor((fixationTimeInMilliseconds - currentTimeHours*(1000*60*60)) / (1000*60));
     currentTimeSeconds = floor((fixationTimeInMilliseconds - currentTimeHours*(1000*60*60) - currentTimeMinutes*(1000*60))/1000);
     currentTimeMilliSeconds = fixationTimeInMilliseconds - currentTimeHours*(1000*60*60) - currentTimeMinutes*(1000*60) - currentTimeSeconds*1000;
@@ -502,16 +502,12 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
             minEyeMovements = eyeMovementsNum;
         end   
     end
-    
-    
-    
+        
     eyeMovementsPerSceneRotation = fixationsPerSceneRotation * eyeMovementParamsStruct.samplesPerFixation
     fullSceneRotations = floor(minEyeMovements / eyeMovementsPerSceneRotation)
     totalFixationsNum = (numel(allSceneNames)-numel(indicesOfScenesToExclude))*fullSceneRotations*fixationsPerSceneRotation
     
     fullSceneRotations = input('Enter desired scene rotations: ');
-    
-    
     
     % Setup video stream
     writerObj = VideoWriter(sprintf('MosaicReconstruction_%s_%s.m4v',adaptationModelToUse, noiseFlag), 'MPEG-4'); % H264 format
@@ -607,10 +603,9 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
             end
         
             for timeBinIndex = 1:eyeMovementsPerSceneRotation 
-
+   
+                relevantTimeBins = aggegateXTResponseOffset + timeBinIndex; % timeBins(timeBinIndex);
                 
-                
-                relevantTimeBins = aggegateXTResponseOffset + timeBins(timeBinIndex);
                 
                 if (strcmp(adaptationModelToUse, 'none'))
                     %currentResponse = XTresponses{sceneIndex}(:,timeBins(timeBinIndex));
