@@ -1,8 +1,8 @@
 function ReconstructMosaicFromXTresponses2
 
-    generateVideo = true;
+    generateVideo = false;
 
-    conesAcross = 10;
+    conesAcross = 15;
     resultsFile = sprintf('results_%dx%d.mat', conesAcross,conesAcross);
             
     if (generateVideo)
@@ -608,6 +608,8 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
         
             for timeBinIndex = 1:eyeMovementsPerSceneRotation 
 
+                
+                
                 relevantTimeBins = aggegateXTResponseOffset + timeBins(timeBinIndex);
                 
                 if (strcmp(adaptationModelToUse, 'none'))
@@ -630,7 +632,10 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
                 
                 kSteps = kSteps + 1;
                 
+                
+                
                 % check if we need to accelerate
+                
                 if (fixationNo >= fixationsThreshold2)
                     if (timeBinIndex < eyeMovementsPerSceneRotation)
                         continue;
