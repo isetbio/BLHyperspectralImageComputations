@@ -616,6 +616,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
                 elseif (strcmp(adaptationModelToUse, 'linear'))
                     if (max(relevantTimeBins) > size(aggregateAdaptedXTresponse,2))
                         fprintf(2, 'requested up to bin %d, but only got up to %d (full length)\n', max(relevantTimeBins), size(aggregateAdaptedXTresponse,2));
+                        error('stop here');
                         relevantTimeBins = size(aggregateAdaptedXTresponse,2);
                     end
                     currentResponse = aggregateAdaptedXTresponse(:, relevantTimeBins);
