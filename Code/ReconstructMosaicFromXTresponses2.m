@@ -2,7 +2,7 @@ function ReconstructMosaicFromXTresponses2
 
     warning('off','stats:mdscale:IterOrEvalLimit');
     
-    generateVideo = false;
+    generateVideo = true;
 
     conesAcross = 15;
     resultsFile = sprintf('results_%dx%d.mat', conesAcross,conesAcross);
