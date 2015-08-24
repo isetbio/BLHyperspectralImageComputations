@@ -24,7 +24,7 @@ function ReconstructMosaicFromXTresponses2
     normalizeResponsesForEachScene = true;
     
     adaptationModelToUse = 'linear';  % choose from 'none' or 'linear'
-    noiseFlag = 'noNoise';       % 'noNoise' or 'RiekeNoise'
+    noiseFlag = 'RiekeNoise';       % 'noNoise' or 'RiekeNoise'
     
     randomSeedForEyeMovementsOnDifferentScenes = 234823568;
     indicesOfScenesToExclude = [25];
