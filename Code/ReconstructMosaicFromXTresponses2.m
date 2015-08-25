@@ -4,7 +4,7 @@ function ReconstructMosaicFromXTresponses2
     
     generateVideo = true;
 
-    conesAcross = 15;
+    conesAcross = 10;
     resultsFile = sprintf('results_%dx%d.mat', conesAcross,conesAcross);
             
     if (generateVideo)
@@ -233,7 +233,7 @@ function GeneratePartsVideo2File(resultsFile, adaptationModelToUse, noiseFlag, n
     
     % permute eyemovements and XT response indices 
     for sceneIndex = 1:numel(allSceneNames)
-        fprintf('Permuting eye movements and XT responses for scene %d\n', sceneIndex);
+        fprintf('Wha the ? Permuting eye movements and XT responses for scene %d\n', sceneIndex);
         fixationsNum = size(XTresponses{sceneIndex},2) / eyeMovementParamsStruct.samplesPerFixation;
         permutedFixationIndices = randperm(fixationsNum);
         
@@ -451,8 +451,8 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
     load(resultsFile, '-mat');
     
     fixationsPerSceneRotation = 12;
-    scenesNumForThreshold1 = 10;
-    scenesNumForThreshold2 = 30;
+    scenesNumForThreshold1 = 1;
+    scenesNumForThreshold2 = 10;
     fixationsThreshold1 = ceil((fixationsPerSceneRotation*scenesNumForThreshold1)/fixationsPerSceneRotation)*fixationsPerSceneRotation;
     % when conesAcross = 20 use: fixationsThreshold1 = ceil(1000/fixationsPerSceneRotation)*fixationsPerSceneRotation;
     fixationsThreshold2 = ceil((fixationsPerSceneRotation*scenesNumForThreshold2)/fixationsPerSceneRotation)*fixationsPerSceneRotation;
@@ -472,7 +472,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
             continue;
         end
         
-        fprintf('Permuting eye movements and XT responses for scene %d\n', sceneIndex);
+        fprintf('here - Permuting eye movements and XT responses for scene %d\n', sceneIndex);
         fixationsNum = size(XTresponses{sceneIndex},2) / eyeMovementParamsStruct.samplesPerFixation;
         permutedFixationIndices = randperm(fixationsNum);
         
@@ -587,7 +587,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
             aggregateXTresponse = [aggregateXTresponse XTresponses{sceneIndex}(:,timeBins)];
 
             if (strcmp(adaptationModelToUse, 'linear'))
-                disp('Computing aggregate adapted XT response - linear adaptation');
+                fprintf('Computing aggregate adapted XT response - linear adaptation (scene:%d/%d, rotation:%d/%d)\n', sceneIndex,numel(allSceneNames), rotationIndex,fullSceneRotations);
                 initialState = riekeInit;
                 initialState.timeInterval  = sensorTimeInterval;
                 initialState.Compress = false;
@@ -598,6 +598,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
                     params.seed = 349573409;
                     params.sampTime = sensorTimeInterval;
                     [aggregateAdaptedXTresponse, ~] = riekeAddNoise(aggregateAdaptedXTresponse, params);
+                    
                 end
                 % normalize
                 aggregateAdaptedXTresponse = aggregateAdaptedXTresponse / max(abs(aggregateAdaptedXTresponse(:)));
