@@ -11,7 +11,6 @@ function ReconstructMosaicFromXTresponses2
         selectedDemo = input('Full reconstruction video (1), Demo1 short video (2), Demo2 short video (3) : ');
 
         if (selectedDemo == 1)
-            conesAcross = 15;
             resultsFile = sprintf('results_%dx%d.mat', conesAcross,conesAcross);
         elseif (selectedDemo == 2)
             conesAcross = 20;
@@ -336,10 +335,10 @@ function GeneratePartsVideo2File(resultsFile, adaptationModelToUse, noiseFlag, n
                 
                 if (strcmp(adaptationModelToUse, 'none'))
                     %currentResponse = XTresponses{sceneIndex}(:,timeBins(timeBinIndex));
-                    currentResponse = aggregateXTresponse(:, aggegateXTResponseOffset + timeBins(timeBinIndex));
+                    currentResponse = aggregateXTresponse(:, aggegateXTResponseOffset + timeBinIndex);
                     %currentMax = max(max(abs(aggregateXTresponse(:, aggegateXTResponseOffset + 1:timeBins(timeBinIndex)))));
                 elseif (strcmp(adaptationModelToUse, 'linear'))
-                    currentResponse = aggregateAdaptedXTresponse(:, aggegateXTResponseOffset + timeBins(timeBinIndex));
+                    currentResponse = aggregateAdaptedXTresponse(:, aggegateXTResponseOffset + timeBinIndex);
                     %currentMax = max(max(abs(aggregateAdaptedXTresponse(:, aggegateXTResponseOffset + 1:timeBins(timeBinIndex)))));
                 end
                 
@@ -549,7 +548,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
     % Initialize
     aggregateXTresponse = [];
     eyeMovementIndex = 1;
-    minSteps = 100;  % 1 minute + 2 seconds + 500 milliseconds
+     minSteps = 10;  % 1 minute + 2 seconds + 500 milliseconds
     
     try
         
@@ -626,7 +625,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
                 
                 shortHistoryXTResponse = circshift(shortHistoryXTResponse, -1, 2);
                 shortHistoryXTResponse(:,end) = currentResponse;
-                current2DResponse = reshape(currentResponse, [sensorRowsCols(1) sensorRowsCols(2)]);
+                current2DResponse = reshape(currentResponse', [sensorRowsCols(1) sensorRowsCols(2)]);
                 
                 kSteps = kSteps + 1;
                 
@@ -670,6 +669,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
                     [MDSprojection,stress] = mdscale(D,dimensionsNum);
                 catch err
                     fprintf(2,'Problem with mdscale. Skipping this time bin (%d).\n', aggegateXTResponseOffset + timeBins(timeBinIndex));
+                    continue;
                 end
                 
                 swapMDSdimsYZ = true;
