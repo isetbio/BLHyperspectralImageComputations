@@ -4,7 +4,7 @@ function ReconstructMosaicFromXTresponses2
     
     generateVideo = true;
 
-    conesAcross = 10;
+    conesAcross = 15;
     resultsFile = sprintf('results_%dx%d.mat', conesAcross,conesAcross);
             
     if (generateVideo)
@@ -183,15 +183,13 @@ function GeneratePartsVideoFile(resultsFile, adaptationModelToUse, noiseFlag, no
         
             for timeBinIndex = 1:eyeMovementsPerSceneRotation 
 
-               tt = aggegateXTResponseOffset + timeBins(timeBinIndex);
-               currentResponse        = aggregateXTresponse(:, tt); 
-               currentAdaptedResponse = aggregateAdaptedXTresponse(:, tt);
+                tt = aggegateXTResponseOffset + timeBins(timeBinIndex);
+                currentResponse        = aggregateXTresponse(:, tt); 
+                currentAdaptedResponse = aggregateAdaptedXTresponse(:, tt);
                 
-               current2DResponse        = reshape(currentResponse,        [sensorRowsCols(1) sensorRowsCols(2)]);
-               current2DAdaptedResponse = reshape(currentAdaptedResponse, [sensorRowsCols(1) sensorRowsCols(2)]);
-               kSteps = kSteps + 1;
-                    
-                
+                current2DResponse        = reshape(currentResponse,        [sensorRowsCols(1) sensorRowsCols(2)]);
+                current2DAdaptedResponse = reshape(currentAdaptedResponse, [sensorRowsCols(1) sensorRowsCols(2)]);
+                kSteps = kSteps + 1;
                 
                 binRange = 1:size(aggregateXTresponse,2)-eyeMovementsPerSceneRotation+timeBinIndex;
                 fixationNo = (binRange(end))/eyeMovementParamsStruct.samplesPerFixation;
@@ -450,12 +448,17 @@ end
 function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normalizeResponsesForEachScene, randomSeedForEyeMovementsOnDifferentScenes, indicesOfScenesToExclude)
     load(resultsFile, '-mat');
     
+    
+    scenesNumForThreshold1 = 1;     % after this many scenes num (here 1), a new frame is added only at the end of each fixation
+    scenesNumForThreshold2 = 2;     % after this many scenes num (here 2), a new frame is added only at the end of 2 consecutive fixations
+    scenesNumForThreshold3 = 3;     % after this many scenes num (here 3), a new frame is added only at the end of 3 consecutive fixations
+    scenesNumForThreshold4 = 4;     % after this many scenes num (here 4), a new frame is added only at the end of 4 consecutive fixations
+    
     fixationsPerSceneRotation = 12;
-    scenesNumForThreshold1 = 1;
-    scenesNumForThreshold2 = 10;
     fixationsThreshold1 = ceil((fixationsPerSceneRotation*scenesNumForThreshold1)/fixationsPerSceneRotation)*fixationsPerSceneRotation;
-    % when conesAcross = 20 use: fixationsThreshold1 = ceil(1000/fixationsPerSceneRotation)*fixationsPerSceneRotation;
     fixationsThreshold2 = ceil((fixationsPerSceneRotation*scenesNumForThreshold2)/fixationsPerSceneRotation)*fixationsPerSceneRotation;
+    fixationsThreshold3 = ceil((fixationsPerSceneRotation*scenesNumForThreshold3)/fixationsPerSceneRotation)*fixationsPerSceneRotation;
+    fixationsThreshold4 = ceil((fixationsPerSceneRotation*scenesNumForThreshold4)/fixationsPerSceneRotation)*fixationsPerSceneRotation;
     
     % find minimal number of eye movements across all scenes
     minEyeMovements = 1000*1000*1000;
@@ -472,7 +475,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
             continue;
         end
         
-        fprintf('here - Permuting eye movements and XT responses for scene %d\n', sceneIndex);
+        fprintf('Permuting eye movements and XT responses for scene %d\n', sceneIndex);
         fixationsNum = size(XTresponses{sceneIndex},2) / eyeMovementParamsStruct.samplesPerFixation;
         permutedFixationIndices = randperm(fixationsNum);
         
@@ -631,15 +634,28 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
                 kSteps = kSteps + 1;
                 
                 
-                
                 % check if we need to accelerate
-                
-                if (fixationNo >= fixationsThreshold2)
-                    if (timeBinIndex < eyeMovementsPerSceneRotation)
+                if (fixationNo >= fixationsThreshold4)
+                    % add a frame at the end of every third fixation
+                    if (mod(timeBinIndex,(4*eyeMovementParamsStruct.samplesPerFixation)) == 0)
                         continue;
                     end
+                    
+                elseif (fixationNo >= fixationsThreshold3)
+                    % add a frame at the end of every third fixation
+                    if (mod(timeBinIndex,(3*eyeMovementParamsStruct.samplesPerFixation)) == 0)
+                        continue;
+                    end
+                    
+                elseif (fixationNo >= fixationsThreshold2) 
+                    % add a frame at the end of every other fixation
+                    if (mod(timeBinIndex,(2*eyeMovementParamsStruct.samplesPerFixation)) == 0)
+                        continue;
+                    end
+                   
                 elseif (fixationNo >= fixationsThreshold1)
-                    if (mod(timeBinIndex-1,eyeMovementParamsStruct.samplesPerFixation) < eyeMovementParamsStruct.samplesPerFixation-1)
+                    % add a frame at the end of all micro-movements associated with each fixation
+                    if (mod(timeBinIndex,(1*eyeMovementParamsStruct.samplesPerFixation)) == 0)
                         continue;
                     end
                 end
