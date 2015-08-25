@@ -4,7 +4,7 @@ function ReconstructMosaicFromXTresponses2
     
     generateVideo = true;
 
-    conesAcross = 15;
+    conesAcross = 10;
     resultsFile = sprintf('results_%dx%d.mat', conesAcross,conesAcross);
             
     if (generateVideo)
@@ -449,10 +449,10 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
     load(resultsFile, '-mat');
     
     
-    scenesNumForThreshold1 = 10;     % after this many scenes num (here 1), a new frame is added only at the end of each fixation
-    scenesNumForThreshold2 = 20;     % after this many scenes num (here 2), a new frame is added only at the end of 2 consecutive fixations
-    scenesNumForThreshold3 = 30;     % after this many scenes num (here 3), a new frame is added only at the end of 3 consecutive fixations
-    scenesNumForThreshold4 = 40;     % after this many scenes num (here 4), a new frame is added only at the end of 4 consecutive fixations
+    scenesNumForThreshold1 = 1;     % after this many scenes num (here 1), a new frame is added only at the end of each fixation
+    scenesNumForThreshold2 = 2;     % after this many scenes num (here 2), a new frame is added only at the end of 2 consecutive fixations
+    scenesNumForThreshold3 = 3;     % after this many scenes num (here 3), a new frame is added only at the end of 3 consecutive fixations
+    scenesNumForThreshold4 = 4;     % after this many scenes num (here 4), a new frame is added only at the end of 4 consecutive fixations
     
     fixationsPerSceneRotation = 12;
     fixationsThreshold1 = ceil((fixationsPerSceneRotation*scenesNumForThreshold1)/fixationsPerSceneRotation)*fixationsPerSceneRotation;
@@ -542,8 +542,8 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
     axesStruct.mosaicAxes        = axes('parent',hFig,'unit','pixel','position',[1010 130  256 256], 'Color', [0 0 0]);
     
     % bottom row
-    axesStruct.performanceAxes1  = axes('parent',hFig,'unit','pixel','position',[30   10 600 110], 'Color', [0 0 0]);
-    axesStruct.performanceAxes2  = axes('parent',hFig,'unit','pixel','position',[680  10 600 110], 'Color', [0 0 0]);
+    axesStruct.performanceAxes1  = axes('parent',hFig,'unit','pixel','position',[25   10 600 110], 'Color', [0 0 0]);
+    axesStruct.performanceAxes2  = axes('parent',hFig,'unit','pixel','position',[670  10 600 110], 'Color', [0 0 0]);
     
     
     shortHistoryXTResponse = zeros(prod(sensorRowsCols), eyeMovementsPerSceneRotation);
@@ -637,25 +637,25 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
                 % check if we need to accelerate
                 if (fixationNo >= fixationsThreshold4)
                     % add a frame at the end of every third fixation
-                    if (mod(timeBinIndex,(4*eyeMovementParamsStruct.samplesPerFixation)) == 0)
+                    if (mod(timeBinIndex,(4*eyeMovementParamsStruct.samplesPerFixation)) ~= 0)
                         continue;
                     end
                     
                 elseif (fixationNo >= fixationsThreshold3)
                     % add a frame at the end of every third fixation
-                    if (mod(timeBinIndex,(3*eyeMovementParamsStruct.samplesPerFixation)) == 0)
+                    if (mod(timeBinIndex,(3*eyeMovementParamsStruct.samplesPerFixation)) ~= 0)
                         continue;
                     end
                     
                 elseif (fixationNo >= fixationsThreshold2) 
                     % add a frame at the end of every other fixation
-                    if (mod(timeBinIndex,(2*eyeMovementParamsStruct.samplesPerFixation)) == 0)
+                    if (mod(timeBinIndex,(2*eyeMovementParamsStruct.samplesPerFixation)) ~= 0)
                         continue;
                     end
                    
                 elseif (fixationNo >= fixationsThreshold1)
                     % add a frame at the end of all micro-movements associated with each fixation
-                    if (mod(timeBinIndex,(1*eyeMovementParamsStruct.samplesPerFixation)) == 0)
+                    if (mod(timeBinIndex,(1*eyeMovementParamsStruct.samplesPerFixation)) ~= 0)
                         continue;
                     end
                 end
