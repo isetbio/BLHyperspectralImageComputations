@@ -25,7 +25,7 @@ function ReconstructMosaicFromXTresponses2
     normalizeResponsesForEachScene = true;
     
     adaptationModelToUse = 'linear';  % choose from 'none' or 'linear'
-    noiseFlag = 'noNoise';       % 'noNoise' or 'RiekeNoise'
+    noiseFlag = 'RiekeNoise';       % 'noNoise' or 'RiekeNoise'
     
     randomSeedForEyeMovementsOnDifferentScenes = 234823568;
     indicesOfScenesToExclude = [25];
@@ -162,7 +162,7 @@ function GeneratePartsVideoFile(resultsFile, adaptationModelToUse, noiseFlag, no
             aggregateXTresponse = [aggregateXTresponse XTresponses{sceneIndex}(:,timeBins)];
 
             if (strcmp(adaptationModelToUse, 'linear'))
-                disp('Computing aggregate adapted XT response - linear adaptation');
+                fprintf('Computing aggregate adapted XT response - linear adaptation (scene:%d/%d, rotation:%d/%d)\n', sceneIndex,numel(allSceneNames), rotationIndex,fullSceneRotations);
                 photonRate = reshape(aggregateXTresponse, [sensorRowsCols(1) sensorRowsCols(2) size(aggregateXTresponse,2)]) / ...
                      sensorConversionGain/sensorExposureTime;
                 initialState = riekeInit;
@@ -170,7 +170,7 @@ function GeneratePartsVideoFile(resultsFile, adaptationModelToUse, noiseFlag, no
                 initialState.Compress = false;
                 adaptedXYTresponse = riekeLinearCone(photonRate, initialState);
                 if (strcmp(noiseFlag, 'RiekeNoise'))
-                    disp('Adding noise to adapted responses');
+                    disp('Adding noise');
                     params.seed = 349573409;
                     params.sampTime = sensorTimeInterval;
                     [adaptedXYTresponse, ~] = riekeAddNoise(adaptedXYTresponse, params);
