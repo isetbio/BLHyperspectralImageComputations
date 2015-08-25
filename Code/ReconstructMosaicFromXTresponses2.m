@@ -449,10 +449,10 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
     load(resultsFile, '-mat');
     
     
-    scenesNumForThreshold1 = 1;     % after this many scenes num (here 1), a new frame is added only at the end of each fixation
-    scenesNumForThreshold2 = 2;     % after this many scenes num (here 2), a new frame is added only at the end of 2 consecutive fixations
-    scenesNumForThreshold3 = 3;     % after this many scenes num (here 3), a new frame is added only at the end of 3 consecutive fixations
-    scenesNumForThreshold4 = 4;     % after this many scenes num (here 4), a new frame is added only at the end of 4 consecutive fixations
+    scenesNumForThreshold1 = 10;     % after this many scenes num (here 1), a new frame is added only at the end of each fixation
+    scenesNumForThreshold2 = 20;     % after this many scenes num (here 2), a new frame is added only at the end of 2 consecutive fixations
+    scenesNumForThreshold3 = 30;     % after this many scenes num (here 3), a new frame is added only at the end of 3 consecutive fixations
+    scenesNumForThreshold4 = 40;     % after this many scenes num (here 4), a new frame is added only at the end of 4 consecutive fixations
     
     fixationsPerSceneRotation = 12;
     fixationsThreshold1 = ceil((fixationsPerSceneRotation*scenesNumForThreshold1)/fixationsPerSceneRotation)*fixationsPerSceneRotation;
