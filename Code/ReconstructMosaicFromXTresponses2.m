@@ -70,6 +70,14 @@ function GeneratePartsVideoFile(resultsFile, adaptationModelToUse, noiseFlag, no
             continue;
         end
         
+        if (normalizeResponsesForEachScene)
+            if (sceneIndex == 1)
+                maxXTresponseForScene1 = max(abs(XTresponses{sceneIndex}));
+            else
+                XTresponses{sceneIndex} = XTresponses{sceneIndex} / max(abs(XTresponses{sceneIndex})) * maxXTresponseForScene1;
+            end
+        end
+        
         fprintf('Permuting eye movements and XT responses for scene %d\n', sceneIndex);
         fixationsNum = size(XTresponses{sceneIndex},2) / eyeMovementParamsStruct.samplesPerFixation;
         permutedFixationIndices = randperm(fixationsNum);
@@ -84,11 +92,6 @@ function GeneratePartsVideoFile(resultsFile, adaptationModelToUse, noiseFlag, no
             destIndices = (fixationIndex-1)*eyeMovementParamsStruct.samplesPerFixation+kk;
             tmp1(:,destIndices) = XTresponses{sceneIndex}(:, sourceIndices);
             tmp2(destIndices,:) = eyeMovements{sceneIndex}(sourceIndices,:);
-        end
-        
-        if (normalizeResponsesForEachScene)
-            % normalize XT responses for each scene
-            tmp1 = tmp1 / max(abs(tmp1(:)));
         end
         
         XTresponses{sceneIndex} = tmp1;
@@ -235,6 +238,14 @@ function GeneratePartsVideo2File(resultsFile, adaptationModelToUse, noiseFlag, n
         fixationsNum = size(XTresponses{sceneIndex},2) / eyeMovementParamsStruct.samplesPerFixation;
         permutedFixationIndices = randperm(fixationsNum);
         
+        if (normalizeResponsesForEachScene)
+            if (sceneIndex == 1)
+                maxXTresponseForScene1 = max(abs(XTresponses{sceneIndex}));
+            else
+                XTresponses{sceneIndex} = XTresponses{sceneIndex} / max(abs(XTresponses{sceneIndex})) * maxXTresponseForScene1;
+            end
+        end
+        
         tmp1 = XTresponses{sceneIndex}*0;
         tmp2 = eyeMovements{sceneIndex}*0;
 
@@ -245,11 +256,6 @@ function GeneratePartsVideo2File(resultsFile, adaptationModelToUse, noiseFlag, n
             destIndices = (fixationIndex-1)*eyeMovementParamsStruct.samplesPerFixation+kk;
             tmp1(:,destIndices) = XTresponses{sceneIndex}(:, sourceIndices);
             tmp2(destIndices,:) = eyeMovements{sceneIndex}(sourceIndices,:);
-        end
-        
-        if (normalizeResponsesForEachScene)
-            % normalize XT responses for each scene
-            tmp1 = tmp1 / max(abs(tmp1(:)));
         end
         
         XTresponses{sceneIndex} = tmp1;
@@ -352,7 +358,9 @@ function GeneratePartsVideo2File(resultsFile, adaptationModelToUse, noiseFlag, n
                 elseif (strcmp(adaptationModelToUse, 'linear'))
                     correlationMatrix = corrcoef((aggregateAdaptedXTresponse(:,binRange))');
                 end
-                D = -log((correlationMatrix+1.0)/2.0);
+                %D = -log((correlationMatrix+1.0)/2.0);
+                %Linear dissim metric
+                D = 1-(correlationMatrix+1.0)/2.0;
                 if ~issymmetric(D)
                     D = 0.5*(D+D');
                 end
@@ -406,7 +414,7 @@ function  RenderParts2Frame(axesStruct, fixationNo, fixationTimeInMilliseconds, 
     currentTimeSeconds = floor((fixationTimeInMilliseconds - currentTimeHours*(1000*60*60) - currentTimeMinutes*(1000*60))/1000);
     currentTimeMilliSeconds = fixationTimeInMilliseconds - currentTimeHours*(1000*60*60) - currentTimeMinutes*(1000*60) - currentTimeSeconds*1000;
     if (fixationNo < 1000)
-        title(current2DResponseAxes,  sprintf('fixation #%03.2f\n(%02.0f : %02.0f : %02.0f : %03.0f)', fixationNo, currentTimeHours, currentTimeMinutes, currentTimeSeconds, currentTimeMilliSeconds), 'FontSize', 20, 'Color', [1 .8 .4]);
+        title(current2DResponseAxes,  sprintf('fixation #%03.3f\n(%02.0f : %02.0f : %02.0f : %03.0f)', fixationNo, currentTimeHours, currentTimeMinutes, currentTimeSeconds, currentTimeMilliSeconds), 'FontSize', 20, 'Color', [1 .8 .4]);
     else
         title(current2DResponseAxes,  sprintf('fixation #%03.0f\n(%02.0f : %02.0f : %02.0f : %03.0f)', fixationNo, currentTimeHours, currentTimeMinutes, currentTimeSeconds, currentTimeMilliSeconds), 'FontSize', 20, 'Color', [1 .8 .4]);
     end
@@ -445,10 +453,10 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
     load(resultsFile, '-mat');
     
     
-    scenesNumForThreshold1 = 1;     % after this many scenes num (here 1), a new frame is added only at the end of each fixation
-    scenesNumForThreshold2 = 2;     % after this many scenes num (here 2), a new frame is added only at the end of 2 consecutive fixations
-    scenesNumForThreshold3 = 3;     % after this many scenes num (here 3), a new frame is added only at the end of 3 consecutive fixations
-    scenesNumForThreshold4 = 4;     % after this many scenes num (here 4), a new frame is added only at the end of 4 consecutive fixations
+    scenesNumForThreshold1 = 0;     % after this many scenes num (here 1), a new frame is added only at the end of each fixation
+    scenesNumForThreshold2 = 1;     % after this many scenes num (here 2), a new frame is added only at the end of 2 consecutive fixations
+    scenesNumForThreshold3 = 2;     % after this many scenes num (here 3), a new frame is added only at the end of 3 consecutive fixations
+    scenesNumForThreshold4 = 3;     % after this many scenes num (here 4), a new frame is added only at the end of 4 consecutive fixations
     
     fixationsPerSceneRotation = 12;
     fixationsThreshold1 = ceil((fixationsPerSceneRotation*scenesNumForThreshold1)/fixationsPerSceneRotation)*fixationsPerSceneRotation;
@@ -475,6 +483,14 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
         fixationsNum = size(XTresponses{sceneIndex},2) / eyeMovementParamsStruct.samplesPerFixation;
         permutedFixationIndices = randperm(fixationsNum);
         
+        if (normalizeResponsesForEachScene)
+            if (sceneIndex == 1)
+                maxXTresponseForScene1 = max(abs(XTresponses{sceneIndex}));
+            else
+                XTresponses{sceneIndex} = XTresponses{sceneIndex} / max(abs(XTresponses{sceneIndex})) * maxXTresponseForScene1;
+            end
+        end
+        
         tmp1 = XTresponses{sceneIndex}*0;
         tmp2 = eyeMovements{sceneIndex}*0;
 
@@ -485,11 +501,6 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
             destIndices = (fixationIndex-1)*eyeMovementParamsStruct.samplesPerFixation+kk;
             tmp1(:,destIndices) = XTresponses{sceneIndex}(:, sourceIndices);
             tmp2(destIndices,:) = eyeMovements{sceneIndex}(sourceIndices,:);
-        end
-        
-        if (normalizeResponsesForEachScene)
-            % normalize XT responses for each scene
-            tmp1 = tmp1 / max(abs(tmp1(:)));
         end
         
         XTresponses{sceneIndex} = tmp1;
@@ -597,10 +608,14 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
                     disp('Adding noise to adapted responses');
                     params.seed = 349573409;
                     params.sampTime = sensorTimeInterval;
-                    [aggregateAdaptedXTresponse, ~] = riekeAddNoise(aggregateAdaptedXTresponse, params);
+                    [aggregateAdaptedXTresponse2, ~] = riekeAddNoise(aggregateAdaptedXTresponse, params);
                 end
+                noise = (aggregateAdaptedXTresponse2-aggregateAdaptedXTresponse);
+                aggregateAdaptedXTresponse  = aggregateAdaptedXTresponse + 0.5*noise;
+                
                 % normalize
-                aggregateAdaptedXTresponse = aggregateAdaptedXTresponse / max(abs(aggregateAdaptedXTresponse(:)));
+                aggregateAdaptedXTresponse = aggregateAdaptedXTresponse / (0.5*max(abs(aggregateAdaptedXTresponse(:))));
+                
             end
             
             for timeBinIndex = 1:eyeMovementsPerSceneRotation 
@@ -664,7 +679,8 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
                 elseif (strcmp(adaptationModelToUse, 'linear'))
                     correlationMatrix = corrcoef((aggregateAdaptedXTresponse(:,binRange))');
                 end
-                D = -log((correlationMatrix+1.0)/2.0);
+                %D = -log((correlationMatrix+1.0)/2.0);
+                D = 1-(correlationMatrix+1.0)/2.0;
                 if ~issymmetric(D)
                     D = 0.5*(D+D');
                 end
@@ -998,7 +1014,7 @@ function RenderFrame(axesStruct, fixationNo, fixationTimeInMilliseconds, optical
     currentTimeSeconds = floor((fixationTimeInMilliseconds - currentTimeHours*(1000*60*60) - currentTimeMinutes*(1000*60))/1000);
     currentTimeMilliSeconds = fixationTimeInMilliseconds - currentTimeHours*(1000*60*60) - currentTimeMinutes*(1000*60) - currentTimeSeconds*1000;
     if (fixationNo < 1000)
-        title(current2DResponseAxes,  sprintf('fixation #%03.2f\n(%02.0f : %02.0f : %02.0f : %03.0f)', fixationNo, currentTimeHours, currentTimeMinutes, currentTimeSeconds, currentTimeMilliSeconds), 'FontSize', 16, 'Color', [1 .8 .4]);
+        title(current2DResponseAxes,  sprintf('fixation #%03.3f\n(%02.0f : %02.0f : %02.0f : %03.0f)', fixationNo, currentTimeHours, currentTimeMinutes, currentTimeSeconds, currentTimeMilliSeconds), 'FontSize', 16, 'Color', [1 .8 .4]);
     else
         title(current2DResponseAxes,  sprintf('fixation #%03.0f\n(%02.0f : %02.0f : %02.0f : %03.0f)', fixationNo, currentTimeHours, currentTimeMinutes, currentTimeSeconds, currentTimeMilliSeconds), 'FontSize', 16, 'Color', [1 .8 .4]);
     end
@@ -1088,6 +1104,15 @@ function GenerateResultsFigure(resultsFile, adaptationModelToUse, noiseFlag, nor
             fixationsNum = fixationsPerSceneToUse;
         end
         
+        if (normalizeResponsesForEachScene)
+            if (sceneIndex == 1)
+                maxXTresponseForScene1 = max(abs(XTresponses{sceneIndex}));
+            else
+                XTresponses{sceneIndex} = XTresponses{sceneIndex} / max(abs(XTresponses{sceneIndex})) * maxXTresponseForScene1;
+            end
+        end
+        
+        
         tmp = XTresponses{sceneIndex}*0;
         for fixationIndex = 1:fixationsNum
             sourceIndices = (permutedFixationIndices(fixationIndex)-1)*eyeMovementParamsStruct.samplesPerFixation + kk;
@@ -1095,10 +1120,6 @@ function GenerateResultsFigure(resultsFile, adaptationModelToUse, noiseFlag, nor
             tmp(:,destIndices) = XTresponses{sceneIndex}(:, sourceIndices);
         end
         
-        if (normalizeResponsesForEachScene)
-            % normalize XT responses for each scene
-            tmp = tmp / max(abs(tmp(:)));
-        end
         
         % empty to save space
         XTresponses{sceneIndex} = [];
@@ -1127,7 +1148,8 @@ function GenerateResultsFigure(resultsFile, adaptationModelToUse, noiseFlag, nor
     
     disp('Computing correlation matrix');
     correlationMatrix = corrcoef(aggregateXTresponse');
-    D = -log((correlationMatrix+1.0)/2.0);
+    % Linear dissimilarity metric
+    D = 1-(correlationMatrix+1.0)/2.0;
     if ~issymmetric(D)
         D = 0.5*(D+D');
     end
