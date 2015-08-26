@@ -8,9 +8,9 @@ function runSimulation
     addpath(genpath(pwd));
     cd(rootPath);
     
-    conesAcross = 15;
+    conesAcross = 10;
     if (conesAcross == 10) || (conesAcross == 15)
-        eyeMovementOverlapFactor = 0.4;
+        eyeMovementOverlapFactor = 0.5;
     elseif (conesAcross == 20)
         eyeMovementOverlapFactor = 0.6;
     end
@@ -30,7 +30,7 @@ function runSimulation
     % Eye movement params
     eyeMovementParamsStruct = struct(...
         'name', 'fixationalEyeMovements', ...
-        'samplesPerFixation', 100, ...% 80, ...
+        'samplesPerFixation', 200, ...% 80, ...
         'sampleTime', 0.001, ...  % 1 milliseconds
         'tremorAmplitude', 0.0073*2, ...  % double the default value
         'overlapFactor', eyeMovementOverlapFactor ...  % 50 % overlap
