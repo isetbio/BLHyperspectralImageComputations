@@ -22,7 +22,7 @@ function ReconstructMosaicFromXTresponses2
     end
     fprintf('Using %s file.\n', resultsFile);
     
-    normalizeResponsesForEachScene = true;
+    normalizeResponsesForEachScene = false;
     
     adaptationModelToUse = 'linear';  % choose from 'none' or 'linear'
     noiseFlag = 'RiekeNoise';       % 'noNoise' or 'RiekeNoise'
@@ -601,7 +601,6 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
                     params.seed = 349573409;
                     params.sampTime = sensorTimeInterval;
                     [aggregateAdaptedXTresponse, ~] = riekeAddNoise(aggregateAdaptedXTresponse, params);
-                    
                 end
                 % normalize
                 aggregateAdaptedXTresponse = aggregateAdaptedXTresponse / max(abs(aggregateAdaptedXTresponse(:)));
@@ -610,8 +609,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
             for timeBinIndex = 1:eyeMovementsPerSceneRotation 
    
                 relevantTimeBins = aggegateXTResponseOffset + timeBinIndex; % timeBins(timeBinIndex);
-                
-                
+               
                 if (strcmp(adaptationModelToUse, 'none'))
                     %currentResponse = XTresponses{sceneIndex}(:,timeBins(timeBinIndex));
                     if (max(relevantTimeBins) > size(aggregateXTresponse,2))
