@@ -308,28 +308,24 @@ function GeneratePartsVideo2File(resultsFile, adaptationModelToUse, noiseFlag, n
             
             if (strcmp(adaptationModelToUse, 'linear'))
                 disp('Computing aggregate adapted XT response - linear adaptation');
-                photonRate = reshape(aggregateXTresponse, [sensorRowsCols(1) sensorRowsCols(2) size(aggregateXTresponse,2)]) / ...
-                     sensorConversionGain/sensorExposureTime;
+                photonRate = aggregateXTresponse / sensorConversionGain/sensorExposureTime;
                 initialState = riekeInit;
                 initialState.timeInterval  = sensorTimeInterval;
                 initialState.Compress = false;
-                adaptedXYTresponse = riekeLinearCone(photonRate, initialState);
+                aggregateAdaptedXTresponse = riekeLinearCone(photonRate, initialState);
                 if (strcmp(noiseFlag, 'RiekeNoise'))
                     disp('Adding noise to adapted responses');
                     params.seed = 349573409;
                     params.sampTime = sensorTimeInterval;
-                    [adaptedXYTresponse, ~] = riekeAddNoise(adaptedXYTresponse, params);
+                    [aggregateAdaptedXTresponse, ~] = riekeAddNoise(aggregateAdaptedXTresponse, params);
                 end
-                aggregateAdaptedXTresponse = reshape(adaptedXYTresponse, ...
-                             [size(photonRate,1)*size(photonRate,2) size(photonRate,3)]);
+               
                 % normalize
                 aggregateAdaptedXTresponse = aggregateAdaptedXTresponse / max(abs(aggregateAdaptedXTresponse(:)));
             end
             
-            
-            for timeBinIndex = 1:eyeMovementsPerSceneRotation 
 
-                
+            for timeBinIndex = 1:eyeMovementsPerSceneRotation 
                 
                 if (strcmp(adaptationModelToUse, 'none'))
                     %currentResponse = XTresponses{sceneIndex}(:,timeBins(timeBinIndex));
@@ -596,6 +592,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
                 initialState.Compress = false;
                 aggregateAdaptedXTresponse = ...
                     riekeLinearCone(aggregateXTresponse/sensorConversionGain/sensorExposureTime, initialState);
+                
                 if (strcmp(noiseFlag, 'RiekeNoise'))
                     disp('Adding noise to adapted responses');
                     params.seed = 349573409;
@@ -605,7 +602,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
                 % normalize
                 aggregateAdaptedXTresponse = aggregateAdaptedXTresponse / max(abs(aggregateAdaptedXTresponse(:)));
             end
-        
+            
             for timeBinIndex = 1:eyeMovementsPerSceneRotation 
    
                 relevantTimeBins = aggegateXTResponseOffset + timeBinIndex; % timeBins(timeBinIndex);
