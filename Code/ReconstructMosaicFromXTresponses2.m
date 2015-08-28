@@ -74,7 +74,7 @@ function GeneratePartsVideoFile(resultsFile, adaptationModelToUse, noiseFlag, no
             if (sceneIndex == 1)
                 maxXTresponseForScene1 = max(abs(XTresponses{sceneIndex}));
             else
-                XTresponses{sceneIndex} = XTresponses{sceneIndex} / max(abs(XTresponses{sceneIndex})) * maxXTresponseForScene1;
+                XTresponses{sceneIndex} = XTresponses{sceneIndex} / max(abs(XTresponses{sceneIndex})) * maxXTresponseForScene1*10;
             end
         end
         
@@ -134,7 +134,7 @@ function GeneratePartsVideoFile(resultsFile, adaptationModelToUse, noiseFlag, no
     eyeMovementIndex = 1;
     minSteps = 10;  % 1 minute + 2 seconds + 500 milliseconds
     
-    midgetIR = midgetImpulseResponse();
+    midgetIR = temporalImpulseResponse('V1monophasic');
     
     for rotationIndex = 1:fullSceneRotations
         
@@ -186,8 +186,10 @@ function GeneratePartsVideoFile(resultsFile, adaptationModelToUse, noiseFlag, no
                              [size(photonRate,1)*size(photonRate,2) size(photonRate,3)]);
                          
                 % apply ganglion midget temporal filtering
+                signalLength = size(aggregateAdaptedXTresponse,2);
                 for coneIndex = 1:size(aggregateAdaptedXTresponse,1)
-                    aggregateAdaptedXTresponse(coneIndex,:) = conv(squeeze(aggregateAdaptedXTresponse(coneIndex,:)), midgetIR, 'same');
+                    tmp = conv(squeeze(aggregateAdaptedXTresponse(coneIndex,:)), midgetIR);
+                    aggregateAdaptedXTresponse(coneIndex,:) = tmp(1:signalLength);
                 end
                 
                 % normalize
@@ -312,7 +314,7 @@ function GeneratePartsVideo2File(resultsFile, adaptationModelToUse, noiseFlag, n
     eyeMovementIndex = 1;
     minSteps = 10;  % 1 minute + 2 seconds + 500 milliseconds
     
-    midgetIR = midgetImpulseResponse();
+    midgetIR = temporalImpulseResponse('V1monophasic');
     
     for rotationIndex = 1:fullSceneRotations
         
@@ -339,8 +341,10 @@ function GeneratePartsVideo2File(resultsFile, adaptationModelToUse, noiseFlag, n
                 end
                
                 % apply ganglion midget temporal filtering
+                signalLength = size(aggregateAdaptedXTresponse,2);
                 for coneIndex = 1:size(aggregateAdaptedXTresponse,1)
-                    aggregateAdaptedXTresponse(coneIndex,:) = conv(squeeze(aggregateAdaptedXTresponse(coneIndex,:)), midgetIR, 'same');
+                    tmp = conv(squeeze(aggregateAdaptedXTresponse(coneIndex,:)), midgetIR);
+                    aggregateAdaptedXTresponse(coneIndex,:) = tmp(1:signalLength);
                 end
                 
                 % normalize
@@ -528,7 +532,11 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
         totalEyeMovementsNum = totalEyeMovementsNum + eyeMovementsNum;
         if (eyeMovementsNum < minEyeMovements)
             minEyeMovements = eyeMovementsNum;
-        end   
+        end  
+        
+        % to photon rate
+        XTresponses{sceneIndex} = XTresponses{sceneIndex}/sensorConversionGain/sensorExposureTime;
+        
     end
         
     eyeMovementsPerSceneRotation = fixationsPerSceneRotation * eyeMovementParamsStruct.samplesPerFixation
@@ -577,7 +585,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
     eyeMovementIndex = 1;
     minSteps = 10;  % 1 minute + 2 seconds + 500 milliseconds
     
-    midgetIR = midgetImpulseResponse();
+    midgetIR = temporalImpulseResponse('V1monophasic');
      
     try
         
@@ -615,40 +623,156 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
             aggegateXTResponseOffset = size(aggregateXTresponse,2);
             aggregateXTresponse = [aggregateXTresponse XTresponses{sceneIndex}(:,timeBins)];
 
+            
+            
+            plotResponses = false;
+            
+            if plotResponses
+                LconeIndices = find(trueConeTypes==2);
+                MconeIndices = find(trueConeTypes==3);
+                SconeIndices = find(trueConeTypes==4);
+
+                m1 = 0;
+                for k = 1:numel(LconeIndices)
+                   m2 = max(squeeze(aggregateXTresponse(LconeIndices(k),:)));
+                   if (m2 > m1)
+                       m1 = m2;
+                       LconeIndex = LconeIndices(k);
+                   end
+                end
+            
+                m1 = 0;
+                for k = 1:numel(MconeIndices)
+                   m2 = max(squeeze(aggregateXTresponse(MconeIndices(k),:)));
+                   if (m2 > m1)
+                       m1 = m2;
+                       MconeIndex = MconeIndices(k);
+                   end
+                end
+            
+                m1 = 0;
+                for k = 1:numel(SconeIndices)
+                   m2 = max(squeeze(aggregateXTresponse(SconeIndices(k),:)));
+                   if (m2 > m1)
+                       m1 = m2;
+                       SconeIndex = SconeIndices(k);
+                   end
+                end
+    
+                LconeAbsorptions = aggregateXTresponse(LconeIndex,:);
+                MconeAbsorptions = aggregateXTresponse(MconeIndex,:);
+                SconeAbsorptions = aggregateXTresponse(SconeIndex,:);
+            end
+            
+            
+            
             if (strcmp(adaptationModelToUse, 'linear'))
                 fprintf('Computing aggregate adapted XT response - linear adaptation (scene:%d/%d, rotation:%d/%d)\n', sceneIndex,numel(allSceneNames), rotationIndex,fullSceneRotations);
                 initialState = riekeInit;
                 initialState.timeInterval  = sensorTimeInterval;
                 initialState.Compress = false;
                 aggregateAdaptedXTresponse = ...
-                    riekeLinearCone(aggregateXTresponse/sensorConversionGain/sensorExposureTime, initialState);
+                    riekeLinearCone(aggregateXTresponse, initialState);
                 
-%                 if (strcmp(noiseFlag, 'RiekeNoise'))
-%                     disp('Adding noise to adapted responses');
-%                     params.seed = 349573409;
-%                     params.sampTime = sensorTimeInterval;
-%                     [aggregateAdaptedXTresponse2, ~] = riekeAddNoise(aggregateAdaptedXTresponse, params);
-%                 end
-%                 noise = (aggregateAdaptedXTresponse2-aggregateAdaptedXTresponse);
-%                 aggregateAdaptedXTresponse  = aggregateAdaptedXTresponse + 0.5*noise;
+                if plotResponses
+                    LadaptedConeAbsorptions = aggregateAdaptedXTresponse(LconeIndex,:);
+                    MadaptedConeAbsorptions = aggregateAdaptedXTresponse(MconeIndex,:);
+                    SadaptedConeAbsorptions = aggregateAdaptedXTresponse(SconeIndex,:);
+                end
                 
-
                 if (strcmp(noiseFlag, 'RiekeNoise'))
                     disp('Adding noise to adapted responses');
                     params.seed = 349573409;
                     params.sampTime = sensorTimeInterval;
-                    [aggregateAdaptedXTresponse, ~] = riekeAddNoise(aggregateAdaptedXTresponse, params);
+                    [aggregateAdaptedXTresponse2, ~] = riekeAddNoise(aggregateAdaptedXTresponse, params);
+                end
+                noise = (aggregateAdaptedXTresponse2-aggregateAdaptedXTresponse);
+                aggregateAdaptedXTresponse  = aggregateAdaptedXTresponse + 1.0*noise;
+                
+                if plotResponses
+                    LphotoCurrent = aggregateAdaptedXTresponse(LconeIndex,:);
+                    MphotoCurrent = aggregateAdaptedXTresponse(MconeIndex,:);
+                    SphotoCurrent = aggregateAdaptedXTresponse(SconeIndex,:);
                 end
                 
                 disp('Applying midget temporal filtering');
                 % apply ganglion midget temporal filtering
+                signalLength = size(aggregateAdaptedXTresponse,2);
                 for coneIndex = 1:size(aggregateAdaptedXTresponse,1)
-                    aggregateAdaptedXTresponse(coneIndex,:) = conv(squeeze(aggregateAdaptedXTresponse(coneIndex,:)), midgetIR, 'same');
+                    tmp = conv(squeeze(aggregateAdaptedXTresponse(coneIndex,:)), midgetIR);
+                    aggregateAdaptedXTresponse(coneIndex,:) = tmp(1:signalLength);
+                end
+                
+                if plotResponses
+                    LfilteredPhotoCurrent = aggregateAdaptedXTresponse(LconeIndex,:);
+                    MfilteredPhotoCurrent = aggregateAdaptedXTresponse(MconeIndex,:);
+                    SfilteredPhotoCurrent = aggregateAdaptedXTresponse(SconeIndex,:);
+                end
+                
+                if plotResponses
+                    
+                    subplotPosVector = NicePlot.getSubPlotPosVectors(...
+                        'rowsNum',      2, ...
+                        'colsNum',      2, ...
+                        'widthMargin',  0.07, ...
+                        'leftMargin',   0.06, ...
+                        'bottomMargin', 0.06, ...
+                        'heightMargin', 0.11, ...
+                        'topMargin',    0.04);
+    
+                    hh  = figure(2);
+                    clf;
+                    set(hh, 'Position', [10 10 1200 720]);
+                    subplot('Position', subplotPosVector(1,1).v);
+                    timeInMsec = numel(midgetIR):numel(LconeAbsorptions)-numel(midgetIR);
+                    plot(timeInMsec-numel(midgetIR), LconeAbsorptions(timeInMsec), 'r.-');
+                    hold on;
+                    plot(timeInMsec-numel(midgetIR), MconeAbsorptions(timeInMsec), 'g.-');
+                    plot(timeInMsec-numel(midgetIR), SconeAbsorptions(timeInMsec), 'b.-');
+                    xlabel('time (ms)')
+                    set(gca, 'FontSize', 14);
+                    title('1. cone absorptions', 'FontSize', 16);
+
+                    subplot('Position', subplotPosVector(1,2).v);
+                    plot(timeInMsec-numel(midgetIR), LadaptedConeAbsorptions(timeInMsec), 'r.-');
+                    hold on;
+                    plot(timeInMsec-numel(midgetIR), MadaptedConeAbsorptions(timeInMsec), 'g.-');
+                    plot(timeInMsec-numel(midgetIR), SadaptedConeAbsorptions(timeInMsec), 'b.-');
+                    xlabel('time (ms)')
+                    set(gca, 'FontSize', 14);
+                    title('2. adapted cone Vm', 'FontSize', 16);
+                
+                    subplot('Position', subplotPosVector(2,1).v);
+                    plot(timeInMsec-numel(midgetIR), LphotoCurrent(timeInMsec), 'r.-');
+                    hold on;
+                    plot(timeInMsec-numel(midgetIR), MphotoCurrent(timeInMsec), 'g.-');
+                    plot(timeInMsec-numel(midgetIR), SphotoCurrent(timeInMsec), 'b.-');
+                    xlabel('time (ms)')
+                    set(gca, 'FontSize', 14);
+                    title('3. photo-current', 'FontSize', 16);
+
+
+                    subplot('Position', subplotPosVector(2,2).v);
+                    plot(timeInMsec-numel(midgetIR), LfilteredPhotoCurrent(timeInMsec), 'r.-');
+                    hold on;
+                    plot(timeInMsec-numel(midgetIR), MfilteredPhotoCurrent(timeInMsec), 'g.-');
+                    plot(timeInMsec-numel(midgetIR), SfilteredPhotoCurrent(timeInMsec), 'b.-');
+                    offset = mean(LfilteredPhotoCurrent);
+                    delta = (max(LfilteredPhotoCurrent)-min(LfilteredPhotoCurrent))/2;
+                    plot((1:length(midgetIR))+1200, midgetIR/max(abs(midgetIR))*delta/2, 'k.-', 'LineWidth', 2);
+
+                    set(gca, 'FontSize', 14);
+                    xlabel('time (ms)')
+                    title('4. filtered photo-current', 'FontSize', 16);
+
+                    drawnow;
+                    NicePlot.exportFigToPNG('ConeSignals.png',hh,300);
+                    pause
+                    figure(1);
                 end
                 
                 % normalize
                 aggregateAdaptedXTresponse = aggregateAdaptedXTresponse / (0.5*max(abs(aggregateAdaptedXTresponse(:))));
-                
             end
             
             for timeBinIndex = 1:eyeMovementsPerSceneRotation 
@@ -750,8 +874,8 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
     
                 % For comparison to true spatial mosaic determine optimal scaling and
                 % rotation (around the spectral (X) axis) of the MDS embedding
-                %coneIndices = LMconeIndices;
-                coneIndices = (1:size(trueConeXYLocations,1));
+                coneIndices = LMconeIndices;
+                %coneIndices = (1:size(trueConeXYLocations,1));
                 [d,Z,transform] = procrustes(trueConeXYLocations(coneIndices,:), rotatedMDSprojection(coneIndices,2:3));
 
                 % Form the rotation matrix around X-axis
@@ -1183,8 +1307,10 @@ function GenerateResultsFigure(resultsFile, adaptationModelToUse, noiseFlag, nor
     
     disp('Applying midget temporal filtering');
     % apply ganglion midget temporal filtering
+    signalLength = size(aggregateXTresponse,2);
     for coneIndex = 1:size(aggregateXTresponse,1)
-        aggregateXTresponse(coneIndex,:) = conv(squeeze(aggregateXTresponse(coneIndex,:)), midgetIR, 'same');
+        tmp = conv(squeeze(aggregateXTresponse(coneIndex,:)), midgetIR);
+        aggregateXTresponse(coneIndex,:) = tmp(1:signalLength);
     end
                 
     disp('Computing correlation matrix');
@@ -1248,10 +1374,10 @@ function GenerateResultsFigure(resultsFile, adaptationModelToUse, noiseFlag, nor
         'rowsNum',      2, ...
         'colsNum',      2, ...
         'widthMargin',  0.07, ...
-        'leftMargin',   0.06, ...
+        'leftMargin',   0.03, ...
         'bottomMargin', 0.06, ...
         'heightMargin', 0.09, ...
-        'topMargin',    0.01);
+        'topMargin',    0.03);
     
     MDSdims = {'MDS-x', 'MDS-y', 'MDS-z'};
     
@@ -1300,20 +1426,29 @@ end
 
 
 
-function IR = midgetImpulseResponse
+
+function IR = temporalImpulseResponse(type)
     t = (0:1:300)/1000;
-    p1 = 1;
-    p2 = 0.15;
     n  = 4;
-    tau1 = 30/1000;
+    p1 = 1;
+    if strcmp(type, 'RGC')
+        p2 = 0.15;
+        tau1 = 30/1000;
+    elseif strcmp(type, 'V1monophasic')
+        p2 = 0.0;
+        tau1 = 50/1000;
+    else
+        error('Unkown impulse response type %s', type);
+    end
     tau2 = 80/1000;
+    
     t1 = t/tau1;
     t2 = t/tau2;
     IR = p1 * (t1.^n) .* exp(-n*(t1-1))  - p2 * (t2.^n) .* exp(-n*(t2-1));
+    IR = IR / sum(abs(IR));
     if (1==2)
     figure(1);
     plot(t, IR, 'k.-');
     drawnow
     end
-    
 end
