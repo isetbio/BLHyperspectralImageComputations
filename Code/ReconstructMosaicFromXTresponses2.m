@@ -134,6 +134,8 @@ function GeneratePartsVideoFile(resultsFile, adaptationModelToUse, noiseFlag, no
     eyeMovementIndex = 1;
     minSteps = 10;  % 1 minute + 2 seconds + 500 milliseconds
     
+    midgetIR = midgetImpulseResponse();
+    
     for rotationIndex = 1:fullSceneRotations
         
         timeBins = eyeMovementIndex + (0:eyeMovementsPerSceneRotation-1);
@@ -178,8 +180,16 @@ function GeneratePartsVideoFile(resultsFile, adaptationModelToUse, noiseFlag, no
                     params.sampTime = sensorTimeInterval;
                     [adaptedXYTresponse, ~] = riekeAddNoise(adaptedXYTresponse, params);
                 end
+                
+                
                 aggregateAdaptedXTresponse = reshape(adaptedXYTresponse, ...
                              [size(photonRate,1)*size(photonRate,2) size(photonRate,3)]);
+                         
+                % apply ganglion midget temporal filtering
+                for coneIndex = 1:size(aggregateAdaptedXTresponse,1)
+                    aggregateAdaptedXTresponse(coneIndex,:) = conv(squeeze(aggregateAdaptedXTresponse(coneIndex,:)), midgetIR, 'same');
+                end
+                
                 % normalize
                 aggregateAdaptedXTresponse = aggregateAdaptedXTresponse / max(abs(aggregateAdaptedXTresponse(:)));
             end
@@ -302,6 +312,8 @@ function GeneratePartsVideo2File(resultsFile, adaptationModelToUse, noiseFlag, n
     eyeMovementIndex = 1;
     minSteps = 10;  % 1 minute + 2 seconds + 500 milliseconds
     
+    midgetIR = midgetImpulseResponse();
+    
     for rotationIndex = 1:fullSceneRotations
         
         timeBins = eyeMovementIndex + (0:eyeMovementsPerSceneRotation-1);
@@ -326,6 +338,11 @@ function GeneratePartsVideo2File(resultsFile, adaptationModelToUse, noiseFlag, n
                     [aggregateAdaptedXTresponse, ~] = riekeAddNoise(aggregateAdaptedXTresponse, params);
                 end
                
+                % apply ganglion midget temporal filtering
+                for coneIndex = 1:size(aggregateAdaptedXTresponse,1)
+                    aggregateAdaptedXTresponse(coneIndex,:) = conv(squeeze(aggregateAdaptedXTresponse(coneIndex,:)), midgetIR, 'same');
+                end
+                
                 % normalize
                 aggregateAdaptedXTresponse = aggregateAdaptedXTresponse / max(abs(aggregateAdaptedXTresponse(:)));
             end
@@ -558,8 +575,10 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
     % Initialize
     aggregateXTresponse = [];
     eyeMovementIndex = 1;
-     minSteps = 10;  % 1 minute + 2 seconds + 500 milliseconds
+    minSteps = 10;  % 1 minute + 2 seconds + 500 milliseconds
     
+    midgetIR = midgetImpulseResponse();
+     
     try
         
     for rotationIndex = 1:fullSceneRotations
@@ -604,14 +623,28 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
                 aggregateAdaptedXTresponse = ...
                     riekeLinearCone(aggregateXTresponse/sensorConversionGain/sensorExposureTime, initialState);
                 
+%                 if (strcmp(noiseFlag, 'RiekeNoise'))
+%                     disp('Adding noise to adapted responses');
+%                     params.seed = 349573409;
+%                     params.sampTime = sensorTimeInterval;
+%                     [aggregateAdaptedXTresponse2, ~] = riekeAddNoise(aggregateAdaptedXTresponse, params);
+%                 end
+%                 noise = (aggregateAdaptedXTresponse2-aggregateAdaptedXTresponse);
+%                 aggregateAdaptedXTresponse  = aggregateAdaptedXTresponse + 0.5*noise;
+                
+
                 if (strcmp(noiseFlag, 'RiekeNoise'))
                     disp('Adding noise to adapted responses');
                     params.seed = 349573409;
                     params.sampTime = sensorTimeInterval;
-                    [aggregateAdaptedXTresponse2, ~] = riekeAddNoise(aggregateAdaptedXTresponse, params);
+                    [aggregateAdaptedXTresponse, ~] = riekeAddNoise(aggregateAdaptedXTresponse, params);
                 end
-                noise = (aggregateAdaptedXTresponse2-aggregateAdaptedXTresponse);
-                aggregateAdaptedXTresponse  = aggregateAdaptedXTresponse + 0.5*noise;
+                
+                disp('Applying midget temporal filtering');
+                % apply ganglion midget temporal filtering
+                for coneIndex = 1:size(aggregateAdaptedXTresponse,1)
+                    aggregateAdaptedXTresponse(coneIndex,:) = conv(squeeze(aggregateAdaptedXTresponse(coneIndex,:)), midgetIR, 'same');
+                end
                 
                 % normalize
                 aggregateAdaptedXTresponse = aggregateAdaptedXTresponse / (0.5*max(abs(aggregateAdaptedXTresponse(:))));
@@ -1086,6 +1119,8 @@ function GenerateResultsFigure(resultsFile, adaptationModelToUse, noiseFlag, nor
     
     kk = 1:eyeMovementParamsStruct.samplesPerFixation;
     
+    midgetIR = midgetImpulseResponse();
+    
     for sceneIndex = 1:numel(allSceneNames)
         
         if (ismember(sceneIndex, indicesOfScenesToExclude))
@@ -1146,6 +1181,12 @@ function GenerateResultsFigure(resultsFile, adaptationModelToUse, noiseFlag, nor
         end
     end
     
+    disp('Applying midget temporal filtering');
+    % apply ganglion midget temporal filtering
+    for coneIndex = 1:size(aggregateXTresponse,1)
+        aggregateXTresponse(coneIndex,:) = conv(squeeze(aggregateXTresponse(coneIndex,:)), midgetIR, 'same');
+    end
+                
     disp('Computing correlation matrix');
     correlationMatrix = corrcoef(aggregateXTresponse');
     % Linear dissimilarity metric
@@ -1259,4 +1300,20 @@ end
 
 
 
-
+function IR = midgetImpulseResponse
+    t = (0:1:300)/1000;
+    p1 = 1;
+    p2 = 0.15;
+    n  = 4;
+    tau1 = 30/1000;
+    tau2 = 80/1000;
+    t1 = t/tau1;
+    t2 = t/tau2;
+    IR = p1 * (t1.^n) .* exp(-n*(t1-1))  - p2 * (t2.^n) .* exp(-n*(t2-1));
+    if (1==2)
+    figure(1);
+    plot(t, IR, 'k.-');
+    drawnow
+    end
+    
+end
