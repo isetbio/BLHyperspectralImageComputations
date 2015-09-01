@@ -1,5 +1,5 @@
 classdef ISETbioSceneProcessor < handle
-    %ISETBIOSIMULATOR Class to handle all of the isebio image processing
+    %ISETBIOSIMULATOR Class to handle isebio image processing
     %   Detailed explanation goes here
     
     properties

@@ -1,160 +1,84 @@
 function runSimulation
+    
+    addConeLearningToolboxesToPath();
+    
+    sceneSet{1}.dataBaseName = 'manchester_database';
+    sceneSet{1}.sceneNames = {'scene1', 'scene2', 'scene3', 'scene4', 'scene6', 'scene7', 'scene8'};
+    
+    
+    sceneSet{2}.dataBaseName = 'harvard_database';
+    sceneSet{2}.sceneNames = {...
+        'img1', 'img2', 'img3', 'img4', 'img6', ...
+        'imga1', 'imga2', 'imga4', 'imga5', 'imga6', 'imga7', 'imga8', ...
+        'imgb1', 'imgb2', 'imgb3', 'imgb5', 'imgb6', 'imgb7', 'imgb8', ...
+        'imgc1', 'imgc2', 'imgc3', 'imgc4', 'imgc5', 'imgc6', 'imgc7', 'imgc8', 'imgc9', ...
+        'imgd0', 'imgd1', 'imgd2', 'imgd3', 'imgd4', 'imgd5', 'imgd6', 'imgd7', 'imgd8', 'imgd9', ...
+        'imge0', 'imge1', 'imge2', 'imge3', 'imge4', 'imge5', 'imge6', 'imge7', ...
+        'imgf1', 'imgf2', 'imgf3', 'imgf4', 'imgf5', 'imgf6', 'imgf7', 'imgf8', ...
+        'imgg0', 'imgg2', 'imgg5', 'imgg8', 'imgg9', ...
+        'imgh0', 'imgh1', 'imgh2', 'imgh3' ...
+        };
 
-    startup();
+    
+    coneLearningProcessor = ConeLearningProcessor();
+    
+    recomputePhotoAbsorptionMatrices = dalse;
+    if (recomputePhotoAbsorptionMatrices)
+        coneAbsorptionsFile = coneLearningProcessor.computeSpatioTemporalPhotonAbsorptionMatrix(...
+                              'conesAcross', 10, ...
+                    'coneApertureInMicrons', 3.0, ...
+        'coneIntegrationTimeInMilliseconds', 50.0, ...
+                         'coneLMSdensities', [0.6 0.3 0.1], ...
+             'eyeMicroMovementsPerFixation', 100, ...
+                                 'sceneSet', sceneSet ...
+        );
+    else
+        coneAbsorptionsFile = 'PhotonAbsorptionMatrices_10x10.mat';
+    end
+    
+    coneLearningProcessor.generateConeLearningProgressVideo(...
+        coneAbsorptionsFile, ...
+        'fixationsPerSceneRotation', 12,...
+             'adaptationModelToUse', 'linear', ...               % 'none' or 'linear'
+                        'noiseFlag', 'RiekeNoise',...            % 'noNoise' or 'RiekeNoise'
+             'precorrelationFilter', monoPhasicIR(50, 300), ...  % monoPhasicIR(50, 300) or biPhasicIR(30, 80, 300)
+                  'disparityMetric', 'log', ...                  % 'log' or 'linear'
+                   'mdsWarningsOFF', true, ...                   % set to true to avoid wanrings about MDS not convering
+    'coneLearningUpdateInFixations', 1.0 ...                     % update cone mosaic learning every this many fixations
+   );
+    
+end
+
+
+function IR = monoPhasicIR(timeConstantInMilliseconds, supportInMilliseconds)
+    n = 4;
+    p1 = 1;
+    t = (0:1:supportInMilliseconds)/1000;
+    tau = timeConstantInMilliseconds/1000;
+    t1 = t / tau;
+    IR = p1 * (t1.^n) .* exp(-n*(t1-1));
+    IR = IR / sum(abs(IR)); 
+end
+
+function IR = biPhasicIR(timeConstant1InMilliseconds, timeConstant2InMilliseconds, supportInMilliseconds)
+    n = 4;
+    p1 = 1;
+    p2 = 0.15;
+    t = (0:1:supportInMilliseconds)/1000;
+    tau1 = timeConstant1InMilliseconds/1000;
+    tau2 = timeConstant2InMilliseconds/1000;
+    t1 = t / tau1;
+    t2 = t / tau2;
+    IR = p1 * (t1.^n) .* exp(-n*(t1-1))  - p2 * (t2.^n) .* exp(-n*(t2-1));
+    IR = IR / sum(abs(IR));
+end
+
+
+function addConeLearningToolboxesToPath()
     [rootPath,~] = fileparts(which(mfilename));
     cd(rootPath);
     cd ..
     cd 'Toolbox';
     addpath(genpath(pwd));
     cd(rootPath);
-    
-    conesAcross = 10;
-    if (conesAcross == 10) || (conesAcross == 15)
-        eyeMovementOverlapFactor = 0.5;
-    elseif (conesAcross == 20)
-        eyeMovementOverlapFactor = 0.6;
-    end
-    
-    % Specify major simulations params
-    % Sensor params
-    sensorParamsStruct = struct(...
-            'name', 'humanLMS', ...
-            'conesAcross', conesAcross, ...
-            'coneAperture', 3*1e-6, ... % specified in meters
-            'LMSdensities', [0.6 0.3 0.1], ...
-            'heightToWidthRatio', 1.0, ...
-            'coneIntegrationTime', 0.050, ...
-            'noiseFlag', 0 ...
-    );
-
-    % Eye movement params
-    eyeMovementParamsStruct = struct(...
-        'name', 'saccadicEyeMovements', ...
-        'samplesPerFixation', 100, ...% 80, ...
-        'sampleTime', 0.001, ...  % 1 milliseconds
-        'tremorAmplitude', 0.0073, ...  % default value
-        'overlapFactor', eyeMovementOverlapFactor ...  % 50 % overlap
-    );
-
-    
-    
-   currentSceneIndex = 0;
-
-   for databaseIndex = 1:2
-       
-        if (databaseIndex == 1)
-           databaseName = 'manchester_database';
-           sceneNames = {'scene1', 'scene2', 'scene3', 'scene4', 'scene6', 'scene7', 'scene8'};
-           %sceneNames = {'scene7', 'scene1', 'scene2'}; % used for demo video of opticalImage->eyemovement->2DmosaicActivation->AdaptedResponse
-           
-        elseif (databaseIndex == 2)
-           databaseName = 'harvard_database';
-           % all scenes available
-           sceneNames = {...
-               'img1', 'img2', 'img3', 'img4', 'img5', 'img6', ...
-               'imga1', 'imga2', 'imga3', 'imga4', 'imga5', 'imga6', 'imga7', 'imga8'...
-               'imgb1', 'imgb2', 'imgb3', 'imgb4', 'imgb5', 'imgb6', 'imgb7', 'imgb8', ...
-               'imgc1', 'imgc2', 'imgc3', 'imgc4', 'imgc5', 'imgc6', 'imgc7', 'imgc8', 'imgc9', ...
-               'imgd0', 'imgd1', 'imgd2', 'imgd3', 'imgd4', 'imgd5', 'imgd6', 'imgd7', 'imgd8', 'imgd9', ...
-               'imge0', 'imge1', 'imge2', 'imge3', 'imge4', 'imge5', 'imge6', 'imge7', ...
-               'imgf1', 'imgf2', 'imgf3', 'imgf4', 'imgf5', 'imgf6', 'imgf7', 'imgf8', ...
-               'imgg0', 'imgg1', 'imgg2', 'imgg3', 'imgg4', 'imgg5', 'imgg6', 'imgg7', 'imgg8', 'imgg9', ...
-               'imgh0', 'imgh1', 'imgh2', 'imgh3', 'imgh4', 'imgh5', 'imgh6', 'imgh7' ...
-               };
-           % scene names with no blacked-out regions
-           sceneNames = {...
-               'img1', 'img2', 'img3', 'img4', 'img6', ...
-               'imga1', 'imga2', 'imga4', 'imga5', 'imga6', 'imga7', 'imga8', ...
-               'imgb1', 'imgb2', 'imgb3', 'imgb5', 'imgb6', 'imgb7', 'imgb8', ...
-               'imgc1', 'imgc2', 'imgc3', 'imgc4', 'imgc5', 'imgc6', 'imgc7', 'imgc8', 'imgc9', ...
-               'imgd0', 'imgd1', 'imgd2', 'imgd3', 'imgd4', 'imgd5', 'imgd6', 'imgd7', 'imgd8', 'imgd9', ...
-               'imge0', 'imge1', 'imge2', 'imge3', 'imge4', 'imge5', 'imge6', 'imge7', ...
-               'imgf1', 'imgf2', 'imgf3', 'imgf4', 'imgf5', 'imgf6', 'imgf7', 'imgf8', ...
-               'imgg0', 'imgg2', 'imgg5', 'imgg8', 'imgg9', ...
-               'imgh0', 'imgh1', 'imgh2', 'imgh3' ...
-               };
-           sceneNames = {};
-%                'img1', 'img2', 'img3', 'img4', 'img6', ...
-%                'imga1', 'imga2', 'imga4', 'imga5', 'imga6', 'imga7', 'imga8', ...
-%                'imgc1', 'imgc2', 'imgc3', 'imgc4', 'imgc5', 'imgc6', 'imgc7', 'imgc8', 'imgc9' ...
-%                };
-        end
-       
-        for sceneIndex = 1:numel(sceneNames)
-            
-            sceneName = sceneNames{sceneIndex};
-            fprintf('\nProcessing scene %s\n', sceneName);
-        
-            % Instantiate a new sceneProcessor
-            verbosity = 10;
-            sceneProcessor = ISETbioSceneProcessor(databaseName, sceneName, verbosity);
-            
-            % Compute optical image (if necessary)
-            sceneProcessor.computeOpticalImage(...
-                'forceRecompute', false, ...
-                'visualizeResultsAsIsetbioWindows', false, ...
-                'visualizeResultsAsImages', false ...
-            );
-            
-            
-            acceptScene = 'y'; %input('Is this scene acceptable ? [y/n] ', 's');
-            
-            if (strcmp(acceptScene, 'y')) 
-                
-                currentSceneIndex = currentSceneIndex + 1;
-                allSceneNames{currentSceneIndex} = sceneName;
-                
-                randomSeedForSensor = 42385654;
-                visualizeResultsAsIsetbioWindows = false;
-                showEyeMovementCoverage = false;
-                
-                % Compute the time-varying activation of the sensor mosaic
-                XTresponse = sceneProcessor.computeSensorActivation(...
-                    'forceRecompute', true, ...
-                    'randomSeed',  randomSeedForSensor, ...   % pass empty to generate new sensor or some seed to generate same sensor
-                    'sensorParams', sensorParamsStruct , ...
-                    'eyeMovementParams', eyeMovementParamsStruct, ...
-                    'visualizeResultsAsIsetbioWindows', visualizeResultsAsIsetbioWindows, ...
-                    'showEyeMovementCoverage', showEyeMovementCoverage, ...
-                    'saveSensorToFile', false ...
-                ); 
-                
-                % save XT responses and eye movements for each scene
-                XTresponses{currentSceneIndex}  = single(XTresponse);
-                eyeMovements{currentSceneIndex} = single(sensorGet(sceneProcessor.sensor,'positions'));
-                
-                % extract other information for saving
-                opticalImageRGBrendering{currentSceneIndex} = oiGet(sceneProcessor.opticalImage, 'rgb image');
-                opticalSampleSeparation{currentSceneIndex}  = oiGet(sceneProcessor.opticalImage, 'distPerSamp','microns');
-                
-                sensorSampleSeparation = sensorGet(sceneProcessor.sensor,'pixel size','um');
-                sensorRowsCols         = sensorGet(sceneProcessor.sensor, 'size');
-                trueConeXYLocations    = sensorGet(sceneProcessor.sensor, 'xy');
-                trueConeTypes          = sensorGet(sceneProcessor.sensor, 'cone type');
-                
-                % information for computing linear cone adaptation signal
-                sensorConversionGain = pixelGet(sensorGet(sceneProcessor.sensor,'pixel'),'conversionGain');
-                sensorExposureTime   = sensorGet(sceneProcessor.sensor,'exposure time');   
-                sensorTimeInterval   = sensorGet(sceneProcessor.sensor, 'time interval');
-        
-            else
-               fprintf('Skipping scene ''%s''\n', sceneName); 
-            end
-            
-            % clear current sceneProcessor
-            varlist = {'sceneProcessor'};
-            clear(varlist{:});
-        end % sceneIndex
-    end % dataBaseIndex
-       
-    % save all params
-    save(sprintf('results_%dx%d.mat', sensorParamsStruct.conesAcross,sensorParamsStruct.conesAcross),...
-        'allSceneNames', 'XTresponses', 'eyeMovements', ...
-        'opticalImageRGBrendering', 'opticalSampleSeparation', ...
-        'trueConeXYLocations', 'trueConeTypes', 'sensorRowsCols','sensorSampleSeparation', ...
-        'sensorConversionGain', 'sensorExposureTime', 'sensorTimeInterval', ...
-        'randomSeedForSensor',  'sensorParamsStruct', 'eyeMovementParamsStruct', ...
-        '-v7.3');
-end        
-       
-
+end

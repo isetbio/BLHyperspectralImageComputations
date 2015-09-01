@@ -479,7 +479,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
     scenesNumForThreshold3 = 2;     % after this many scenes num (here 3), a new frame is added only at the end of 3 consecutive fixations
     scenesNumForThreshold4 = 3;     % after this many scenes num (here 4), a new frame is added only at the end of 4 consecutive fixations
     
-    fixationsPerSceneRotation = 12;
+    fixationsPerSceneRotation = 22;
     fixationsThreshold1 = ceil((fixationsPerSceneRotation*scenesNumForThreshold1)/fixationsPerSceneRotation)*fixationsPerSceneRotation;
     fixationsThreshold2 = ceil((fixationsPerSceneRotation*scenesNumForThreshold2)/fixationsPerSceneRotation)*fixationsPerSceneRotation;
     fixationsThreshold3 = ceil((fixationsPerSceneRotation*scenesNumForThreshold3)/fixationsPerSceneRotation)*fixationsPerSceneRotation;
@@ -585,7 +585,7 @@ function GenerateVideoFile(resultsFile, adaptationModelToUse, noiseFlag, normali
     eyeMovementIndex = 1;
     minSteps = 10;  % 1 minute + 2 seconds + 500 milliseconds
     
-    midgetIR = temporalImpulseResponse('V1monophasic');
+    midgetIR = temporalImpulseResponse('RGCbiphasic'); % temporalImpulseResponse('V1monophasic');
      
     try
         
@@ -1431,7 +1431,7 @@ function IR = temporalImpulseResponse(type)
     t = (0:1:300)/1000;
     n  = 4;
     p1 = 1;
-    if strcmp(type, 'RGC')
+    if strcmp(type, 'RGCbiphasic')
         p2 = 0.15;
         tau1 = 30/1000;
     elseif strcmp(type, 'V1monophasic')
