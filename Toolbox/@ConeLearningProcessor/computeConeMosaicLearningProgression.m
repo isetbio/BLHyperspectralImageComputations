@@ -37,23 +37,23 @@ function computeConeMosaicLearningProgression(obj, fixationsNum)
     correctlyIdentifiedLMcones = correctlyIdentifiedLMcones / LMconesNum;
     correctlyIdentifiedScones = correctlyIdentifiedScones / SconesNum;
     
-    if (isempty(obj.coneMosaicLearningAccuracy))
-        obj.coneMosaicLearningAccuracy.correctlyIdentifiedLMcones = correctlyIdentifiedLMcones;
-        obj.coneMosaicLearningAccuracy.correctlyIdentifiedScones = correctlyIdentifiedScones;
-        obj.coneMosaicLearningAccuracy.meanDistanceLMmosaic = meanDistanceLMmosaic;
-        obj.coneMosaicLearningAccuracy.meanDistanceSmosaic = meanDistanceSmosaic;
-        obj.coneMosaicLearningAccuracy.fixationsNum = fixationsNum;
+    if (isempty(obj.coneMosaicLearningProgress))
+        obj.coneMosaicLearningProgress.correctlyIdentifiedLMcones = correctlyIdentifiedLMcones;
+        obj.coneMosaicLearningProgress.correctlyIdentifiedScones = correctlyIdentifiedScones;
+        obj.coneMosaicLearningProgress.meanDistanceLMmosaic = meanDistanceLMmosaic;
+        obj.coneMosaicLearningProgress.meanDistanceSmosaic = meanDistanceSmosaic;
+        obj.coneMosaicLearningProgress.fixationsNum = fixationsNum;
     else
-        obj.coneMosaicLearningAccuracy.correctlyIdentifiedLMcones = ...
-            [obj.coneMosaicLearningAccuracy.correctlyIdentifiedLMcones correctlyIdentifiedLMcones];
-        obj.coneMosaicLearningAccuracy.correctlyIdentifiedScones = ...
-            [obj.coneMosaicLearningAccuracy.correctlyIdentifiedScones correctlyIdentifiedScones];
-        obj.coneMosaicLearningAccuracy.meanDistanceLMmosaic = ...
-            [obj.coneMosaicLearningAccuracy.meanDistanceLMmosaic meanDistanceLMmosaic];
-        obj.coneMosaicLearningAccuracy.meanDistanceSmosaic = ...
-            [obj.coneMosaicLearningAccuracy.meanDistanceSmosaic meanDistanceSmosaic];
-        obj.coneMosaicLearningAccuracy.fixationsNum = ...
-            [ obj.coneMosaicLearningAccuracy.fixationsNum fixationsNum];
+        obj.coneMosaicLearningProgress.correctlyIdentifiedLMcones = ...
+            [obj.coneMosaicLearningProgress.correctlyIdentifiedLMcones correctlyIdentifiedLMcones];
+        obj.coneMosaicLearningProgress.correctlyIdentifiedScones = ...
+            [obj.coneMosaicLearningProgress.correctlyIdentifiedScones correctlyIdentifiedScones];
+        obj.coneMosaicLearningProgress.meanDistanceLMmosaic = ...
+            [obj.coneMosaicLearningProgress.meanDistanceLMmosaic meanDistanceLMmosaic];
+        obj.coneMosaicLearningProgress.meanDistanceSmosaic = ...
+            [obj.coneMosaicLearningProgress.meanDistanceSmosaic meanDistanceSmosaic];
+        obj.coneMosaicLearningProgress.fixationsNum = ...
+            [ obj.coneMosaicLearningProgress.fixationsNum fixationsNum];
     end
     
     

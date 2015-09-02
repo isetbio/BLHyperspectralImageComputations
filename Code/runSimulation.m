@@ -37,6 +37,7 @@ function runSimulation
         coneAbsorptionsFile = sprintf('PhotonAbsorptionMatrices_%dx%d.mat', conesAcross, conesAcross);
     end
     
+    % compute precorrelation filter for photocurrent de-noising
     precorrelationFilter = monoPhasicIR(50, 300);
     
     coneLearningProcessor.generateConeLearningProgressVideo(...
@@ -48,7 +49,8 @@ function runSimulation
                   'disparityMetric',    'log', ...                  % 'log' or 'linear'
 'coneLearningUpdateIntervalInFixations', 1.0, ...                   % update cone mosaic learning every this many fixations
                    'mdsWarningsOFF',     true, ...                  % set to true to avoid wanrings about MDS not converging
-          'displayComputationTimes',     false ...                  % set to true to see the time that each computation takes
+          'displayComputationTimes',     false, ...                 % set to true to see the time that each computation takes
+                     'outputFormat',     'still' ...                % 'video' or 'still'
    );
     
 end

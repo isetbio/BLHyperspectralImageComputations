@@ -24,6 +24,7 @@ classdef ConeLearningProcessor < handle
         coneLearningUpdateIntervalInFixations;
         randomSeedForEyeMovementsOnDifferentScenes = 234823568;
         displayComputationTimes;
+        outputFormat;
     end
     
     % Internal data
@@ -61,7 +62,7 @@ classdef ConeLearningProcessor < handle
         unwrappedScenter;
         unwrappedPrivot;
     
-        coneMosaicLearningAccuracy = [];
+        coneMosaicLearningProgress = [];
     end
     
     % Public API
