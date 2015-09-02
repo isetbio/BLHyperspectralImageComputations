@@ -13,16 +13,17 @@ classdef ConeLearningProcessor < handle
         sceneSet
     end
     
-    % Cone learning parameters (user-specified or defaults)
+    % Cone learning analysis parameters (user-specified or defaults)
     properties (SetAccess = private)
         fixationsPerSceneRotation;
-        adaptationModelToUse;
-        noiseFlag;
+        adaptationModel;
+        photocurrentNoise;
         precorrelationFilter;
         disparityMetric;
         mdsWarningsOFF;
-        coneLearningUpdateInFixations;
+        coneLearningUpdateIntervalInFixations;
         randomSeedForEyeMovementsOnDifferentScenes = 234823568;
+        displayComputationTimes;
     end
     
     % Internal data
@@ -76,9 +77,11 @@ classdef ConeLearningProcessor < handle
     end
     
     methods (Access = private)
+        % import data and convert to photon absorption rates
         loadSpatioTemporalPhotonAbsorptionMatrix(obj, datafile);
         
         % computational methods
+        maxAvailableSceneRotations = permuteEyeMovementsAndPhotoAbsorptionResponses(obj);
         computePostAbsorptionResponse(obj);
         D = computeDisparityMatrix(obj,timeBinRange);
         unwrapMDSprojection(obj);

@@ -37,15 +37,18 @@ function runSimulation
         coneAbsorptionsFile = sprintf('PhotonAbsorptionMatrices_%dx%d.mat', conesAcross, conesAcross);
     end
     
+    precorrelationFilter = monoPhasicIR(50, 300);
+    
     coneLearningProcessor.generateConeLearningProgressVideo(...
         coneAbsorptionsFile, ...
-        'fixationsPerSceneRotation', 12,...
-             'adaptationModelToUse', 'linear', ...               % 'none' or 'linear'
-                        'noiseFlag', 'RiekeNoise',...            % 'noNoise' or 'RiekeNoise'
-             'precorrelationFilter', monoPhasicIR(50, 300), ...  % monoPhasicIR(50, 300) or biPhasicIR(30, 80, 300)
-                  'disparityMetric', 'log', ...                  % 'log' or 'linear'
-                   'mdsWarningsOFF', true, ...                   % set to true to avoid wanrings about MDS not convering
-    'coneLearningUpdateInFixations', 1.0 ...                     % update cone mosaic learning every this many fixations
+        'fixationsPerSceneRotation',     12,...
+                  'adaptationModel',    'linear', ...               % 'none' or 'linear'
+                'photocurrentNoise',    'RiekeNoise',...            % 'noNoise' or 'RiekeNoise'
+             'precorrelationFilter',     precorrelationFilter, ...  % monoPhasicIR(50, 300) or biPhasicIR(30, 80, 300)
+                  'disparityMetric',    'log', ...                  % 'log' or 'linear'
+'coneLearningUpdateIntervalInFixations', 1.0, ...                   % update cone mosaic learning every this many fixations
+                   'mdsWarningsOFF',     true, ...                  % set to true to avoid wanrings about MDS not converging
+          'displayComputationTimes',     false ...                  % set to true to see the time that each computation takes
    );
     
 end

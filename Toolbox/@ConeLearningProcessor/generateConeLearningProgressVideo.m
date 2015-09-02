@@ -1,17 +1,24 @@
 function generateConeLearningProgressVideo(obj, datafile, varargin)
 
-    obj.loadSpatioTemporalPhotonAbsorptionMatrix(datafile);
- 
-    % parse optional arguments
-    parser = inputParser;
-    parser.addParamValue('fixationsPerSceneRotation', 12, @isnumeric);
-    parser.addParamValue('adaptationModelToUse',  'none', @ischar);
-    parser.addParamValue('noiseFlag', 'noNoise', @ischar);
-    parser.addParamValue('precorrelationFilter', []);
-    parser.addParamValue('disparityMetric', 'linear', @ischar);
-    parser.addParamValue('mdsWarningsOFF', false, @islogical);
-    parser.addParamValue('coneLearningUpdateInFixations', 1.0, @isfloat);
+    defaultFixationsPerSceneRotations = 12;
+    defaultAdaptationModel = 'none';
+    defaultPhotoCurrentNoise = 'noNoise';
+    defaultPrecorrelationFilter = [];
+    defaultDisparityMetric = 'linear';
+    defaultMDSwarningsOFF = false;
+    defaultConeLearningUpdateIntervalInFixations = 1.0;
+    defaultDisplayComputationTimes = false;
     
+    % Parse optional analysis paramaters in varargin
+    parser = inputParser;
+    parser.addParamValue('fixationsPerSceneRotation', defaultFixationsPerSceneRotations, @isnumeric);
+    parser.addParamValue('adaptationModel', defaultAdaptationModel, @ischar);
+    parser.addParamValue('photocurrentNoise', defaultPhotoCurrentNoise, @ischar);
+    parser.addParamValue('precorrelationFilter', defaultPrecorrelationFilter);
+    parser.addParamValue('disparityMetric', defaultDisparityMetric, @ischar);
+    parser.addParamValue('mdsWarningsOFF', defaultMDSwarningsOFF, @islogical);
+    parser.addParamValue('coneLearningUpdateIntervalInFixations', defaultConeLearningUpdateIntervalInFixations, @isfloat);
+    parser.addParamValue('displayComputationTimes', defaultDisplayComputationTimes, @islogical);
     % Execute the parser
     parser.parse(varargin{:});
     % Create a standard Matlab structure from the parser results.
@@ -21,6 +28,10 @@ function generateConeLearningProgressVideo(obj, datafile, varargin)
         eval(sprintf('obj.%s = parserResults.%s', pNames{k}, pNames{k}))
     end
     
+    % Load data and conv
+    obj.loadSpatioTemporalPhotonAbsorptionMatrix(datafile);
+ 
+    % Go !
     generateVideo(obj);
 end
 
@@ -33,70 +44,21 @@ function generateVideo(obj)
         warning('on','stats:mdscale:IterOrEvalLimit');
     end
     
-    % find minimal number of eye movements across all scenes
-    minEyeMovements = 1000*1000*1000;
-    totalEyeMovementsNum = 0;
+    % Permute eye movements and photon absorptions and compute max scene
+    % rotations so that all scenes are scanned with the same number of eye movements
+    maxAvailableSceneRotations = obj.permuteEyeMovementsAndPhotoAbsorptionResponses();
     
-    % Set the rng for repeatable eye movements
-    rng(obj.randomSeedForEyeMovementsOnDifferentScenes);
-    
-    % permute eyemovements and XT response indices 
-    for sceneIndex = 1:numel(obj.core1Data.allSceneNames)
-         
-        fprintf('Permuting eye movements and photon absorptions sequences for scene %d (''%s'')\n', sceneIndex, obj.core1Data.allSceneNames{sceneIndex});
-        
-        responseLength = size(obj.core1Data.XTphotonAbsorptionMatrices{sceneIndex},2);
-        fixationsNum = responseLength / obj.core1Data.eyeMovementParamsStruct.samplesPerFixation;
-        permutedFixationIndices = randperm(fixationsNum);
-        
-        % to photon rate
-        obj.core1Data.XTphotonAbsorptionMatrices{sceneIndex} = ...
-        obj.core1Data.XTphotonAbsorptionMatrices{sceneIndex}/obj.core1Data.sensorConversionGain/obj.core1Data.sensorExposureTime;
-        
-        % Ensure that all scenes have same maximal photon absorption rates (and
-        % equal to the max absorption rate during scene 1)
-        maxPhotonAbsorptionForCurrentScene = max(max(abs(obj.core1Data.XTphotonAbsorptionMatrices{sceneIndex})));
-        if (sceneIndex == 1)
-            maxPhotonAbsorptionForScene1 = maxPhotonAbsorptionForCurrentScene;
-        else
-            obj.core1Data.XTphotonAbsorptionMatrices{sceneIndex} = ...
-            obj.core1Data.XTphotonAbsorptionMatrices{sceneIndex} / maxPhotonAbsorptionForCurrentScene * maxPhotonAbsorptionForScene1;
-        end
-            
-        % do the permutation of eyemovements/responses
-        tmp1 = obj.core1Data.XTphotonAbsorptionMatrices{sceneIndex}*0;
-        tmp2 = obj.core1Data.eyeMovements{sceneIndex}*0;
-        
-        kk = 1:obj.core1Data.eyeMovementParamsStruct.samplesPerFixation;
-        for fixationIndex = 1:fixationsNum
-            sourceIndices = (permutedFixationIndices(fixationIndex)-1)*obj.core1Data.eyeMovementParamsStruct.samplesPerFixation + kk;
-            destIndices = (fixationIndex-1)*obj.core1Data.eyeMovementParamsStruct.samplesPerFixation+kk;
-            tmp1(:,destIndices) = obj.core1Data.XTphotonAbsorptionMatrices{sceneIndex}(:, sourceIndices);
-            tmp2(destIndices,:) = obj.core1Data.eyeMovements{sceneIndex}(sourceIndices,:);
-        end
-        obj.core1Data.XTphotonAbsorptionMatrices{sceneIndex} = tmp1;
-        obj.core1Data.eyeMovements{sceneIndex} = tmp2;
-        
-        % compute min number of eyemovements across all scenes
-        eyeMovementsNum = size(obj.core1Data.eyeMovements{sceneIndex},1);
-        totalEyeMovementsNum = totalEyeMovementsNum + eyeMovementsNum;
-        if (eyeMovementsNum < minEyeMovements)
-            minEyeMovements = eyeMovementsNum;
-        end   
-    end % sceneIndex
+    % Ask user for the desired number of scene rotations
+    fullSceneRotations = input(sprintf('Enter desired scene rotations [max=%2.0f]: ', maxAvailableSceneRotations));
+    totalFixationsNum  = numel(obj.core1Data.allSceneNames)*obj.fixationsPerSceneRotation*fullSceneRotations;
+    eyeMovementsPerSceneRotation = obj.fixationsPerSceneRotation * obj.core1Data.eyeMovementParamsStruct.samplesPerFixation;
+    fprintf('Video will contain a total of %d fixations (total of %d microfixations).\n\n', totalFixationsNum, eyeMovementsPerSceneRotation*fullSceneRotations);
     
     % determine maximally - responsive LMS cones for sceneIndex = 1
     obj.determineMaximallyResponseLMSConeIndices(1);
     
-    eyeMovementsPerSceneRotation = obj.fixationsPerSceneRotation * obj.core1Data.eyeMovementParamsStruct.samplesPerFixation;
-    fullSceneRotations = floor(minEyeMovements / eyeMovementsPerSceneRotation);
-    
-    fullSceneRotations = input(sprintf('Enter desired scene rotations [max=%2.0f]: ', fullSceneRotations));
-    totalFixationsNum  = numel(obj.core1Data.allSceneNames)*obj.fixationsPerSceneRotation*fullSceneRotations;
-    fprintf('Video will contain a total of %d fixations (total of %d microfixations)\n', totalFixationsNum, eyeMovementsPerSceneRotation*fullSceneRotations);
-    
     % Setup video stream
-    writerObj = VideoWriter(sprintf('MosaicReconstruction_%s_%s.m4v',obj.adaptationModelToUse, obj.noiseFlag), 'MPEG-4'); % H264 format
+    writerObj = VideoWriter(sprintf('MosaicReconstruction_%s_%s.m4v',obj.adaptationModel, obj.photocurrentNoise), 'MPEG-4'); % H264 format
     writerObj.FrameRate = 60; 
     writerObj.Quality = 100;
     
@@ -134,7 +96,7 @@ function generateVideo(obj)
            
            for sceneIndex = 1:numel(obj.core1Data.allSceneNames)
                
-                fprintf('Scene:%d/%d Rotation:%d/%d\n', sceneIndex, numel(obj.core1Data.allSceneNames), rotationIndex, fullSceneRotations)
+                fprintf('<strong>Scene:%d/%d Rotation:%d/%d</strong>\n', sceneIndex, numel(obj.core1Data.allSceneNames), rotationIndex, fullSceneRotations)
                 
                 % Get optical image and eye movement video data for this scene scan
                 obj.computeOpticalImageVideoData(sceneIndex);
@@ -177,7 +139,7 @@ function generateVideo(obj)
                     obj.videoData.shortHistoryXTResponse(:,end) = currentResponse;
                     
                     % check to see if it is time to compute an updated learned cone mosaic
-                    updateConeMosaicLearning = (mod(obj.fixationsNum,obj.coneLearningUpdateInFixations) == 0.0);
+                    updateConeMosaicLearning = (mod(obj.fixationsNum,obj.coneLearningUpdateIntervalInFixations) == 0.0);
                     kSteps = kSteps + 1;
                     
                     if (kSteps < kStepsMin)
@@ -196,7 +158,9 @@ function generateVideo(obj)
                     
                     % Attempt MDS of disparity matrix
                     try
-                        tic
+                        if (obj.displayComputationTimes)
+                            tic
+                        end
                         % Compute MDSprojection
                         dimensionsNum = 3;
                         [obj.MDSprojection, obj.MDSstress] = mdscale(obj.disparityMatrix,dimensionsNum);
@@ -206,10 +170,11 @@ function generateVideo(obj)
 
                         % compute cone learning progression
                         obj.computeConeMosaicLearningProgression(obj.fixationsNum);
-                        fprintf('MDS took %f\n', toc);
-
-                    catch err
+                        if (obj.displayComputationTimes)
+                            fprintf('\tMDS computation took %f seconds.\n', toc);
+                        end
                         
+                    catch err
                         fprintf(2,'Problem with mdscale (''%s''). Skipping this time bin (%d).\n', err.message, timeBinRangeToThisPoint(end));
                         rethrow(err)
                         continue;

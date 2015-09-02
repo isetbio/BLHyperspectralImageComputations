@@ -1,6 +1,8 @@
 function computeDisparityMatrix(obj,timeBinRange)
     % compute correlation matrix up to this point
-    tic
+    if (obj.displayComputationTimes)
+        tic
+    end
     correlationMatrix = corrcoef((obj.adaptedPhotoCurrentXTresponse(:,timeBinRange))');
 
     % Compute disparity matrix
@@ -15,6 +17,7 @@ function computeDisparityMatrix(obj,timeBinRange)
         D = 0.5*(D+D');
     end
     obj.disparityMatrix = D;
-    fprintf('disparity Matrix took %f\n', toc);
+    if (obj.displayComputationTimes)
+        fprintf('\tCorrelation and disparity matrices computeation took %f seconds. \n', toc);
+    end
 end
-

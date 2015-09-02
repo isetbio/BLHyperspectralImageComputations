@@ -36,10 +36,10 @@ function  displaySingleConeTraces(obj, photonAbsorptionTracesAxes, photoCurrentT
     if (isempty(obj.photoCurrentsTracesRange))
         obj.photoCurrentsTracesRange = [minR maxR];
     end
-    if (obj.photoCurrentsTracesRange(1) > minR)
+    if (minR < obj.photoCurrentsTracesRange(1))
         obj.photoCurrentsTracesRange(1) = minR;
     end
-    if (obj.photoCurrentsTracesRange(2) < maxR)
+    if (maxR > obj.photoCurrentsTracesRange(2))
         obj.photoCurrentsTracesRange(2) = maxR;
     end
     

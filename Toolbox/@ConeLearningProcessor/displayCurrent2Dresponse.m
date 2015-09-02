@@ -6,6 +6,7 @@ function displayCurrent2Dresponse(obj, current2DResponseAxes)
     axis(current2DResponseAxes, 'ij');
     axis(current2DResponseAxes, 'on');
     box(current2DResponseAxes, 'on');
+    
     minR = min(min(obj.videoData.current2DResponse));
     maxR = max(max(obj.videoData.current2DResponse));
     
