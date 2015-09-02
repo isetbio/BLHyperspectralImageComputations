@@ -1,24 +1,7 @@
 function generateConeLearningProgressVideo(obj, datafile, varargin)
 
     obj.loadSpatioTemporalPhotonAbsorptionMatrix(datafile);
-
-    % this loads core1Data struct with the following fields:
-%     obj.core1Data.allSceneNames
-%     obj.core1Data.XTphotonAbsorptionMatrices
-%     obj.core1Data.eyeMovements
-%     obj.core1Data.opticalImageRGBrendering
-%     obj.core1Data.opticalSampleSeparation
-%     obj.core1Data.trueConeXYLocations
-%     obj.core1Data.trueConeTypes
-%     obj.core1Data.sensorRowsCols
-%     obj.core1Data.sensorSampleSeparation
-%     obj.core1Data.sensorConversionGain
-%     obj.core1Data.sensorExposureTime
-%     obj.core1Data.sensorTimeInterval
-%     obj.core1Data.randomSeedForSensor
-%     obj.core1Data.sensorParamsStruct
-%     obj.core1Data.eyeMovementParamsStruct
-    
+ 
     % parse optional arguments
     parser = inputParser;
     parser.addParamValue('fixationsPerSceneRotation', 12, @isnumeric);
@@ -99,9 +82,11 @@ function generateVideo(obj)
         totalEyeMovementsNum = totalEyeMovementsNum + eyeMovementsNum;
         if (eyeMovementsNum < minEyeMovements)
             minEyeMovements = eyeMovementsNum;
-        end  
+        end   
     end % sceneIndex
     
+    % determine maximally - responsive LMS cones for sceneIndex = 1
+    obj.determineMaximallyResponseLMSConeIndices(1);
     
     eyeMovementsPerSceneRotation = obj.fixationsPerSceneRotation * obj.core1Data.eyeMovementParamsStruct.samplesPerFixation;
     fullSceneRotations = floor(minEyeMovements / eyeMovementsPerSceneRotation);
@@ -125,6 +110,9 @@ function generateVideo(obj)
     kStepsMin = 100;
     
     % Preallocate temp matrices to hold up various computation components
+    obj.videoData.photonAsborptionTraces = zeros(3,obj.core1Data.eyeMovementParamsStruct.samplesPerFixation);
+    obj.videoData.photoCurrentTraces = zeros(3,obj.core1Data.eyeMovementParamsStruct.samplesPerFixation);
+    
     % XT response for a duration equal to 1 fixation
     obj.videoData.shortHistoryXTResponse = zeros(prod(obj.core1Data.sensorRowsCols), eyeMovementsPerSceneRotation)-Inf;
     % current 2D response
@@ -172,6 +160,12 @@ function generateVideo(obj)
                     % compute fixation time for current time bin
                     obj.fixationsNum = timeBinRangeToThisPoint(end) / obj.core1Data.eyeMovementParamsStruct.samplesPerFixation;     
                     obj.fixationTimeInMilliseconds = timeBinRangeToThisPoint(end) * (1000.0*obj.core1Data.sensorTimeInterval);
+                    
+                    % update traces
+                    obj.videoData.photonAsborptionTraces = circshift(obj.videoData.photonAsborptionTraces, -1, 2);
+                    obj.videoData.photonAsborptionTraces(:,end) = obj.photonAbsorptionXTresponse(obj.maxResponsiveConeIndices, timeBinRangeToThisPoint(end));
+                    obj.videoData.photoCurrentTraces = circshift(obj.videoData.photoCurrentTraces, -1, 2);
+                    obj.videoData.photoCurrentTraces(:,end) = obj.prefilteredAdaptedPhotoCurrentXTresponse(obj.maxResponsiveConeIndices, timeBinRangeToThisPoint(end));
                     
                     % obtain current response at this time bin index
                     currentResponse = (obj.adaptedPhotoCurrentXTresponse(:, timeBinRangeToThisPoint(end)))';
@@ -261,10 +255,10 @@ end
 
 function axesStruct = generateAxes(hFig)
     % top row
-    axesStruct.opticalImageAxes      = axes('parent',hFig,'unit','pixel','position',[-30 395 620 400], 'Color', [0 0 0]);
-    axesStruct.photonAbsorptionTraces= axes('parent',hFig,'unit','pixel','position',[563 690 140 100], 'Color', [0 0 0]);
-    axesStruct.photoCurrentTraces    = axes('parent',hFig,'unit','pixel','position',[563 580 140 100], 'Color', [0 0 0]);
-    axesStruct.current2DResponseAxes = axes('parent',hFig,'unit','pixel','position',[563 397 140 140], 'Color', [0 0 0]);
+    axesStruct.opticalImageAxes      = axes('parent',hFig,'unit','pixel','position',[-30 394 620 400], 'Color', [0 0 0]);
+    axesStruct.photonAbsorptionTraces= axes('parent',hFig,'unit','pixel','position',[563 705 140 75], 'Color', [0 0 0]);
+    axesStruct.photoCurrentTraces    = axes('parent',hFig,'unit','pixel','position',[563 590 140 75], 'Color', [0 0 0]);
+    axesStruct.current2DResponseAxes = axes('parent',hFig,'unit','pixel','position',[563 395 140 140], 'Color', [0 0 0]);
     axesStruct.xtResponseAxes        = axes('parent',hFig,'unit','pixel','position',[720 395 144 400], 'Color', [0 0 0]);
     axesStruct.dispMatrixAxes        = axes('parent',hFig,'unit','pixel','position',[870 395 400 400], 'Color', [0 0 0]);
      

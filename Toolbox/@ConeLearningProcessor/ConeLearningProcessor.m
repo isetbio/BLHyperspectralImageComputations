@@ -36,11 +36,16 @@ classdef ConeLearningProcessor < handle
         disparityRange = [];
         
         % current fixation time and number
-        fixationTimeInMilliseconds
-        fixationsNum
+        fixationTimeInMilliseconds;
+        fixationsNum;
         
-        photonAbsorptionXTresponse;    % current agreggate photon absorption XT response
-        adaptedPhotoCurrentXTresponse; % current aggregate photo-current XT response 
+        maxResponsiveConeIndices;
+        photonAbsorptionTracesRange = [];
+        photoCurrentsTracesRange = [];
+        
+        photonAbsorptionXTresponse;             % current agreggate photon absorption XT response
+        adaptedPhotoCurrentXTresponse;          % current aggregate photo-current XT response 
+        prefilteredAdaptedPhotoCurrentXTresponse;
         
         disparityMatrix;
         MDSprojection;                  % current MDSprojection
@@ -84,7 +89,9 @@ classdef ConeLearningProcessor < handle
         computeEyeMovementVideoData(obj, sceneIndex, timeBins);
         displayOpticalImageAndEyeMovements(obj, opticalImageAxes, eyeMovementIndex)
         
+        determineMaximallyResponseLMSConeIndices(obj, sceneIndex);
         displaySingleConeTraces(obj, photonAbsorptionTraces, photoCurrentTraces);
+        
         displayCurrent2Dresponse(obj, current2DResponseAxes);
         displayShortHistoryXTresponse(obj, xtResponseAxes);
         

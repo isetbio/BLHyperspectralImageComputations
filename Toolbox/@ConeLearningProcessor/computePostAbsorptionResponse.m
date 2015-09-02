@@ -18,6 +18,8 @@ function computePostAbsorptionResponse(obj)
        error('Unknown adaptation mode to use (''%s'')', obj.adaptationModelToUse);
     end
 
+    obj.prefilteredAdaptedPhotoCurrentXTresponse = obj.adaptedPhotoCurrentXTresponse;
+    
     % apply pre-correlation filter
     if (~isempty(obj.precorrelationFilter))
         signalLength = size(obj.adaptedPhotoCurrentXTresponse,2);
