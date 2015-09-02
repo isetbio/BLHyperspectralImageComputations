@@ -24,8 +24,7 @@ function computePostAbsorptionResponse(obj)
     if (~isempty(obj.precorrelationFilter))
         signalLength = size(obj.adaptedPhotoCurrentXTresponse,2);
         for coneIndex = 1:size(obj.adaptedPhotoCurrentXTresponse,1)
-            % convolve with 'same' argument to eliminate additional delay of filtered response
-            tmp = conv(squeeze(obj.adaptedPhotoCurrentXTresponse(coneIndex,:)), obj.precorrelationFilter, 'same');
+            tmp = conv(squeeze(obj.adaptedPhotoCurrentXTresponse(coneIndex,:)), obj.precorrelationFilter);
             obj.adaptedPhotoCurrentXTresponse(coneIndex,:) = tmp(1:signalLength);
         end
     end
