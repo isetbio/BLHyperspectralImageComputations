@@ -26,17 +26,6 @@ function displayCurrent2Dresponse(obj, current2DResponseAxes)
     set(current2DResponseAxes, 'XLim', [1 size(obj.videoData.current2DResponse,2)], 'YLim', [1 size(obj.videoData.current2DResponse,1)]);
     set(current2DResponseAxes, 'Color', [0 0 0], 'XColor', [1 1 1], 'YColor', [1 1 1], 'XTick', [], 'YTick', [], 'XTickLabel', {}, 'YTickLabel', {});
     
-    
-    currentTimeHours = floor(obj.fixationTimeInMilliseconds/(1000*60*60));
-    currentTimeMinutes = floor((obj.fixationTimeInMilliseconds - currentTimeHours*(1000*60*60)) / (1000*60));
-    currentTimeSeconds = floor((obj.fixationTimeInMilliseconds - currentTimeHours*(1000*60*60) - currentTimeMinutes*(1000*60))/1000);
-    currentTimeMilliSeconds = obj.fixationTimeInMilliseconds - currentTimeHours*(1000*60*60) - currentTimeMinutes*(1000*60) - currentTimeSeconds*1000;
-    if (obj.fixationsNum < 1000)
-        title(current2DResponseAxes,  sprintf('fixation #%03.3f\n(%02.0f : %02.0f : %02.0f : %03.0f)', obj.fixationsNum, currentTimeHours, currentTimeMinutes, currentTimeSeconds, currentTimeMilliSeconds), 'FontSize', 16, 'Color', [1 .8 .4]);
-    else
-        title(current2DResponseAxes,  sprintf('fixation #%03.0f\n(%02.0f : %02.0f : %02.0f : %03.0f)', obj.fixationsNum, currentTimeHours, currentTimeMinutes, currentTimeSeconds, currentTimeMilliSeconds), 'FontSize', 16, 'Color', [1 .8 .4]);
-    end
-    
-    %xlabel(current2DResponseAxes, sprintf('mosaic activation'), 'Color', [1 1 1], 'FontSize', 16); 
+    title(current2DResponseAxes, sprintf('mosaic activation\n(filtered photocurrent)'), 'Color', [1 1 1], 'FontSize', 14); 
 end
 

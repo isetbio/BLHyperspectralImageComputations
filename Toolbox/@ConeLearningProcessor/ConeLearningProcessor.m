@@ -98,6 +98,8 @@ classdef ConeLearningProcessor < handle
         displayDisparityMatrix(obj, dispMatrixAxes);
         displayLearnedConeMosaic(obj, xyMDSAxes, xzMDSAxes, yzMDSAxes, mosaicAxes)
         displayConeMosaicProgress(obj, performanceAxes1, performanceAxes2);
+        
+        displayTimeInfo(obj,timeDisplayAxes);
     end
     
 end

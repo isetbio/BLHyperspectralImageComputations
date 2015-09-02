@@ -247,6 +247,7 @@ function renderVideoFrame(obj, eyeMovementIndex, axesStruct, writerObj)
     obj.displayDisparityMatrix(axesStruct.dispMatrixAxes);
     obj.displayLearnedConeMosaic(axesStruct.xyMDSAxes, axesStruct.xzMDSAxes, axesStruct.yzMDSAxes,axesStruct.mosaicAxes);
     obj.displayConeMosaicProgress(axesStruct.performanceAxes1, axesStruct.performanceAxes2);
+    obj.displayTimeInfo(axesStruct.timeDisplayAxes);
     
     drawnow;
     frame = getframe(gcf);
@@ -262,6 +263,7 @@ function axesStruct = generateAxes(hFig)
     axesStruct.current2DResponseAxes = axes('parent',hFig,'unit','pixel','position',[563 395 140 140], 'Color', [0 0 0]);
     axesStruct.xtResponseAxes        = axes('parent',hFig,'unit','pixel','position',[720 395 144 400], 'Color', [0 0 0]);
     axesStruct.dispMatrixAxes        = axes('parent',hFig,'unit','pixel','position',[870 395 400 400], 'Color', [0 0 0]);
+    axesStruct.timeDisplayAxes       = axes('parent',hFig,'unit','pixel','position',[1120 720 140 20], 'Color', [0 0 0]);
      
     % mid row
     axesStruct.xyMDSAxes         = axes('parent',hFig,'unit','pixel','position',[30   130  256 226], 'Color', [0 0 0]);
