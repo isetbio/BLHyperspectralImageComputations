@@ -110,11 +110,12 @@ function generateVideo(obj)
     kStepsMin = 100;
     
     % Preallocate temp matrices to hold up various computation components
+    % Traces for a duration equal to 1 fixations
     obj.videoData.photonAsborptionTraces = zeros(3,obj.core1Data.eyeMovementParamsStruct.samplesPerFixation);
     obj.videoData.photoCurrentTraces = zeros(3,obj.core1Data.eyeMovementParamsStruct.samplesPerFixation);
     
-    % XT response for a duration equal to 1 fixation
-    obj.videoData.shortHistoryXTResponse = zeros(prod(obj.core1Data.sensorRowsCols), eyeMovementsPerSceneRotation)-Inf;
+    % XT response for a duration equal to 6 fixations
+    obj.videoData.shortHistoryXTResponse = zeros(prod(obj.core1Data.sensorRowsCols), 6*obj.core1Data.eyeMovementParamsStruct.samplesPerFixation)-Inf;
     % current 2D response
     obj.videoData.current2DResponse = zeros(obj.core1Data.sensorRowsCols(1), obj.core1Data.sensorRowsCols(2));
     
