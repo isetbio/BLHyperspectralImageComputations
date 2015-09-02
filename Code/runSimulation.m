@@ -1,6 +1,7 @@
 function runSimulation
     
     addConeLearningToolboxesToPath();
+    conesAcross = 10;
     
     sceneSet{1}.dataBaseName = 'manchester_database';
     sceneSet{1}.sceneNames = {'scene1', 'scene2', 'scene3', 'scene4', 'scene6', 'scene7', 'scene8'};
@@ -22,10 +23,10 @@ function runSimulation
     
     coneLearningProcessor = ConeLearningProcessor();
     
-    recomputePhotoAbsorptionMatrices = true;
+    recomputePhotoAbsorptionMatrices = false;
     if (recomputePhotoAbsorptionMatrices)
         coneAbsorptionsFile = coneLearningProcessor.computeSpatioTemporalPhotonAbsorptionMatrix(...
-                              'conesAcross', 15, ...
+                              'conesAcross', conesAcross, ...
                     'coneApertureInMicrons', 3.0, ...
         'coneIntegrationTimeInMilliseconds', 50.0, ...
                          'coneLMSdensities', [0.6 0.3 0.1], ...
@@ -33,7 +34,7 @@ function runSimulation
                                  'sceneSet', sceneSet ...
         );
     else
-        coneAbsorptionsFile = 'PhotonAbsorptionMatrices_10x10.mat';
+        coneAbsorptionsFile = sprintf('PhotonAbsorptionMatrices_%dx%d.mat', conesAcross, conesAcross);
     end
     
     coneLearningProcessor.generateConeLearningProgressVideo(...
