@@ -32,7 +32,7 @@ function learnConeMosaic(obj, datafile, varargin)
     parserResults = parser.Results;
     pNames = fieldnames(parserResults);
     for k = 1:length(pNames)
-        eval(sprintf('obj.%s = parserResults.%s', pNames{k}, pNames{k}))
+        eval(sprintf('obj.%s = parserResults.%s;', pNames{k}, pNames{k}))
     end
    
     % Load data and conv
@@ -185,7 +185,7 @@ function generateVideo(obj)
     fullSceneRotations = input(sprintf('Enter desired scene rotations [max=%2.0f]: ', maxAvailableSceneRotations));
     totalFixationsNum  = numel(obj.core1Data.allSceneNames)*obj.fixationsPerSceneRotation*fullSceneRotations;
     eyeMovementsPerSceneRotation = obj.fixationsPerSceneRotation * obj.core1Data.eyeMovementParamsStruct.samplesPerFixation;
-    fprintf('Video will contain a total of %d fixations (total of %d microfixations).\n\n', totalFixationsNum, eyeMovementsPerSceneRotation*fullSceneRotations);
+    fprintf('Video will contain a total of %d fixations (total of %d microfixations).\n\n', totalFixationsNum, totalFixationsNum*obj.core1Data.eyeMovementParamsStruct.samplesPerFixation);
     
     % determine maximally - responsive LMS cones for sceneIndex = 1
     obj.determineMaximallyResponseLMSConeIndices(1);
