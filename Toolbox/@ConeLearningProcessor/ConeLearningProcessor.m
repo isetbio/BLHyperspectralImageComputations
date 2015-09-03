@@ -74,7 +74,7 @@ classdef ConeLearningProcessor < handle
     
     methods (Access = public)
         exportFile = computeSpatioTemporalPhotonAbsorptionMatrix(obj, varargin);
-        generateConeLearningProgressVideo(obj, datafile, varargin);
+        learnConeMosaic(obj, datafile, varargin);
     end
     
     methods (Access = private)
