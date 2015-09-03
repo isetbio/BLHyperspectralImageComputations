@@ -147,11 +147,11 @@ function generateFigure(obj)
     drawnow;
     
     % Save figure as PDF
-    pdfFileName = sprintf('MosaicReconstruction_%s_%s.pdf',obj.adaptationModel, obj.photocurrentNoise);
+    pdfFileName = sprintf('MosaicReconstruction_%s_%s_%sDisparityMetric.pdf',obj.adaptationModel, obj.photocurrentNoise, obj.disparityMetric);
     NicePlot.exportFigToPDF(pdfFileName,hFig,300);
     
     % Save data as matfile
-    dataFileName = sprintf('MosaicReconstruction_%s_%s.mat',obj.adaptationModel, obj.photocurrentNoise);
+    dataFileName = sprintf('MosaicReconstruction_%s_%s_%sDisparityMetric.mat',obj.adaptationModel, obj.photocurrentNoise,obj.disparityMetric);
     coneMosaicLearningProgress = obj.coneMosaicLearningProgress;
     save(dataFileName, 'coneMosaicLearningProgress');
 end
@@ -179,7 +179,7 @@ function generateVideo(obj)
     obj.determineMaximallyResponseLMSConeIndices(1);
     
     % Setup video stream
-    writerObj = VideoWriter(sprintf('MosaicReconstruction_%s_%s.m4v',obj.adaptationModel, obj.photocurrentNoise), 'MPEG-4'); % H264 format
+    writerObj = VideoWriter(sprintf('MosaicReconstruction_%s_%s_%sDisparityMetric.m4v',obj.adaptationModel, obj.photocurrentNoise, obj.disparityMetric), 'MPEG-4'); % H264 format
     writerObj.FrameRate = 60; 
     writerObj.Quality = 100;
     
