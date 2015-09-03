@@ -1,4 +1,4 @@
-function computePostAbsorptionResponse(obj)
+function computePostAbsorptionResponse(obj, savePrefilteredAdaptedPhotoCurrentXTresponse)
        
     if (obj.displayComputationTimes)
         tic
@@ -21,7 +21,9 @@ function computePostAbsorptionResponse(obj)
        error('Unknown adaptation mode to use (''%s'')', obj.adaptationModelToUse);
     end
 
-    obj.prefilteredAdaptedPhotoCurrentXTresponse = obj.adaptedPhotoCurrentXTresponse;
+    if (savePrefilteredAdaptedPhotoCurrentXTresponse)
+        obj.prefilteredAdaptedPhotoCurrentXTresponse = obj.adaptedPhotoCurrentXTresponse;
+    end
     
     % apply pre-correlation filter
     if (~isempty(obj.precorrelationFilter))

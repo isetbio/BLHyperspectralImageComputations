@@ -90,7 +90,8 @@ function generateFigure(obj)
            
            % Compute rieke adapted photo-current response with noise
            % and post-adaptation filter according to the passed analysis params
-           obj.computePostAbsorptionResponse();
+           savePrefilteredAdaptedPhotoCurrentXTresponse = false;
+           obj.computePostAbsorptionResponse(savePrefilteredAdaptedPhotoCurrentXTresponse);
            
            % Now generate image data ms-for-ms and compute mosaic during this scene rotation
            for timeBinIndex = 1:eyeMovementsPerSceneRotation
@@ -232,7 +233,8 @@ function generateVideo(obj)
             
                 % Compute rieke adapted photo-current response with noise
                 % and post-adaptation filter according to the passed analysis params
-                obj.computePostAbsorptionResponse();
+                savePrefilteredAdaptedPhotoCurrentXTresponse = true;
+                obj.computePostAbsorptionResponse(savePrefilteredAdaptedPhotoCurrentXTresponse);
                
                 % Now generate image data ms-for-ms and compute mosaic during this scene rotation
                 for timeBinIndex = 1:eyeMovementsPerSceneRotation
