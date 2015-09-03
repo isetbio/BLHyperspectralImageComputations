@@ -5,7 +5,7 @@ function runSimulation
     
     sceneSet{1}.dataBaseName = 'manchester_database';
     sceneSet{1}.sceneNames = {'scene1', 'scene2', 'scene3', 'scene4', 'scene6', 'scene7', 'scene8'};
-    
+    sceneSet{1}.sceneNames = {'scene1', 'scene2'}
     
     sceneSet{2}.dataBaseName = 'harvard_database';
     sceneSet{2}.sceneNames = {...
@@ -19,11 +19,12 @@ function runSimulation
         'imgg0', 'imgg2', 'imgg5', 'imgg8', 'imgg9', ...
         'imgh0', 'imgh1', 'imgh2', 'imgh3' ...
         };
-
+    sceneSet{2}.sceneNames = {...
+        'img1'};
     
     coneLearningProcessor = ConeLearningProcessor();
     
-    recomputePhotoAbsorptionMatrices = true;
+    recomputePhotoAbsorptionMatrices = false;
     if (recomputePhotoAbsorptionMatrices)
         coneAbsorptionsFile = coneLearningProcessor.computeSpatioTemporalPhotonAbsorptionMatrix(...
                               'conesAcross', conesAcross, ...
@@ -61,7 +62,7 @@ function runSimulation
 
     
     coneLearningProcessor.learnConeMosaic(coneAbsorptionsFile, ...
-                   'fixationsPerSceneRotation', 1,...
+                   'fixationsPerSceneRotation', 8,...
                              'adaptationModel', 'linear', ...               % 'none' or 'linear'
                            'photocurrentNoise', 'RiekeNoise',...            % 'noNoise' or 'RiekeNoise'
 'correlationComputationIntervalInMilliseconds', 5, ...                      % smallest value is 1 milliseconds
@@ -70,7 +71,7 @@ function runSimulation
        'coneLearningUpdateIntervalInFixations', 1.0, ...                    % update cone mosaic learning every this many fixations
                               'mdsWarningsOFF', true, ...                   % set to true to avoid wanrings about MDS not converging
                      'displayComputationTimes', false, ...                  % set to true to see the time that each computation takes
-                                'outputFormat', 'video' ...                 % 'video' or 'still'
+                                'outputFormat', 'still' ...                 % 'video' or 'still'
    );
     
 end

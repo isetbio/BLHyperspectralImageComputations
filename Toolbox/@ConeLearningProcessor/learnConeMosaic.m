@@ -32,7 +32,7 @@ function learnConeMosaic(obj, datafile, varargin)
     parserResults = parser.Results;
     pNames = fieldnames(parserResults);
     for k = 1:length(pNames)
-        eval(sprintf('obj.%s = parserResults.%s;', pNames{k}, pNames{k}))
+        eval(sprintf('obj.%s = parserResults.%s;', pNames{k}, pNames{k}));
     end
    
     % Load data and conv
@@ -153,9 +153,7 @@ function generateFigure(obj)
             if (obj.lastMDSscaleSucceeded)
                 obj.displayLearnedConeMosaic(axesStruct.xyMDSAxes, axesStruct.xzMDSAxes, axesStruct.yzMDSAxes,axesStruct.mosaicAxes);
                 obj.displayConeMosaicProgress(axesStruct.performanceAxes1, axesStruct.performanceAxes2);
-                drawnow;
-            else
-                
+                drawnow; 
             end
         end % sceneIndex
     
@@ -168,9 +166,13 @@ function generateFigure(obj)
     NicePlot.exportFigToPDF(pdfFileName,hFig,300);
     
     % Save data as matfile
-    dataFileName = sprintf('MosaicReconstruction_%s_%s_%sDisparityMetric.mat',obj.adaptationModel, obj.photocurrentNoise,obj.disparityMetric);
+    dataFileName = sprintf('MosaicReconstruction_%sAdaptation_%s_%sDisparityMetric.mat',obj.adaptationModel, obj.photocurrentNoise,obj.disparityMetric);
+    
+    % get copies of private properties for saving to file
     coneMosaicLearningProgress = obj.coneMosaicLearningProgress;
-    save(dataFileName, 'coneMosaicLearningProgress');
+    precorrelationFilter = obj.precorrelationFilter;
+    
+    save(dataFileName, 'obj', 'fullSceneRotations', 'precorrelationFilter', 'coneMosaicLearningProgress');
 end
 
 
