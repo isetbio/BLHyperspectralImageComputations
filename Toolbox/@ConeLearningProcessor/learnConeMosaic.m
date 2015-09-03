@@ -127,7 +127,7 @@ function generateFigure(obj)
                       
                 catch err
                     fprintf(2,'Problem with mdscale (''%s''). Skipping this time bin (%d).\n', err.message, timeBinRangeToThisPoint(end));
-                    rethrow(err)
+                    %rethrow(err)
                     continue;
                 end
                     
@@ -296,7 +296,7 @@ function generateVideo(obj)
                         
                     catch err
                         fprintf(2,'Problem with mdscale (''%s''). Skipping this time bin (%d).\n', err.message, timeBinRangeToThisPoint(end));
-                        rethrow(err)
+                        %rethrow(err)
                         continue;
                     end
                     
