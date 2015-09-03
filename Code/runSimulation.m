@@ -37,46 +37,42 @@ function runSimulation
         coneAbsorptionsFile = sprintf('PhotonAbsorptionMatrices_%dx%d.mat', conesAcross, conesAcross);
     end
     
-    % compute precorrelation filter for photocurrent de-noising
-    precorrelationFilter = monoPhasicIR(50, 300);
     
-    coneLearningProcessor.learnConeMosaic(...
-        coneAbsorptionsFile, ...
-        'fixationsPerSceneRotation',     12,...
-                  'adaptationModel',    'linear', ...               % 'none' or 'linear'
-                'photocurrentNoise',    'RiekeNoise',...            % 'noNoise' or 'RiekeNoise'
-             'precorrelationFilter',     precorrelationFilter, ...  % monoPhasicIR(50, 300) or biPhasicIR(30, 80, 300)
-                  'disparityMetric',    'log', ...                  % 'log' or 'linear'
-'coneLearningUpdateIntervalInFixations', 1.0, ...                   % update cone mosaic learning every this many fixations
-                   'mdsWarningsOFF',     true, ...                  % set to true to avoid wanrings about MDS not converging
-          'displayComputationTimes',     false, ...                 % set to true to see the time that each computation takes
-                     'outputFormat',     'still' ...                % 'video' or 'still'
+    % precorrelation filter for photocurrent de-noising
+    precorrelationFilterType = 'monophasic';  % 'monophasic' or 'biphasic'
+    
+    if (strcmp(precorrelationFilterType, 'monophasic'))
+        % monophasic filter
+        preCorrelationFilterSpecs = struct(...
+                                'type', precorrelationFilterType, ...
+                'supportInMilliseconds', 300, ...
+           'timeConstantInMilliseconds', 50 ...
+        );
+    else 
+        % biphasic filter
+        preCorrelationFilterSpecs = struct(...
+                                  'type', precorrelationFilterType, ...
+                 'supportInMilliseconds', 300, ...
+           'timeConstant1InMilliseconds', 30, ...
+           'timeConstant2InMilliseconds', 80, ...
+                         'biphasicRatio', 0.15 ...   % ratio of second phase to first phase
+        );
+    end
+
+    
+    coneLearningProcessor.learnConeMosaic(coneAbsorptionsFile, ...
+                   'fixationsPerSceneRotation', 1,...
+                             'adaptationModel', 'linear', ...               % 'none' or 'linear'
+                           'photocurrentNoise', 'RiekeNoise',...            % 'noNoise' or 'RiekeNoise'
+'correlationComputationIntervalInMilliseconds', 5, ...                      % smallest value is 1 milliseconds
+                   'precorrelationFilterSpecs', preCorrelationFilterSpecs, ...   % struct with filter params
+                             'disparityMetric', 'log', ...                  % 'log' or 'linear'
+       'coneLearningUpdateIntervalInFixations', 1.0, ...                    % update cone mosaic learning every this many fixations
+                              'mdsWarningsOFF', true, ...                   % set to true to avoid wanrings about MDS not converging
+                     'displayComputationTimes', false, ...                  % set to true to see the time that each computation takes
+                                'outputFormat', 'video' ...                 % 'video' or 'still'
    );
     
-end
-
-
-function IR = monoPhasicIR(timeConstantInMilliseconds, supportInMilliseconds)
-    n = 4;
-    p1 = 1;
-    t = (0:1:supportInMilliseconds)/1000;
-    tau = timeConstantInMilliseconds/1000;
-    t1 = t / tau;
-    IR = p1 * (t1.^n) .* exp(-n*(t1-1));
-    IR = IR / sum(abs(IR)); 
-end
-
-function IR = biPhasicIR(timeConstant1InMilliseconds, timeConstant2InMilliseconds, supportInMilliseconds)
-    n = 4;
-    p1 = 1;
-    p2 = 0.15;
-    t = (0:1:supportInMilliseconds)/1000;
-    tau1 = timeConstant1InMilliseconds/1000;
-    tau2 = timeConstant2InMilliseconds/1000;
-    t1 = t / tau1;
-    t2 = t / tau2;
-    IR = p1 * (t1.^n) .* exp(-n*(t1-1))  - p2 * (t2.^n) .* exp(-n*(t2-1));
-    IR = IR / sum(abs(IR));
 end
 
 

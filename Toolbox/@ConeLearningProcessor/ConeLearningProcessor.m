@@ -18,9 +18,10 @@ classdef ConeLearningProcessor < handle
         fixationsPerSceneRotation;
         adaptationModel;
         photocurrentNoise;
-        precorrelationFilter;
+        precorrelationFilterSpecs;
         disparityMetric;
         mdsWarningsOFF;
+        correlationComputationIntervalInMilliseconds;
         coneLearningUpdateIntervalInFixations;
         randomSeedForEyeMovementsOnDifferentScenes = 234823568;
         displayComputationTimes;
@@ -41,17 +42,20 @@ classdef ConeLearningProcessor < handle
         fixationTimeInMilliseconds;
         fixationsNum;
         
+        precorrelationFilter = [];
+        
         maxResponsiveConeIndices;
         photonAbsorptionTracesRange = [];
         photoCurrentsTracesRange = [];
         
         photonAbsorptionXTresponse;             % current agreggate photon absorption XT response
         adaptedPhotoCurrentXTresponse;          % current aggregate photo-current XT response 
-        prefilteredAdaptedPhotoCurrentXTresponse;
+        prefilteredAdaptedPhotoCurrentResponsesForSelectCones;
         
         disparityMatrix;
         MDSprojection;                  % current MDSprojection
         MDSstress;                      % current MDSstress
+        lastMDSscaleSucceeded;          % flag indicating whether the last call to mdsscale succeeded
         
         unwrappedMDSprojection;         % unwrapped stuff - computed by unwrapMDSprojection       
         unwrappedLconeIndices;
@@ -82,6 +86,7 @@ classdef ConeLearningProcessor < handle
         loadSpatioTemporalPhotonAbsorptionMatrix(obj, datafile);
         
         % computational methods
+        computePrecorrelationFilter(obj);
         maxAvailableSceneRotations = permuteEyeMovementsAndPhotoAbsorptionResponses(obj);
         computePostAbsorptionResponse(obj, savePrefilteredAdaptedPhotoCurrentXTresponse);
         D = computeDisparityMatrix(obj,timeBinRange);

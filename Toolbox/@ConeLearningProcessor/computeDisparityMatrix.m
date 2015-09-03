@@ -3,7 +3,12 @@ function computeDisparityMatrix(obj,timeBinRange)
     if (obj.displayComputationTimes)
         tic
     end
-    correlationMatrix = corrcoef((obj.adaptedPhotoCurrentXTresponse(:,timeBinRange))');
+    
+    % compute sub-sampled time range for correlations
+    subsampledBinRange = timeBinRange(1:obj.correlationComputationIntervalInMilliseconds:end);
+    
+    % compute correlations
+    correlationMatrix = corrcoef((obj.adaptedPhotoCurrentXTresponse(:,subsampledBinRange))');
 
     % Compute disparity matrix
     if (strcmp(obj.disparityMetric, 'linear'))

@@ -2,9 +2,10 @@ function learnConeMosaic(obj, datafile, varargin)
 
     default = struct(...
         'fixationsPerSceneRotations', 12, ...
-        'adaptationModel',   'none', ...
+        'adaptationModel', 'none', ...
         'photoCurrentNoise', 'noNoise', ...
-        'precorrelationFilter', [], ...
+        'precorrelationFilterSpecs', struct(), ...   
+        'correlationComputationIntervalInMilliseconds', 1, ...
         'disparityMetric', 'linear', ...
         'mdsWarningsOFF', false, ...
         'coneLearningUpdateIntervalInFixations', 1.0, ...
@@ -17,7 +18,8 @@ function learnConeMosaic(obj, datafile, varargin)
     parser.addParamValue('fixationsPerSceneRotation', default.fixationsPerSceneRotations, @isnumeric);
     parser.addParamValue('adaptationModel', default.adaptationModel, @ischar);
     parser.addParamValue('photocurrentNoise', default.photoCurrentNoise, @ischar);
-    parser.addParamValue('precorrelationFilter', default.precorrelationFilter);
+    parser.addParamValue('precorrelationFilterSpecs', default.precorrelationFilterSpecs, @isstruct);
+    parser.addParamValue('correlationComputationIntervalInMilliseconds', default.correlationComputationIntervalInMilliseconds, @isnumeric);
     parser.addParamValue('disparityMetric', default.disparityMetric, @ischar);
     parser.addParamValue('mdsWarningsOFF', default.mdsWarningsOFF, @islogical);
     parser.addParamValue('coneLearningUpdateIntervalInFixations', default.coneLearningUpdateIntervalInFixations, @isfloat);
@@ -55,6 +57,9 @@ function generateFigure(obj)
             warning('on','stats:mdscale:IterOrEvalLimit');
     end
     
+    % compute pre-correlation filter
+    obj.computePrecorrelationFilter();
+    
     % Permute eye movements and photon absorptions and compute max scene
     % rotations so that all scenes are scanned with the same number of eye movements
     maxAvailableSceneRotations = obj.permuteEyeMovementsAndPhotoAbsorptionResponses();
@@ -64,6 +69,11 @@ function generateFigure(obj)
     totalFixationsNum  = numel(obj.core1Data.allSceneNames)*obj.fixationsPerSceneRotation*fullSceneRotations;
     eyeMovementsPerSceneRotation = obj.fixationsPerSceneRotation * obj.core1Data.eyeMovementParamsStruct.samplesPerFixation;
     fprintf('Video will contain a total of %d fixations (total of %d microfixations).\n\n', totalFixationsNum, eyeMovementsPerSceneRotation*fullSceneRotations);
+    
+    hFig = figure(2); clf;
+    set(hFig, 'unit','pixel', 'menubar','none', 'Position', [10 20 1280 800], 'Color', [0 0 0]);
+    axesStruct = generateFigureAxes(hFig);
+ 
     
     % Initialize counters
     eyeMovementIndex = 1;
@@ -79,7 +89,7 @@ function generateFigure(obj)
 
        for sceneIndex = 1:numel(obj.core1Data.allSceneNames)
            
-           fprintf('<strong>Scene:%d/%d Rotation:%d/%d</strong>\n', sceneIndex, numel(obj.core1Data.allSceneNames), rotationIndex, fullSceneRotations)
+           fprintf('<strong>Rotation:%d/%d (Scene:%d/%d)</strong>\n', rotationIndex, fullSceneRotations, sceneIndex, numel(obj.core1Data.allSceneNames));
                 
            % Aggregate response
            aggegateXTResponseOffset = size(obj.photonAbsorptionXTresponse,2);
@@ -135,17 +145,15 @@ function generateFigure(obj)
            end % timeBinIndex
         end % sceneIndex
        
+        if (obj.lastMDSscaleSucceeded)
+            obj.displayLearnedConeMosaic(axesStruct.xyMDSAxes, axesStruct.xzMDSAxes, axesStruct.yzMDSAxes,axesStruct.mosaicAxes);
+            obj.displayConeMosaicProgress(axesStruct.performanceAxes1, axesStruct.performanceAxes2);
+            drawnow;
+        end
+        
         % update eye movementIndex
-        eyeMovementIndex = eyeMovementIndex + eyeMovementsPerSceneRotation;
-           
+        eyeMovementIndex = eyeMovementIndex + eyeMovementsPerSceneRotation;       
     end % rotationIndex       
-    
-    hFig = figure(2); clf;
-    set(hFig, 'unit','pixel', 'menubar','none', 'Position', [10 20 1280 800], 'Color', [0 0 0]);
-    axesStruct = generateFigureAxes(hFig);
-    obj.displayLearnedConeMosaic(axesStruct.xyMDSAxes, axesStruct.xzMDSAxes, axesStruct.yzMDSAxes,axesStruct.mosaicAxes);
-    obj.displayConeMosaicProgress(axesStruct.performanceAxes1, axesStruct.performanceAxes2);
-    drawnow;
     
     % Save figure as PDF
     pdfFileName = sprintf('MosaicReconstruction_%s_%s_%sDisparityMetric.pdf',obj.adaptationModel, obj.photocurrentNoise, obj.disparityMetric);
@@ -165,6 +173,9 @@ function generateVideo(obj)
     else
         warning('on','stats:mdscale:IterOrEvalLimit');
     end
+    
+    % compute pre-correlation filter
+    obj.computePrecorrelationFilter();
     
     % Permute eye movements and photon absorptions and compute max scene
     % rotations so that all scenes are scanned with the same number of eye movements
@@ -210,6 +221,9 @@ function generateVideo(obj)
     % Open video stream
     open(writerObj);
     
+    % state of last MDSscale output
+    obj.lastMDSscaleSucceeded = false;
+    
     try
        for rotationIndex = 1:fullSceneRotations
            
@@ -250,7 +264,7 @@ function generateVideo(obj)
                     obj.videoData.photonAsborptionTraces = circshift(obj.videoData.photonAsborptionTraces, -1, 2);
                     obj.videoData.photonAsborptionTraces(:,end) = obj.photonAbsorptionXTresponse(obj.maxResponsiveConeIndices, timeBinRangeToThisPoint(end));
                     obj.videoData.photoCurrentTraces = circshift(obj.videoData.photoCurrentTraces, -1, 2);
-                    obj.videoData.photoCurrentTraces(:,end) = obj.prefilteredAdaptedPhotoCurrentXTresponse(obj.maxResponsiveConeIndices, timeBinRangeToThisPoint(end));
+                    obj.videoData.photoCurrentTraces(:,end) = obj.prefilteredAdaptedPhotoCurrentResponsesForSelectCones(:, timeBinRangeToThisPoint(end));
                     
                     % obtain current response at this time bin index
                     currentResponse = (obj.adaptedPhotoCurrentXTresponse(:, timeBinRangeToThisPoint(end)))';
@@ -295,9 +309,11 @@ function generateVideo(obj)
                         if (obj.displayComputationTimes)
                             fprintf('\tMDS computation took %f seconds.\n', toc);
                         end
+                        obj.lastMDSscaleSucceeded = true;
                         
                     catch err
                         fprintf(2,'Problem with mdscale (''%s''). Skipping this time bin (%d).\n', err.message, timeBinRangeToThisPoint(end));
+                        obj.lastMDSscaleSucceeded = false;
                         %rethrow(err)
                         continue;
                     end
@@ -332,8 +348,10 @@ function renderVideoFrame(obj, eyeMovementIndex, axesStruct, writerObj)
     obj.displayCurrent2Dresponse(axesStruct.current2DResponseAxes);
     obj.displayShortHistoryXTresponse(axesStruct.xtResponseAxes);
     obj.displayDisparityMatrix(axesStruct.dispMatrixAxes);
-    obj.displayLearnedConeMosaic(axesStruct.xyMDSAxes, axesStruct.xzMDSAxes, axesStruct.yzMDSAxes,axesStruct.mosaicAxes);
-    obj.displayConeMosaicProgress(axesStruct.performanceAxes1, axesStruct.performanceAxes2);
+    if (obj.lastMDSscaleSucceeded)
+        obj.displayLearnedConeMosaic(axesStruct.xyMDSAxes, axesStruct.xzMDSAxes, axesStruct.yzMDSAxes,axesStruct.mosaicAxes);
+        obj.displayConeMosaicProgress(axesStruct.performanceAxes1, axesStruct.performanceAxes2);
+    end
     obj.displayTimeInfo(axesStruct.timeDisplayAxes);
     
     drawnow;

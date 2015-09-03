@@ -22,7 +22,7 @@ function computePostAbsorptionResponse(obj, savePrefilteredAdaptedPhotoCurrentXT
     end
 
     if (savePrefilteredAdaptedPhotoCurrentXTresponse)
-        obj.prefilteredAdaptedPhotoCurrentXTresponse = obj.adaptedPhotoCurrentXTresponse;
+        obj.prefilteredAdaptedPhotoCurrentResponsesForSelectCones = obj.adaptedPhotoCurrentXTresponse(obj.maxResponsiveConeIndices,:);
     end
     
     % apply pre-correlation filter
