@@ -63,7 +63,7 @@ function runSimulation
                    'fixationsPerSceneRotation', 8,...
                              'adaptationModel', 'linear', ...               % 'none' or 'linear'
                            'photocurrentNoise', 'RiekeNoise',...            % 'noNoise' or 'RiekeNoise'
-'correlationComputationIntervalInMilliseconds', 5, ...                      % smallest value is 1 milliseconds
+'correlationComputationIntervalInMilliseconds', 1, ...                      % smallest value is 1 milliseconds
                    'precorrelationFilterSpecs', preCorrelationFilterSpecs, ...   % struct with filter params
                              'disparityMetric', 'linear', ...                  % 'log' or 'linear'
        'coneLearningUpdateIntervalInFixations', 1.0, ...                    % update cone mosaic learning every this many fixations
