@@ -45,7 +45,7 @@ function runSimulation
         preCorrelationFilterSpecs = struct(...
                                 'type', precorrelationFilterType, ...
                 'supportInMilliseconds', 300, ...
-           'timeConstantInMilliseconds', 50 ...
+           'timeConstantInMilliseconds', 70 ...
         );
     else 
         % biphasic filter
@@ -65,7 +65,7 @@ function runSimulation
                            'photocurrentNoise', 'RiekeNoise',...            % 'noNoise' or 'RiekeNoise'
 'correlationComputationIntervalInMilliseconds', 5, ...                      % smallest value is 1 milliseconds
                    'precorrelationFilterSpecs', preCorrelationFilterSpecs, ...   % struct with filter params
-                             'disparityMetric', 'log', ...                  % 'log' or 'linear'
+                             'disparityMetric', 'linear', ...                  % 'log' or 'linear'
        'coneLearningUpdateIntervalInFixations', 1.0, ...                    % update cone mosaic learning every this many fixations
                               'mdsWarningsOFF', true, ...                   % set to true to avoid wanrings about MDS not converging
                      'displayComputationTimes', false, ...                  % set to true to see the time that each computation takes
