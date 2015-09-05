@@ -28,6 +28,12 @@ classdef ConeLearningProcessor < handle
         outputFormat;
     end
     
+    properties (SetAccess = private, Dependent)
+        outputPDFFileName;
+        outputVideoFileName;
+        outputMatFileName;
+    end
+    
     % Internal data
     properties (Access = private)
         core1Data = struct();   % Core computed params (computed by computeSpatioTemporalPhotonAbsorptionMatrix() ) 
@@ -81,6 +87,19 @@ classdef ConeLearningProcessor < handle
         learnConeMosaic(obj, datafile, varargin);
     end
     
+    % getters for dependent properties
+    methods
+        function filename = get.outputPDFFileName(obj)
+            filename = sprintf('%s.pdf', obj.assembleOutputFileName);
+        end
+        function filename = get.outputMatFileName(obj)
+            filename = sprintf('%s.mat', obj.assembleOutputFileName);
+        end
+        function filename = get.outputVideoFileName(obj)
+            filename = sprintf('%s.m4v', obj.assembleOutputFileName);
+        end 
+    end
+    
     methods (Access = private)
         % import data and convert to photon absorption rates
         loadSpatioTemporalPhotonAbsorptionMatrix(obj, datafile);
@@ -109,6 +128,8 @@ classdef ConeLearningProcessor < handle
         displayConeMosaicProgress(obj, performanceAxes1, performanceAxes2);
         
         displayTimeInfo(obj,timeDisplayAxes);
+        
+        filename = assembleOutputFileName(obj, extention);
     end
     
 end
