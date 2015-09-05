@@ -1,7 +1,7 @@
 function runSimulation
     
     addConeLearningToolboxesToPath();
-    conesAcross = 10;
+    conesAcross = 15;
     
     sceneSet{1}.dataBaseName = 'manchester_database';
     sceneSet{1}.sceneNames = {'scene1', 'scene2', 'scene3', 'scene4', 'scene6', 'scene7', 'scene8'};
