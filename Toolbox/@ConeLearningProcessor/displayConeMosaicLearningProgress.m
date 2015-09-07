@@ -1,13 +1,18 @@
 function displayConeMosaicLearningProgress(obj, performanceAxes1, performanceAxes2)
 
     if (isfield(obj.coneMosaicLearningProgress, 'fixationsNum'))
-        plot(performanceAxes1, obj.coneMosaicLearningProgress.fixationsNum, 1-obj.coneMosaicLearningProgress.correctlyIdentifiedLMcones, 'y-', 'LineWidth', 2.0);
+        minTypeErrorDisplayed = 0.005; % 0.5 percent
+        rateLM = 1-obj.coneMosaicLearningProgress.correctlyIdentifiedLMcones;
+        rateLM(rateLM < minTypeErrorDisplayed) = minTypeErrorDisplayed;
+        rateS = 1-obj.coneMosaicLearningProgress.correctlyIdentifiedScones;
+        rateS(rateS < minTypeErrorDisplayed) = minTypeErrorDisplayed;
+        plot(performanceAxes1, obj.coneMosaicLearningProgress.fixationsNum, rateLM, 'y-', 'LineWidth', 2.0);
         hold(performanceAxes1,'on')
-        plot(performanceAxes1, obj.coneMosaicLearningProgress.fixationsNum, 1-obj.coneMosaicLearningProgress.correctlyIdentifiedScones, '-', 'Color', [0 0.6 1.0], 'LineWidth', 2.0);
+        plot(performanceAxes1, obj.coneMosaicLearningProgress.fixationsNum, rateS, '-', 'Color', [0 0.6 1.0], 'LineWidth', 2.0);
         hold(performanceAxes1,'off')
         set(performanceAxes1, 'Color', [0 0 0], 'XColor', [0 0 0], 'YColor', [1 1 1]);
-        set(performanceAxes1, 'XLim', [0 max([10 obj.coneMosaicLearningProgress.fixationsNum])], ...
-                              'YLim', [0.001 1.0], 'YScale', 'log', 'XTickLabel', {}, 'YTickLabel', {});
+        set(performanceAxes1, 'XLim', [1 max([10 obj.coneMosaicLearningProgress.fixationsNum])], ...
+                              'YLim', [minTypeErrorDisplayed 1.0], 'YScale', 'log', 'Xscale', 'log', 'XTickLabel', {}, 'YTickLabel', {});
         ylabel(performanceAxes1, 'type error', 'FontSize', 16);
         hLeg = legend(performanceAxes1, 'L/M', 'S');
         set(hLeg, 'Color', [0.3 0.3 0.3], 'FontSize', 14, 'TextColor',[1 1 1], 'Location', 'northeast');
@@ -19,9 +24,9 @@ function displayConeMosaicLearningProgress(obj, performanceAxes1, performanceAxe
         plot(performanceAxes2, obj.coneMosaicLearningProgress.fixationsNum, obj.coneMosaicLearningProgress.meanDistanceSmosaic, '-', 'Color', [0 0.6 1.0], 'LineWidth', 2.0);
         hold(performanceAxes2,'off')
         set(performanceAxes2, 'Color', [0 0 0], 'XColor', [0 0 0], 'YColor', [1 1 1]);
-        set(performanceAxes2, 'XLim', [0 max([10 max(obj.coneMosaicLearningProgress.fixationsNum)])], ...
-                              'YLim', [0.01 max([max(obj.coneMosaicLearningProgress.meanDistanceLMmosaic) max(obj.coneMosaicLearningProgress.meanDistanceSmosaic)])], ...
-                              'YScale', 'log', ...
+        set(performanceAxes2, 'XLim', [1 max([10 max(obj.coneMosaicLearningProgress.fixationsNum)])], ...
+                              'YLim', [1 max([max(obj.coneMosaicLearningProgress.meanDistanceLMmosaic) max(obj.coneMosaicLearningProgress.meanDistanceSmosaic)])], ...
+                              'YScale', 'log', 'Xscale', 'log', ...
                               'XTickLabel', {}, 'YTickLabel', {});
         ylabel(performanceAxes2, 'positional error', 'FontSize', 16);
         hLeg = legend(performanceAxes2, 'L/M', 'S');
