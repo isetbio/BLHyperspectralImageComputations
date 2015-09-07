@@ -68,7 +68,7 @@ function generateFigure(obj)
     fullSceneRotations = input(sprintf('Enter desired scene rotations [max=%2.0f]: ', maxAvailableSceneRotations));
     totalFixationsNum  = numel(obj.core1Data.allSceneNames)*obj.fixationsPerSceneRotation*fullSceneRotations;
     eyeMovementsPerSceneRotation = obj.fixationsPerSceneRotation * obj.core1Data.eyeMovementParamsStruct.samplesPerFixation;
-    fprintf('Analysis will contain a total of %d fixations (total of %d microfixations).\n\n', totalFixationsNum, eyeMovementsPerSceneRotation*fullSceneRotations);
+    fprintf('Analysis will contain a total of %d fixations (total of %d microfixations).\n\n', totalFixationsNum, eyeMovementsPerSceneRotation*numel(obj.core1Data.allSceneNames)*fullSceneRotations);
     
     % Initialize figure
     hFig = figure(2); clf;
