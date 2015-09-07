@@ -152,7 +152,7 @@ function generateFigure(obj)
            
             if (obj.lastMDSscaleSucceeded)
                 obj.displayLearnedConeMosaic(axesStruct.xyMDSAxes, axesStruct.xzMDSAxes, axesStruct.yzMDSAxes,axesStruct.mosaicAxes);
-                obj.displayConeMosaicProgress(axesStruct.performanceAxes1, axesStruct.performanceAxes2);
+                obj.displayConeMosaicLearningProgress(axesStruct.performanceAxes1, axesStruct.performanceAxes2);
                 drawnow; 
             end
         end % sceneIndex
@@ -358,7 +358,7 @@ function renderVideoFrame(obj, eyeMovementIndex, axesStruct, writerObj)
     obj.displayDisparityMatrix(axesStruct.dispMatrixAxes);
     if (obj.lastMDSscaleSucceeded)
         obj.displayLearnedConeMosaic(axesStruct.xyMDSAxes, axesStruct.xzMDSAxes, axesStruct.yzMDSAxes,axesStruct.mosaicAxes);
-        obj.displayConeMosaicProgress(axesStruct.performanceAxes1, axesStruct.performanceAxes2);
+        obj.displayConeMosaicLearningProgress(axesStruct.performanceAxes1, axesStruct.performanceAxes2);
     end
     obj.displayTimeInfo(axesStruct.timeDisplayAxes);
     

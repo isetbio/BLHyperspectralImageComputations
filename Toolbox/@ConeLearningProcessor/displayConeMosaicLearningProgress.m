@@ -1,4 +1,4 @@
-function displayConeMosaicProgress(obj, performanceAxes1, performanceAxes2)
+function displayConeMosaicLearningProgress(obj, performanceAxes1, performanceAxes2)
 
     if (isfield(obj.coneMosaicLearningProgress, 'fixationsNum'))
         plot(performanceAxes1, obj.coneMosaicLearningProgress.fixationsNum, 1-obj.coneMosaicLearningProgress.correctlyIdentifiedLMcones, 'y-', 'LineWidth', 2.0);
@@ -7,7 +7,7 @@ function displayConeMosaicProgress(obj, performanceAxes1, performanceAxes2)
         hold(performanceAxes1,'off')
         set(performanceAxes1, 'Color', [0 0 0], 'XColor', [0 0 0], 'YColor', [1 1 1]);
         set(performanceAxes1, 'XLim', [0 max([10 obj.coneMosaicLearningProgress.fixationsNum])], ...
-                              'YLim', [0 1.0], 'XTickLabel', {}, 'YTickLabel', {});
+                              'YLim', [0.001 1.0], 'YScale', 'log', 'XTickLabel', {}, 'YTickLabel', {});
         ylabel(performanceAxes1, 'type error', 'FontSize', 16);
         hLeg = legend(performanceAxes1, 'L/M', 'S');
         set(hLeg, 'Color', [0.3 0.3 0.3], 'FontSize', 14, 'TextColor',[1 1 1], 'Location', 'northeast');
@@ -20,7 +20,8 @@ function displayConeMosaicProgress(obj, performanceAxes1, performanceAxes2)
         hold(performanceAxes2,'off')
         set(performanceAxes2, 'Color', [0 0 0], 'XColor', [0 0 0], 'YColor', [1 1 1]);
         set(performanceAxes2, 'XLim', [0 max([10 max(obj.coneMosaicLearningProgress.fixationsNum)])], ...
-                              'YLim', [0 max([max(obj.coneMosaicLearningProgress.meanDistanceLMmosaic) max(obj.coneMosaicLearningProgress.meanDistanceSmosaic)])], ...
+                              'YLim', [0.01 max([max(obj.coneMosaicLearningProgress.meanDistanceLMmosaic) max(obj.coneMosaicLearningProgress.meanDistanceSmosaic)])], ...
+                              'YScale', 'log', ...
                               'XTickLabel', {}, 'YTickLabel', {});
         ylabel(performanceAxes2, 'positional error', 'FontSize', 16);
         hLeg = legend(performanceAxes2, 'L/M', 'S');
