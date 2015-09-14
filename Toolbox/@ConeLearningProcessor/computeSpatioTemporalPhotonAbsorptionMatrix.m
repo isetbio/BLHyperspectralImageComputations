@@ -3,9 +3,9 @@ function exportFile = computeSpatioTemporalPhotonAbsorptionMatrix(obj, varargin)
     parser = inputParser;
     parser.addParamValue('conesAcross',  10, @isnumeric);
     parser.addParamValue('coneApertureInMicrons', 3.0, @isfloat);
-    parser.addParamValue('coneIntegrationTimeInMilliseconds', 50, @isfloat );
     parser.addParamValue('coneLMSdensities', [0.6 0.3 0.1], @isfloat);
     parser.addParamValue('eyeMicroMovementsPerFixation', 100, @isnumeric);
+    parser.addParamValue('sampleTimeInMilliseconds', 1, @isfloat);
     parser.addParamValue('sceneSet', @isstruct);
     
     % Execute the parser
@@ -36,7 +36,7 @@ function exportFile = computePhotonAbsorptions(obj)
                'coneAperture', obj.coneApertureInMicrons*1e-6, ... % specified in meters
                'LMSdensities', obj.coneLMSdensities, ...
          'heightToWidthRatio', 1.0, ...
-        'coneIntegrationTime', obj.coneIntegrationTimeInMilliseconds*1e-3, ... % specified in seconds
+        'coneIntegrationTime', obj.sampleTimeInMilliseconds*1e-3, ... % specified in seconds
                   'noiseFlag', 0 ...
     );
 
@@ -44,7 +44,7 @@ function exportFile = computePhotonAbsorptions(obj)
     eyeMovementParamsStruct = struct(...
                       'name', 'saccadicEyeMovements', ...
         'samplesPerFixation', obj.eyeMicroMovementsPerFixation, ... 
-                'sampleTime', 0.001, ...  % 1 milliseconds
+                'sampleTime', obj.sampleTimeInMilliseconds*1e-3, ...  % specified in seconds
            'tremorAmplitude', 0.0073, ...  % default value
              'overlapFactor', eyeMovementOverlapFactor ...  % 50 % overlap
     );

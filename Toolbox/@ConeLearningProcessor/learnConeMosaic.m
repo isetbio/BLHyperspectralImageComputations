@@ -209,15 +209,15 @@ function generateVideo(obj)
     % Initialize counters
     eyeMovementIndex = 1;
     kSteps = 0;
-    kStepsMin = 100;
+    kStepsMin = 4;
     
     % Preallocate temp matrices to hold up various computation components
     % Traces for a duration equal to 1 fixations
     obj.videoData.photonAsborptionTraces = zeros(3,obj.core1Data.eyeMovementParamsStruct.samplesPerFixation);
-    obj.videoData.photoCurrentTraces = zeros(3,obj.core1Data.eyeMovementParamsStruct.samplesPerFixation);
+    obj.videoData.photoCurrentTraces = randn(3, 2*obj.core1Data.eyeMovementParamsStruct.samplesPerFixation)-32;
     
     % XT response for a duration equal to 6 fixations
-    obj.videoData.shortHistoryXTResponse = zeros(prod(obj.core1Data.sensorRowsCols), 6*obj.core1Data.eyeMovementParamsStruct.samplesPerFixation)-Inf;
+    obj.videoData.shortHistoryXTResponse = zeros(prod(obj.core1Data.sensorRowsCols), 2*obj.core1Data.eyeMovementParamsStruct.samplesPerFixation)-Inf;
     % current 2D response
     obj.videoData.current2DResponse = zeros(obj.core1Data.sensorRowsCols(1), obj.core1Data.sensorRowsCols(2));
     
@@ -282,7 +282,7 @@ function generateVideo(obj)
                     obj.videoData.shortHistoryXTResponse(:,end) = currentResponse;
                     
                     % check to see if it is time to compute an updated learned cone mosaic
-                    updateConeMosaicLearning = (mod(obj.fixationsNum,obj.coneLearningUpdateIntervalInFixations) == 0.0);
+                    updateConeMosaicLearning = (mod(obj.fixationsNum,obj. coneLearningUpdateIntervalInFixations) == 0.0);
                     kSteps = kSteps + 1;
                     
                     if (kSteps < kStepsMin)
@@ -291,7 +291,8 @@ function generateVideo(obj)
                     
                     if (~updateConeMosaicLearning)
                         % Render another video frame
-                        renderVideoFrame(obj, timeBinIndex, axesStruct, writerObj);
+                        redisplayLearnedMosaic = false;
+                        renderVideoFrame(obj, timeBinIndex, redisplayLearnedMosaic, axesStruct, writerObj);
                         % do not update learned cone mosaic
                         continue;
                     end
@@ -327,7 +328,8 @@ function generateVideo(obj)
                     end
                     
                     % Render another video frame
-                    renderVideoFrame(obj, timeBinIndex, axesStruct, writerObj);
+                    redisplayLearnedMosaic = true;
+                    renderVideoFrame(obj, timeBinIndex, redisplayLearnedMosaic, axesStruct, writerObj);
                     
                 end  % timeBinIndex
            end % sceneIndex
@@ -349,14 +351,14 @@ function generateVideo(obj)
     close(writerObj);
 end
 
-function renderVideoFrame(obj, eyeMovementIndex, axesStruct, writerObj)
+function renderVideoFrame(obj, eyeMovementIndex, updateLearnedMosaicFigs, axesStruct, writerObj)
 
     obj.displayOpticalImageAndEyeMovements(axesStruct.opticalImageAxes, eyeMovementIndex);
     obj.displaySingleConeTraces(axesStruct.photonAbsorptionTraces,axesStruct.photoCurrentTraces);
     obj.displayCurrent2Dresponse(axesStruct.current2DResponseAxes);
     obj.displayShortHistoryXTresponse(axesStruct.xtResponseAxes);
     obj.displayDisparityMatrix(axesStruct.dispMatrixAxes);
-    if (obj.lastMDSscaleSucceeded)
+    if (obj.lastMDSscaleSucceeded && updateLearnedMosaicFigs)
         obj.displayLearnedConeMosaic(axesStruct.xyMDSAxes, axesStruct.xzMDSAxes, axesStruct.yzMDSAxes,axesStruct.mosaicAxes);
         obj.displayConeMosaicLearningProgress(axesStruct.performanceAxes1, axesStruct.performanceAxes2);
     end
@@ -378,11 +380,23 @@ function axesStruct = generateVideoAxes(hFig)
     axesStruct.dispMatrixAxes        = axes('parent',hFig,'unit','pixel','position',[870 395 400 400], 'Color', [0 0 0]);
     axesStruct.timeDisplayAxes       = axes('parent',hFig,'unit','pixel','position',[1120 720 140 20], 'Color', [0 0 0]);
      
+    set(axesStruct.dispMatrixAxes, 'XTickLabel', {}, 'YTickLabel', {});
+    
     % mid row
     axesStruct.xyMDSAxes         = axes('parent',hFig,'unit','pixel','position',[30   130  256 226], 'Color', [0 0 0]);
     axesStruct.xzMDSAxes         = axes('parent',hFig,'unit','pixel','position',[370  130  256 226], 'Color', [0 0 0]);
     axesStruct.yzMDSAxes         = axes('parent',hFig,'unit','pixel','position',[720  130  256 256], 'Color', [0 0 0]);
     axesStruct.mosaicAxes        = axes('parent',hFig,'unit','pixel','position',[1010 130  256 256], 'Color', [0 0 0]);
+    
+    set(axesStruct.xyMDSAxes, 'XTickLabel', {}, 'YTickLabel', {});
+    set(axesStruct.xzMDSAxes, 'XTickLabel', {}, 'YTickLabel', {});
+    set(axesStruct.yzMDSAxes, 'XTickLabel', {}, 'YTickLabel', {});
+    set(axesStruct.mosaicAxes, 'XTickLabel', {}, 'YTickLabel', {});
+    axis(axesStruct.xyMDSAxes, 'off');  
+    axis(axesStruct.xzMDSAxes, 'off');  
+    axis(axesStruct.yzMDSAxes, 'off');  
+    axis(axesStruct.mosaicAxes, 'off');  
+    axis(axesStruct.dispMatrixAxes, 'off');
     
     % bottom row
     axesStruct.performanceAxes1  = axes('parent',hFig,'unit','pixel','position',[25   10 600 110], 'Color', [0 0 0]);

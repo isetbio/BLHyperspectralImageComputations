@@ -1,7 +1,7 @@
 function displayConeMosaicLearningProgress(obj, performanceAxes1, performanceAxes2)
 
     if (isfield(obj.coneMosaicLearningProgress, 'fixationsNum'))
-        minTypeErrorDisplayed = 0.005; % 0.5 percent
+        minTypeErrorDisplayed = 0.0;  % 0.005 for log scaling
         rateLM = 1-obj.coneMosaicLearningProgress.correctlyIdentifiedLMcones;
         rateLM(rateLM < minTypeErrorDisplayed) = minTypeErrorDisplayed;
         rateS = 1-obj.coneMosaicLearningProgress.correctlyIdentifiedScones;
@@ -12,7 +12,7 @@ function displayConeMosaicLearningProgress(obj, performanceAxes1, performanceAxe
         hold(performanceAxes1,'off')
         set(performanceAxes1, 'Color', [0 0 0], 'XColor', [0 0 0], 'YColor', [1 1 1]);
         set(performanceAxes1, 'XLim', [1 max([10 obj.coneMosaicLearningProgress.fixationsNum])], ...
-                              'YLim', [minTypeErrorDisplayed 1.0], 'YScale', 'log', 'Xscale', 'log', 'XTickLabel', {}, 'YTickLabel', {});
+                              'YLim', [minTypeErrorDisplayed 1.0], 'YScale', 'linear', 'Xscale', 'log', 'XTickLabel', {}, 'YTickLabel', {});
         ylabel(performanceAxes1, 'type error', 'FontSize', 16);
         hLeg = legend(performanceAxes1, 'L/M', 'S');
         set(hLeg, 'Color', [0.3 0.3 0.3], 'FontSize', 14, 'TextColor',[1 1 1], 'Location', 'northeast');

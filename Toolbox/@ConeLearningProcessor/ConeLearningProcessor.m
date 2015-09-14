@@ -7,8 +7,8 @@ classdef ConeLearningProcessor < handle
     properties (SetAccess = private)
         conesAcross
         coneApertureInMicrons
-        coneIntegrationTimeInMilliseconds
         coneLMSdensities
+        sampleTimeInMilliseconds
         eyeMicroMovementsPerFixation
         sceneSet
     end
