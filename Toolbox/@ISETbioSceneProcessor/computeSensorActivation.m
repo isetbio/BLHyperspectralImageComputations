@@ -168,11 +168,12 @@ function XTresponse = computeSensorActivation(obj,varargin)
         obj.sensor = sensorSet(obj.sensor, 'noise flag', sensorParams.noiseFlag);
         obj.sensor = coneAbsorptions(obj.sensor, obj.opticalImage);
         
-        obj.sensorActivationImage = sensorGet(obj.sensor, 'volts');
+        % Compute the photon rate image
+        obj.sensorPhotonRateImage = sensorGet(obj.sensor, 'photons') / sensorParams.coneIntegrationTime;
         
-        [coneRows, coneCols, timeBins] = size(obj.sensorActivationImage);
+        [coneRows, coneCols, timeBins] = size(obj.sensorPhotonRateImage);
         totalConesNum = coneRows * coneCols;
-        XTresponse = reshape(obj.sensorActivationImage, [totalConesNum timeBins]);
+        XTresponse = reshape(obj.sensorPhotonRateImage, [totalConesNum timeBins]);
     
         if (showEyeMovementCoverage)
             showEyeMovementCoverageImage(obj);

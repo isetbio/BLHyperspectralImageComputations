@@ -6,8 +6,8 @@ function init(obj)
     obj.opticalImage = [];
     obj.sensor = [];
     
-    % the images
-    obj.sensorActivationImage = [];
+    % the sensor activation (photon rate)
+    obj.sensorPhotonRateImage = [];
     
     % close down current instance of ISETBIO and start a fresh session
     ieInit;

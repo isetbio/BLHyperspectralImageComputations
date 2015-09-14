@@ -20,8 +20,8 @@ classdef ISETbioSceneProcessor < handle
         % the eye movement isetbio struct
         eyeMovement;
         
-        % the sensor activation image (volts)
-        sensorActivationImage
+        % the sensor photon rate image (photons/sec)
+        sensorPhotonRateImage;
     end
     
     properties (Access = private)
