@@ -86,6 +86,8 @@ function generateFigure(obj)
     % state of last MDSscale output
     obj.lastMDSscaleSucceeded = false;
     
+    scenesWithExhaustedEyeMovements = [];
+    
     for rotationIndex = 1:fullSceneRotations
 
        % time bins for eyeMovement and XTresponse that this scene rotation will include
@@ -94,6 +96,16 @@ function generateFigure(obj)
        for sceneIndex = 1:numel(obj.core1Data.allSceneNames)
            fprintf('<strong>Rotation:%d/%d (Scene:%d/%d)</strong>\n', rotationIndex, fullSceneRotations, sceneIndex, numel(obj.core1Data.allSceneNames));
                 
+           if (ismember(sceneIndex, scenesWithExhaustedEyeMovements))
+               continue;
+           end
+           
+           if (max(timeBinsForPresentSceneRotation) > size(obj.core1Data.XTphotonAbsorptionMatrices{sceneIndex},2))
+               fprintf('Exhausted eye movements for scene %d. Skipping...\n', sceneIndex);
+               scenesWithExhaustedEyeMovements = [scenesWithExhaustedEyeMovements sceneIndex];
+               continue;
+           end
+           
            % Aggregate response
            aggegateXTResponseOffset = size(obj.photonAbsorptionXTresponse,2);
                 obj.photonAbsorptionXTresponse  = [...
@@ -166,9 +178,20 @@ function generateFigure(obj)
     
     % Save data as matfile
     % get copies of private properties for saving to file
+    
     coneMosaicLearningProgress = obj.coneMosaicLearningProgress;
     precorrelationFilter = obj.precorrelationFilter;
-    save(obj.outputMatFileName, 'obj', 'fullSceneRotations', 'precorrelationFilter', 'coneMosaicLearningProgress');
+    
+    conesAcross = obj.conesAcross;
+    coneApertureInMicrons = obj.coneApertureInMicrons;
+    coneLMSdensities = obj.coneLMSdensities;
+    sampleTimeInMilliseconds = obj.sampleTimeInMilliseconds;
+    eyeMicroMovementsPerFixation = obj.eyeMicroMovementsPerFixation;
+    sceneSet = obj.sceneSet;
+        
+    save(obj.outputMatFileName, 'conesAcross', 'coneApertureInMicrons', 'coneLMSdensities', ...
+        'sampleTimeInMilliseconds', 'eyeMicroMovementsPerFixation', 'sceneSet', ...
+        'fullSceneRotations', 'precorrelationFilter', 'coneMosaicLearningProgress');
 end
 
 

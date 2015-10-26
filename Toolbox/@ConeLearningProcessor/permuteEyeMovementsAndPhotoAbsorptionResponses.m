@@ -5,6 +5,8 @@ function maxAvailableSceneRotations = permuteEyeMovementsAndPhotoAbsorptionRespo
     
     % find minimal number of eye movements across all scenes
     minEyeMovements = 1000*1000*1000;
+    maxEyeMovements = 0;
+    
     totalEyeMovementsNum = 0;
     
     % permute eyemovements and XT response indices 
@@ -45,10 +47,15 @@ function maxAvailableSceneRotations = permuteEyeMovementsAndPhotoAbsorptionRespo
         totalEyeMovementsNum = totalEyeMovementsNum + eyeMovementsNum;
         if (eyeMovementsNum < minEyeMovements)
             minEyeMovements = eyeMovementsNum;
-        end   
+        end
+        
+        if (eyeMovementsNum > maxEyeMovements)
+            maxEyeMovements = eyeMovementsNum;
+        end
+        
     end % sceneIndex
     
     eyeMovementsPerSceneRotation = obj.fixationsPerSceneRotation * obj.core1Data.eyeMovementParamsStruct.samplesPerFixation;
-    maxAvailableSceneRotations = floor(minEyeMovements / eyeMovementsPerSceneRotation);
+    maxAvailableSceneRotations = floor(maxEyeMovements / eyeMovementsPerSceneRotation);
 end
 

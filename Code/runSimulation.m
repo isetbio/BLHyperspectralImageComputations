@@ -1,8 +1,9 @@
 function runSimulation
     
     addConeLearningToolboxesToPath();
+    
     conesAcross = 15;
-    recomputePhotoAbsorptionMatrices = false;
+    recomputePhotonAbsorptionMatrices = false;
     
     
     sceneSet{1}.dataBaseName = 'manchester_database';
@@ -24,7 +25,7 @@ function runSimulation
     % Instantiate a ConeLearningProcessor
     coneLearningProcessor = ConeLearningProcessor();
     
-    if (recomputePhotoAbsorptionMatrices)
+    if (recomputePhotonAbsorptionMatrices)
         coneAbsorptionsFile = coneLearningProcessor.computeSpatioTemporalPhotonAbsorptionMatrix(...
                               'conesAcross', conesAcross, ...
                     'coneApertureInMicrons', 3.0, ...
@@ -33,6 +34,8 @@ function runSimulation
              'eyeMicroMovementsPerFixation', 100, ...
                                  'sceneSet', sceneSet ...
         );
+        fprintf('\n\nAll done with computation of photon absorption matrices ...');
+        return;
     else
         coneAbsorptionsFile = sprintf('PhotonAbsorptionMatrices_%dx%d.mat', conesAcross, conesAcross);
     end
@@ -45,7 +48,7 @@ function runSimulation
         % monophasic filter
         preCorrelationFilterSpecs = struct(...
                                 'type', precorrelationFilterType, ...
-           'timeConstantInMilliseconds', 90 ...
+           'timeConstantInMilliseconds', 125 ...
         );
     else 
         % biphasic filter
