@@ -5,7 +5,6 @@ function runSimulation
     conesAcross = 15;
     recomputePhotonAbsorptionMatrices = false;
     
-    
     sceneSet{1}.dataBaseName = 'manchester_database';
     sceneSet{1}.sceneNames = {'scene1', 'scene2', 'scene3', 'scene4', 'scene6', 'scene7', 'scene8'};
     
@@ -68,7 +67,7 @@ function runSimulation
 'correlationComputationIntervalInMilliseconds', 1, ...                      % smallest value is 1 milliseconds
                    'precorrelationFilterSpecs', preCorrelationFilterSpecs, ...   % struct with filter params
                              'disparityMetric', 'linear', ...                  % 'log' or 'linear'
-       'coneLearningUpdateIntervalInFixations', 1.0, ...                    % update cone mosaic learning every this many fixations
+       'coneLearningUpdateIntervalInFixations', 8, ...                    % update cone mosaic learning every this many fixations
                               'mdsWarningsOFF', true, ...                   % set to true to avoid wanrings about MDS not converging
                      'displayComputationTimes', false, ...                  % set to true to see the time that each computation takes
                                 'outputFormat', 'still' ...                 % 'video' or 'still'
@@ -80,6 +79,7 @@ end
 function addConeLearningToolboxesToPath()
     [rootPath,~] = fileparts(which(mfilename));
     cd(rootPath);
+    cd ..
     cd ..
     cd 'Toolbox';
     addpath(genpath(pwd));
