@@ -8,10 +8,11 @@ function learnConeMosaic(obj, datafile, varargin)
         'correlationComputationIntervalInMilliseconds', 1, ...
         'disparityMetric', 'linear', ...
         'mdsWarningsOFF', false, ...
-        'coneLearningUpdateIntervalInFixations', 1.0, ...
+        'coneLearningUpdateIntervalInFixations', 12, ...
         'displayComputationTimes', false, ...
         'outputFormat', 'still' ...
         );
+
     
     % Parse optional analysis paramaters in varargin
     parser = inputParser;
@@ -22,9 +23,10 @@ function learnConeMosaic(obj, datafile, varargin)
     parser.addParamValue('correlationComputationIntervalInMilliseconds', default.correlationComputationIntervalInMilliseconds, @isnumeric);
     parser.addParamValue('disparityMetric', default.disparityMetric, @ischar);
     parser.addParamValue('mdsWarningsOFF', default.mdsWarningsOFF, @islogical);
-    parser.addParamValue('coneLearningUpdateIntervalInFixations', default.coneLearningUpdateIntervalInFixations, @isfloat);
+    parser.addParamValue('coneLearningUpdateIntervalInFixations', default.coneLearningUpdateIntervalInFixations, @isnumeric);
     parser.addParamValue('displayComputationTimes', default.displayComputationTimes, @islogical);
     parser.addParamValue('outputFormat', default.outputFormat, @ischar);
+
     
     % Execute the parser
     parser.parse(varargin{:});
@@ -34,10 +36,11 @@ function learnConeMosaic(obj, datafile, varargin)
     for k = 1:length(pNames)
         eval(sprintf('obj.%s = parserResults.%s;', pNames{k}, pNames{k}));
     end
-   
-    % Load data and conv
+
+    
+    % Load data
     obj.loadSpatioTemporalPhotonAbsorptionMatrix(datafile);
- 
+
     % Go !
     if (strcmp(obj.outputFormat, 'video'))
         generateVideo(obj);
@@ -70,9 +73,19 @@ function generateFigure(obj)
     eyeMovementsPerSceneRotation = obj.fixationsPerSceneRotation * obj.core1Data.eyeMovementParamsStruct.samplesPerFixation;
     fprintf('Analysis will contain a total of %d fixations (total of %d microfixations).\n\n', totalFixationsNum, eyeMovementsPerSceneRotation*numel(obj.core1Data.allSceneNames)*fullSceneRotations);
     
+    % Setup video stream
+    kpos = strfind(obj.outputVideoFileName, 'm4v');
+    outputVideoFileName = [obj.outputVideoFileName(1:kpos-1) 'NoDetails', '.m4v'];
+    fprintf('Video saved in %s\n', outputVideoFileName);
+    writerObj = VideoWriter(outputVideoFileName, 'MPEG-4'); % H264 format
+    writerObj.FrameRate = 60; 
+    writerObj.Quality = 100;
+    % Open video stream
+    open(writerObj);
+    
     % Initialize figure
     hFig = figure(2); clf;
-    set(hFig, 'unit','pixel', 'menubar','none', 'Position', [10 20 1280 800], 'Color', [0 0 0]);
+    set(hFig, 'unit','pixel', 'menubar','none', 'Position', [10 20 2540 1560], 'Color', [0 0 0]);
     axesStruct = generateFigureAxes(hFig);
     drawnow;
     
@@ -113,10 +126,10 @@ function generateFigure(obj)
                     obj.core1Data.XTphotonAbsorptionMatrices{sceneIndex}(:,timeBinsForPresentSceneRotation)...
                     ];
            
-           % Compute rieke adapted photo-current response with noise
+           % Compute adapted outersegment response with noise
            % and post-adaptation filter according to the passed analysis params
-           savePrefilteredAdaptedPhotoCurrentXTresponse = false;
-           obj.computePostAbsorptionResponse(savePrefilteredAdaptedPhotoCurrentXTresponse);
+           savePrefilteredOuterSegmentResponse = false;
+           obj.computeOuterSegmentResponse(savePrefilteredOuterSegmentResponse);
            
            % Now generate image data ms-for-ms and compute mosaic during this scene rotation
            for timeBinIndex = 1:eyeMovementsPerSceneRotation
@@ -135,7 +148,7 @@ function generateFigure(obj)
                     % do not update learned cone mosaic
                     continue;
                 end
-                    
+                      
                 % compute disparity matrix
                 obj.computeDisparityMatrix(timeBinRangeToThisPoint);
                     
@@ -165,13 +178,19 @@ function generateFigure(obj)
             if (obj.lastMDSscaleSucceeded)
                 obj.displayLearnedConeMosaic(axesStruct.xyMDSAxes, axesStruct.xzMDSAxes, axesStruct.yzMDSAxes,axesStruct.mosaicAxes);
                 obj.displayConeMosaicLearningProgress(axesStruct.performanceAxes1, axesStruct.performanceAxes2);
+                obj.displayTimeInfo(axesStruct.timeDisplayAxes);
                 drawnow; 
+                frame = getframe(hFig);
+                writeVideo(writerObj, frame);
             end
         end % sceneIndex
     
         % update eye movementIndex
         eyeMovementIndex = eyeMovementIndex + eyeMovementsPerSceneRotation;       
     end % rotationIndex       
+    
+    % close video stream and save movie
+    close(writerObj);
     
     % Save figure as PDF
     NicePlot.exportFigToPDF(obj.outputPDFFileName,hFig,300);
@@ -275,11 +294,11 @@ function generateVideo(obj)
                     obj.core1Data.XTphotonAbsorptionMatrices{sceneIndex}(:,timeBinsForPresentSceneRotation)...
                     ];
             
-                % Compute rieke adapted photo-current response with noise
+                % Compute adapted outersegment response with noise
                 % and post-adaptation filter according to the passed analysis params
-                savePrefilteredAdaptedPhotoCurrentXTresponse = true;
-                obj.computePostAbsorptionResponse(savePrefilteredAdaptedPhotoCurrentXTresponse);
-               
+                savePrefilteredOuterSegmentResponse = false;
+                obj.computeOuterSegmentResponse(savePrefilteredOuterSegmentResponse);
+           
                 % Now generate image data ms-for-ms and compute mosaic during this scene rotation
                 for timeBinIndex = 1:eyeMovementsPerSceneRotation
                    
@@ -427,13 +446,17 @@ function axesStruct = generateVideoAxes(hFig)
 end
 
 function axesStruct = generateFigureAxes(hFig)
+    w = 1280;
+    h = 800;
+    
+    axesStruct.timeDisplayAxes   = axes('parent',hFig,'unit','normalized','position',[585/w 750/h 140/w 20/h], 'Color', [0 0 0]);
     % top row
-    axesStruct.xyMDSAxes         = axes('parent',hFig,'unit','pixel','position',[30   130+400  256 226], 'Color', [0 0 0]);
-    axesStruct.xzMDSAxes         = axes('parent',hFig,'unit','pixel','position',[370  130+400  256 226], 'Color', [0 0 0]);
-    axesStruct.yzMDSAxes         = axes('parent',hFig,'unit','pixel','position',[720  130+400  256 256], 'Color', [0 0 0]);
-    axesStruct.mosaicAxes        = axes('parent',hFig,'unit','pixel','position',[1010 130+400  256 256], 'Color', [0 0 0]);
+    axesStruct.xyMDSAxes         = axes('parent',hFig,'unit','normalized','position',[30/w   (130+400)/h  256/w 226/h], 'Color', [0 0 0]);
+    axesStruct.xzMDSAxes         = axes('parent',hFig,'unit','normalized','position',[370/w  (130+400)/h  256/w 226/h], 'Color', [0 0 0]);
+    axesStruct.yzMDSAxes         = axes('parent',hFig,'unit','normalized','position',[720/w  (130+400)/h  256/w 256/h], 'Color', [0 0 0]);
+    axesStruct.mosaicAxes        = axes('parent',hFig,'unit','normalized','position',[1010/w (130+400)/h  256/w 256/h], 'Color', [0 0 0]);
     
     % bottom row
-    axesStruct.performanceAxes1  = axes('parent',hFig,'unit','pixel','position',[25   30 600 110+350], 'Color', [0 0 0]);
-    axesStruct.performanceAxes2  = axes('parent',hFig,'unit','pixel','position',[670  30 600 110+350], 'Color', [0 0 0]);
+    axesStruct.performanceAxes1  = axes('parent',hFig,'unit','normalized','position',[25/w   30/h 600/w (110+350)/h], 'Color', [0 0 0]);
+    axesStruct.performanceAxes2  = axes('parent',hFig,'unit','normalized','position',[670/w  30/h 600/w (110+350)/h], 'Color', [0 0 0]);
 end

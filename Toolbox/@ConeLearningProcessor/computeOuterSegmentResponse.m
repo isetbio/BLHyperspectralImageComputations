@@ -1,19 +1,19 @@
-function computePostAbsorptionResponse(obj, savePrefilteredAdaptedPhotoCurrentXTresponse)
+function computeOuterSegmentResponse(obj, savePrefilteredOuterSegmentResponse)
        
     if (obj.displayComputationTimes)
         tic
     end
     
     if (strcmp(obj.adaptationModel, 'linear'))
-        initialState = riekeInit;
+        initialState = osInit;  % used to be riekeInit;
         initialState.timeInterval  = obj.core1Data.sensorTimeInterval;
         initialState.Compress = false;
-        obj.adaptedPhotoCurrentXTresponse = riekeLinearCone(obj.photonAbsorptionXTresponse, initialState);
+        obj.adaptedPhotoCurrentXTresponse = osLinearCone(obj.photonAbsorptionXTresponse, initialState);  % used to be riekeLinearCone
 
         if (strcmp(obj.photocurrentNoise, 'RiekeNoise'))
             params.seed = 349573409;
             params.sampTime = obj.core1Data.sensorTimeInterval;
-            [obj.adaptedPhotoCurrentXTresponse, ~] = riekeAddNoise(obj.adaptedPhotoCurrentXTresponse, params);
+            [obj.adaptedPhotoCurrentXTresponse, ~] = osAddNoise(obj.adaptedPhotoCurrentXTresponse, params); % used to be riekeAddNoise
         end
     elseif (strcmp(obj.adaptationModel,'none'))
        obj.adaptedPhotoCurrentXTresponse = obj.photonAbsorptionXTresponse;
@@ -21,7 +21,7 @@ function computePostAbsorptionResponse(obj, savePrefilteredAdaptedPhotoCurrentXT
        error('Unknown adaptation mode to use (''%s'')', obj.adaptationModelToUse);
     end
 
-    if (savePrefilteredAdaptedPhotoCurrentXTresponse)
+    if (savePrefilteredOuterSegmentResponse)
         obj.prefilteredAdaptedPhotoCurrentResponsesForSelectCones = obj.adaptedPhotoCurrentXTresponse(obj.maxResponsiveConeIndices,:);
     end
     

@@ -9,7 +9,16 @@ function displayLearnedConeMosaic(obj, xyMDSAxes, xzMDSAxes, yzMDSAxes, mosaicAx
         margin = 0;
     end
     XLims = [minX-margin/2 maxX+margin/2];
-    spatialExtent = max(obj.core1Data.trueConeXYLocations(:)) * 1.2;
+    
+    % Determine spatial position range
+    yy = squeeze(obj.unwrappedMDSprojection(:,2));
+    zz = squeeze(obj.unwrappedMDSprojection(:,3));
+    maxSpace = max([max(abs(yy)) max(abs(zz))]);
+    spatialExtent = max(obj.core1Data.trueConeXYLocations(:)) * 1.5;
+    if (maxSpace > spatialExtent)
+        spatialExtent = maxSpace;
+    end
+    
     YLims = spatialExtent*[-1 1];
     ZLims = spatialExtent*[-1 1];
     

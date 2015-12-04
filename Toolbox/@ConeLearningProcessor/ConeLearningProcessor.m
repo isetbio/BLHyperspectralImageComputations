@@ -107,7 +107,7 @@ classdef ConeLearningProcessor < handle
         % computational methods
         computePrecorrelationFilter(obj);
         maxAvailableSceneRotations = permuteEyeMovementsAndPhotoAbsorptionResponses(obj);
-        computePostAbsorptionResponse(obj, savePrefilteredAdaptedPhotoCurrentXTresponse);
+        computeOuterSegmentResponse(obj, savePrefilteredOuterSegmentResponse);
         D = computeDisparityMatrix(obj,timeBinRange);
         unwrapMDSprojection(obj);
         computeConeMosaicLearningProgression(obj, fixationsNum);
