@@ -67,7 +67,7 @@ function runSimulation
 'correlationComputationIntervalInMilliseconds', 1, ...                      % smallest value is 1 milliseconds
                    'precorrelationFilterSpecs', preCorrelationFilterSpecs, ...   % struct with filter params
                              'disparityMetric', 'linear', ...                  % 'log' or 'linear'
-       'coneLearningUpdateIntervalInFixations', 8, ...                    % update cone mosaic learning every this many fixations
+       'coneLearningUpdateIntervalInFixations', 1, ...                    % update cone mosaic learning every this many fixations
                               'mdsWarningsOFF', true, ...                   % set to true to avoid wanrings about MDS not converging
                      'displayComputationTimes', false, ...                  % set to true to see the time that each computation takes
                                 'outputFormat', 'still' ...                 % 'video' or 'still'
