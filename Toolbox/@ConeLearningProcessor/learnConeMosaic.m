@@ -85,7 +85,7 @@ function generateFigure(obj)
     
     % Initialize figure
     hFig = figure(2); clf;
-    set(hFig, 'unit','pixel', 'menubar','none', 'Position', [10 20 2540 1560], 'Color', [0 0 0]);
+    set(hFig, 'unit','pixel', 'menubar','none', 'Position', [10 20 1682 1026], 'Color', [0 0 0]);
     axesStruct = generateFigureAxes(hFig);
     drawnow;
     
@@ -149,6 +149,14 @@ function generateFigure(obj)
                     continue;
                 end
                       
+                obj.coneLearningUpdateIntervalInFixations = round(obj.fixationsNum/obj.fixationsPerSceneRotation);
+                if (obj.coneLearningUpdateIntervalInFixations < 1)
+                    obj.coneLearningUpdateIntervalInFixations = 1;
+                end
+                if (obj.coneLearningUpdateIntervalInFixations > obj.fixationsPerSceneRotation*6)
+                    obj.coneLearningUpdateIntervalInFixations = obj.fixationsPerSceneRotation*6;
+                end
+                
                 % compute disparity matrix
                 obj.computeDisparityMatrix(timeBinRangeToThisPoint);
                     
@@ -179,6 +187,7 @@ function generateFigure(obj)
                 obj.displayLearnedConeMosaic(axesStruct.xyMDSAxes, axesStruct.xzMDSAxes, axesStruct.yzMDSAxes,axesStruct.mosaicAxes);
                 obj.displayConeMosaicLearningProgress(axesStruct.performanceAxes1, axesStruct.performanceAxes2);
                 obj.displayTimeInfo(axesStruct.timeDisplayAxes);
+                set(hFig, 'Position', [10 20 1682 1026]);
                 drawnow; 
                 frame = getframe(hFig);
                 writeVideo(writerObj, frame);
