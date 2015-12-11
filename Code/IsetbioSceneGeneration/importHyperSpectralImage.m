@@ -47,7 +47,8 @@ function importHyperSpectralImage(varargin)
 
     % Show an sRGB version of the hyperspectral image with the reference object outlined in red
     hyperSpectralImageDataHandler.showLabeledsRGBImage(s.clipLuminance, s.gammaValue, s.outlineWidth);
-
+    hyperSpectralImageDataHandler.shootingInfo()
+    
     % Show/Export Isetbio scene object
     if (exportIsetbioSceneObject)
         % Export isetbio scene object
@@ -72,16 +73,21 @@ function showGeneratedIsetbioData(sceneObjectOrFileNameOfSceneObject)
         scene = sceneObjectOrFileNameOfSceneObject;
     end
 
+    if (1==2)
+        
     % display scene
     vcAddAndSelectObject(scene); sceneWindow;
     
-    % human optics
-    oi = oiCreate('human');
     
-    % Compute optical image of scene and
-    oi = oiCompute(scene,oi);
+        % human optics
+        oi = oiCreate('human');
+
+        % Compute optical image of scene and
+        oi = oiCompute(scene,oi);
+
+        % Show optical image
+        vcAddAndSelectObject(oi); oiWindow;
+    end
     
-    % Shown optical image
-    vcAddAndSelectObject(oi); oiWindow;
 end
 
