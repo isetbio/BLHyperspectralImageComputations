@@ -1,7 +1,7 @@
 function setPrefsForHyperspectralImageIsetbioComputations
 
     %originalDataBaseDir = '/Volumes/SDXC_64GB/Matlab/Analysis/HyperSpectralImages/ManchesterData';
-    originalDataBaseDir = '/Volumes/ColorShare1/hyperspectral-images';
+    originalDataBaseDir = '/Volumes/ColorShare1/hyperspectral-images-noahproject';
     isetbioDataBaseDir  = '/Users1/Shared/Matlab/Analysis/isetbioHyperspectralImages';
    % isetbioDataBaseDir  = '/Volumes/Data/Users1/Shared/Matlab/Analysis/isetbioHyperspectralImages';
 

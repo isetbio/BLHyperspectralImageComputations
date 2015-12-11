@@ -220,67 +220,282 @@ function referenceObjectData = generateReferenceObjectDataStructForHarvardScenes
     obj.sceneData.clippingRegion.y1 = 1;
     obj.sceneData.clippingRegion.y2 = Inf;
     
+    % Nicolas' description of what the images depict
+    imageInfo = [];
+    [obj.sceneData.subset ' / ' obj.sceneData.name]
+     
+     if (strcmp(obj.sceneData.subset, 'CZ_hsdi'))
+        switch obj.sceneData.name 
+            case 'img3'
+                imageInfo = 'Office area. Indoors.';
+                
+            case 'img4'
+                imageInfo = 'Bicycle against wall. Indoors.';
+                
+            case 'img5'
+                imageInfo = 'Desk with computer monitor and red book. Indoors.';
+                
+            case 'img6'
+                imageInfo = 'Shelves with storage bins. Indoors.';
+                
+            case 'imga3'
+                imageInfo = 'Chair on green carpet floor. Indoors.';
+             
+           case 'imga4'
+                imageInfo = 'Office area with green carpet floor. Indoors.';
+                
+           case 'imga8'
+                imageInfo = 'Office ares with red chair. Indoors.';
+                
+           case 'imgc3'
+                imageInfo = 'Wall. Indoors.';
+             
+           case 'imgc6'
+                imageInfo = 'Walls and windows. Indoors.';
+                
+           case 'imgd0'
+                imageInfo = 'Shelf with books, Indoors.';
+             
+           case 'imgd1'
+                imageInfo = 'Storage room. Indoors.';  
+              
+           case 'imgd6'
+                imageInfo = 'Carpeted floor with plant. Indoors.';  
+                
+           case 'imgg0'
+                imageInfo = 'Cork wall with pinned documents. Indoors.';     
+                
+           case 'imgg1'
+                imageInfo = 'Carpeted corridor with chairs. Indoors.';  
+            
+           case 'imgg2'
+                imageInfo = 'Office area with Xrite white balance card. Indoors.';   
+                
+           case 'imgg3'
+                imageInfo = 'Office wall with Xrite white balance card. Indoors.';    
+                
+           case 'imgg4'
+                imageInfo = 'Mailroom. Indoors.';  
+            
+           case 'imgg5'
+                imageInfo = 'Desk area with Xrite white balance card. Indoors.';   
+                
+           case 'imgg6'
+                imageInfo = 'Orange wood wall and yellow chair. Indoors.';     
+                
+           case 'imgg7'
+                imageInfo = 'Sitting area with red chairs and Xrite white balance card. Indoors.';   
+            
+           case 'imgg8'
+                imageInfo = 'Room with blackboard, chair and Xrite white balance card. Indoors.';  
+                
+           case 'imgg9'
+                imageInfo = 'Office are with recycling bins. Indoors.';  
+              
+           case 'imgh4'
+                imageInfo = 'Yellow Chairs. Indoors.';  
+            
+           case 'imgh5'
+                imageInfo = 'Lounge with leather and fabric chairs. Indoors.';   
+                
+           case 'imgh6'
+                imageInfo = 'Yellow desk and chair. Indoors.';     
+                
+           case 'imgh7'
+                imageInfo = 'Wooden wall and floor. Indoors.';  
+                
+        end
+     end
+     
     if (strcmp(obj.sceneData.subset, 'CZ_hsdb'))
         switch obj.sceneData.name 
+            case 'img1'
+                imageInfo = 'Snowed roof of building. Overcast day.';
+            
+            case 'img2'
+                imageInfo = 'Snowed street, trees, buildings. Overcast day.';
+            
+            case 'imga1'
+                imageInfo = 'Buildings with trees in front. Sunny day.';
+                
+            case 'imga2'
+                imageInfo = 'Corner of a building, truck, strong shadows. Sunny day.';
+                
+            case 'imga5'
+                imageInfo = 'Room ceiling. Indoors.';
+              
+            case 'imga6'
+                imageInfo = 'Asphalt walkway with bushes and sitting benches. Overcast day.';
+                
+            case 'imga7'
+                imageInfo = 'Building wall. Overcast day.';
+                
+            case 'imgb1'
+                imageInfo = 'Brik and stone building wall. Sunny day';  
+                
+            case 'imgb2'
+                imageInfo = 'Building, trees, and parking area with cars. Overcast day.'; 
+                
+            case 'imgb3'
+                imageInfo = 'Buildings, trees, and parking area with cars. Overcast day.'; 
+                
             case 'imgb4'
+                imageInfo = 'Bushes, tree branches. Sunny day'; 
                 obj.sceneData.clippingRegion.x1 = 1;
                 obj.sceneData.clippingRegion.x2 = 600;
                 obj.sceneData.clippingRegion.y1 = 1;
                 obj.sceneData.clippingRegion.y2 = Inf;
                 
+            case 'imgb5'
+                imageInfo = 'Beautiful and intricate stone bulding door. Sunny day.'; 
+                
+            case 'imgb6'
+                imageInfo = 'Grassy area with brown soil, tree trunk and stone plaque. Sunny day.'; 
+                
             case 'imgb7'
+                imageInfo = 'Building with tree branches in front. Sunny day.'; 
                 obj.sceneData.clippingRegion.x1 = 1;
                 obj.sceneData.clippingRegion.x2 = Inf;
                 obj.sceneData.clippingRegion.y1 = 736;
                 obj.sceneData.clippingRegion.y2 = Inf;
                
             case 'imgb8'
+                imageInfo = 'Buildings with tree branches in front. Overcast day.'; 
                 obj.sceneData.clippingRegion.x1 = 1;
                 obj.sceneData.clippingRegion.x2 = 762;
                 obj.sceneData.clippingRegion.y1 = 1;
                 obj.sceneData.clippingRegion.y2 = Inf;
                 
+            case 'imgb9'
+                imageInfo = 'Building with brick walkway. Overcast day.'; 
+                
+            case 'imgc1'
+                 imageInfo = 'Buildings. Overcast day.'; 
+                 
+            case 'imgc2'
+                 imageInfo = 'Room floor and wall. Indoors.'; 
+                 
+            case 'imgc4'
+                 imageInfo = 'House with backyard. Overcast day.'; 
+              
+            case 'imgc5'
+                 imageInfo = 'Building wall and pavement. Overcast day.'; 
+                
+            case 'imgc7'
+                 imageInfo = 'House deck with wood chairs and fence. Trees, snow. Overcast day.';
+                 
+            case 'imgc8'
+                 imageInfo = 'University hall with glass walls, chairs. Indoors.';
+                 
             case 'imgc9'
+                imageInfo = 'House roof and siding, tree branches. Overcast day.';
                 obj.sceneData.clippingRegion.x1 = 1;
                 obj.sceneData.clippingRegion.x2 = 976;
                 obj.sceneData.clippingRegion.y1 = 1;
                 obj.sceneData.clippingRegion.y2 = 855;
                 
+            case 'imgd2'
+                 imageInfo = 'Desk. Indoors.';
+                 
+            case 'imgd3'
+                 imageInfo = 'Shelves. Indoors.';
+                 
+            case 'imgd4'
+                 imageInfo = 'Desk with water bottle, book. Indoors.';
+               
+            case 'imgd7'
+                 imageInfo = 'Wall tiled with pinned documents. Indoors.';
+                 
+            case 'imgd8'
+                 imageInfo = 'Room corner with orange wall and tall plant. Indoors.';
+            
+            case 'imgd9'
+                 imageInfo = 'Room corner with short plant. Indoors.';
+                 
             case 'imge0'
+                imageInfo = 'Buildings, large wooden barrel. Overcast day.';
                 obj.sceneData.clippingRegion.x1 = 306;
                 obj.sceneData.clippingRegion.x2 = Inf;
                 obj.sceneData.clippingRegion.y1 = 1;
                 obj.sceneData.clippingRegion.y2 = Inf;  
                 
             case 'imge1'
+                imageInfo = 'Part of building with intricate roof decoration. Sunny day.';
                 obj.sceneData.clippingRegion.x1 = 472;
                 obj.sceneData.clippingRegion.x2 = 1144;
                 obj.sceneData.clippingRegion.y1 = 187;
                 obj.sceneData.clippingRegion.y2 = 983;  
                 
             case 'imge2'
+                imageInfo = 'Tree trunk. Sunny day.';
                 obj.sceneData.clippingRegion.x1 = 383;
                 obj.sceneData.clippingRegion.x2 = 1013;
                 obj.sceneData.clippingRegion.y1 = 1;
                 obj.sceneData.clippingRegion.y2 = Inf;  
+              
+            case 'imge3'
+                imageInfo = 'Building with windows and tree shadows. Sunny day.';
+                
+            case 'imge4'
+                imageInfo = 'Building door and columns. Overcast day.';
+                
+            case 'imge5'
+                imageInfo = 'Building with windows, tree branches. Overcast day.';
+                
+            case 'imge6'
+                imageInfo = 'Building entrance, tree branches. Overcast day.';
                 
             case 'imge7'
+                imageInfo = 'Metal statue against building stone wall. Overcast day.';
                 obj.sceneData.clippingRegion.x1 = 626;
                 obj.sceneData.clippingRegion.x2 = Inf;
                 obj.sceneData.clippingRegion.y1 = 1;
                 obj.sceneData.clippingRegion.y2 = Inf; 
                 
+            case 'imgf1'
+                imageInfo = 'Building with red car in shadow. Overcast day.';
+                
+            case 'imgf2'
+                imageInfo = 'Building with trees in front. Overcast day.';
+                
+
             case 'imgf3'
+                imageInfo = 'Building with large windows. Sunny day.';
                 obj.sceneData.clippingRegion.x1 = 791;
                 obj.sceneData.clippingRegion.x2 = Inf;
                 obj.sceneData.clippingRegion.y1 = 1;
                 obj.sceneData.clippingRegion.y2 = Inf; 
                 
+            case 'imgf4'
+                imageInfo = 'Large building against blue sky. Sunny day.';
+                
+            case 'imgf5'
+                imageInfo = 'Bicycles against building wall. Overcast day.';
+                
+            case 'imgf6'
+                imageInfo = 'Grassy area with bush and red fire hose. Sunny day.';
+                
+            case 'imgf7'
+                imageInfo = 'Building entrace. Sunny day.';
+                
             case 'imgf8'
+                imageInfo = 'Building with red fruit - carrying bush in front of it. Sunny day.';
                 obj.sceneData.clippingRegion.x1 = 1;
                 obj.sceneData.clippingRegion.x2 = 1230;
                 obj.sceneData.clippingRegion.y1 = 1;
                 obj.sceneData.clippingRegion.y2 = Inf;     
+                
+            case 'imgh0'
+                imageInfo = 'Magazine shelves. Indoors.';
+                
+            case 'imgh1'
+                imageInfo = 'Desktop computer with Xrite white balance card. Indoors.';
+                
+            case 'imgh2'
+                imageInfo = 'Shelf with books. Indoors.';
+                
+            case 'imgh3'
+                imageInfo = 'Rotating chair and bookshelves. Indoors.';
                 
         end
     end
@@ -307,7 +522,7 @@ function referenceObjectData = generateReferenceObjectDataStructForHarvardScenes
             'roiXYpos',         referenceObjectXYpos, ...        % pixels (center)
             'roiSize',          referenceObjectROI ...           % pixels (halfwidth, halfheight)
          ), ...
-         'info', [] ...
+         'info', imageInfo ...
     ); 
 
 end
