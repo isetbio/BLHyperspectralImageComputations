@@ -223,7 +223,7 @@ function referenceObjectData = generateReferenceObjectDataStructForHarvardScenes
     % Nicolas' description of what the images depict
     imageInfo = [];
     [obj.sceneData.subset ' / ' obj.sceneData.name]
-     
+    
      if (strcmp(obj.sceneData.subset, 'CZ_hsdi'))
         switch obj.sceneData.name 
             case 'img3'
@@ -310,7 +310,7 @@ function referenceObjectData = generateReferenceObjectDataStructForHarvardScenes
     if (strcmp(obj.sceneData.subset, 'CZ_hsdb'))
         switch obj.sceneData.name 
             case 'img1'
-                imageInfo = 'Snowed roof of building. Overcast day.';
+                imageInfo = 'Snowed building roof. Overcast day.';
             
             case 'img2'
                 imageInfo = 'Snowed street, trees, buildings. Overcast day.';
