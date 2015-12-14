@@ -119,6 +119,9 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
     % Enter custom geometry and illuminant settings as these images do not have such information.
     switch obj.sceneData.name
         case 'scene9'
+             % Manual scene description
+            sceneInfo = 'Pink flower tree closeup';
+            
             % custom spatial calibration information  (pedal)
             distanceToCamera = 2.0;                      % in meters
             referenceObjectShape = 'flower pedal';
@@ -140,6 +143,9 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
             
             
         case 'scene10'
+             % Manual scene description
+            sceneInfo = 'Forest view. Motion artifacts.';
+            
             % custom spatial calibration information (tree branch)
             distanceToCamera = 40.0;                      % in meters
             referenceObjectShape = 'tree branch';
@@ -160,6 +166,9 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
             obj.sceneData.clippingRegion.y2 = 700;
             
         case 'scene11'
+             % Manual scene description
+            sceneInfo = 'Foliage. Motion artifacts.';
+            
             % custom spatial calibration information (tree branch)
             distanceToCamera = 80.0;                      % in meters
             referenceObjectShape = 'tree branch';
@@ -180,6 +189,9 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
             obj.sceneData.clippingRegion.y2 = 750;
             
         case 'scene12'
+             % Manual scene description
+            sceneInfo = 'Valley view. Motion/out-of-focus artifacts.';
+            
             % custom spatial calibration information (tree branch)
             distanceToCamera = 130.0;                      % in meters
             referenceObjectShape = 'tree branch';
@@ -200,6 +212,9 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
             obj.sceneData.clippingRegion.y2 = 664;
          
         case 'scene13'
+             % Manual scene description
+            sceneInfo = 'Toys. Indoors.'; 
+            
             % custom spatial calibration information (tree branch)
             distanceToCamera = 10.0;                      % in meters
             referenceObjectShape = 'basket ball';
@@ -220,6 +235,9 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
             obj.sceneData.clippingRegion.y2 = inf;
             
         case 'scene14'
+             % Manual scene description
+            sceneInfo = 'Old building and tree view. Sunny day.';
+            
             % custom spatial calibration information (tree branch)
             distanceToCamera = 80.0;                      % in meters
             referenceObjectShape = 'rail';
@@ -241,6 +259,9 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
             
         
         case 'scene15'
+            % Manual scene description
+            sceneInfo = 'Building view. Sunny day.';
+            
             % custom spatial calibration information (tree branch)
             distanceToCamera = 80.0;                      % in meters
             referenceObjectShape = 'rail';
@@ -261,6 +282,9 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
             obj.sceneData.clippingRegion.y2 = 776;
             
         case 'scene16'
+            % Manual scene description
+            sceneInfo = 'City view. Sunny day.';
+            
             % custom spatial calibration information (tree branch)
             distanceToCamera = 600.0;                      % in meters
             referenceObjectShape = 'rail';
@@ -278,7 +302,7 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
             obj.sceneData.clippingRegion.x1 = 213;
             obj.sceneData.clippingRegion.x2 = Inf;
             obj.sceneData.clippingRegion.y1 = 1;
-            obj.sceneData.clippingRegion.y2 = 700;
+            obj.sceneData.clippingRegion.y2 = 450;
             
             
         otherwise
@@ -303,7 +327,7 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
             'roiXYpos',         referenceObjectXYpos, ...        % pixels (center)
             'roiSize',          referenceObjectROI ...           % pixels (halfwidth, halfheight)
          ), ...
-         'info', [] ...
+         'info', sceneInfo ...
     ); 
 end
 
@@ -338,11 +362,11 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
             'roiXYpos',         [1339 851], ...     % pixels (center)
             'roiSize',          [0 20] ...          % pixels (halfwidth, halfheight)
          ), ...
-         'info', ['Scene was recorded in the Sameiro area, Braga, Minho region, Portugal, on 12 July 2003 at 15:10'...
+         'info', ['Forest view. Scene was recorded in the Sameiro area, Braga, Minho region, Portugal, on 12 July 2003 at 15:10'...
                   'under direct sunlight with clear sky. Ambient temperature was 32 ºC. Camera aperture was f/16, focus 9.0,'...
                   'and zoom set to maximum giving a focal length of 75 mm.'
                   ] ...
-    );    
+    );  
 end
 
 
@@ -374,7 +398,7 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
             'roiXYpos',         [1324 469], ...     % pixels (center)
             'roiSize',          [13 18] ...         % pixels (halfwidth, halfheight)
          ), ...
-         'info', ['Scene was recorded in Ruivães, Vieira do MInho, Minho region, Portugal, on 4 July 2003 at 14:50 under overcast sky with'...
+         'info', ['Dense foliage with purple flower. Scene was recorded in Ruivães, Vieira do MInho, Minho region, Portugal, on 4 July 2003 at 14:50 under overcast sky with'...
                   'occasional direct sunlight and a slight wind.  Ambient temperature was 28 ºC. Camera aperture was f/16, focus 12.5, and'...
                   'zoom set to maximum giving a focal length of 75 mm.'...
                   ] ...
@@ -412,7 +436,7 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
             'roiXYpos',         [1246 962], ...     % pixels (center)
             'roiSize',          [9 9] ...         % pixels (halfwidth, halfheight)
          ), ...
-         'info', ['Scene was recorded in the Museum of the Monastery of S. Martinho de Tibães, Mire de Tibães, Minho region, Portugal,' ...
+         'info', ['Garden. Scene was recorded in the Museum of the Monastery of S. Martinho de Tibães, Mire de Tibães, Minho region, Portugal,' ...
                   'on 2 July 2003 at 16:49 under overcast cloudy sky. Ambient temperature was 24 ºC. Camera aperture was f/16, focus 10,' ...
                   'and zoom set to maximum giving a focal length of 75 mm'...
                   ] ...
@@ -449,7 +473,7 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
             'roiXYpos',         [83 981], ...       % pixels (center)
             'roiSize',          [10 10] ...         % pixels (halfwidth, halfheight)
          ), ...
-         'info', ['Recorded in the Gualtar campus of University of Minho, Portugal, on 31 July 2002 at 17:40' ...
+         'info', ['Yellow flower close up. Recorded in the Gualtar campus of University of Minho, Portugal, on 31 July 2002 at 17:40' ...
                 'under direct sunlight and blue sky. Ambient temperature: 29 C.' ...
                 'Camera aperture: f/22, focus: 38, zoom set to maximum giving a focal length of 75 mm'] ...
     );    
@@ -483,7 +507,7 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
             'roiXYpos',         [83 981], ...       % pixels (center)
             'roiSize',          [10 10] ...         % pixels (halfwidth, halfheight)
          ), ...
-         'info', ['Scene was recorded at Brufe, Terras do Bouro, Minho region, Portugal, on 25 July 2002 at 16:15'...
+         'info', ['Data inconsistency (32/33 bands). Scene was recorded at Brufe, Terras do Bouro, Minho region, Portugal, on 25 July 2002 at 16:15'...
                   'under a blue sky with some wind.  Ambient temperature was 30ºC. Camera aperture was f/16, focus 3.0,'...
                   'and zoom maximum'] ...
     );    
@@ -518,7 +542,7 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
             'roiXYpos',         [1303 986], ...     % pixels (center)
             'roiSize',          [5 5] ...           % pixels (halfwidth, halfheight)
          ), ...
-         'info', ['Scene was recorded in the Picoto area, Braga, Minho region, Portugal, on 8 August 2002 at 12:57'...
+         'info', ['City view. Scene was recorded in the Picoto area, Braga, Minho region, Portugal, on 8 August 2002 at 12:57'...
                   'under direct sunlight with a thin cloud and a slight wind. Ambient temperature was 28 ºC. '...
                   'Camera aperture was f/22, focus 5.0, and zoom set to maximum giving a focal length of 75 mm'] ...
     );    
@@ -553,7 +577,7 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
             'roiXYpos',         [12 640], ... % pixels (center)
             'roiSize',          [7 180] ...         % pixels (halfwidth, halfheight)
          ), ...
-         'info', ['Scene was recorded in the Ribeira area, Porto, Portugal, on 10 July 2003 at 15:05 under '...
+         'info', ['Beautiful redroof buildings. Scene was recorded in the Ribeira area, Porto, Portugal, on 10 July 2003 at 15:05 under '...
                   'direct sunlight with thin cloud and a slight wind. Ambient temperature was 26 ºC. '...
                   'Camera aperture was f/16, focus 8.5, and zoom set to maximum, giving a focal length of 75 mm'] ...
     );    
@@ -587,7 +611,7 @@ function referenceObjectData = generateReferenceObjectDataStructForManchesterSce
             'roiXYpos',         [1334 626], ...       % pixels (center)
             'roiSize',          [6 18] ...         % pixels (halfwidth, halfheight)
          ), ...
-         'info', ['Scene was recorded in Souto, Minho region, Portugal, on 8 July 2003 at 13:17 under '...
+         'info', ['Stone and wood cabin closeup. Scene was recorded in Souto, Minho region, Portugal, on 8 July 2003 at 13:17 under '...
                   'direct sunlight with clear sky. Ambient temperature was 26 ºC. Camera aperture was f/16,'...
                   'focus 9.0, and zoom set to maximum giving a focal length of 75 mm'] ...
     );    
