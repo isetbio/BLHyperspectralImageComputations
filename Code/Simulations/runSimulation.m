@@ -6,7 +6,7 @@ function runSimulation
     recomputePhotonAbsorptionMatrices = false;
     
     sceneSet{1}.dataBaseName = 'manchester_database';
-    sceneSet{1}.sceneNames = {'scene1', 'scene2', 'scene3', 'scene4', 'scene6', 'scene7', 'scene8'};
+    sceneSet{1}.sceneNames = {'scene1', 'scene2', 'scene3', 'scene4', 'scene6', 'scene7', 'scene8', 'scene9', 'scene13', 'scene14', 'scene15'};
     
     sceneSet{2}.dataBaseName = 'harvard_database';
     sceneSet{2}.sceneNames = {...
