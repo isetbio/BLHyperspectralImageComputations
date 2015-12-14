@@ -24,9 +24,14 @@ function importHyperSpectralImage(varargin)
         case 'manchester_database'
             % Instantiate a ManchesterHyperSpectralImageDataExtractor
             hyperSpectralImageDataHandler = ManchesterHyperSpectralImageDataExtractor(s.sceneName);
+        
         case 'harvard_database'
             % Instantiate a HarvardHyperSpectralImageDataExtractor
             hyperSpectralImageDataHandler = HarvardHyperSpectralImageDataExtractor(s.subsetDirectory,s.sceneName, s.applyMotionMask);
+            
+        case 'stanford_database'
+            % Instantiate a StanfordHyperSpectralImageDataExtractor
+            hyperSpectralImageDataHandler = StanfordHyperSpectralImageDataExtractor(s.sceneName);
             
         otherwise
             fprintf(2, 'Unknown database name (''%s''). Skipping scene.\n', s.databaseName);
@@ -73,12 +78,11 @@ function showGeneratedIsetbioData(sceneObjectOrFileNameOfSceneObject)
         scene = sceneObjectOrFileNameOfSceneObject;
     end
 
-    if (1==2)
-        
+     
     % display scene
     vcAddAndSelectObject(scene); sceneWindow;
     
-    
+    if (1==2)
         % human optics
         oi = oiCreate('human');
 
