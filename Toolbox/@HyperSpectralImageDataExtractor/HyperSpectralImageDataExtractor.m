@@ -123,6 +123,10 @@ classdef HyperSpectralImageDataExtractor < handle
     
     % Protected methods so that our subclasses can call them
     methods (Access = protected)
+        
+        % Set photons directly
+        generatePassThroughRadianceDataStruct(obj, photons, waveIndices);
+        
         % Method to generate an illuminant for scenes with no information about the illuminant
         generateIlluminant(obj, sceneCalibrationStruct);
         

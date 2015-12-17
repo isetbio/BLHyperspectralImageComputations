@@ -8,7 +8,8 @@ function inspectBristolDatabase
                  'jan10pm', 'jan13am', 'moss', 'pink7', ...
                  'plaza', 'red1', 'rleaves', 'rocks', 'rwood', 'valley', 'windy', 'yellow1', 'yleaves'...
                  };
-
+    imageNames = {'ashton3'};
+    
     for k = 1:numel(imageNames)
         fprintf('Now displaying components from ''%s''. \n', imageNames{k});
         greaycardLocationFile = fullfile(imageDir, imageNames{k}, 'greycard location.txt');
@@ -49,7 +50,7 @@ function inspectBristolDatabase
             set(h, 'Position', [600 10 400 400]);
             imshow(A)
             hold on;
-            plot(greyCardLocationCoords(1), greyCardLocationCoords(2), 'rs');
+            %plot(greyCardLocationCoords(1), greyCardLocationCoords(2), 'rs');
             axis 'image'
             drawnow;
             

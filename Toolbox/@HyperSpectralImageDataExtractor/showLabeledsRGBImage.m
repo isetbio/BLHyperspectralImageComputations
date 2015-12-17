@@ -50,6 +50,7 @@ function showLabeledsRGBImage(obj, clipLuminance, gammaValue, outlineWidth)
     imshow(sRGBimage, 'Border','tight'); truesize;
     titleText = sprintf('sRGB image (reference object outlined in red); viewingDistance: %2.2f m', obj.referenceObjectData.geometry.distanceToCamera);
     title(titleText);
+    %pause
     
     % Keep a copy of it
     obj.sRGBimage = sRGBimage;

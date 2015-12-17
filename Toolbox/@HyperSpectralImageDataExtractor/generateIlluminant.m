@@ -11,10 +11,15 @@ function generateIlluminant(obj)
             newS = WlsToS(reshape(obj.sceneData.customIlluminant.wave, [numel(obj.sceneData.customIlluminant.wave) 1]));
             spd = SplineCmf(S_D65, spd_D65', newS);
             
+        case 'D75'
+            spd = (ieReadSpectra('D75.mat',obj.sceneData.customIlluminant.wave))';
+            newS = WlsToS(reshape(obj.sceneData.customIlluminant.wave, [numel(obj.sceneData.customIlluminant.wave) 1]));
+ 
         otherwise
             error('Unknown illuminant: ''%s''', obj.sceneData.customIlluminant.name);
     end
     
     obj.illuminant.wave = SToWls(newS);
     obj.illuminant.spd  = spd';
+   
 end
