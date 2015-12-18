@@ -33,6 +33,10 @@ function importHyperSpectralImage(varargin)
             % Instantiate a StanfordHyperSpectralImageDataExtractor
             hyperSpectralImageDataHandler = StanfordHyperSpectralImageDataExtractor(s.sceneName);
             
+        case 'penn_database'
+            % Instantiate a StanfordHyperSpectralImageDataExtractor
+            hyperSpectralImageDataHandler = PennHyperSpectralImageDataExtractor(s.sceneName);
+            
         otherwise
             fprintf(2, 'Unknown database name (''%s''). Skipping scene.\n', s.databaseName);
             return;
