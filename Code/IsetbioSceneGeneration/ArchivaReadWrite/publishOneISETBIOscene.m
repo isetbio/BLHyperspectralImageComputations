@@ -8,8 +8,8 @@ function publishOneISETBIOscene
     d = dir(isetbioHyperSpectralScenesFolder);
     nDirs = numel(d);
     
-    theDataBase = 'harvard_database';
-    theSceneName = 'imgb1.mat';
+    theDataBase = 'penn_database';
+    theSceneName = 'BearFruitGrayG.mat';
     
     % Go through the files in each of the subfolders
     fprintf('\n');

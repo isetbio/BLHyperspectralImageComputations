@@ -1,6 +1,6 @@
 function pushOneFileToArchiva
 
-    theDataBase = 'manchester_database';
+    theDataBase = 'penn_database';
     theFile = 'Info.md';
     
     localFile = fullfile(getpref('HyperSpectralImageIsetbioComputations', 'isetbioSceneDataBaseDir'), theDataBase, theFile);
@@ -9,13 +9,16 @@ function pushOneFileToArchiva
     version = '1';
     description = 'Information regarding any processing that was done on the original data files';
     
+    % Get a client for isetbio
     client = RdtClient('isetbio');
+    
+    % Log into archiva
     client.credentialsDialog();
     
-    % change to the "remote path" where we want to publish the artifact
+    % Change to the "remote path" where we want to publish the artifact
     client.crp(remotePath);
-        
-     
+    
+    % Push artifact 
     artifact = client.publishArtifact(...
             localFile, ...
             'artifactId', artifactId, ...
