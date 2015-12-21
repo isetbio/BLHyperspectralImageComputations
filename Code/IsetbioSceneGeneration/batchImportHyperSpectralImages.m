@@ -17,8 +17,9 @@ function batchImportHyperSpectralImages
         
         case 'penn_database'
             set = {...
-                struct('databaseName', 'penn_database', 'sceneName','BearFruitGrayB',  'clipLuminance', 1000,  'gammaValue', 1.7, 'outlineWidth', 1, 'showIsetbioData', showIsetbioData) ...
                 struct('databaseName', 'penn_database', 'sceneName','BearFruitGrayR',  'clipLuminance', 1000,  'gammaValue', 1.7, 'outlineWidth', 1, 'showIsetbioData', showIsetbioData) ...
+                struct('databaseName', 'penn_database', 'sceneName','BearFruitGrayG',  'clipLuminance', 1000,  'gammaValue', 1.7, 'outlineWidth', 1, 'showIsetbioData', showIsetbioData) ...
+                struct('databaseName', 'penn_database', 'sceneName','BearFruitGrayB',  'clipLuminance', 1000,  'gammaValue', 1.7, 'outlineWidth', 1, 'showIsetbioData', showIsetbioData) ...
                 struct('databaseName', 'penn_database', 'sceneName','BearFruitGrayY',  'clipLuminance', 1000,  'gammaValue', 1.7, 'outlineWidth', 1, 'showIsetbioData', showIsetbioData) ...
                 };
             
@@ -161,15 +162,23 @@ function batchImportHyperSpectralImages
     end
     
     
+    switch (whichDataBase)   
+        case 'stanford_database'
+            % compressed spectrum range
+            exportType = 'compressed';
+        otherwise
+            % full spectrum range
+            exportType = 'full';
+    end
     
-    exportIsetbioSceneObject = true;
+    
     % Start the batch import and process
     for k = 1:numel(set)
         s = set{k};
         fprintf('\n<strong>--------------------------------------------------------------------------------------------</strong>\n');
         fprintf('<strong>%2d. Importing data files for scene ''%s'' of database ''%s''.</strong>\n', k, s.sceneName, s.databaseName);
         fprintf('<strong>--------------------------------------------------------------------------------------------</strong>\n');
-        importHyperSpectralImage(s, exportIsetbioSceneObject);
+        importHyperSpectralImage(s, exportType);
     end
 end
 

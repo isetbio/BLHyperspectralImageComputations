@@ -26,7 +26,10 @@ function referenceObjectData = generateReferenceObjectDataStructForPennScenes(ob
             
        case 'BearFruitGrayY'
            sceneInfo = 'Bear and fruit scene under yellow illumination. Spatial and illuminant data available. For more information, please visit http://color.psych.upenn.edu/hyperspectral/bearfruitgray/bearfruitgray.html';
-            
+           
+       case 'BearFruitGrayG'
+           sceneInfo = 'Bear and fruit scene under green illumination. Spatial and illuminant data available. For more information, please visit http://color.psych.upenn.edu/hyperspectral/bearfruitgray/bearfruitgray.html';
+           
        otherwise
             error('Unknown scene name (''%s'') for database ''%s''. ', obj.sceneData.name, obj.sceneData.database);  
     end

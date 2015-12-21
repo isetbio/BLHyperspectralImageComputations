@@ -81,7 +81,7 @@ classdef HyperSpectralImageDataExtractor < handle
         showLabeledsRGBImage(obj, clipLuminance, gammaValue, outlineWidth);
         
         % Method to export the generated isetbio scene object
-        exportFileName = exportIsetbioSceneObject(obj);
+        exportFileName = exportIsetbioSceneObject(obj, exportMode);
         
         % Getter for dependent property isetbioSceneObject
         function scene = get.isetbioSceneObject(obj)

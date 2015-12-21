@@ -5,6 +5,9 @@ function loadReflectanceMap(obj)
     load(fullfile(sourceDir, obj.sceneData.reflectanceDataFileName), 'photons');
     
     % only keep spectral data in the range [380 - 780]
-    obj.generatePassThroughRadianceDataStruct(Quanta2Energy(obj.illuminant.wave, double(photons)), [380 780]);
+    %obj.generatePassThroughRadianceDataStruct(Quanta2Energy(obj.illuminant.wave, double(photons)), [380 780]);
+    
+    % keep all spectral data
+    obj.generatePassThroughRadianceDataStruct(Quanta2Energy(obj.illuminant.wave, double(photons)), [ ]);
 end
 

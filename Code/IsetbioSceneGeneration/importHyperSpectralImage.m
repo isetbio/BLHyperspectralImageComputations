@@ -14,10 +14,10 @@ function importHyperSpectralImage(varargin)
             'outlineWidth', 2, ...                      % only relevant for the sRGB rendition - reference object outline width
             'showIsetbioData', 'true' ...               % flag indicating whether to show the generated isetbio scene and resulting optical image
             );
-        exportIsetbioSceneObject = false;
+        exportMode = [];
     else
         s = varargin{1};
-        exportIsetbioSceneObject = varargin{2};
+        exportMode = varargin{2};
     end
     
     switch (s.databaseName)
@@ -59,25 +59,28 @@ function importHyperSpectralImage(varargin)
     hyperSpectralImageDataHandler.shootingInfo()
     
     % Show/Export Isetbio scene object
-    if (exportIsetbioSceneObject)
-        % Export isetbio scene object
-        fileNameOfExportedSceneObject = hyperSpectralImageDataHandler.exportIsetbioSceneObject();
+    if (~isempty(exportMode))
+        fileNameOfExportedSceneObject = hyperSpectralImageDataHandler.exportIsetbioSceneObject(exportMode);
         if (s.showIsetbioData)
-            showGeneratedIsetbioData(fileNameOfExportedSceneObject);
+            showGeneratedIsetbioData(fileNameOfExportedSceneObject, exportMode);
         end
     else
         sceneObject = hyperSpectralImageDataHandler.isetbioSceneObject;
         if (s.showIsetbioData)
-            showGeneratedIsetbioData(sceneObject);
+            showGeneratedIsetbioData(sceneObject, exportMode);
         end
     end
     
 end
 
-function showGeneratedIsetbioData(sceneObjectOrFileNameOfSceneObject)
+function showGeneratedIsetbioData(sceneObjectOrFileNameOfSceneObject, exportMode)
     if (ischar(sceneObjectOrFileNameOfSceneObject)) && (exist(sceneObjectOrFileNameOfSceneObject, 'file'))
         % Load exported scene object
-        load(sceneObjectOrFileNameOfSceneObject);
+        if (strcmp(exportMode, 'full'))
+            load(sceneObjectOrFileNameOfSceneObject);
+        else
+            scene = sceneFromFile(sceneObjectOrFileNameOfSceneObject,'multispectral');
+        end
     else
         scene = sceneObjectOrFileNameOfSceneObject;
     end

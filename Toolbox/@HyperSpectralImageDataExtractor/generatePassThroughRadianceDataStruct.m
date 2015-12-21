@@ -1,8 +1,11 @@
 function generatePassThroughRadianceDataStruct(obj, energy, waveRange)
  
+    if (~isempty(waveRange))
+        indices = find((obj.illuminant.wave>= waveRange(1))&(obj.illuminant.wave<=waveRange(2)));
+    else
+        indices = 1:numel(obj.illuminant.wave);
+    end
     
-    indices = find((obj.illuminant.wave>= waveRange(1))&(obj.illuminant.wave<=waveRange(2)));
-
     obj.radianceData = struct(...
         'sceneName',    obj.sceneData.name, ...
         'wave',         obj.illuminant.wave(indices), ...
@@ -10,7 +13,6 @@ function generatePassThroughRadianceDataStruct(obj, energy, waveRange)
         'radianceMap',  energy(:,:,indices) ...                                                
     );
 
-    
     obj.illuminant.wave = obj.radianceData.wave(1): mean(diff(obj.radianceData.wave)): obj.radianceData.wave(end);
     obj.illuminant.spd = obj.radianceData.illuminant;
     obj.radianceData.wave = obj.illuminant.wave;
