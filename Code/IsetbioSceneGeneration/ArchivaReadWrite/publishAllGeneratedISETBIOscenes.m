@@ -8,7 +8,7 @@ function publishAllGeneratedISETBIOscenes
     d = dir(isetbioHyperSpectralScenesFolder);
     nDirs = numel(d);
     
-    excludedDirs = {'.', '..', 'stanford_database', 'manchester_database', 'harvard_database'};
+    excludedDirs = {'.', '..', 'penn_database', 'manchester_database', 'harvard_database'};
     % Go through the files in each of the subfolders
     fprintf('\n');
     
@@ -34,6 +34,16 @@ function publishAllGeneratedISETBIOscenes
                     'scene11', ...
                     'scene12' ...
                     };
+                
+             case 'stanford_database'
+                % exclude scenes we already uploaded
+                excludedScenes = {...
+                    'SanFranciscoPFilter', ...
+                    'StanfordDishPFilter', ...
+                    'StanfordTowerPFilter', ...
+                    'StanfordMemorial' ...
+                    };
+                
         end
         
         cd(sceneSubFolder); 

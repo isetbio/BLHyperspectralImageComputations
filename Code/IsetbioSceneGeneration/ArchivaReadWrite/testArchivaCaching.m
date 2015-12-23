@@ -88,10 +88,27 @@ function testArchivaCaching
         'imgh7', ...
         };
     
+    theDataBase = 'manchester_database';
+    sceneNames = {...
+        'scene1', ...
+        'scene2', ...
+        'scene3', ...
+        'scene4', ...
+        'scene6', ...
+        'scene7', ...
+        'scene8', ...
+        };
+    
     remotePath = rdtFullPath({'', 'resources', 'scenes', 'hyperspectral', theDataBase}); 
     
     % Get a client for isetbio
     client = RdtClient('isetbio');
+    
+    cacheFolder = sprintf('/Users/nicolas/.gradle/caches/modules-2/files-2.1/resources.scenes.hyperspectral.%s', theDataBase);
+    if (exist(cacheFolder, 'dir'))
+        fprintf('Cache %s exists. Removing.\n',cacheFolder);
+        rmdir(cacheFolder, 's')
+    end
     
     % change to the "remote path" where we want to publish the artifact
     client.crp(remotePath);
@@ -125,7 +142,7 @@ function readFileFromDisk(filename, filetype)
 
     % fetch our artifact
     load(fullfile('Data',filename), 'data');
-    vcAddAndSelectObject(data.scene); sceneWindow;
+    %vcAddAndSelectObject(data.scene); sceneWindow;
 
 end
 

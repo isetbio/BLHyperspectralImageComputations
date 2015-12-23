@@ -7,6 +7,7 @@ function loadIlluminant(obj)
 
     % Correct by 1e9 to get correct scale of the illuminant in Watts/(sr m^2 nm)
     illuminant.data.photons = double(illuminant.data.photons)*1e9;
+    %max(illuminant.data.photons)
     
     obj.illuminant.wave = double(illuminant.spectrum.wave);
     obj.illuminant.spd = (Quanta2Energy(obj.illuminant.wave, double(illuminant.data.photons)))'; 

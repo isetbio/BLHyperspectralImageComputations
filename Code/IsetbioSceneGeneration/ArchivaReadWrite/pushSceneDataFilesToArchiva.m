@@ -14,16 +14,44 @@ function pushSceneDataFilesToArchiva(dataFiles)
     for dataFileIndex = 1:nDataFiles
         
         dataFile = dataFiles(dataFileIndex);
-        load(fullfile(dataFile.localFolder, dataFile.originalFile), 'scene', 'description');
-        if isempty(description)
-            description = 'There is no further info regarding this scene.';
+
+        % Determine if the file contains compressed data (e.g. Stanford images)
+        S = whos('-file', fullfile(dataFile.localFolder, dataFile.originalFile));
+        dataIsCompressed = true;
+        for fieldIndex = 1:numel(S)
+            if (strcmp(S(fieldIndex).name, 'scene'))
+                dataIsCompressed = false;
+            end
         end
-    
-        data.scene = scene;
-        data.description = description;
-        tmpFile = fullfile(dataFile.localFolder, dataFile.localFile);
-        save(tmpFile, '-struct', 'data');
-    
+        
+        if dataIsCompressed
+            load(fullfile(dataFile.localFolder, dataFile.originalFile));
+            tmpFile = fullfile(dataFile.localFolder, dataFile.localFile);
+            for fieldIndex = 1:numel(S)
+                if (fieldIndex == 1)
+                   eval(sprintf('save(''%s'', ''%s'');', tmpFile, S(fieldIndex).name))
+                else
+                   eval(sprintf('save(''%s'', ''%s'', ''-append'');', tmpFile, S(fieldIndex).name))
+                end
+            end
+            if strfind(lower(dataFile.localFile), 'male')
+                description = sprintf('%s. Spatial and illuminant data available. Scene was shot under Tungten illumination and subsequently re-illuminated in software using D65. For more information, please visit https://scien.stanford.edu/index.php/hyperspectral-image-data/', comment)
+            else
+                description = sprintf('%s. Spatial and illuminant data available. For more information, please visit https://scien.stanford.edu/index.php/hyperspectral-image-data/', comment)
+            end
+        else  
+            load(fullfile(dataFile.localFolder, dataFile.originalFile), 'scene', 'description');
+            if isempty(description)
+                description = 'There is no further info regarding this scene.';
+            end
+
+            data.scene = scene;
+            data.description = description;
+            tmpFile = fullfile(dataFile.localFolder, dataFile.localFile);
+            save(tmpFile, '-struct', 'data');
+        end
+        
+        
         % change to the "remote path" where we want to publish the artifact
         client.crp(dataFile.remotePath);
     
