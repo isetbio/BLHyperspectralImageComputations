@@ -7,9 +7,8 @@ function BenTestArchivaCaching
     % use an alternative cache folder and make sure it's empty
     cacheFolder = fullfile(pwd, 'cacheTests')
 
-    if exist(cacheFolder, 'dir')
-        rmdir(cacheFolder, 's');
-    end
+    
+    
 
     theDataBase = 'manchester_database';
     sceneNames = {...
