@@ -11,17 +11,19 @@ function downloadIsetbioScenes
     %client.crp('resources/scenes/hyperspectral/stanford_database');
     %[artifactData, artifactInfo] = client.readArtifact('StanfordMemorial', 'type', 'mat')
     
+    % Retrieve forest scene from Manchester database
     client.crp('resources/scenes/hyperspectral/manchester_database');
     [artifactData, artifactInfo] = client.readArtifact('scene1', 'type', 'mat')
     
     toc
     
-    % Compute and show scene
+    % Compute fulland show scene
     tic
     if ismember('scene', fieldnames(artifactData))
-        fprintf('data contains uncompressed scene data');
+        fprintf('Fethed scene contains uncompressed scene data.\n');
+        scene = artifactData.scene;
     else
-        fprintf('data contains compressed scene data');
+        fprintf('Fetched scene contains compressed scene data.\n');
         basis = artifactData.basis;
         comment = artifactData.comment;
         illuminant = artifactData.illuminant;
@@ -34,6 +36,7 @@ function downloadIsetbioScenes
         delete('tmp.mat');
     end
     toc
+    
     vcAddAndSelectObject(scene); sceneWindow;
     
     % Compute and show optical image
