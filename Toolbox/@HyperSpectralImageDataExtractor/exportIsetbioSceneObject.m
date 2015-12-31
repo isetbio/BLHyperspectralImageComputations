@@ -19,7 +19,6 @@ function exportFileName = exportIsetbioSceneObject(obj, exportMode)
         fprintf('Isetbio scene object (uncompressed) for scene named ''%s'' was exported to ''%s''.\n', sceneGet(scene, 'name'), exportFileName);
     elseif (strcmp(exportMode, 'compressed')) 
         sceneToFile(exportFileName,scene,0.9999, 'canonical');
-        %save(exportFileName, '??', 'description');
         fprintf('Isetbio scene object (compressed) for scene named ''%s'' was exported to ''%s''.\n', sceneGet(scene, 'name'), exportFileName);
     else
         error('Unknown export mode: %s\n', exportMode);

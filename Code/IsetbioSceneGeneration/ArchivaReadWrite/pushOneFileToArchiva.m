@@ -1,6 +1,6 @@
 function pushOneFileToArchiva
 
-    theDataBase = 'penn_database';
+    theDataBase = 'stanford_database';
     theFile = 'Info.md';
     
     localFile = fullfile(getpref('HyperSpectralImageIsetbioComputations', 'isetbioSceneDataBaseDir'), theDataBase, theFile);

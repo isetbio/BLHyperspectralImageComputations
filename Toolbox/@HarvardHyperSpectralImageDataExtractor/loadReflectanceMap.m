@@ -22,8 +22,7 @@ function loadReflectanceMap(obj)
     
     
     obj.reflectanceMap = ref;
-    size(ref)
-    pause
+
     % Apply camera sensitivity correction
     correction = 1./repmat(obj.cameraSensitivityProfile, [size(ref,1) size(ref,2) 1]);
     obj.reflectanceMap = obj.reflectanceMap .* correction;

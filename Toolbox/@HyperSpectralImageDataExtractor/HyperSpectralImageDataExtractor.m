@@ -125,7 +125,7 @@ classdef HyperSpectralImageDataExtractor < handle
     methods (Access = protected)
         
         % Set photons directly
-        generatePassThroughRadianceDataStruct(obj, photons, waveIndices);
+        generatePassThroughRadianceDataStruct(obj, photons, customIlluminant);
         
         % Method to generate an illuminant for scenes with no information about the illuminant
         generateIlluminant(obj, sceneCalibrationStruct);

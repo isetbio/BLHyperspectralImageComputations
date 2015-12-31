@@ -1,16 +1,20 @@
-function generatePassThroughRadianceDataStruct(obj, energy, waveRange)
+function generatePassThroughRadianceDataStruct(obj, energy, customIlluminant)
  
-    if (~isempty(waveRange))
-        indices = find((obj.illuminant.wave>= waveRange(1))&(obj.illuminant.wave<=waveRange(2)));
-    else
-        indices = 1:numel(obj.illuminant.wave);
+    
+    if (~isempty(customIlluminant))
+        % illuminant adjustment vector
+        illuminantAdjustmentVector = customIlluminant ./ obj.illuminant.spd;
+        % adjust radiance
+        energy = bsxfun(@times, energy, reshape(illuminantAdjustmentVector, [1 1 numel(illuminantAdjustmentVector)]));    
+        % adjust illuminant 
+        obj.illuminant.spd = obj.illuminant.spd .* illuminantAdjustmentVector;
     end
     
     obj.radianceData = struct(...
         'sceneName',    obj.sceneData.name, ...
-        'wave',         obj.illuminant.wave(indices), ...
-        'illuminant',   obj.illuminant.spd(indices), ... 
-        'radianceMap',  energy(:,:,indices) ...                                                
+        'wave',         obj.illuminant.wave, ...
+        'illuminant',   obj.illuminant.spd, ... 
+        'radianceMap',  energy ...                                                
     );
 
     obj.illuminant.wave = obj.radianceData.wave(1): mean(diff(obj.radianceData.wave)): obj.radianceData.wave(end);
