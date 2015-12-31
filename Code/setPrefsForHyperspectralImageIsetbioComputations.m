@@ -1,16 +1,14 @@
 function setPrefsForHyperspectralImageIsetbioComputations
 
-    %originalDataBaseDir = '/Volumes/SDXC_64GB/Matlab/Analysis/HyperSpectralImages/ManchesterData';
-    originalDataBaseDir = '/Volumes/ColorShare1/hyperspectral-images-noahproject';
-    originalDataBaseDir = '/Users1/HyperSpectralImages';
-    isetbioDataBaseDir  = '/Users1/Shared/Matlab/Analysis/isetbioHyperspectralImages';
-   % isetbioDataBaseDir  = '/Volumes/Data/Users1/Shared/Matlab/Analysis/isetbioHyperspectralImages';
-
+    originalDataBaseDir = '/Users1/HyperSpectralImages';  % valid on Manta
+    opticalImagesCacheDir  = '/Users1/Shared/Matlab/Analysis/BLHyperspectralImageComputations/OpticalImagesCache';
+   
     % Specify project-specific preferences
     p = struct( ...
         'projectName', 'HyperSpectralImageIsetbioComputations', ...
         'originalDataBaseDir',  originalDataBaseDir,...
-        'isetbioSceneDataBaseDir', isetbioDataBaseDir ...
+        'remoteDataToolboxConfig', '/Users/nicolas/Documents/1.code/2.matlabDevs/ProjectPrefs/rdt-config-isetbio-nicolas.json', ...
+        'opticalImagesCacheDir', opticalImagesCacheDir ...
         );
     
     generatePreferenceGroup(p);
