@@ -9,9 +9,8 @@ function downloadIsetbioScenes
     
     % Spacify images
     imageSources = {...
-        {'stanford_database', 'HiResFemale12'} ...
-        {'manchester_database', 'scene1'}, ...
-        {'stanford_database', 'StanfordMemorial'} ...
+        {'manchester_database', 'scene1'} ...
+    %    {'stanford_database', 'StanfordMemorial'} ...
         };
     
     % Get directory location where optical images are to be saved
@@ -23,7 +22,7 @@ function downloadIsetbioScenes
     sensorParams = struct(...
         'coneApertureInMicrons', 3.0, ... 
         'LMSdensities', [0.6 0.4 0.1], ...
-        'spatialGrid', [10 10], ...  
+        'spatialGrid', [20 10], ...  
         'samplingIntervalInMilliseconds', timeStepInMilliseconds, ...
         'fixationalEyeMovementParams', struct(...
             'samplingIntervalInMilliseconds', timeStepInMilliseconds, ...
@@ -41,19 +40,19 @@ function downloadIsetbioScenes
             scene = artifactData.scene;
         else
             fprintf('Fetched scene contains compressed scene data.\n');
-            scene = sceneFromBasis(artifactData);
-            %scene = uncompressScene(artifactData);
+            %scene = sceneFromBasis(artifactData);
+            scene = uncompressScene(artifactData);
         end
         
         % Show scene
         vcAddAndSelectObject(scene); sceneWindow;
-        pause
+       
         % Compute optical image with human optics
         oi = oiCreate('human');
         oi = oiCompute(oi, scene);
         
         % Show optical image
-        %vcAddAndSelectObject(oi); oiWindow;
+        vcAddAndSelectObject(oi); oiWindow;
         
         % create custom human sensor
         sensor = sensorCreate('human');
@@ -62,21 +61,24 @@ function downloadIsetbioScenes
         
         % compute rate of isomerized photons
         sensor = coneAbsorptions(sensor, oi);
+         
         photonIsomerizationRate = sensorGet(sensor,'photon rate');
         photonIsomerizationRateXT = reshape(photonIsomerizationRate, [size(photonIsomerizationRate,1)*size(photonIsomerizationRate,2), size(photonIsomerizationRate,3)]);
         
         % compute adapted photo-current
-        adaptedOS = osLinear(); 
-        %adaptedOS = osBioPhys();
+        %adaptedOS = osLinear(); 
+        adaptedOS = osBioPhys();
         adaptedOS = osSet(adaptedOS, 'noiseFlag', 1);
         adaptedOS = osCompute(adaptedOS, sensor);
         osAdaptedCur = osGet(adaptedOS, 'ConeCurrentSignal');
         osAdaptedCurXT = reshape(osAdaptedCur, [size(osAdaptedCur,1)*size(osAdaptedCur,2), size(osAdaptedCur,3)]);
         
+        osWindow(adaptedOS, sensor, oi);
+        
         % plot results
         figure(10);
         clf;
-        subplot(3,1,1);
+        subplot(5,1,1);
         eyeMovementPositions = sensorGet(sensor, 'positions');
         timeAxis = (0:size(eyeMovementPositions,1)-1)/(size(eyeMovementPositions,1))*sensorGet(sensor, 'total time');
         stairs(timeAxis,eyeMovementPositions(:,1), 'r-');
@@ -85,19 +87,29 @@ function downloadIsetbioScenes
         ylabel('distance (cones)');
         title('eye movements');
         
-        subplot(3,1,2);
+        subplot(5,1,2);
         timeAxis = (0:size(photonIsomerizationRate,3)-1)/(size(photonIsomerizationRate,3))*sensorGet(sensor, 'total time');
         imagesc(timeAxis, (1:size(photonIsomerizationRate,1)*size(photonIsomerizationRate,2)), photonIsomerizationRateXT);
         ylabel('cone no');
-        colorbar();
+        colorbar('northoutside');
         title('photoisomerization rates');
         
-        subplot(3,1,3)
+        subplot(5,1,3);
+        plot(timeAxis, photonIsomerizationRateXT, 'k-');
+        ylabel('isomerization rates (R*/sec)');
+        
+        subplot(5,1,4)
         timeAxis = (0:size(osAdaptedCur,3)-1)/(size(osAdaptedCur,3))*sensorGet(sensor, 'total time');
         imagesc(timeAxis, (1:size(osAdaptedCur,1)*size(osAdaptedCur,2)), osAdaptedCurXT);
         ylabel('cone no');
         xlabel('time (seconds)');
-        colorbar();
+        title('photocurrent');
+        colorbar('northoutside');
+        
+        subplot(5,1,5);
+        plot(timeAxis, osAdaptedCurXT, 'k-');
+        ylabel('photocurrents (R*/sec)');
+        
     end
      
 end
@@ -148,10 +160,14 @@ function sensor = customizeSensor(sensor, sensorParams, opticalImage, randomSeed
     sensor = sensorSet(sensor,'eyemove', eyeMovement);
             
     % generate the fixation eye movement sequence
-    eyeMovementsNum = round(fixationalEyeMovementParams.durationInMilliseconds / fixationalEyeMovementParams.samplingIntervalInMilliseconds)
+    eyeMovementsNum = round(fixationalEyeMovementParams.durationInMilliseconds / fixationalEyeMovementParams.samplingIntervalInMilliseconds);
     eyeMovementPositions = zeros(eyeMovementsNum,2);
     sensor = sensorSet(sensor,'positions', eyeMovementPositions);
     sensor = emGenSequence(sensor);
+    
+    % saccade 300 cones leftward and 100 cones upwards
+    eyeMovementPositions = bsxfun(@plus, sensorGet(sensor,'positions'), [58 10]);
+    sensor = sensorSet(sensor,'positions', eyeMovementPositions);
     
     % Integration time. This will determine signal amplitude !!!
     fprintf('Sensor has default integration time:  %2.2f milliseconds\n', 1000.0*sensorGet(sensor, 'integrationTime'));

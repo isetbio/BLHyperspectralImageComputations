@@ -1,7 +1,7 @@
 function setPrefsForHyperspectralImageIsetbioComputations
 
     originalDataBaseDir = '/Users1/HyperSpectralImages';  % valid on Manta
-    isetbioScenesDir = '/Users1/Shared/Matlab/Analysis/isetbioHyperspectralImages'
+    isetbioScenesDir = '/Users1/Shared/Matlab/Analysis/isetbioHyperspectralImages';
     opticalImagesCacheDir  = '/Users1/Shared/Matlab/Analysis/BLHyperspectralImageComputations/OpticalImagesCache';
    
     % Specify project-specific preferences
