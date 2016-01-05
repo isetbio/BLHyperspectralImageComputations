@@ -8,7 +8,7 @@ function pushSceneDataFilesToArchiva(dataFiles)
     end
     
     % Publish artifacts.
-    client = RdtClient('isetbio');
+    client = RdtClient(getpref('HyperSpectralImageIsetbioComputations','remoteDataToolboxConfig'));
     client.credentialsDialog();
     
     for dataFileIndex = 1:nDataFiles

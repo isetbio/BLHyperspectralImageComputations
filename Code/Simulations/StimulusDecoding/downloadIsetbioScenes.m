@@ -9,6 +9,7 @@ function downloadIsetbioScenes
     
     % Spacify images
     imageSources = {...
+        {'stanford_database', 'HiResFemale12'} ...
         {'manchester_database', 'scene1'}, ...
         {'stanford_database', 'StanfordMemorial'} ...
         };
@@ -40,12 +41,13 @@ function downloadIsetbioScenes
             scene = artifactData.scene;
         else
             fprintf('Fetched scene contains compressed scene data.\n');
-            scene = uncompressScene(artifactData);
+            scene = sceneFromBasis(artifactData);
+            %scene = uncompressScene(artifactData);
         end
         
         % Show scene
-        %vcAddAndSelectObject(scene); sceneWindow;
-        
+        vcAddAndSelectObject(scene); sceneWindow;
+        pause
         % Compute optical image with human optics
         oi = oiCreate('human');
         oi = oiCompute(oi, scene);
