@@ -204,7 +204,7 @@ classdef osWindow < handle
             obj.hFig = figure();
             aspectRatio = 800/1000;
             screenSize = get(0,'ScreenSize');
-            screenSize(4) = screenSize(4)/2;
+            screenSize(4) = screenSize(4)*0.85;
             set(obj.hFig, 'Position',[10 1000 screenSize(4)*aspectRatio screenSize(4)], 'SizeChangedFcn', {@resizeOSwindow, obj, aspectRatio})
         end
         

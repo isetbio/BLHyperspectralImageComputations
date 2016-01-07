@@ -45,14 +45,14 @@ function downloadIsetbioScenes
         end
         
         % Show scene
-        vcAddAndSelectObject(scene); sceneWindow;
+        %vcAddAndSelectObject(scene); sceneWindow;
        
         % Compute optical image with human optics
         oi = oiCreate('human');
         oi = oiCompute(oi, scene);
         
         % Show optical image
-        vcAddAndSelectObject(oi); oiWindow;
+        %vcAddAndSelectObject(oi); oiWindow;
         
         % create custom human sensor
         sensor = sensorCreate('human');
