@@ -51,6 +51,18 @@ classdef osWindow < handle
         sensorViewOpticalImage;
         sensorXsamplingGrid;
         sensorYsamplingGrid;
+        
+        % Outer Segment - related properties
+        % - struct with handles to overlay plots for the outersegment
+        outerSegmentOverlayPlots;
+         
+        % - XYT and XT outersegment responses
+        outerSegmentXYTCurrent;
+        outerSegmentXTCurrent;
+        outerSegmentResponseTimeData;
+        outerSegmentResponseXYpositionData;
+        outerSegmentResponseXpositionData;
+        outerSegmentResponseYpositionData;
     end
     
     % Public API
@@ -61,17 +73,125 @@ classdef osWindow < handle
             obj.init(); 
             
             obj.oi = oi;
-            obj.os = os;
             obj.sensor = sensor;
+            obj.os = os;
             
             % whenever we set a new oi, sensor, we re-generate the different figure handles
             obj.generateAxesAndControls();
-            
             obj.initOpticalImageDisplay();
             obj.initSensorViewDisplay();
+            obj.initOuterSegmentResponseDisplays();
+            
         end % constructor
 
+        function set.os(obj, os)
+            % generate our private copy of the outer segment
+            obj.osPrivate = os;
+            
+            % get the response
+            obj.outerSegmentXYTCurrent = osGet(obj.osPrivate, 'ConeCurrentSignal');
+            
+            % normalization
+            minCurrent = -100;
+            maxCurrent = 0;
+            obj.outerSegmentXYTCurrent = (obj.outerSegmentXYTCurrent - minCurrent)/(maxCurrent-minCurrent);
+            if (any(obj.outerSegmentXYTCurrent<0))
+                fprintf(2,'os current is lower than min displayed value: %f\n', minCurrent);
+                obj.outerSegmentXYTCurrent(obj.outerSegmentXYTCurrent<0) = 0;
+            end
+            if (any(obj.outerSegmentXYTCurrent>1))
+                fprintf(2,'os current is higher  than max displayed value: %f\n', maxCurrent);
+                obj.outerSegmentXYTCurrent(obj.outerSegmentXYTCurrent>1) = 1;
+            end
+
+            % XT response
+            obj.outerSegmentXTCurrent  = reshape(obj.outerSegmentXYTCurrent, [size(obj.outerSegmentXYTCurrent,1)*size(obj.outerSegmentXYTCurrent,2), size(obj.outerSegmentXYTCurrent,3)]);
+           
+            obj.outerSegmentResponseTimeData = (0:size(obj.outerSegmentXYTCurrent,3)-1)/size(obj.outerSegmentXYTCurrent,3)*sensorGet(obj.sensorPrivate, 'total time');
+            obj.outerSegmentResponseXpositionData = 1:size(obj.outerSegmentXYTCurrent,1);
+            obj.outerSegmentResponseYpositionData = 1:size(obj.outerSegmentXYTCurrent,2);
+            obj.outerSegmentResponseXYpositionData = 1:size(obj.outerSegmentXYTCurrent,1)*size(obj.outerSegmentXYTCurrent,2);
+        end
+        
+        function set.sensor(obj, sensor)
+            % generate our private copy of the outer segment
+            obj.sensorPrivate = sensor;
+            
+            % compute sensor positions in microns
+            sensorSampleSeparationInMicrons = sensorGet(obj.sensorPrivate,'pixel size','um');
+            obj.sensorPositionsInMicrons = bsxfun(@times, sensorGet(sensor,'positions'), sensorSampleSeparationInMicrons);
+            
+            % compute sensor cone sampling grid
+            sensorRowsCols = sensorGet(obj.sensorPrivate, 'size');
+            dx = sensorRowsCols(2) * sensorSampleSeparationInMicrons(2);
+            dy = sensorRowsCols(1) * sensorSampleSeparationInMicrons(1);
+            obj.sensorSizeInMicrons = [dx dy]; 
+           
+            [R,C] = meshgrid(1:sensorRowsCols(1), 1:sensorRowsCols(2));
+            obj.sensorXsamplingGrid = (C(:)-0.5) * sensorSampleSeparationInMicrons(1);
+            obj.sensorYsamplingGrid = (R(:)-0.5) * sensorSampleSeparationInMicrons(2);
+            obj.sensorOutlineInMicrons(:,1) = [-1 -1 1 1 -1] * dx/2;
+            obj.sensorOutlineInMicrons(:,2) = [-1 1 1 -1 -1] * dy/2;
+        end
+        
+        function set.oi(obj, oi)
+            % generate our private copy of the optical image
+            obj.oiPrivate = oi;
+            
+            % generate RGB rendering of the optical image
+            obj.opticalImageRGBrenderingFullRes = oiGet(obj.oiPrivate, 'rgb image');
+            
+            oiSpatialSupport = oiGet(obj.oiPrivate,'spatial support','microns');
+            obj.opticalImageXgrid = squeeze(oiSpatialSupport(:,:,1)); 
+            obj.opticalImageYgrid = squeeze(oiSpatialSupport(:,:,2));
+            obj.opticalImageXdata = squeeze(obj.opticalImageXgrid(1,:));  % x-positions from 1st row
+            obj.opticalImageYdata = squeeze(obj.opticalImageYgrid(:,1));  % y-positions from 1st col
     
+            % subsample the optical image by a factor of 2 to speed up display
+            k = 2;
+            obj.opticalImageXdata = obj.opticalImageXdata(1):k:obj.opticalImageXdata(end);
+            obj.opticalImageYdata = obj.opticalImageYdata(1):k:obj.opticalImageYdata(end);
+            obj.opticalImageRGBrendering = obj.opticalImageRGBrenderingFullRes(1:k:end, 1:k:end,:);
+        end
+    
+    end
+        
+    methods (Access = private)  
+        
+        function init(obj)
+            obj.hFig = figure();
+            aspectRatio = 800/1000;
+            screenSize = get(0,'ScreenSize');
+            screenSize(4) = screenSize(4)*0.85;
+            set(obj.hFig, 'Position',[10 1000 screenSize(4)*aspectRatio screenSize(4)], 'SizeChangedFcn', {@resizeOSwindow, obj, aspectRatio})
+        end
+        
+        function initOuterSegmentResponseDisplays(obj)
+            positionIndex = 1;
+            currentTime = obj.outerSegmentResponseTimeData(positionIndex);
+            N = numel(obj.outerSegmentResponseXYpositionData);
+            
+            cla(obj.axesStruct.outerSegmentXTresponseAxes);
+            obj.outerSegmentOverlayPlots.p1 = imagesc('XData', obj.outerSegmentResponseTimeData, 'YData', obj.outerSegmentResponseXYpositionData, 'CData', obj.outerSegmentXTCurrent, 'parent', obj.axesStruct.outerSegmentXTresponseAxes);
+            % plot current time vertical line
+            hold(obj.axesStruct.outerSegmentXTresponseAxes, 'on');
+            obj.outerSegmentOverlayPlots.p2  = plot(obj.axesStruct.outerSegmentXTresponseAxes, currentTime*[1 1], [1 N] , 'k--', 'LineWidth', 1);
+            hold(obj.axesStruct.outerSegmentXTresponseAxes, 'off');
+            colorbar(obj.axesStruct.outerSegmentXTresponseAxes, 'northoutside');
+            
+            set(obj.axesStruct.outerSegmentXTresponseAxes, ...
+                 'XLim', [obj.outerSegmentResponseTimeData(1) obj.outerSegmentResponseTimeData(end)], ...
+                 'YLim', [obj.outerSegmentResponseXYpositionData(1) obj.outerSegmentResponseXYpositionData(end)], ...
+                 'CLim', [0 1], ...
+                 'XColor', [0 0 0], 'YColor', [0 0 0]);
+            set(obj.axesStruct.outerSegmentXTresponseAxes, 'FontSize', 12);
+        end
+        
+        function updateOuterSegmentResponseDisplays(obj, kPos)
+            currentTime = obj.outerSegmentResponseTimeData(kPos);
+            set(obj.outerSegmentOverlayPlots.p2, 'XData', currentTime*[1 1]);
+        end
+        
         function initSensorViewDisplay(obj)
             positionIndex = 1;
             currentSensorPosition = squeeze(obj.sensorPositionsInMicrons(positionIndex,:));
@@ -150,64 +270,6 @@ classdef osWindow < handle
             set(obj.opticalImageOverlayPlots.p2, 'XData', currentSensorPosition(1) + obj.sensorOutlineInMicrons(:,1), 'YData', currentSensorPosition(2) + obj.sensorOutlineInMicrons(:,2));
         end
         
-        function set.os(obj, os)
-            % generate our private copy of the outer segment
-            obj.osPrivate = os;
-        end
-        
-        function set.sensor(obj, sensor)
-            % generate our private copy of the outer segment
-            obj.sensorPrivate = sensor;
-            
-            % compute sensor positions in microns
-            sensorSampleSeparationInMicrons = sensorGet(obj.sensorPrivate,'pixel size','um');
-            obj.sensorPositionsInMicrons = bsxfun(@times, sensorGet(sensor,'positions'), sensorSampleSeparationInMicrons);
-            
-            % compute sensor cone sampling grid
-            sensorRowsCols = sensorGet(obj.sensorPrivate, 'size');
-            dx = sensorRowsCols(2) * sensorSampleSeparationInMicrons(2);
-            dy = sensorRowsCols(1) * sensorSampleSeparationInMicrons(1);
-            obj.sensorSizeInMicrons = [dx dy]; 
-           
-            [R,C] = meshgrid(1:sensorRowsCols(1), 1:sensorRowsCols(2));
-            obj.sensorXsamplingGrid = (C(:)-0.5) * sensorSampleSeparationInMicrons(1);
-            obj.sensorYsamplingGrid = (R(:)-0.5) * sensorSampleSeparationInMicrons(2);
-            obj.sensorOutlineInMicrons(:,1) = [-1 -1 1 1 -1] * dx/2;
-            obj.sensorOutlineInMicrons(:,2) = [-1 1 1 -1 -1] * dy/2;
-            
-        end
-        
-        function set.oi(obj, oi)
-            % generate our private copy of the optical image
-            obj.oiPrivate = oi;
-            
-            % generate RGB rendering of the optical image
-            obj.opticalImageRGBrenderingFullRes = oiGet(obj.oiPrivate, 'rgb image');
-            
-            oiSpatialSupport = oiGet(obj.oiPrivate,'spatial support','microns');
-            obj.opticalImageXgrid = squeeze(oiSpatialSupport(:,:,1)); 
-            obj.opticalImageYgrid = squeeze(oiSpatialSupport(:,:,2));
-            obj.opticalImageXdata = squeeze(obj.opticalImageXgrid(1,:));  % x-positions from 1st row
-            obj.opticalImageYdata = squeeze(obj.opticalImageYgrid(:,1));  % y-positions from 1st col
-    
-            % subsample the optical image by a factor of 2 to speed up display
-            k = 2;
-            obj.opticalImageXdata = obj.opticalImageXdata(1):k:obj.opticalImageXdata(end);
-            obj.opticalImageYdata = obj.opticalImageYdata(1):k:obj.opticalImageYdata(end);
-            obj.opticalImageRGBrendering = obj.opticalImageRGBrenderingFullRes(1:k:end, 1:k:end,:);
-        end
-    
-    end
-        
-    methods (Access = private)  
-        function init(obj)
-            obj.hFig = figure();
-            aspectRatio = 800/1000;
-            screenSize = get(0,'ScreenSize');
-            screenSize(4) = screenSize(4)*0.85;
-            set(obj.hFig, 'Position',[10 1000 screenSize(4)*aspectRatio screenSize(4)], 'SizeChangedFcn', {@resizeOSwindow, obj, aspectRatio})
-        end
-        
         function generateAxesAndControls(obj)  
             p = get(obj.hFig, 'Position');
             w = 800;
@@ -226,13 +288,13 @@ classdef osWindow < handle
             obj.axesStruct.opticalImageAxes = axes('parent',obj.hFig,'unit','normalized','position',[leftMargin bottomMargin opticalImageWidth opticalImageHeight], 'Color', [0 0 0]);
             obj.axesStruct.sensorViewAxes   = axes('parent',obj.hFig,'unit','normalized','position',[leftMargin+20/w bottomMargin+20/h sensorViewWidth sensorViewHeight], 'Color', [0 0 0]);
             
-            % generate response time series axes
-            obj.axesStruct.spatioTemporalPopulationResponseAxes = axes('parent',obj.hFig,'unit','normalized','position',[leftMargin bottomMargin-spatiotemporalViewHeight-20/h spatiotemporalViewWidth spatiotemporalViewHeight], 'Color', [0 0 0]);
-            obj.axesStruct.singleUnitResponseAxes = axes('parent',obj.hFig,'unit','normalized','position',[leftMargin bottomMargin-1.5*spatiotemporalViewHeight-50/h spatiotemporalViewWidth spatiotemporalViewHeight/2], 'Color', [0 0 0]);
+            % generate response axes
+            obj.axesStruct.outerSegmentXTresponseAxes = axes('parent',obj.hFig,'unit','normalized','position',[3*leftMargin bottomMargin-spatiotemporalViewHeight-20/h spatiotemporalViewWidth spatiotemporalViewHeight], 'Color', [0 0 0]);
+            obj.axesStruct.outerSegmentSingleResponseAxes = axes('parent',obj.hFig,'unit','normalized','position',[3*leftMargin bottomMargin-1.5*spatiotemporalViewHeight-50/h spatiotemporalViewWidth spatiotemporalViewHeight/2], 'Color', [0 0 0]);
             
             % generate 2D instantaneous response axes
-            positionVector = [leftMargin+50/w+spatiotemporalViewWidth bottomMargin-1.5*spatiotemporalViewHeight-50/h spatialViewWidth spatialViewHeight];
-            obj.axesStruct.spatialPopulationResponseAxes = axes('parent',obj.hFig,'unit','normalized','position', positionVector, 'Color', [0 0 0]);
+            positionVector = [3*leftMargin+50/w+spatiotemporalViewWidth bottomMargin-1.5*spatiotemporalViewHeight-50/h spatialViewWidth spatialViewHeight];
+            obj.axesStruct.outerSegmentXYresponseAxes = axes('parent',obj.hFig,'unit','normalized','position', positionVector, 'Color', [0 0 0]);
             
             % generate time slider
             timeSliderLeftMargin = leftMargin;
@@ -259,14 +321,10 @@ end
 
 % Callback for figure resizing
 function resizeOSwindow(hObject,Event, obj, aspectRatio)
-    
     posVector = get(hObject,'Position');
-    
     width = posVector(3);
     height = width/aspectRatio;
-    
     set(obj.hFig,'Position',[posVector(1:2) width height]);
-    
 end
 
 
@@ -275,4 +333,5 @@ function timeSliderCallback(hObject,eventdata, obj)
     currentTimeBin = round(get(hObject,'Value'));
     obj.updateOpticalImageDisplay(currentTimeBin);
     obj.updateSensorViewDisplay(currentTimeBin);
+    obj.updateOuterSegmentResponseDisplays(currentTimeBin);
 end
