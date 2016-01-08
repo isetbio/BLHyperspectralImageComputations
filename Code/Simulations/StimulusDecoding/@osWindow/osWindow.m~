@@ -178,11 +178,11 @@ classdef osWindow < handle
             aspectRatio = 800/1000;
             screenSize = get(0,'ScreenSize');
             screenSize(4) = screenSize(4)*0.85;
-            set(obj.hFig, 'Name', figureTitle, 'Menubar', 'none', 'Toolbar', 'none', 'Color', [0.1 0.1 0.1], 'Position',[10+(figureNo-1)*(100+screenSize(4)*aspectRatio) 10+(figureNo-1)*50 screenSize(4)*aspectRatio screenSize(4)], 'SizeChangedFcn', {@resizeOSwindow, obj, aspectRatio})
+            set(obj.hFig, 'Name', figureTitle, 'Color', [0.1 0.1 0.1], 'Position',[10+(figureNo-1)*(100+screenSize(4)*aspectRatio) 10+(figureNo-1)*50 screenSize(4)*aspectRatio screenSize(4)], 'SizeChangedFcn', {@resizeOSwindow, obj, aspectRatio})
         end
         
         function initOuterSegmentResponseDisplays(obj)
-            positionIndex = 10;
+            positionIndex = 1;
             currentTime = obj.outerSegmentResponseTimeData(positionIndex);
             N = numel(obj.outerSegmentResponseXYpositionData);
             
@@ -204,7 +204,7 @@ classdef osWindow < handle
             set(obj.axesStruct.outerSegmentXTresponseAxes, ...
                  'XLim', [obj.outerSegmentResponseTimeData(1) obj.outerSegmentResponseTimeData(end)], ...
                  'YLim', [obj.outerSegmentResponseXYpositionData(1) obj.outerSegmentResponseXYpositionData(end)], ...
-                 'CLim', obj.outerSegmentDisplayedCurrentRange, ...
+                 'CLim', 0.8*obj.outerSegmentDisplayedCurrentRange, ...
                  'XColor', [1 1 1], 'YColor', [1 1 1]);
             ylabel(obj.axesStruct.outerSegmentTracesAxes,  'cone #', 'FontSize', 12);
             set(obj.axesStruct.outerSegmentXTresponseAxes, 'FontSize', 12);
@@ -216,9 +216,7 @@ classdef osWindow < handle
             [lConeIndex, mConeIndex, sConeIndex] = obj.findStrongestResponsingCone();
             
             coneTypes = sensorGet(obj.sensorPrivate, 'cone type');
-            [rowBestLcone, colBestLcone] = ind2sub(size(coneTypes), lConeIndex);
-            [rowBestMcone, colBestMcone] = ind2sub(size(coneTypes), mConeIndex);
-            [rowBestScone, colBestScone] = ind2sub(size(coneTypes), sConeIndex);
+            [row, col] = ind2sub(size(coneTypes), lConeIndex);
             
             obj.outerSegmentOverlayPlots.p4 = plot(obj.axesStruct.outerSegmentTracesAxes, obj.outerSegmentResponseTimeData, obj.outerSegmentXTCurrent(lConeIndex,:), 'r-', 'Color', [1 0.2 0.4]);
             obj.outerSegmentOverlayPlots.p5 = plot(obj.axesStruct.outerSegmentTracesAxes, obj.outerSegmentResponseTimeData, obj.outerSegmentXTCurrent(mConeIndex,:), 'g-', 'Color', [0.2 1.0 0.5]);
@@ -244,22 +242,17 @@ classdef osWindow < handle
                          'YData', obj.outerSegmentResponseHiResYpositionData, ..., 
                          'CData', obj.outerSegmentSpatiallyInterpolated2DResponseMap, ...
                          'parent', obj.axesStruct.outerSegmentXYresponseAxes);
-            hold(obj.axesStruct.outerSegmentXYresponseAxes, 'on');
-            plot(obj.axesStruct.outerSegmentXYresponseAxes, obj.outerSegmentResponseXpositionData(colBestLcone), obj.outerSegmentResponseYpositionData(rowBestLcone), 'ro');
-            plot(obj.axesStruct.outerSegmentXYresponseAxes, obj.outerSegmentResponseXpositionData(colBestMcone), obj.outerSegmentResponseYpositionData(rowBestMcone), 'go');
-            plot(obj.axesStruct.outerSegmentXYresponseAxes, obj.outerSegmentResponseXpositionData(colBestScone), obj.outerSegmentResponseYpositionData(rowBestScone), 'bo');
-            hold(obj.axesStruct.outerSegmentXYresponseAxes, 'off');
             set(obj.axesStruct.outerSegmentXYresponseAxes, ...
                 'XLim', [0 max(obj.outerSegmentResponseHiResXpositionData)], ...
                 'YLim', [0 max(obj.outerSegmentResponseHiResYpositionData)], ...
-                'CLim', obj.outerSegmentDisplayedCurrentRange, ...
+                'CLim', 0.8*obj.outerSegmentDisplayedCurrentRange, ...
                 'XColor', [1 1 1], 'YColor', [1 1 1]);
             
             axis(obj.axesStruct.outerSegmentXYresponseAxes,'ij'); axis(obj.axesStruct.outerSegmentXYresponseAxes,'equal');
             axis(obj.axesStruct.outerSegmentXYresponseAxes, 'off');
             set(obj.axesStruct.outerSegmentXYresponseAxes, 'FontSize', 12, 'XTick', [], 'YTick', []);
             colormap(obj.axesStruct.outerSegmentXYresponseAxes, 'bone');
-            title(obj.axesStruct.outerSegmentXYresponseAxes, sprintf('t = %2.3f sec', obj.outerSegmentResponseTimeData(positionIndex)), 'Color', [0.9 0.7 0.1], 'FontSize', 12);
+            title(obj.axesStruct.outerSegmentXYresponseAxes, sprintf('t = %2.3f sec', obj.outerSegmentResponseTimeData(positionIndex)), 'Color', [0.9 0.7 0.1], 'FontSize', 14);
         end
         
         
@@ -274,12 +267,12 @@ classdef osWindow < handle
             % update the XY plot
             obj.computeSpatiallyInterpolatedOuterSegment2DResponseMap(kPos);
             set(obj.outerSegmentOverlayPlots.p3, 'CData', obj.outerSegmentSpatiallyInterpolated2DResponseMap); 
-            title(obj.axesStruct.outerSegmentXYresponseAxes, sprintf('t = %2.3f sec', obj.outerSegmentResponseTimeData(kPos)), 'Color', [0.9 0.7 0.1], 'FontSize', 12);
+            title(obj.axesStruct.outerSegmentXYresponseAxes, sprintf('t = %2.3f sec', obj.outerSegmentResponseTimeData(kPos)), 'Color', [0.9 0.7 0.1], 'FontSize', 14);
         end
         
         
         function initSensorViewDisplay(obj)
-            positionIndex = 10;
+            positionIndex = 1;
             currentSensorPosition = squeeze(obj.sensorPositionsInMicrons(positionIndex,:));
             obj.findImagePixelsUnderSensor(currentSensorPosition);
             
@@ -360,7 +353,7 @@ classdef osWindow < handle
         end
         
         function initOpticalImageDisplay(obj)  
-            positionIndex = 10;
+            positionIndex = 1;
             currentSensorPosition = squeeze(obj.sensorPositionsInMicrons(positionIndex,:));
             
             cla(obj.axesStruct.opticalImageAxes);
@@ -434,7 +427,7 @@ function resizeOSwindow(hObject,Event, obj, aspectRatio)
     posVector = get(hObject,'Position');
     width = posVector(3);
     height = width/aspectRatio;
-    %Set(obj.hFig,'Position',[posVector(1:2) width height]);
+    set(obj.hFig,'Position',[posVector(1:2) width height]);
 end
 
 
