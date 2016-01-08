@@ -180,7 +180,7 @@ function sensor = customizeSensor(sensor, sensorParams, opticalImage, randomSeed
         if (mod(k-1,6) < 2)
             saccadicTargetPos(k,:) = [-850 -390]/3; % spot of light 
         elseif (mod(k-1,6) < 4)
-            saccadicTargetPos(k,:) = [-170 515]/2;
+            saccadicTargetPos(k,:) = [-170 515]/3;
         else
             saccadicTargetPos(k,:) = [-105 505]/3; % tree trunk
         end

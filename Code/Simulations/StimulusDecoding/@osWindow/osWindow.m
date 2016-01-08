@@ -112,11 +112,11 @@ classdef osWindow < handle
             obj.outerSegmentResponseTimeData = (0:size(obj.outerSegmentXYTCurrent,3)-1)/size(obj.outerSegmentXYTCurrent,3)*sensorGet(obj.sensorPrivate, 'total time');
             obj.outerSegmentResponseXpositionData = 1:size(obj.outerSegmentXYTCurrent,2);
             obj.outerSegmentResponseYpositionData = 1:size(obj.outerSegmentXYTCurrent,1);
-            delta = 0.10; sigma = 2.5*delta;
+            delta = 0.10; sigma = 4.0*delta;
             obj.outerSegmentResponseHiResXpositionData = 0:delta:(obj.outerSegmentResponseXpositionData(end)+1);
             obj.outerSegmentResponseHiResYpositionData = 0:delta:(obj.outerSegmentResponseYpositionData(end)+1);
-            [X,Y] = meshgrid(-7*delta:delta:7*delta, -7*delta:delta:7*delta); 
-            obj.outerSegmentXYResponseInterpolatingKernel = (exp(-(X/sigma).^2) .* exp(-(Y/sigma).^2)).^0.3;
+            [X,Y] = meshgrid(delta*(-10:10), delta*(-10:10)); 
+            obj.outerSegmentXYResponseInterpolatingKernel = (exp(-(X/sigma).^2) .* exp(-(Y/sigma).^2)).^0.99;
             obj.outerSegmentResponseXYpositionData = 1:size(obj.outerSegmentXYTCurrent,1)*size(obj.outerSegmentXYTCurrent,2);
             
             % XY response helper properties
@@ -277,7 +277,7 @@ classdef osWindow < handle
             % update the XY plot
             obj.computeSpatiallyInterpolatedOuterSegment2DResponseMap(kPos);
             set(obj.outerSegmentOverlayPlots.p3, 'CData', obj.outerSegmentSpatiallyInterpolated2DResponseMap); 
-            title(obj.axesStruct.outerSegmentXYresponseAxes, sprintf('t = %2.3f sec', obj.outerSegmentResponseTimeData(kPos)), 'Color', [1 1 1], 'FontSize', 14);
+            title(obj.axesStruct.outerSegmentXYresponseAxes, sprintf('t = %2.3f sec', obj.outerSegmentResponseTimeData(kPos)), 'Color', [0.9 0.7 0.1], 'FontSize', 14);
         end
         
         
