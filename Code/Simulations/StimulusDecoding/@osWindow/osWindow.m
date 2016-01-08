@@ -57,12 +57,21 @@ classdef osWindow < handle
         outerSegmentOverlayPlots;
          
         % - XYT and XT outersegment responses
+        outerSegmentDisplayedCurrentRange;
         outerSegmentXYTCurrent;
         outerSegmentXTCurrent;
         outerSegmentResponseTimeData;
         outerSegmentResponseXYpositionData;
         outerSegmentResponseXpositionData;
         outerSegmentResponseYpositionData;
+        outerSegmentResponseHiResXpositionData;
+        outerSegmentResponseHiResYpositionData;
+        outerSegmentResponseX;
+        outerSegmentResponseY;
+        outerSegmentResponseHiResX;
+        outerSegmentResponseHiResY;
+        outerSegmentSpatiallyInterpolated2DResponseMap;
+        outerSegmentXYResponseInterpolatingKernel;
     end
     
     % Public API
@@ -88,29 +97,32 @@ classdef osWindow < handle
             % generate our private copy of the outer segment
             obj.osPrivate = os;
             
-            % get the response
+            % get the full XYT response
             obj.outerSegmentXYTCurrent = osGet(obj.osPrivate, 'ConeCurrentSignal');
             
-            % normalization
-            minCurrent = -100;
-            maxCurrent = 0;
-            obj.outerSegmentXYTCurrent = (obj.outerSegmentXYTCurrent - minCurrent)/(maxCurrent-minCurrent);
-            if (any(obj.outerSegmentXYTCurrent<0))
-                fprintf(2,'os current is lower than min displayed value: %f\n', minCurrent);
-                obj.outerSegmentXYTCurrent(obj.outerSegmentXYTCurrent<0) = 0;
-            end
-            if (any(obj.outerSegmentXYTCurrent>1))
-                fprintf(2,'os current is higher  than max displayed value: %f\n', maxCurrent);
-                obj.outerSegmentXYTCurrent(obj.outerSegmentXYTCurrent>1) = 1;
-            end
-
+            % subtract baseline response at t = 0;
+            obj.outerSegmentXYTCurrent = bsxfun(@minus, obj.outerSegmentXYTCurrent, squeeze(obj.outerSegmentXYTCurrent(:,:,1)));
+            
             % XT response
             obj.outerSegmentXTCurrent  = reshape(obj.outerSegmentXYTCurrent, [size(obj.outerSegmentXYTCurrent,1)*size(obj.outerSegmentXYTCurrent,2), size(obj.outerSegmentXYTCurrent,3)]);
            
+            % Displayed current range
+            obj.outerSegmentDisplayedCurrentRange = [0 max(obj.outerSegmentXYTCurrent(:))];
+                
             obj.outerSegmentResponseTimeData = (0:size(obj.outerSegmentXYTCurrent,3)-1)/size(obj.outerSegmentXYTCurrent,3)*sensorGet(obj.sensorPrivate, 'total time');
-            obj.outerSegmentResponseXpositionData = 1:size(obj.outerSegmentXYTCurrent,1);
-            obj.outerSegmentResponseYpositionData = 1:size(obj.outerSegmentXYTCurrent,2);
+            obj.outerSegmentResponseXpositionData = 1:size(obj.outerSegmentXYTCurrent,2);
+            obj.outerSegmentResponseYpositionData = 1:size(obj.outerSegmentXYTCurrent,1);
+            delta = 0.10; sigma = 2.5*delta;
+            obj.outerSegmentResponseHiResXpositionData = 0:delta:(obj.outerSegmentResponseXpositionData(end)+1);
+            obj.outerSegmentResponseHiResYpositionData = 0:delta:(obj.outerSegmentResponseYpositionData(end)+1);
+            [X,Y] = meshgrid(-7*delta:delta:7*delta, -7*delta:delta:7*delta); 
+            obj.outerSegmentXYResponseInterpolatingKernel = (exp(-(X/sigma).^2) .* exp(-(Y/sigma).^2)).^0.3;
             obj.outerSegmentResponseXYpositionData = 1:size(obj.outerSegmentXYTCurrent,1)*size(obj.outerSegmentXYTCurrent,2);
+            
+            % XY response helper properties
+            [obj.outerSegmentResponseX, obj.outerSegmentResponseY] = meshgrid(obj.outerSegmentResponseXpositionData, obj.outerSegmentResponseYpositionData);
+            [obj.outerSegmentResponseHiResX, obj.outerSegmentResponseHiResY] = meshgrid(obj.outerSegmentResponseHiResXpositionData, obj.outerSegmentResponseHiResYpositionData);
+                             
         end
         
         function set.sensor(obj, sensor)
@@ -119,7 +131,10 @@ classdef osWindow < handle
             
             % compute sensor positions in microns
             sensorSampleSeparationInMicrons = sensorGet(obj.sensorPrivate,'pixel size','um');
-            obj.sensorPositionsInMicrons = bsxfun(@times, sensorGet(sensor,'positions'), sensorSampleSeparationInMicrons);
+            pos = sensorGet(obj.sensorPrivate,'positions');
+            obj.sensorPositionsInMicrons(:,1) = -pos(:,1)*sensorSampleSeparationInMicrons(1);
+            obj.sensorPositionsInMicrons(:,2) =  pos(:,2)*sensorSampleSeparationInMicrons(2);
+            %obj.sensorPositionsInMicrons = -bsxfun(@times, sensorGet(obj.sensorPrivate,'positions'), sensorSampleSeparationInMicrons);
             
             % compute sensor cone sampling grid
             sensorRowsCols = sensorGet(obj.sensorPrivate, 'size');
@@ -163,7 +178,7 @@ classdef osWindow < handle
             aspectRatio = 800/1000;
             screenSize = get(0,'ScreenSize');
             screenSize(4) = screenSize(4)*0.85;
-            set(obj.hFig, 'Position',[10 1000 screenSize(4)*aspectRatio screenSize(4)], 'SizeChangedFcn', {@resizeOSwindow, obj, aspectRatio})
+            set(obj.hFig, 'Color', [0.1 0.1 0.1], 'Position',[10 1000 screenSize(4)*aspectRatio screenSize(4)], 'SizeChangedFcn', {@resizeOSwindow, obj, aspectRatio})
         end
         
         function initOuterSegmentResponseDisplays(obj)
@@ -171,26 +186,100 @@ classdef osWindow < handle
             currentTime = obj.outerSegmentResponseTimeData(positionIndex);
             N = numel(obj.outerSegmentResponseXYpositionData);
             
+            % The XT plot
             cla(obj.axesStruct.outerSegmentXTresponseAxes);
-            obj.outerSegmentOverlayPlots.p1 = imagesc('XData', obj.outerSegmentResponseTimeData, 'YData', obj.outerSegmentResponseXYpositionData, 'CData', obj.outerSegmentXTCurrent, 'parent', obj.axesStruct.outerSegmentXTresponseAxes);
+            obj.outerSegmentOverlayPlots.p1 = imagesc(...
+                'XData', obj.outerSegmentResponseTimeData, 'YData', obj.outerSegmentResponseXYpositionData, ...
+                'CData', obj.outerSegmentXTCurrent, 'parent', obj.axesStruct.outerSegmentXTresponseAxes);
             % plot current time vertical line
             hold(obj.axesStruct.outerSegmentXTresponseAxes, 'on');
-            obj.outerSegmentOverlayPlots.p2  = plot(obj.axesStruct.outerSegmentXTresponseAxes, currentTime*[1 1], [1 N] , 'k--', 'LineWidth', 1);
+            obj.outerSegmentOverlayPlots.p2  = plot(obj.axesStruct.outerSegmentXTresponseAxes, currentTime*[1 1], [1 N] , 'y--', 'LineWidth', 2);
             hold(obj.axesStruct.outerSegmentXTresponseAxes, 'off');
+            axis(obj.axesStruct.outerSegmentXTresponseAxes, 'ij');
             colorbar(obj.axesStruct.outerSegmentXTresponseAxes, 'northoutside');
+            colormap(obj.axesStruct.outerSegmentXTresponseAxes, 'bone');
             
             set(obj.axesStruct.outerSegmentXTresponseAxes, ...
                  'XLim', [obj.outerSegmentResponseTimeData(1) obj.outerSegmentResponseTimeData(end)], ...
                  'YLim', [obj.outerSegmentResponseXYpositionData(1) obj.outerSegmentResponseXYpositionData(end)], ...
-                 'CLim', [0 1], ...
-                 'XColor', [0 0 0], 'YColor', [0 0 0]);
+                 'CLim', 0.8*obj.outerSegmentDisplayedCurrentRange, ...
+                 'XColor', [1 1 1], 'YColor', [1 1 1]);
+            ylabel(obj.axesStruct.outerSegmentTracesAxes,  'cone #', 'FontSize', 12);
             set(obj.axesStruct.outerSegmentXTresponseAxes, 'FontSize', 12);
+
+            % The traces plot
+            cla(obj.axesStruct.outerSegmentTracesAxes);
+            hold(obj.axesStruct.outerSegmentTracesAxes, 'on');
+            coneTypes = sensorGet(obj.sensorPrivate, 'cone type');
+            lConeIndices = find(coneTypes == 2);
+            mConeIndices = find(coneTypes == 3);
+            sConeIndices = find(coneTypes == 4);
+            
+            A = obj.outerSegmentXTCurrent(lConeIndices,:);
+            [m,index] = max(A(:)); [row, col] = ind2sub(size(A),index);
+            lConeIndices = lConeIndices(row);
+            
+            A = obj.outerSegmentXTCurrent(mConeIndices,:);
+            [m,index] = max(A(:)); [row, col] = ind2sub(size(A),index);
+            mConeIndices = mConeIndices(row);
+            
+            A = obj.outerSegmentXTCurrent(sConeIndices,:);
+            [m,index] = max(A(:)); [row, col] = ind2sub(size(A),index);
+            sConeIndices = sConeIndices(row);
+            
+            
+            obj.outerSegmentOverlayPlots.p4 = plot(obj.axesStruct.outerSegmentTracesAxes, obj.outerSegmentResponseTimeData, obj.outerSegmentXTCurrent(lConeIndices,:), 'r-', 'Color', [1 0.2 0.4]);
+            obj.outerSegmentOverlayPlots.p5 = plot(obj.axesStruct.outerSegmentTracesAxes, obj.outerSegmentResponseTimeData, obj.outerSegmentXTCurrent(mConeIndices,:), 'g-', 'Color', [0.2 1.0 0.5]);
+            obj.outerSegmentOverlayPlots.p6 = plot(obj.axesStruct.outerSegmentTracesAxes, obj.outerSegmentResponseTimeData, obj.outerSegmentXTCurrent(sConeIndices,:), 'b-', 'Color', [0.8 0.3 1.0]);
+            obj.outerSegmentOverlayPlots.p7 = plot(obj.axesStruct.outerSegmentTracesAxes, currentTime*[1 1], obj.outerSegmentDisplayedCurrentRange , 'y--', 'LineWidth', 2);
+            hold(obj.axesStruct.outerSegmentTracesAxes, 'off');
+            box(obj.axesStruct.outerSegmentTracesAxes, 'on');
+            set(obj.axesStruct.outerSegmentTracesAxes, ...
+                 'XLim', [obj.outerSegmentResponseTimeData(1) obj.outerSegmentResponseTimeData(end)], ...
+                 'YLim', obj.outerSegmentDisplayedCurrentRange, ...
+                 'XColor', [1 1 1], 'YColor', [1 1 1], 'Color', [0 0 0] ...
+                 );
+            xlabel(obj.axesStruct.outerSegmentTracesAxes, 'time (seconds)', 'FontSize', 12);
+            ylabel(obj.axesStruct.outerSegmentTracesAxes, 'current (uAmps)', 'FontSize', 12);
+            set(obj.axesStruct.outerSegmentTracesAxes, 'FontSize', 12);
+            
+            % The XY plot
+            obj.computeSpatiallyInterpolatedOuterSegment2DResponseMap(positionIndex);
+
+            cla(obj.axesStruct.outerSegmentXYresponseAxes);
+            obj.outerSegmentOverlayPlots.p3 = ...
+                 imagesc('XData', obj.outerSegmentResponseHiResXpositionData, ...
+                         'YData', obj.outerSegmentResponseHiResYpositionData, ..., 
+                         'CData', obj.outerSegmentSpatiallyInterpolated2DResponseMap, ...
+                         'parent', obj.axesStruct.outerSegmentXYresponseAxes);
+            set(obj.axesStruct.outerSegmentXYresponseAxes, ...
+                'XLim', [0 max(obj.outerSegmentResponseHiResXpositionData)], ...
+                'YLim', [0 max(obj.outerSegmentResponseHiResYpositionData)], ...
+                'CLim', 0.8*obj.outerSegmentDisplayedCurrentRange, ...
+                'XColor', [1 1 1], 'YColor', [1 1 1]);
+            
+            axis(obj.axesStruct.outerSegmentXYresponseAxes,'ij'); axis(obj.axesStruct.outerSegmentXYresponseAxes,'equal');
+            axis(obj.axesStruct.outerSegmentXYresponseAxes, 'off');
+            set(obj.axesStruct.outerSegmentXYresponseAxes, 'FontSize', 12, 'XTick', [], 'YTick', []);
+            colormap(obj.axesStruct.outerSegmentXYresponseAxes, 'bone');
+            title(obj.axesStruct.outerSegmentXYresponseAxes, sprintf('t = %2.3f sec', obj.outerSegmentResponseTimeData(positionIndex)), 'Color', [0.9 0.7 0.1], 'FontSize', 14);
         end
         
-        function updateOuterSegmentResponseDisplays(obj, kPos)
+        
+        function updateOuterSegmentResponseDisplays(obj, kPos)    
+            % update the time line in the XT plot
             currentTime = obj.outerSegmentResponseTimeData(kPos);
             set(obj.outerSegmentOverlayPlots.p2, 'XData', currentTime*[1 1]);
+            
+            % update the traces plot
+            set(obj.outerSegmentOverlayPlots.p7, 'XData', currentTime*[1 1]);
+            
+            % update the XY plot
+            obj.computeSpatiallyInterpolatedOuterSegment2DResponseMap(kPos);
+            set(obj.outerSegmentOverlayPlots.p3, 'CData', obj.outerSegmentSpatiallyInterpolated2DResponseMap); 
+            title(obj.axesStruct.outerSegmentXYresponseAxes, sprintf('t = %2.3f sec', obj.outerSegmentResponseTimeData(kPos)), 'Color', [1 1 1], 'FontSize', 14);
         end
+        
         
         function initSensorViewDisplay(obj)
             positionIndex = 1;
@@ -202,18 +291,19 @@ classdef osWindow < handle
             hold(obj.axesStruct.sensorViewAxes, 'on');
             xpos = currentSensorPosition(1) -obj.sensorSizeInMicrons(1)/2 +  obj.sensorXsamplingGrid;
             ypos = currentSensorPosition(2) -obj.sensorSizeInMicrons(2)/2 +  obj.sensorYsamplingGrid;
-            obj.sensorViewOverlayPlots.p2  = plot(obj.axesStruct.sensorViewAxes, xpos, ypos, 'w+', 'MarkerSize', 8);
+            obj.sensorViewOverlayPlots.p2  = plot(obj.axesStruct.sensorViewAxes, xpos, ypos, 'k.', 'MarkerSize', 12);
             hold(obj.axesStruct.sensorViewAxes, 'off');
             axis(obj.axesStruct.sensorViewAxes,'ij'); axis(obj.axesStruct.sensorViewAxes,'equal');
             
             set(obj.axesStruct.sensorViewAxes, ...
                  'XLim', round(currentSensorPosition(1) + obj.sensorSizeInMicrons(1)*0.55*[-1 1]), ...
                  'YLim', round(currentSensorPosition(2) + obj.sensorSizeInMicrons(2)*0.55*[-1 1]), ...
-                 'XColor', [0 0 0], 'YColor', [0 0 0]);
+                 'XColor', [01 1 1], 'YColor', [1 1 1]);
             set(obj.axesStruct.sensorViewAxes, 'FontSize', 12);
             tickPositions = -2000:20:2000;
             set(obj.axesStruct.sensorViewAxes, 'XTick', tickPositions, 'YTick', tickPositions);
             box(obj.axesStruct.sensorViewAxes, 'on');
+            axis(obj.axesStruct.sensorViewAxes, 'off');
         end
         
         function updateSensorViewDisplay(obj, kPos)
@@ -226,8 +316,6 @@ classdef osWindow < handle
             set(obj.axesStruct.sensorViewAxes, ...
                  'XLim', round(currentSensorPosition(1) + obj.sensorSizeInMicrons(1)*0.55*[-1 1]), ...
                  'YLim', round(currentSensorPosition(2) + obj.sensorSizeInMicrons(2)*0.55*[-1 1]));
-             
-            title(obj.axesStruct.sensorViewAxes, sprintf('position index: %d', kPos), 'Color', [1 1 1], 'FontSize', 14);
         end
         
         function findImagePixelsUnderSensor(obj,currentSensorPosition)
@@ -246,6 +334,13 @@ classdef osWindow < handle
             yGridSubset = obj.opticalImageYgrid(rowRange, colRange);
             obj.sensorViewXdata = squeeze(xGridSubset(1,:));
             obj.sensorViewYdata = squeeze(yGridSubset(:,1));
+        end
+        
+        function computeSpatiallyInterpolatedOuterSegment2DResponseMap(obj, kPos)  
+            obj.outerSegmentSpatiallyInterpolated2DResponseMap = zeros(numel(obj.outerSegmentResponseHiResYpositionData), numel(obj.outerSegmentResponseHiResXpositionData));
+            delta = obj.outerSegmentResponseHiResXpositionData(2)-obj.outerSegmentResponseHiResXpositionData(1); step = round(1.0/delta);
+            obj.outerSegmentSpatiallyInterpolated2DResponseMap(1+(1:size(obj.outerSegmentXYTCurrent,1))*step, 1+(1:size(obj.outerSegmentXYTCurrent,2))*step) = squeeze(obj.outerSegmentXYTCurrent(:,:,kPos));
+            obj.outerSegmentSpatiallyInterpolated2DResponseMap = conv2(obj.outerSegmentSpatiallyInterpolated2DResponseMap, obj.outerSegmentXYResponseInterpolatingKernel, 'same');
         end
         
         function initOpticalImageDisplay(obj)  
@@ -271,7 +366,6 @@ classdef osWindow < handle
         end
         
         function generateAxesAndControls(obj)  
-            p = get(obj.hFig, 'Position');
             w = 800;
             h = 1000;
             imageWidthToHeightRatio = size(obj.opticalImageRGBrendering,2) / size(obj.opticalImageRGBrendering,1);
@@ -279,7 +373,7 @@ classdef osWindow < handle
             leftMargin = 5/w;
             opticalImageWidth  = (w-10)/w;
             opticalImageHeight = (w-10)/imageWidthToHeightRatio/h;
-            bottomMargin = (h-10)/h - opticalImageHeight - 5/h;
+            bottomMargin = (h-10)/h - opticalImageHeight + 5/h;
     
             % generate plot axes
             sensorViewWidth = 200/w; sensorViewHeight = 200/h; 
@@ -289,11 +383,11 @@ classdef osWindow < handle
             obj.axesStruct.sensorViewAxes   = axes('parent',obj.hFig,'unit','normalized','position',[leftMargin+20/w bottomMargin+20/h sensorViewWidth sensorViewHeight], 'Color', [0 0 0]);
             
             % generate response axes
-            obj.axesStruct.outerSegmentXTresponseAxes = axes('parent',obj.hFig,'unit','normalized','position',[3*leftMargin bottomMargin-spatiotemporalViewHeight-20/h spatiotemporalViewWidth spatiotemporalViewHeight], 'Color', [0 0 0]);
-            obj.axesStruct.outerSegmentSingleResponseAxes = axes('parent',obj.hFig,'unit','normalized','position',[3*leftMargin bottomMargin-1.5*spatiotemporalViewHeight-50/h spatiotemporalViewWidth spatiotemporalViewHeight/2], 'Color', [0 0 0]);
+            obj.axesStruct.outerSegmentXTresponseAxes = axes('parent',obj.hFig,'unit','normalized','position',[8*leftMargin bottomMargin-spatiotemporalViewHeight-10/h spatiotemporalViewWidth spatiotemporalViewHeight], 'Color', [0 0 0]);
+            obj.axesStruct.outerSegmentTracesAxes = axes('parent',obj.hFig,'unit','normalized','position',[8*leftMargin bottomMargin-1.5*spatiotemporalViewHeight-40/h spatiotemporalViewWidth spatiotemporalViewHeight/2], 'Color', [0 0 0]);
             
             % generate 2D instantaneous response axes
-            positionVector = [3*leftMargin+50/w+spatiotemporalViewWidth bottomMargin-1.5*spatiotemporalViewHeight-50/h spatialViewWidth spatialViewHeight];
+            positionVector = [5*leftMargin+50/w+spatiotemporalViewWidth bottomMargin-1.5*spatiotemporalViewHeight - 10/h spatialViewWidth spatialViewHeight];
             obj.axesStruct.outerSegmentXYresponseAxes = axes('parent',obj.hFig,'unit','normalized','position', positionVector, 'Color', [0 0 0]);
             
             % generate time slider
@@ -303,7 +397,7 @@ classdef osWindow < handle
             obj.timeSlider = uicontrol(...
                 'Parent', obj.hFig,...
                 'Style', 'slider',...
-                'BackgroundColor', [0.4 0.6 0.9], ...
+                'BackgroundColor', [0.8 0.7 0.2], ...
                 'Min', 1, 'Max', size(obj.sensorPositionsInMicrons,1), 'Value', 1,...
                 'Units', 'normalized',...
                 'Position', [timeSliderLeftMargin, timeSliderBottom 0.99 0.012]);    

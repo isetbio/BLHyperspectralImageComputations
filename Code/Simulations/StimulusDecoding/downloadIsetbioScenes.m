@@ -17,16 +17,18 @@ function downloadIsetbioScenes
     getpref('HyperSpectralImageIsetbioComputations','opticalImagesCacheDir');
     
     % simulation time step. same for eye movements and for sensor, outersegment
-    timeStepInMilliseconds = 0.5;
+    timeStepInMilliseconds = 0.1;
     
     sensorParams = struct(...
         'coneApertureInMicrons', 3.0, ... 
         'LMSdensities', [0.6 0.4 0.1], ...
-        'spatialGrid', [15 15], ...  
+        'spatialGrid', [25 25], ...  
         'samplingIntervalInMilliseconds', timeStepInMilliseconds, ...
-        'fixationalEyeMovementParams', struct(...
+        'integrationTimeInMilliseconds', 50, ...
+        'eyeMovementScanningParams', struct(...
             'samplingIntervalInMilliseconds', timeStepInMilliseconds, ...
-            'durationInMilliseconds', 200 ...
+            'fixationDurationInMilliseconds', 300, ...
+            'numberOfFixations', 20 ...
             ) ...
         );
     
@@ -36,7 +38,7 @@ function downloadIsetbioScenes
         client.crp(sprintf('/resources/scenes/hyperspectral/%s', imsource{1}));
         [artifactData, artifactInfo] = client.readArtifact(imsource{2}, 'type', 'mat');
         if ismember('scene', fieldnames(artifactData))
-            fprintf('Fethed scene contains uncompressed scene data.\n');
+            fprintf('Fetched scene contains uncompressed scene data.\n');
             scene = artifactData.scene;
         else
             fprintf('Fetched scene contains compressed scene data.\n');
@@ -56,13 +58,19 @@ function downloadIsetbioScenes
         
         % create custom human sensor
         sensor = sensorCreate('human');
-        randomSeed = 3242984;
+        randomSeed = 94586784;
         sensor = customizeSensor(sensor, sensorParams, oi, randomSeed);
         
         % compute rate of isomerized photons
         sensor = coneAbsorptions(sensor, oi);
          
         photonIsomerizationRate = sensorGet(sensor,'photon rate');
+        eyeMovementPositions = sensorGet(sensor, 'positions');
+        eyeMovementPositions(end,:)
+        
+        figure(1001);
+        imagesc(squeeze(photonIsomerizationRate(:,:,end)));
+        
         photonIsomerizationRateXT = reshape(photonIsomerizationRate, [size(photonIsomerizationRate,1)*size(photonIsomerizationRate,2), size(photonIsomerizationRate,3)]);
         
         % compute adapted photo-current
@@ -70,9 +78,7 @@ function downloadIsetbioScenes
         adaptedOS = osBioPhys();
         adaptedOS = osSet(adaptedOS, 'noiseFlag', 1);
         adaptedOS = osCompute(adaptedOS, sensor);
-        osAdaptedCur = osGet(adaptedOS, 'ConeCurrentSignal');
-        osAdaptedCurXT = reshape(osAdaptedCur, [size(osAdaptedCur,1)*size(osAdaptedCur,2), size(osAdaptedCur,3)]);
-        
+
         osWindow(adaptedOS, sensor, oi);
         
         % plot results
@@ -122,7 +128,7 @@ function sensor = customizeSensor(sensor, sensorParams, opticalImage, randomSeed
        rng(randomSeed);
     end
     
-    fixationalEyeMovementParams = sensorParams.fixationalEyeMovementParams;
+    eyeMovementScanningParams = sensorParams.eyeMovementScanningParams;
     
     % custom aperture
     pixel  = sensorGet(sensor,'pixel');
@@ -150,27 +156,43 @@ function sensor = customizeSensor(sensor, sensorParams, opticalImage, randomSeed
     % custom time interval
     sensor = sensorSet(sensor, 'time interval', sensorParams.samplingIntervalInMilliseconds/1000.0);
     
+    % custom integration time
+    sensor = sensorSet(sensor, 'integration time', sensorParams.integrationTimeInMilliseconds/1000.0);
+    
     % custom eye movement
     eyeMovement = emCreate();
     
     % custom sample time
-    eyeMovement  = emSet(eyeMovement, 'sample time', fixationalEyeMovementParams.samplingIntervalInMilliseconds/1000.0);        
+    eyeMovement  = emSet(eyeMovement, 'sample time', eyeMovementScanningParams.samplingIntervalInMilliseconds/1000.0);        
     
     % attach eyeMovement to the sensor
     sensor = sensorSet(sensor,'eyemove', eyeMovement);
             
     % generate the fixation eye movement sequence
-    eyeMovementsNum = round(fixationalEyeMovementParams.durationInMilliseconds / fixationalEyeMovementParams.samplingIntervalInMilliseconds);
+    eyeMovementsNum = eyeMovementScanningParams.numberOfFixations * round(eyeMovementScanningParams.fixationDurationInMilliseconds / eyeMovementScanningParams.samplingIntervalInMilliseconds);
     eyeMovementPositions = zeros(eyeMovementsNum,2);
     sensor = sensorSet(sensor,'positions', eyeMovementPositions);
     sensor = emGenSequence(sensor);
     
-    % saccade 300 cones leftward and 100 cones upwards
-    eyeMovementPositions = bsxfun(@plus, sensorGet(sensor,'positions'), [58 10]);
+    % add saccadic targets
+    saccadicTargetPos = round(randn(eyeMovementScanningParams.numberOfFixations,2)*100);
+    for k = 1:eyeMovementScanningParams.numberOfFixations
+        if (mod(k-1,4) < 2)
+            saccadicTargetPos(k,:) = [-850 -390]/3; % spot of light 
+        else
+            saccadicTargetPos(k,:) = [-105 505]/3; % tree trunk
+        end
+    end
+    eyeMovementPositions = sensorGet(sensor,'positions', eyeMovementPositions);
+    for eyeMovementIndex = 1:eyeMovementsNum
+        kk = 1+floor((eyeMovementIndex-1)/round(eyeMovementScanningParams.fixationDurationInMilliseconds / eyeMovementScanningParams.samplingIntervalInMilliseconds));
+        eyeMovementPositions(eyeMovementIndex,:) = eyeMovementPositions(eyeMovementIndex,:) + saccadicTargetPos(kk,:);
+    end
     sensor = sensorSet(sensor,'positions', eyeMovementPositions);
     
+    eyeMovementPositions
     % Integration time. This will determine signal amplitude !!!
-    fprintf('Sensor has default integration time:  %2.2f milliseconds\n', 1000.0*sensorGet(sensor, 'integrationTime'));
+    fprintf('Sensor integration time:  %2.2f milliseconds\n', 1000.0*sensorGet(sensor, 'integrationTime'));
     fprintf('Sensor time interval:  %2.2f milliseconds\n', 1000.0*sensorGet(sensor, 'time interval'));
     fprintf('Sensor sampling total time:  %2.2f milliseconds\n', 1000.0*sensorGet(sensor, 'total time'));
     fprintf('eye movement time interval:  %2.2f milliseconds\n', 1000.0*emGet(eyeMovement, 'sample time'));
