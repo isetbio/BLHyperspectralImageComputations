@@ -77,9 +77,9 @@ classdef osWindow < handle
     % Public API
     methods
         % Constructor
-        function obj = osWindow(os, sensor, oi)
+        function obj = osWindow(figureNo, figureTitle, os, sensor, oi)
             
-            obj.init(); 
+            obj.init(figureNo, figureTitle); 
             
             obj.oi = oi;
             obj.sensor = sensor;
@@ -173,12 +173,12 @@ classdef osWindow < handle
         
     methods (Access = private)  
         
-        function init(obj)
-            obj.hFig = figure();
+        function init(obj, figureNo, figureTitle)
+            obj.hFig = figure(figureNo);
             aspectRatio = 800/1000;
             screenSize = get(0,'ScreenSize');
             screenSize(4) = screenSize(4)*0.85;
-            set(obj.hFig, 'Color', [0.1 0.1 0.1], 'Position',[10 1000 screenSize(4)*aspectRatio screenSize(4)], 'SizeChangedFcn', {@resizeOSwindow, obj, aspectRatio})
+            set(obj.hFig, 'Name', figureTitle, 'Color', [0.1 0.1 0.1], 'Position',[10+figureNo*40 100+figureNo*40 screenSize(4)*aspectRatio screenSize(4)], 'SizeChangedFcn', {@resizeOSwindow, obj, aspectRatio})
         end
         
         function initOuterSegmentResponseDisplays(obj)
