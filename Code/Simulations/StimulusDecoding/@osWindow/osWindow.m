@@ -178,7 +178,7 @@ classdef osWindow < handle
             aspectRatio = 800/1000;
             screenSize = get(0,'ScreenSize');
             screenSize(4) = screenSize(4)*0.85;
-            set(obj.hFig, 'Name', figureTitle, 'Color', [0.1 0.1 0.1], 'Position',[10+figureNo*40 100+figureNo*40 screenSize(4)*aspectRatio screenSize(4)], 'SizeChangedFcn', {@resizeOSwindow, obj, aspectRatio})
+            set(obj.hFig, 'Name', figureTitle, 'Color', [0.1 0.1 0.1], 'Position',[10+(figureNo-1)*(100+screenSize(4)*aspectRatio) 10+(figureNo-1)*50 screenSize(4)*aspectRatio screenSize(4)], 'SizeChangedFcn', {@resizeOSwindow, obj, aspectRatio})
         end
         
         function initOuterSegmentResponseDisplays(obj)
