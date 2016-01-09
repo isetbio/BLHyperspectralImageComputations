@@ -21,15 +21,9 @@ function downloadIsetbioScenes
     timeStepInMilliseconds = 0.1;
     
     sensorParams = struct(...
-<<<<<<< HEAD
         'coneApertureInMicrons', 3.0, ...        % custom cone aperture
         'LMSdensities', [0.6 0.4 0.1], ...       % custom percentages of L,M and S cones
         'spatialGrid', [20 20], ...              % generate mosaic of 20 x 20 cones
-=======
-        'coneApertureInMicrons', 3.0, ... 
-        'LMSdensities', [0.6 0.4 0.1], ...
-        'spatialGrid', [20 20], ...  
->>>>>>> 4e801ac2c5c0a91dd2d9248f0d33ef003fa01045
         'samplingIntervalInMilliseconds', timeStepInMilliseconds, ...
         'integrationTimeInMilliseconds', 50, ...
         'randomSeed', 1552784, ...
@@ -66,7 +60,6 @@ function downloadIsetbioScenes
         
         % create custom human sensor
         sensor = sensorCreate('human');
-        randomSeed = 94586784;
         sensor = customizeSensor(sensor, sensorParams, oi);
         
         % compute rate of isomerized photons
