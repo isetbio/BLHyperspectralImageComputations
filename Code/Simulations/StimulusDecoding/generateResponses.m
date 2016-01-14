@@ -1,4 +1,4 @@
-function downloadIsetbioScenes
+function generateResponses
 
     % reset
     ieInit; close all;
@@ -7,8 +7,6 @@ function downloadIsetbioScenes
     
     % Set up remote data toolbox client
     client = RdtClient(getpref('HyperSpectralImageIsetbioComputations','remoteDataToolboxConfig'));
-    client.crp('/resources/data/cones');
-    [eyeMovementExample, eyeMovementExampleArtifact] = client.readArtifact('eyeMovementExample', 'type', 'mat');
     
     % Spacify images
     imageSources = {...
@@ -32,7 +30,8 @@ function downloadIsetbioScenes
         'eyeMovementScanningParams', struct(...
             'samplingIntervalInMilliseconds', timeStepInMilliseconds, ...
             'fixationDurationInMilliseconds', 300, ...
-            'numberOfFixations', 20 ...
+            'fixationOverlapFactor', 1.0, ...     % overlapFactor of 1, results in sensor positions that just abut each other
+            'positionScanMode',  'randomized' ... % 'randomized' or 'sequential' to visit eye position grid sequentially
         ) ...
     );
     
@@ -50,6 +49,9 @@ function downloadIsetbioScenes
             scene = uncompressScene(artifactData);
         end
         
+        % Set mean luminance of all scenes to 400 cd/m2
+        scene = sceneAdjustLuminance(scene, 200);
+        
         % Show scene
         vcAddAndSelectObject(scene); sceneWindow;
        
@@ -64,28 +66,49 @@ function downloadIsetbioScenes
         sensor = sensorCreate('human');
         sensor = customizeSensor(sensor, sensorParams, oi);
         
-        % compute rate of isomerized photons
+        positionsPerFixation = round(sensorParams.eyeMovementScanningParams.fixationDurationInMilliseconds / sensorParams.eyeMovementScanningParams.samplingIntervalInMilliseconds); 
+        fixationsNum = size(sensorGet(sensor,'positions'),1) / positionsPerFixation;
+        
+        % compute isomerization rage for all positions
         sensor = coneAbsorptions(sensor, oi);
-         
-        % compute photo-current
-        osB = osBioPhys();
-        osB = osSet(osB, 'noiseFlag', 1);
-        osB = osCompute(osB, sensor);
         
-        osL = osLinear(); 
-        osL = osSet(osL, 'noiseFlag', 1);
-        osL = osCompute(osL, sensor);
+        % save full isomerization rate and positions
+        isomerizationRate = sensorGet(sensor, 'photon rate');
+        sensorPositions   = sensorGet(sensor,'positions');
         
-        osWindow(1001+imageIndex, 'biophys-based outer segment', osB, sensor, oi);
-        osWindow(1002+imageIndex, 'linear outer segment', osL, sensor, oi);
+        % reset sensor positions and isomerization rate
+        sensor = sensorSet(sensor, 'photon rate', []);
+        sensor = sensorSet(sensor, 'positions', []);
         
-%         figure(1001);
-%         photonIsomerizationRate = sensorGet(sensor,'photon rate');
-%         imagesc(squeeze(photonIsomerizationRate(:,:,end)));
-%         
- 
+        % compute currents for different fixation sub-sequences
+        saccadicPosRanges = [ 1 10; ...                   % first group of 10 saccades
+                             11 20; ...                   % second  group of 10 saccades
+                             [-9 0] + fixationsNum ...    % last group of 10 saccades
+                             ];
+        
+        for saccadeGroupIndex = 1:size(saccadicPosRanges,1)   
+            saccadicPosRange = squeeze(saccadicPosRanges(saccadeGroupIndex,:));
+            % find position indices
+            positionIndices = 1 + ((saccadicPosRange(1)-1)*positionsPerFixation : (saccadicPosRange(2))*positionsPerFixation-1);
+            fprintf('Analyzed positions: %d-%4d\n', positionIndices(1), positionIndices(end));
+        
+            % generate new sensor with given sub-sequence data
+            newSensor = sensor;
+            newSensor = sensorSet(newSensor, 'photon rate', isomerizationRate(:,:,positionIndices));
+            newSensor = sensorSet(newSensor, 'positions',   sensorPositions(positionIndices,:));
+            visualizeCurrent(newSensor, oi, 100+saccadeGroupIndex);
+        end 
     end
-     
+end
+
+
+function visualizeCurrent(sensor, oi, figNum)
+    % compute photo-current
+    osB = osBioPhys();
+    osB = osSet(osB, 'noiseFlag', 1);
+    osB = osCompute(osB, sensor);
+
+    osWindow(figNum, 'biophys-based outer segment', osB, sensor, oi);
 end
 
 function sensor = customizeSensor(sensor, sensorParams, opticalImage)
@@ -137,40 +160,40 @@ function sensor = customizeSensor(sensor, sensorParams, opticalImage)
     sensor = sensorSet(sensor,'eyemove', eyeMovement);
             
     % generate the fixation eye movement sequence
-    eyeMovementsNum = eyeMovementScanningParams.numberOfFixations * round(eyeMovementScanningParams.fixationDurationInMilliseconds / eyeMovementScanningParams.samplingIntervalInMilliseconds);
+    xNodes = floor(0.35*oiGet(opticalImage, 'width',  'microns')/sensorGet(sensor, 'width', 'microns')*eyeMovementScanningParams.fixationOverlapFactor);
+    yNodes = floor(0.35*oiGet(opticalImage, 'height', 'microns')/sensorGet(sensor, 'height', 'microns')*eyeMovementScanningParams.fixationOverlapFactor);
+    fx = round(sensorParams.spatialGrid(1)/eyeMovementScanningParams.fixationOverlapFactor);
+    saccadicTargetPos = generateSaccadicTargets(xNodes, yNodes, fx, sensorParams.eyeMovementScanningParams.positionScanMode);
+    
+    eyeMovementsNum = size(saccadicTargetPos,1) * round(eyeMovementScanningParams.fixationDurationInMilliseconds / eyeMovementScanningParams.samplingIntervalInMilliseconds);
     eyeMovementPositions = zeros(eyeMovementsNum,2);
     sensor = sensorSet(sensor,'positions', eyeMovementPositions);
     sensor = emGenSequence(sensor);
     
     % add saccadic targets
-    saccadicTargetPos = generateSaccadicTargets(eyeMovementScanningParams, 'random'); 
-    eyeMovementPositions = sensorGet(sensor,'positions', eyeMovementPositions);
+    eyeMovementPositions = sensorGet(sensor,'positions');
     for eyeMovementIndex = 1:eyeMovementsNum
         kk = 1+floor((eyeMovementIndex-1)/round(eyeMovementScanningParams.fixationDurationInMilliseconds / eyeMovementScanningParams.samplingIntervalInMilliseconds));
         eyeMovementPositions(eyeMovementIndex,:) = eyeMovementPositions(eyeMovementIndex,:) + saccadicTargetPos(kk,:);
     end
+    
     sensor = sensorSet(sensor,'positions', eyeMovementPositions);
 end
 
-function saccadicTargetPos = generateSaccadicTargets(eyeMovementScanningParams, mode) 
-
-    saccadicTargetPos = zeros(eyeMovementScanningParams.numberOfFixations,2);
+function saccadicTargetPos = generateSaccadicTargets(xNodes, yNodes, fx, positionScanMode)
+    [gridXX,gridYY] = meshgrid(-xNodes:xNodes,-yNodes:yNodes); 
+    gridXX = gridXX(:); gridYY = gridYY(:); 
     
-    % random targets
-    if (strcmp(mode, 'random'))
-        saccadicTargetPos = round(randn(eyeMovementScanningParams.numberOfFixations,2)*100);
+    if (strcmp(positionScanMode, 'randomized'))
+        indices = randperm(numel(gridXX));
+    elseif (strcmp(positionScanMode, 'sequential'))
+        indices = 1:numel(gridXX);
     else
-        % oscillate between three positions of interest - useful for debuging
-        for k = 1:eyeMovementScanningParams.numberOfFixations
-            if (mod(k-1,6) < 2)
-                saccadicTargetPos(k,:) = [-850 -390]/3;  
-            elseif (mod(k-1,6) < 4)
-                saccadicTargetPos(k,:) = [-170 515]/3;
-            else
-                saccadicTargetPos(k,:) = [-105 505]/3; 
-            end
-        end
+        error('Unkonwn position scan mode: ''%s''', positionScanMode);
     end
+    
+    saccadicTargetPos(:,1) = gridXX(indices)*fx; 
+    saccadicTargetPos(:,2) = gridYY(indices)*fx;
 end
 
 
