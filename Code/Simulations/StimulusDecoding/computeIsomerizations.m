@@ -3,7 +3,7 @@
 function computeIsomerizations
 
     % reset
-    ieInit; close all;
+    %ieInit; close all;
     
     addNeddedToolboxesToPath();
     
@@ -24,9 +24,10 @@ function computeIsomerizations
     
     % simulation time step. same for eye movements and for sensor, outersegment
     timeStepInMilliseconds = 0.1;
-    fixationOverlapFactor = 0.15;             % overlapFactor of 1, results in sensor positions that just abut each other, 2 more dense 0.5 less dense
+    fixationOverlapFactor = 0.15;           % overlapFactor of 1, results in sensor positions that just abut each other, 2 more dense 0.5 less dense
+    saccadesPerScan = 10;                   % parse the eye movement data into scans, each scan having this many saccades
     saccadicScanMode = 'randomized';        % 'randomized' or 'sequential', to visit eye position grid sequentially
-    debug = false;                          % set to true, to see the eye scanning and the responses
+    debug = true;                          % set to true, to see the eye scanning and the responses
     
     
     sensorParams = struct(...
@@ -69,7 +70,7 @@ function computeIsomerizations
         % Compute optical image with human optics
         oi = oiCreate('human');
         oi = oiCompute(oi, scene);
-        clear 'scene'
+        
         
         % Show optical image
         vcAddAndSelectObject(oi); oiWindow;
@@ -78,8 +79,13 @@ function computeIsomerizations
         sensor = sensorCreate('human');
         sensor = customizeSensor(sensor, sensorParams, oi);
         
-        positionsPerFixation = round(sensorParams.eyeMovementScanningParams.fixationDurationInMilliseconds / sensorParams.eyeMovementScanningParams.samplingIntervalInMilliseconds); 
-        fixationsNum = size(sensorGet(sensor,'positions'),1) / positionsPerFixation;
+        % extract the LMS cone stimulus sequence encoded by sensor at all visited positions
+        LMSstimulusSequence = computeLMSstimulusSequence(sensor, scene);
+        
+        if (~debug)
+            % we do not need the scene any more so clear it
+            clear 'scene'
+        end
         
         % compute isomerization rage for all positions
         sensor = coneAbsorptions(sensor, oi);
@@ -88,14 +94,17 @@ function computeIsomerizations
         isomerizationRate = sensorGet(sensor, 'photon rate');
         sensorPositions   = sensorGet(sensor,'positions');
         
+        % parse the data into scans, each scan having saccadesPerScansaccades
+        positionsPerFixation = round(sensorParams.eyeMovementScanningParams.fixationDurationInMilliseconds / sensorParams.eyeMovementScanningParams.samplingIntervalInMilliseconds); 
+        fixationsNum = size(sensorGet(sensor,'positions'),1) / positionsPerFixation;
+        scansNum = floor(fixationsNum/saccadesPerScan);
+        fprintf('Data sets generated for this image: %d\n', scansNum);
+        
         % reset sensor positions and isomerization rate
         sensor = sensorSet(sensor, 'photon rate', []);
         sensor = sensorSet(sensor, 'positions', []);
         
-        scansNum = floor(fixationsNum/10);
-        fprintf('Data sets generated for this image: %d\n', scansNum);
-        for scanIndex = 1:scansNum
-            
+        for scanIndex = 1:scansNum    
             % define a new sequence of saccades
             startingSaccade = 1+(scanIndex-1)*10;
             endingSaccade = startingSaccade + 9;
@@ -115,8 +124,9 @@ function computeIsomerizations
                 osB = osBioPhys();
                 osB.osSet('noiseFlag', 1);
                 osB.osCompute(scanSensor);
-                figNum = 100+scanIndex;
-                osWindow(figNum, 'biophys-based outer segment', osB, scanSensor, oi);
+                figNum = 200+scanIndex;
+                osWindow(figNum, 'biophys-based outer segment', osB, scanSensor, oi, scene);
+                pause
             end
         end
         
@@ -126,6 +136,10 @@ function computeIsomerizations
     end % imageIndex
 end
 
+
+function LMSstimulusSequence = computeLMSstimulusSequence(sensor, scene)
+    LMSstimulusSequence = []
+end
 
 function sensor = customizeSensor(sensor, sensorParams, opticalImage)
     
