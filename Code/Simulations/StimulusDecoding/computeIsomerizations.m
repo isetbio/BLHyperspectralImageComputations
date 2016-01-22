@@ -231,6 +231,7 @@ function [StockmanLMSexcitationSequence, timeAxis] = computeLMSstimulusSequence(
     
     for kIndex = 1:numel(positionIndicesToEncode)
         
+        fprintf('Encoding LMS scene excitation for position no.:%d / %d\n', kIndex, numel(positionIndicesToEncode));
         % get examined position index
         posIndex = positionIndicesToEncode(kIndex);
         
