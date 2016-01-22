@@ -105,11 +105,14 @@ function computeIsomerizations
         sensorPositions   = sensorGet(sensor,'positions');
         
         % extract the LMS cone stimulus sequence encoded by sensor at all visited positions
-        LMSstimulusSequence = computeLMSstimulusSequence(sensor, scene, [retinalMicronsPerDegreeX retinalMicronsPerDegreeY], wavelengthSampling, StockmanFundamentals);
+        visualizeEncodingProcess = false;
+        tic
+        [LMSstimulusSequence, LMSstimulusSequenceTime] = computeLMSstimulusSequence(sensor, scene, [retinalMicronsPerDegreeX retinalMicronsPerDegreeY], wavelengthSampling, StockmanFundamentals, visualizeEncodingProcess);
         if (~debug)
             % we do not need the scene any more so clear it
             clear 'scene'
         end
+        fprintf('Done with scene encoding in %2.2f seconds\n', toc);
         
         % parse the data into scans, each scan having saccadesPerScansaccades
         positionsPerFixation = round(sensorParams.eyeMovementScanningParams.fixationDurationInMilliseconds / sensorParams.eyeMovementScanningParams.samplingIntervalInMilliseconds); 
@@ -154,13 +157,13 @@ function computeIsomerizations
 end
 
 
-function StockmanLMSexcitationSequence = computeLMSstimulusSequence(sensor, scene, retinalMicronsPerDegree,  wavelengthSampling, StockmanFundamentals)
-    StockmanLMSexcitationSequence = [];
+function [StockmanLMSexcitationSequence, timeAxis] = computeLMSstimulusSequence(sensor, scene, retinalMicronsPerDegree,  wavelengthSampling, StockmanFundamentals, visualizeEncodingProcess)
     
     % compute sensor positions (due to eye movements) in microns
     sensorSampleSeparationInMicrons = sensorGet(sensor,'pixel size','um');
     pos = sensorGet(sensor,'positions');
     isomerizationRate = sensorGet(sensor, 'photon rate');
+    sensorTimeStep = sensorGet(sensor, 'time interval')
     
     sensorPositionsInRetinalMicrons = pos * 0;
     sensorPositionsInRetinalMicrons(:,1) = -pos(:,1)*sensorSampleSeparationInMicrons(1);
@@ -194,46 +197,49 @@ function StockmanLMSexcitationSequence = computeLMSstimulusSequence(sensor, scen
     sceneXdataInRetinalMicrons = squeeze(sceneXgridInRetinalMicrons(1,:));  % x-positions from 1st row in retinal microns
     sceneYdataInRetinalMicrons = squeeze(sceneYgridInRetinalMicrons(:,1));  % y-positions from 1st col in retinal microns
             
-    % Obtain the scene Stockman LMS excitation maps with a spatial
-    % resolution = 0.5 microns
+    % Obtain the scene Stockman LMS excitation maps with a spatial resolution = 0.5 microns
     sceneResamplingResolutionInRetinalMicrons = 0.5
     [sceneStockmanLMSexitations, sceneXgridInRetinalMicrons, sceneYgridInRetinalMicrons] = resampleScene(sceneGet(scene, 'lms'), sceneXdataInRetinalMicrons, sceneYdataInRetinalMicrons, sceneResamplingResolutionInRetinalMicrons);
     
-    % Obtain an RGB rendition of the scene with a spatial resolution three times that of the original
-    [sceneRGB, sceneXgridInRetinalMicrons, sceneYgridInRetinalMicrons] = resampleScene(sceneGet(scene, 'rgb image'), sceneXdataInRetinalMicrons, sceneYdataInRetinalMicrons, sceneResamplingResolutionInRetinalMicrons);
-        
-    sceneXdataInRetinalMicrons = squeeze(sceneXgridInRetinalMicrons(1,:));  % x-positions from 1st row in retinal microns
-    sceneYdataInRetinalMicrons = squeeze(sceneYgridInRetinalMicrons(:,1));  % y-positions from 1st col in retinal microns
     
-    % Compute photon isomerization and scene LMS excitation ranges
-    ClimRange   = [min(sceneStockmanLMSexitations(:)) max(sceneStockmanLMSexitations(:))];
-    photonRange = [min(isomerizationRate(:)) max(isomerizationRate(:))];
+    if (visualizeEncodingProcess)
+        % Obtain an RGB rendition of the scene with a spatial resolution three times that of the original
+        [sceneRGB, sceneXgridInRetinalMicrons, sceneYgridInRetinalMicrons] = resampleScene(sceneGet(scene, 'rgb image'), sceneXdataInRetinalMicrons, sceneYdataInRetinalMicrons, sceneResamplingResolutionInRetinalMicrons); 
+        sceneXdataInRetinalMicrons = squeeze(sceneXgridInRetinalMicrons(1,:));  % x-positions from 1st row in retinal microns
+        sceneYdataInRetinalMicrons = squeeze(sceneYgridInRetinalMicrons(:,1));  % y-positions from 1st col in retinal microns
+    
+        % Compute photon isomerization and scene LMS excitation ranges
+        ClimRange   = [min(sceneStockmanLMSexitations(:)) max(sceneStockmanLMSexitations(:))];
+        photonRange = [min(isomerizationRate(:)) max(isomerizationRate(:))];
 
-    coneApertureInMicrons = pixelGet(sensorGet(sensor, 'pixel'), 'size')/1e-6;
-    th = [0:10:360]/360*2*pi;
-    coneApertureXcoords = cos(th)*coneApertureInMicrons(1)/2;
-    coneApertureYcoords = sin(th)*coneApertureInMicrons(2)/2;
+        coneApertureInMicrons = pixelGet(sensorGet(sensor, 'pixel'), 'size')/1e-6;
+        th = [0:10:360]/360*2*pi;
+        coneApertureXcoords = cos(th)*coneApertureInMicrons(1)/2;
+        coneApertureYcoords = sin(th)*coneApertureInMicrons(2)/2;
         
-    hFig = figure(11);
-    clf;
-    set(hFig, 'Position', [10 10 780 1300]);
-    plotHandles = [];
-    colormap(gray);
-
-    for posIndex = 1:3000:size(sensorPositionsInRetinalMicrons,1)
+        hFig = figure(11);
+        clf;
+        set(hFig, 'Position', [10 10 780 1300]);
+        plotHandles = [];
+        colormap(gray);
+    end
+    
+    
+    positionIndicesToEncode = 1:10:size(sensorPositionsInRetinalMicrons,1);
+    StockmanLMSexcitationSequence = [];
+    timeAxis = zeros(1, numel(positionIndicesToEncode));
+    
+    for kIndex = 1:numel(positionIndicesToEncode)
         
+        % get examined position index
+        posIndex = positionIndicesToEncode(kIndex);
+        
+        % Get current isomerization rate and sensor position
         currentSensorIsomerizationRate = squeeze(isomerizationRate(:,:,posIndex));
-        
-        % Get current sensor position
         currentSensorPositionInRetinalMicrons = sensorPositionsInRetinalMicrons(posIndex,:);
-        
         
         % We need to determine the scene portion that lies under the sensor's current position
         % So find scene pixels falling within the sensor outline
-        % However, there is some jitter noise here because the sampling resolution of the optical image 
-        % is not much finer than the cone photoreceptor spacing 
-        
-        sceneSpatialSamplingInRetinalMicrons = sceneXdataInRetinalMicrons(2)-sceneXdataInRetinalMicrons(1);
         pixelIndices = find(...
             (sceneXgridInRetinalMicrons >= currentSensorPositionInRetinalMicrons(1) - round(sensorSizeInMicrons(1)*0.6)) & ...
             (sceneXgridInRetinalMicrons <= currentSensorPositionInRetinalMicrons(1) + round(sensorSizeInMicrons(1)*0.6)) & ...
@@ -241,7 +247,6 @@ function StockmanLMSexcitationSequence = computeLMSstimulusSequence(sensor, scen
             (sceneYgridInRetinalMicrons <= currentSensorPositionInRetinalMicrons(2) + round(sensorSizeInMicrons(2)*0.6)) );
         [rows, cols] = ind2sub(size(sceneXgridInRetinalMicrons), pixelIndices);
             
-
         if isempty(StockmanLMSexcitationSequence)
             rowRange = min(rows):1:max(rows);
             colRange = min(cols):1:max(cols);
@@ -251,16 +256,28 @@ function StockmanLMSexcitationSequence = computeLMSstimulusSequence(sensor, scen
         end
         
         sensorViewStockmanLMSexcitations = sceneStockmanLMSexitations(rowRange,colRange,:);
-        StockmanLMSexcitationSequence(posIndex,:,:,:) = sensorViewStockmanLMSexcitations;
         
+        if (posIndex == 1)
+            StockmanLMSexcitationSequence = zeros(numel(positionIndicesToEncode), ...
+                                                  size(sensorViewStockmanLMSexcitations,1), ...
+                                                  size(sensorViewStockmanLMSexcitations, 2), ...
+                                                  size(sensorViewStockmanLMSexcitations, 3), 'single');
+        end
+        StockmanLMSexcitationSequence(kIndex,:,:,:) = single(sensorViewStockmanLMSexcitations);
+        timeAxis(kIndex) = (posIndex-1) * sensorTimeStep;
+        
+        if (~visualizeEncodingProcess)
+            continue;
+        end
+        
+        % Continue with plotting
         xGridSubsetInRetinalMicrons = sceneXgridInRetinalMicrons(rowRange, colRange);
         yGridSubsetInRetinalMicrons = sceneYgridInRetinalMicrons(rowRange, colRange);
         sensorViewXdata = squeeze(xGridSubsetInRetinalMicrons(1,:));
         sensorViewYdata = squeeze(yGridSubsetInRetinalMicrons(:,1));
 
-        % Do the plotting
         % Set the figure name
-        set(hFig, 'Name', sprintf('pos: %d / %d', posIndex,size(sensorPositionsInRetinalMicrons,1)));
+        set(hFig, 'Name', sprintf('pos: %d / %d (t: %2.4f sec)', posIndex,size(sensorPositionsInRetinalMicrons,1),timeAxis(kIndex)));
        
         % compute the cone positions on the retinal image based on the current sensor position
         coneXpos = currentSensorPositionInRetinalMicrons(1) - sensorSizeInMicrons(1)/2 +  sensorXsamplingGridInMicrons;
@@ -411,8 +428,8 @@ function StockmanLMSexcitationSequence = computeLMSstimulusSequence(sensor, scen
         end % targetCone
         
         drawnow;
-        disp('Hit enter to proceed');
-        pause
+        %disp('Hit enter to proceed');
+        %pause
     end % posIndex
 end
 
