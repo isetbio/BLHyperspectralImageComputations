@@ -28,7 +28,7 @@ function computeIsomerizations
     LMSdensities = [0.6 0.4 0.1];
     coneApertureInMicrons = 3.0;
     randomSeed = 1552784;
-    fixationDurationInMilliseconds = 300;
+    fixationDurationInMilliseconds = 200;
     fixationOverlapFactor = 0.2;            % overlapFactor of 1, results in sensor positions that just abut each other, 2 more dense 0.5 less dense
     saccadesPerScan = 10;                   % parse the eye movement data into scans, each scan having this many saccades
     saccadicScanMode = 'sequential';        % 'randomized' or 'sequential', to visit eye position grid sequentially
@@ -133,7 +133,7 @@ function computeIsomerizations
         fprintf('LMS  sequence for adapting scene took %2.2f seconds\n', toc);
         tic
         [LMSstimulusSequence, LMSstimulusSequenceTime] = computeSceneLMSstimulusSequenceGeneratedBySensorMovements(scene, sensor, retinalMicronsPerDegree);
-        printf('LMS  sequence for scene took %2.2f seconds\n', toc);
+        fprintf('LMS  sequence for scene took %2.2f seconds\n', toc);
         
         size(isomerizationRate)
         size(sensorPositions)
