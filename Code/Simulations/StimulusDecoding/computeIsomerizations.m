@@ -24,6 +24,11 @@ function computeIsomerizations
     
     % simulation time step. same for eye movements and for sensor, outersegment
     timeStepInMilliseconds = 0.1;
+    integrationTimeInMilliseconds = 50;
+    LMSdensities = [0.6 0.4 0.1];
+    coneApertureInMicrons = 3.0;
+    randomSeed = 1552784;
+    fixationDurationInMilliseconds = 300;
     fixationOverlapFactor = 0.2;            % overlapFactor of 1, results in sensor positions that just abut each other, 2 more dense 0.5 less dense
     saccadesPerScan = 10;                   % parse the eye movement data into scans, each scan having this many saccades
     saccadicScanMode = 'sequential';        % 'randomized' or 'sequential', to visit eye position grid sequentially
@@ -33,20 +38,26 @@ function computeIsomerizations
     coneRows = 20;
     
     sensorParams = struct(...
-        'coneApertureInMicrons', 3.0, ...        % custom cone aperture
-        'LMSdensities', [0.6 0.4 0.1], ...       % custom percentages of L,M and S cones
+        'coneApertureInMicrons', coneApertureInMicrons, ...        % custom cone aperture
+        'LMSdensities', LMSdensities, ...       % custom percentages of L,M and S cones
         'spatialGrid', [coneRows coneCols], ...  % generate a coneCols x coneRows cone mosaic
         'samplingIntervalInMilliseconds', timeStepInMilliseconds, ...  % time step of simulation (0.1 millisecond or smaller)
-        'integrationTimeInMilliseconds', 50, ...
-        'randomSeed', 1552784, ...
+        'integrationTimeInMilliseconds', integrationTimeInMilliseconds, ...
+        'randomSeed', randomSeed, ...
         'eyeMovementScanningParams', struct(...
             'samplingIntervalInMilliseconds', timeStepInMilliseconds, ...
-            'fixationDurationInMilliseconds', 300, ...
+            'fixationDurationInMilliseconds', fixationDurationInMilliseconds, ...
             'fixationOverlapFactor', fixationOverlapFactor, ...     
             'saccadicScanMode',  saccadicScanMode ...
         ) ...
     );
     
+    % params for the sensor that will compute excitations to the adapting scene
+    sensorAdaptingParams = sensorParams;
+    sensorAdaptingParams.eyeMovementScanningParams.fixationOverlapFactor = 0.0;
+
+    parpoolOBJ = parpool();
+	fprintf('Opened parallel pool with %d workers\n', parpoolOBJ.NumWorkers);
     
     for imageIndex = 1:numel(imageSources)
         % retrieve scene
@@ -67,47 +78,74 @@ function computeIsomerizations
         % Set mean luminance of all scenes to 400 cd/m2
         scene = sceneAdjustLuminance(scene, 200);
         
-        % Obtain the Stockman fundamentals for the wavelength sampling using in current scene
-        wavelengthSampling    = sceneGet(scene,'wave');
-        StockmanFundamentals = ieReadSpectra('stockman', wavelengthSampling);
-    
-        % insert an adapting field in the lower-left corner of the scene
-        adaptingFieldSize = [161 161];                    % adapting field size: 51 microns, 51 microns wide
-        adaptingFieldIlluminant = 'from scene';         % either 'from scene', or the name of a known illuminant, such as 'D65'
-        adaptingFieldLuminance = 100;                   % desired luminance in cd/m2   - sceneGet(scene, 'mean luminance')
-        scene = insertAdaptingField(scene, adaptingFieldSize, adaptingFieldLuminance, adaptingFieldIlluminant);
-
+        % generate adapting scene: equal size as test scene containing a uniform field
+        adaptingFieldIlluminant = 'illuminant c';         % either 'from scene', or the name of a known illuminant, such as 'D65', 'illuminant c'
+        adaptingFieldLuminance = sceneGet(scene, 'mean luminance');
+        adaptingFieldReflectance = 0.18;
+        sceneAdapting = makeAdaptingScene(scene, adaptingFieldReflectance, adaptingFieldLuminance, adaptingFieldIlluminant);
+        fprintf('Adapting scene  mean luminance: %2.2f cd/m2\n', sceneGet(sceneAdapting, 'mean luminance'));
+        fprintf('Testing  scene mean luminance: %2.2f cd/m2\n',  sceneGet(scene, 'mean luminance'));
+        
+        % for debugging purposes, add calibration stimulus on original scene
+%         adaptingFieldSize = [151 151];
+%         adaptingFieldLuminance = 100;
+%         scene = insertAdaptingFieldWithCalibrationStimulus(scene, adaptingFieldSize, adaptingFieldLuminance, adaptingFieldIlluminant);
+%         
         % Show scene
         vcAddAndSelectObject(scene); sceneWindow;
+        vcAddAndSelectObject(sceneAdapting); sceneWindow;
        
         % Compute optical image with human optics
         oi = oiCreate('human');
         oi = oiCompute(oi, scene);
         
-        % Retrieve retinal microns&degrees per pixel
-        retinalMicronsPerPixel = oiGet(oi, 'wres','microns');
-        retinalDegreesPerPixel = oiGet(oi, 'angularresolution');
-        retinalMicronsPerDegreeX = retinalMicronsPerPixel / retinalDegreesPerPixel(1);
-        retinalMicronsPerDegreeY = retinalMicronsPerPixel / retinalDegreesPerPixel(2);
-    
+        % Compute optical image of adapting scene
+        oiAdapting = oiCreate('human');
+        oiAdapting = oiCompute(oiAdapting, sceneAdapting);
+        
         % Show optical image
         vcAddAndSelectObject(oi); oiWindow;
+        vcAddAndSelectObject(oiAdapting); oiWindow;
         
         % create custom human sensor
         sensor = sensorCreate('human');
         sensor = customizeSensor(sensor, sensorParams, oi);
         
+        % create custom human sensor
+        sensorAdapting = sensorCreate('human');
+        sensorAdapting = customizeSensor(sensorAdapting, sensorAdaptingParams, oiAdapting);
+        
         % compute isomerization rage for all positions
         sensor = coneAbsorptions(sensor, oi);
+        sensorAdapting = coneAbsorptions(sensorAdapting, oiAdapting);
         
         % extract the full isomerization rate sequence across all positions
         isomerizationRate = sensorGet(sensor, 'photon rate');
-        sensorPositions   = sensorGet(sensor,'positions');
+        sensorPositions   = sensorGet(sensor, 'positions');
         
         % extract the LMS cone stimulus sequence encoded by sensor at all visited positions
+        tic
+        % Retrieve retinal microns&degrees per pixel
+        retinalMicronsPerDegree = oiGet(oi, 'wres','microns') ./ oiGet(oi, 'angular resolution');
         visualizeEncodingProcess = false;
         tic
-        [LMSstimulusSequence, LMSstimulusSequenceTime] = computeLMSstimulusSequence(sensor, scene, [retinalMicronsPerDegreeX retinalMicronsPerDegreeY], wavelengthSampling, StockmanFundamentals, visualizeEncodingProcess);
+        [LMSadaptingSequence, LMSadaptingSequenceTime] = computeSceneLMSstimulusSequenceGeneratedBySensorMovements(sceneAdapting, sensorAdapting, retinalMicronsPerDegree);
+        fprintf('LMS  sequence for adapting scene took %2.2f seconds\n', toc);
+        tic
+        [LMSstimulusSequence, LMSstimulusSequenceTime] = computeSceneLMSstimulusSequenceGeneratedBySensorMovements(scene, sensor, retinalMicronsPerDegree);
+        printf('LMS  sequence for scene took %2.2f seconds\n', toc);
+        
+        size(isomerizationRate)
+        size(sensorPositions)
+        size(LMSstimulusSequence)
+        size(LMSstimulusSequenceTime)
+        size(LMSadaptingSequence)
+        size(LMSadaptingSequenceTime)
+        pause
+        
+%         [LMSstimulusSequence, LMSstimulusSequenceTime] = computeLMSstimulusSequenceOLD(sensor, scene, retinalMicronsPerDegree, visualizeEncodingProcess);
+%         [LMSadaptingSequence, LMSadaptingSequenceTime] = computeLMSstimulusSequenceOLD(sensorAdapting, sceneAdapting, retinalMicronsPerDegree, visualizeEncodingProcess);
+        
         if (~debug)
             % we do not need the scene any more so clear it
             clear 'scene'
@@ -157,8 +195,86 @@ function computeIsomerizations
 end
 
 
-function [StockmanLMSexcitationSequence, timeAxis] = computeLMSstimulusSequence(sensor, scene, retinalMicronsPerDegree,  wavelengthSampling, StockmanFundamentals, visualizeEncodingProcess)
+function [LMSexcitationSequence, timeAxis] = computeSceneLMSstimulusSequenceGeneratedBySensorMovements(scene, sensor, retinalMicronsPerDegree)
     
+    % Retrieve sensor positions - this is in units of cones
+    sensorPositions = sensorGet(sensor,'positions');
+    
+    % Convert to units of retinal microns
+    sensorSampleSeparationInMicrons = sensorGet(sensor,'pixel size','um');
+    sensorPositionsInRetinalMicrons(:,1) = -sensorPositions(:,1)*sensorSampleSeparationInMicrons(1);
+    sensorPositionsInRetinalMicrons(:,2) =  sensorPositions(:,2)*sensorSampleSeparationInMicrons(2);
+    
+    % Compute sensor size in retinal microns
+    sensorRowsCols = sensorGet(sensor, 'size');
+    sensorWidthInMicrons = sensorRowsCols(2) * sensorSampleSeparationInMicrons(2);
+    sensorHeightInMicrons = sensorRowsCols(1) * sensorSampleSeparationInMicrons(1);
+    
+    % Retrieve scene spatial support in scenemicrons
+    sceneSpatialSupportInMicrons = sceneGet(scene,'spatial support','microns');
+    
+    % Convert from scene microns to degrees of visual angle
+    micronsPerSample = sceneGet(scene,'distPerSamp','microns');
+    degreesPerSample = sceneGet(scene,'deg per samp');
+    sceneSpatialSupportInDegrees(:,:,1) = sceneSpatialSupportInMicrons(:,:,1) / micronsPerSample(1) * degreesPerSample;
+    sceneSpatialSupportInDegrees(:,:,2) = sceneSpatialSupportInMicrons(:,:,2) / micronsPerSample(2) * degreesPerSample;
+    
+    % Convert from degrees of visual angle to retinal microns
+    sceneSpatialSupportInRetinalMicrons(:,:,1) = sceneSpatialSupportInDegrees(:,:,1) * retinalMicronsPerDegree(1);
+    sceneSpatialSupportInRetinalMicrons(:,:,2) = sceneSpatialSupportInDegrees(:,:,2) * retinalMicronsPerDegree(2);
+    
+    % Obtain the scene's Stockman LMS excitation maps with a spatial resolution = 0.5 microns
+    sceneResamplingResolutionInRetinalMicrons = 0.5;
+    sceneXdataInRetinalMicrons = squeeze(sceneSpatialSupportInRetinalMicrons(1,:,1));
+    sceneYdataInRetinalMicrons = squeeze(sceneSpatialSupportInRetinalMicrons(:,1,2));
+    [sceneLMSexitations, sceneXgridInRetinalMicrons, sceneYgridInRetinalMicrons] = ...
+        resampleScene(sceneGet(scene, 'lms'), sceneXdataInRetinalMicrons, sceneYdataInRetinalMicrons, sceneResamplingResolutionInRetinalMicrons);
+    sceneLMSexitations = single(sceneLMSexitations);
+    
+    % Go through all sensor positions and compute the corresponding scene LMS excitation
+    positionsNum = size(sensorPositionsInRetinalMicrons,1);
+    
+    % Preallocate memory
+    posIndex = 1;
+    currentSensorPositionInRetinalMicrons = sensorPositionsInRetinalMicrons(posIndex,:);
+    % Determine the scene rows and cols that lie under the sensor's current position
+    pixelIndices = find(...
+            (sceneXgridInRetinalMicrons >= currentSensorPositionInRetinalMicrons(1) - round(sensorWidthInMicrons*0.6)) & ...
+            (sceneXgridInRetinalMicrons <= currentSensorPositionInRetinalMicrons(1) + round(sensorWidthInMicrons*0.6)) & ...
+            (sceneYgridInRetinalMicrons >= currentSensorPositionInRetinalMicrons(2) - round(sensorHeightInMicrons*0.6)) & ...
+            (sceneYgridInRetinalMicrons <= currentSensorPositionInRetinalMicrons(2) + round(sensorHeightInMicrons*0.6)) );
+    [rows, cols] = ind2sub(size(sceneXgridInRetinalMicrons), pixelIndices);
+    % Retrieve LMS excitations for current position
+    rowRange = min(rows):1:max(rows); colRange = min(cols):1:max(cols);  
+    LMSexcitationSequence = zeros(positionsNum, numel(rowRange), numel(colRange), 3, 'single');
+                                              
+    parfor posIndex = 1:positionsNum
+        % Retrieve sensor current position
+        currentSensorPositionInRetinalMicrons = sensorPositionsInRetinalMicrons(posIndex,:);
+        
+        % Determine the scene rows and cols that lie under the sensor's current position
+        pixelIndices = find(...
+            (sceneXgridInRetinalMicrons >= currentSensorPositionInRetinalMicrons(1) - round(sensorWidthInMicrons*0.6)) & ...
+            (sceneXgridInRetinalMicrons <= currentSensorPositionInRetinalMicrons(1) + round(sensorWidthInMicrons*0.6)) & ...
+            (sceneYgridInRetinalMicrons >= currentSensorPositionInRetinalMicrons(2) - round(sensorHeightInMicrons*0.6)) & ...
+            (sceneYgridInRetinalMicrons <= currentSensorPositionInRetinalMicrons(2) + round(sensorHeightInMicrons*0.6)) );
+        [rows, cols] = ind2sub(size(sceneXgridInRetinalMicrons), pixelIndices);
+        
+        % Retreieve LMS excitations for current position
+        rowRange = min(rows):1:max(rows); colRange = min(cols):1:max(cols);
+        LMSexcitationSequence(posIndex,:,:,:) = sceneLMSexitations(rowRange,colRange,:);
+    end % posIndex
+    
+    % compute time axis
+    timeAxis = (0:positionsNum-1) * sensorGet(sensor, 'time interval');
+end
+
+function [StockmanLMSexcitationSequence, timeAxis] = computeLMSstimulusSequenceOLD(sensor, scene, retinalMicronsPerDegree, visualizeEncodingProcess)
+    
+    % Obtain the Stockman fundamentals for the wavelength sampling using in current scene
+    wavelengthSampling   = sceneGet(scene,'wave');
+    StockmanFundamentals = ieReadSpectra('stockman', wavelengthSampling);
+        
     % compute sensor positions (due to eye movements) in microns
     sensorSampleSeparationInMicrons = sensorGet(sensor,'pixel size','um');
     pos = sensorGet(sensor,'positions');
@@ -167,6 +283,7 @@ function [StockmanLMSexcitationSequence, timeAxis] = computeLMSstimulusSequence(
     
     sensorPositionsInRetinalMicrons = pos * 0;
     sensorPositionsInRetinalMicrons(:,1) = -pos(:,1)*sensorSampleSeparationInMicrons(1);
+    
     sensorPositionsInRetinalMicrons(:,2) =  pos(:,2)*sensorSampleSeparationInMicrons(2);
 
     % compute sensor cone sampling grid
@@ -536,11 +653,17 @@ function sensor = customizeSensor(sensor, sensorParams, opticalImage)
     sensor = sensorSet(sensor,'eyemove', eyeMovement);
             
     % generate the fixation eye movement sequence
-    xNodes = round(0.35*oiGet(opticalImage, 'width',  'microns')/sensorGet(sensor, 'width', 'microns')*eyeMovementScanningParams.fixationOverlapFactor);
-    yNodes = round(0.35*oiGet(opticalImage, 'height', 'microns')/sensorGet(sensor, 'height', 'microns')*eyeMovementScanningParams.fixationOverlapFactor);
-    fx = sensorParams.spatialGrid(1)/eyeMovementScanningParams.fixationOverlapFactor;
-    saccadicTargetPos = generateSaccadicTargets(xNodes, yNodes, fx, sensorParams.coneApertureInMicrons, sensorParams.eyeMovementScanningParams.saccadicScanMode);
+    if (eyeMovementScanningParams.fixationOverlapFactor == 0)
+        xNodes = 0;
+        yNodes = 0;
+        fx = 1.0;
+    else
+        xNodes = round(0.35*oiGet(opticalImage, 'width',  'microns')/sensorGet(sensor, 'width', 'microns')*eyeMovementScanningParams.fixationOverlapFactor);
+        yNodes = round(0.35*oiGet(opticalImage, 'height', 'microns')/sensorGet(sensor, 'height', 'microns')*eyeMovementScanningParams.fixationOverlapFactor);
+        fx = sensorParams.spatialGrid(1)/eyeMovementScanningParams.fixationOverlapFactor;  
+    end
     
+    saccadicTargetPos = generateSaccadicTargets(xNodes, yNodes, fx, sensorParams.coneApertureInMicrons, sensorParams.eyeMovementScanningParams.saccadicScanMode);
     eyeMovementsNum = size(saccadicTargetPos,1) * round(eyeMovementScanningParams.fixationDurationInMilliseconds / eyeMovementScanningParams.samplingIntervalInMilliseconds);
     eyeMovementPositions = zeros(eyeMovementsNum,2);
     sensor = sensorSet(sensor,'positions', eyeMovementPositions);
@@ -582,7 +705,50 @@ function saccadicTargetPos = generateSaccadicTargets(xNodes, yNodes, fx, coneApe
 end
 
 
-function scene = insertAdaptingField(scene, adaptingFieldSize, adaptingFieldLuminance, adaptingFieldIlluminant)
+
+function scene = makeAdaptingScene(originalScene, adaptingFieldReflectance, adaptingFieldLuminance, adaptingFieldIlluminant)
+
+    scene = originalScene;
+    % Retrieve scene wavelength sampling 
+    wavelengthSampling = sceneGet(scene,'wave');
+    
+    % Get the reflectance of the white patch in the MacBeth chart
+    fName = fullfile(isetRootPath,'data','surfaces','macbethChart.mat');
+    macbethChart = ieReadSpectra(fName, wavelengthSampling);
+    
+    patchNo = 12;  % scale the 3rd (middle) gray patch
+    macbethGrayPatchMeanReflectanceCurve = squeeze(macbethChart(:,patchNo));
+    macbethGrayPatchMeanReflectance = mean(macbethGrayPatchMeanReflectanceCurve);
+    matchingMacbethReflectance = macbethGrayPatchMeanReflectanceCurve / macbethGrayPatchMeanReflectance * adaptingFieldReflectance;
+    
+    % choose an illuminant: either the scene's or D65
+    if (strcmp(adaptingFieldIlluminant, 'from scene'))
+        illuminantToUse = sceneGet(scene, 'illuminant');
+    else
+        illuminantToUse = illuminantCreate(adaptingFieldIlluminant,wavelengthSampling);
+    end
+    
+    % if an adapting field luminance is passed, set the illuminant to this luminance
+    if (~isempty(adaptingFieldLuminance))
+        illuminantPhotons = illuminantGet(illuminantToUse, 'photons');
+        luminance = ieLuminanceFromPhotons(illuminantPhotons, wavelengthSampling);
+        illuminantPhotons = illuminantPhotons / luminance * adaptingFieldLuminance;
+        illuminantToUse = illuminantSet(illuminantToUse, 'photons', illuminantPhotons);
+        luminanceAfter = ieLuminanceFromPhotons(illuminantPhotons, wavelengthSampling);
+    end
+    
+    % Illuminate scene with chosen illuminant
+    adaptationPhotonRate = matchingMacbethReflectance .* reshape(illuminantGet(illuminantToUse, 'photons'), size(matchingMacbethReflectance));
+    
+    % Hack. Set the scene photons directly, i.e., without going through isetbio.
+    scene.data.photons = ...
+            repmat(reshape(adaptationPhotonRate, [1 1 numel(adaptationPhotonRate)]), [sceneGet(scene, 'rows') sceneGet(scene, 'cols') 1]);
+        
+    % Finally set the scene illuminant
+    sceneSet(scene, 'illuminant', illuminantToUse);
+end
+
+function scene = insertAdaptingFieldWithCalibrationStimulus(scene, adaptingFieldSize, adaptingFieldLuminance, adaptingFieldIlluminant)
 
     % Retrieve scene wavelength sampling 
     wavelengthSampling  = sceneGet(scene,'wave');
@@ -600,7 +766,7 @@ function scene = insertAdaptingField(scene, adaptingFieldSize, adaptingFieldLumi
         illuminantToUse = illuminantCreate(adaptingFieldIlluminant,wavelengthSampling);
     end
     
-    % illuminate patch
+    % illuminate scene with chosen illuminant
     adaptationPhotonRate = macbethReflectance .* reshape(illuminantGet(illuminantToUse, 'photons'), size(macbethReflectance));
         
     % adjust adaptation field luminance to target luminance
