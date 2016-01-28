@@ -25,12 +25,12 @@ function viewScan
 
         photoCurrents = osGet(osB, 'ConeCurrentSignal'); 
         
-        % Smooth photocurrent using a Gaussian temporal filter with a 10 msec sigma
-        tauInSeconds = 5/1000;
-        fprintf('Lowpassing raw photocurrents with a filter with %2.2f msec time constant\n', tauInSeconds*1000);
-        tauInSamples = round(tauInSeconds / sensorGet(scanSensor, 'time interval'));
+        % Smooth photocurrent using a Gaussian temporal filter with a 5 msec sigma
+        tauInMilliseconds = 2.0;
+        fprintf('Lowpassing raw photocurrents with a filter with %2.2f msec time constant\n', tauInMilliseconds);
+        tauInSamples = round(tauInMilliseconds / 1000 / sensorGet(scanSensor, 'time interval'));
         kernelTimeSupport = ((-3*tauInSamples):(3*tauInSamples))*sensorGet(scanSensor, 'time interval');
-        kernel = exp(-0.5*(kernelTimeSupport/tauInSeconds).^2);
+        kernel = exp(-0.5*(kernelTimeSupport/(tauInMilliseconds/1000)).^2);
         kernel = kernel / sum(kernel);
         photoCurrentsLowPass = photoCurrents*0;
         for i = 1:size(photoCurrents,1)
@@ -40,13 +40,17 @@ function viewScan
         end
         
         % Substract baseline (determined by the last point in the photocurrent time series)
-        binsToRemove = round(sensorAdaptationFieldParams.eyeMovementScanningParams.fixationDurationInMilliseconds/2/1000*sensorGet(scanSensor, 'time interval'));
+        binsToRemove = round(0.25*sensorAdaptationFieldParams.eyeMovementScanningParams.fixationDurationInMilliseconds/1000/sensorGet(scanSensor, 'time interval'));
         
-        
-        lastBinsRaw = size(photoCurrents,3)-binsToRemove+(-binsToRemove/4:binsToRemove/4);
-        photoCurrents = bsxfun(@minus, photoCurrents, photoCurrents(:,:,lastBinsRaw));
-        lastBinsLowPass = size(photoCurrentsLowPass,3)-binsToRemove;
+        lastBinsRaw = size(photoCurrents,3)-binsToRemove+(-round(binsToRemove/4):round(binsToRemove/4));
+        photoCurrents = bsxfun(@minus, photoCurrents, mean(photoCurrents(:,:, lastBinsRaw),3));
+        lastBinsLowPass = size(photoCurrentsLowPass,3)-binsToRemove
         photoCurrentsLowPass = bsxfun(@minus, photoCurrentsLowPass, photoCurrentsLowPass(:,:,lastBinsLowPass));
+        
+        fprintf('Upsampling low-passed photocurrent maps.\n');
+        [LconePhotocurrentMapLowPass, MconePhotocurrentMapLowPass, SconePhotocurrentMapLowPass, photocurrentMapXdataInRetinalMicrons, photocurrentMapYdataInRetinalMicrons, ...
+            LconeRows, LconeCols, MconeRows, MconeCols, SconeRows, SconeCols] = generateIsomerizationMaps(scanSensor, photoCurrentsLowPass);
+
         
         % Compute upsampled photocurrent maps for visualization
         fprintf('Upsampling raw photocurrent maps.\n');
@@ -54,10 +58,7 @@ function viewScan
             LconeRows, LconeCols, MconeRows, MconeCols, SconeRows, SconeCols] = generateIsomerizationMaps(scanSensor, photoCurrents);
 
         
-        fprintf('Upsampling low-passed photocurrent maps.\n');
-        [LconePhotocurrentMapLowPass, MconePhotocurrentMapLowPass, SconePhotocurrentMapLowPass, photocurrentMapXdataInRetinalMicrons, photocurrentMapYdataInRetinalMicrons, ...
-            LconeRows, LconeCols, MconeRows, MconeCols, SconeRows, SconeCols] = generateIsomerizationMaps(scanSensor, photoCurrentsLowPass);
-
+       
         
         
         % Compute upsampled isomerization maps for visualization
@@ -113,8 +114,10 @@ function viewScan
         [~, ix] = min(abs(LMSexcitationYdataInRetinalMicrons - targetSconeYpos));
         targetSconeRowInExcitationMap = ix;
         
-        figure(1);
+        hFig = figure(1);
         clf;
+        set(hFig, 'Color', [0 0 0 ], 'Position', [10 10 1438 1298]);
+        
         subplot(3,1,1)
         hold on;
         
@@ -122,16 +125,15 @@ function viewScan
         plot(scanPlusAdaptationFieldTimeAxis, squeeze(LconePhotocurrentMapLowPass(LconeRows(targetLconeRowIndex), LconeCols(targetLconeColIndex), :))/LMphotocurrentRange(2), '-', 'Color', [1 1 0.9], 'LineWidth', 2.0);
         plot(scanPlusAdaptationFieldTimeAxis, squeeze(LconeIsomerizationMap(LconeRows(targetLconeRowIndex), LconeCols(targetLconeColIndex), :))/LMisomerizationRange(2), 'r-', 'LineWidth', 2.0);
         plot(scanPlusAdaptationFieldTimeAxis, squeeze(scanPlusAdaptationFieldLMSexcitationSequence(:, targetLconeRowInExcitationMap, targetLconeColInExcitationMap, 1))/LMconeExcitationRange(2), 'm-', 'LineWidth', 2.0);
-        plot(kernelTimeSupport, kernel, 'w-', 'LineWidth', 2.0);
+        plot(kernelTimeSupport+0.25, 50*kernel+0.5, 'w-', 'LineWidth', 1.0);
         % plot the analysis limits
-        plot(scanPlusAdaptationFieldTimeAxis(binsToRemove)*[1 1],     [0 1], '-', 'Color', [0.5 0.5 1.0]);
-        plot(scanPlusAdaptationFieldTimeAxis(end-binsToRemove)*[1 1], [0 1], '-', 'Color', [0.5 0.5 1.0]);
-        
-        
+        plot(scanPlusAdaptationFieldTimeAxis(binsToRemove)*[1 1],     [-1 1], '-', 'Color', [0.5 0.5 1.0]);
+        plot(scanPlusAdaptationFieldTimeAxis(end-binsToRemove)*[1 1], [-1 1], '-', 'Color', [0.5 0.5 1.0]);
         hold off;
+        box on
         h1 = legend('Lcone photocurrent (raw)', 'Lcone photocurrent (lowpass)', 'Lcone isomerization rate', 'Lcone excitation (Stockman)', 'smoothing kernel', 'analysisTbegin', 'analysisTend');
         set(h1, 'FontSize', 12, 'Color', [0.2 0.2 0.2], 'TextColor', [0.8 0.8 0.8]);
-        set(gca, 'Color', [0.2 0.2 0.2], 'XLim', [scanPlusAdaptationFieldTimeAxis(1) scanPlusAdaptationFieldTimeAxis(end)]);
+        set(gca, 'XColor', [1 1 1], 'YColor', [1 1 1], 'FontSize', 12, 'Color', [0.2 0.2 0.2], 'XLim', [scanPlusAdaptationFieldTimeAxis(1) scanPlusAdaptationFieldTimeAxis(end)], 'YLim', [-1 1]);
         
         subplot(3,1,2);
         hold on
@@ -140,9 +142,10 @@ function viewScan
         plot(scanPlusAdaptationFieldTimeAxis, squeeze(MconeIsomerizationMap(MconeRows(targetMconeRowIndex), MconeCols(targetMconeColIndex), :))/LMisomerizationRange(2), 'g-', 'LineWidth', 2.0);
         plot(scanPlusAdaptationFieldTimeAxis, squeeze(scanPlusAdaptationFieldLMSexcitationSequence(:, targetMconeRowInExcitationMap, targetMconeColInExcitationMap, 2))/LMconeExcitationRange(2), 'y-', 'LineWidth', 2.0);
         hold off;
+        box on
         h2 = legend('Mcone photocurrent (raw)', 'Mcone photocurrent (lowpass)', 'Mcone isomerization rate', 'Mcone excitation (Stockman)');
         set(h2, 'FontSize', 12, 'Color', [0.2 0.2 0.2], 'TextColor', [0.8 0.8 0.8]);
-        set(gca, 'Color', [0.2 0.2 0.2], 'XLim', [scanPlusAdaptationFieldTimeAxis(1) scanPlusAdaptationFieldTimeAxis(end)]);
+        set(gca, 'XColor', [1 1 1], 'YColor', [1 1 1], 'FontSize', 12, 'Color', [0.2 0.2 0.2], 'XLim', [scanPlusAdaptationFieldTimeAxis(1) scanPlusAdaptationFieldTimeAxis(end)], 'YLim', [-1 1]);
         
         subplot(3,1,3)
         hold on;
@@ -151,9 +154,10 @@ function viewScan
         plot(scanPlusAdaptationFieldTimeAxis, squeeze(SconeIsomerizationMap(SconeRows(targetSconeRowIndex), SconeCols(targetSconeColIndex), :))/SisomerizationRange(2), 'b-', 'LineWidth', 2.0);
         plot(scanPlusAdaptationFieldTimeAxis, squeeze(scanPlusAdaptationFieldLMSexcitationSequence(:, targetSconeRowInExcitationMap, targetSconeColInExcitationMap, 3))/SconeExcitationRange(2), 'c-', 'LineWidth', 2.0);
         hold off;
+        box on
         h3 = legend('Scone photocurrent (raw)', 'Scone photocurrent (lowpass)', 'Scone isomerization rate', 'Scone excitation (Stockman)');
         set(h3, 'FontSize', 12, 'Color', [0.2 0.2 0.2], 'TextColor', [0.8 0.8 0.8]);
-        set(gca, 'Color', [0.2 0.2 0.2], 'XLim', [scanPlusAdaptationFieldTimeAxis(1) scanPlusAdaptationFieldTimeAxis(end)]);
+        set(gca, 'XColor', [1 1 1], 'YColor', [1 1 1], 'FontSize', 12, 'Color', [0.2 0.2 0.2], 'XLim', [scanPlusAdaptationFieldTimeAxis(1) scanPlusAdaptationFieldTimeAxis(end)], 'YLim', [-1 1]);
         drawnow
         
         fprintf('Displaying ... \n');

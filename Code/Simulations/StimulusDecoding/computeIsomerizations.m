@@ -56,8 +56,8 @@ function computeIsomerizations
     % params for the sensor that will compute excitations to the adapting scene
     sensorAdaptationFieldParams = sensorParams;
     sensorAdaptationFieldParams.eyeMovementScanningParams.fixationOverlapFactor = 0.0;
-    % Allow 300 msec inter-stimulus interval (stimulus = adaptation field) for the outer segment response to return to baseline
-    sensorAdaptationFieldParams.eyeMovementScanningParams.fixationDurationInMilliseconds = 300;  
+    % Allow 400 msec inter-stimulus interval (stimulus = adaptation field) for the outer segment response to return to baseline
+    sensorAdaptationFieldParams.eyeMovementScanningParams.fixationDurationInMilliseconds = 400;  
     
 %     poolobj = gcp('nocreate'); % If no pool, do not create new one.
 %     if isempty(poolobj)
