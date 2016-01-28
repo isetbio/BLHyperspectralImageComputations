@@ -28,7 +28,7 @@ function computeIsomerizations
     LMSdensities = [0.6 0.4 0.1];
     coneApertureInMicrons = 3.0;
     randomSeed = 1552784;
-    fixationDurationInMilliseconds = 100;
+    fixationDurationInMilliseconds = 100;   % 100 millisecond fixations - stimulus duration
     fixationOverlapFactor = 0.1;            % overlapFactor of 1, results in sensor positions that just abut each other, 2 more dense 0.5 less dense
     saccadesPerScan = 10;                   % parse the eye movement data into scans, each scan having this many saccades
     saccadicScanMode = 'sequential';        % 'randomized' or 'sequential', to visit eye position grid sequentially
@@ -56,7 +56,8 @@ function computeIsomerizations
     % params for the sensor that will compute excitations to the adapting scene
     sensorAdaptationFieldParams = sensorParams;
     sensorAdaptationFieldParams.eyeMovementScanningParams.fixationOverlapFactor = 0.0;
-    sensorAdaptationFieldParams.eyeMovementScanningParams.fixationDurationInMilliseconds = 200;
+    % Allow 300 msec inter-stimulus interval (stimulus = adaptation field) for the outer segment response to return to baseline
+    sensorAdaptationFieldParams.eyeMovementScanningParams.fixationDurationInMilliseconds = 300;  
     
 %     poolobj = gcp('nocreate'); % If no pool, do not create new one.
 %     if isempty(poolobj)
@@ -243,7 +244,7 @@ function [LMSexcitationSequence, timeAxis, sceneSensorViewXdataInRetinalMicrons,
     sensorPositions = sensorGet(sensor,'positions');
     
     % Convert to units of retinal microns
-    sensorSampleSeparationInMicrons = sensorGet(sensor,'pixel size','um')
+    sensorSampleSeparationInMicrons = sensorGet(sensor,'pixel size','um');
     sensorPositionsInRetinalMicrons(:,1) = -sensorPositions(:,1)*sensorSampleSeparationInMicrons(1);
     sensorPositionsInRetinalMicrons(:,2) =  sensorPositions(:,2)*sensorSampleSeparationInMicrons(2);
     
