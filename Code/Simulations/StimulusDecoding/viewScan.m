@@ -3,19 +3,30 @@ function viewScan
     % Spacify images
     imageSources = {...
         {'manchester_database', 'scene1'} ...
-        {'manchester_database', 'scene2'} ...
-        {'manchester_database', 'scene3'} ...
-        {'manchester_database', 'scene4'} ...
+    %    {'manchester_database', 'scene2'} ...
+    %    {'manchester_database', 'scene3'} ...
+    %    {'manchester_database', 'scene4'} ...
     %    {'stanford_database', 'StanfordMemorial'} ...
         };
     
     for imageIndex = 1:numel(imageSources)
         imsource = imageSources{imageIndex};
-        
+        scanSensor = [];
+        scanPlusAdaptationFieldTimeAxis = [];
+        scanPlusAdaptationFieldLMSexcitationSequence = [];
+        LMSexcitationXdataInRetinalMicrons = [];
+        LMSexcitationYdataInRetinalMicrons = [];
+        sensorAdaptationFieldParams = [];
         for scanIndex = 1:1
             scanFilename = sprintf('%s_%s_scan%d.mat', imsource{1}, imsource{2}, scanIndex);
             whos('-file', scanFilename)
-            load(scanFilename, 'scanSensor', 'scanPlusAdaptationFieldTimeAxis', 'scanPlusAdaptationFieldLMSexcitationSequence', 'LMSexcitationXdataInRetinalMicrons', 'LMSexcitationYdataInRetinalMicrons', 'sensorAdaptationFieldParams');
+            load(scanFilename, ...
+                'scanSensor', ...
+                'scanPlusAdaptationFieldTimeAxis', ...
+                'scanPlusAdaptationFieldLMSexcitationSequence', ...
+                'LMSexcitationXdataInRetinalMicrons', ...
+                'LMSexcitationYdataInRetinalMicrons', ...
+                'sensorAdaptationFieldParams');
         end
                 
         % Compute outer-segment response
@@ -44,7 +55,7 @@ function viewScan
         
         lastBinsRaw = size(photoCurrents,3)-binsToRemove+(-round(binsToRemove/4):round(binsToRemove/4));
         photoCurrents = bsxfun(@minus, photoCurrents, mean(photoCurrents(:,:, lastBinsRaw),3));
-        lastBinsLowPass = size(photoCurrentsLowPass,3)-binsToRemove
+        lastBinsLowPass = size(photoCurrentsLowPass,3)-binsToRemove;
         photoCurrentsLowPass = bsxfun(@minus, photoCurrentsLowPass, photoCurrentsLowPass(:,:,lastBinsLowPass));
         
         fprintf('Upsampling low-passed photocurrent maps.\n');
@@ -57,9 +68,6 @@ function viewScan
         [LconePhotocurrentMap, MconePhotocurrentMap, SconePhotocurrentMap, photocurrentMapXdataInRetinalMicrons, photocurrentMapYdataInRetinalMicrons, ...
             LconeRows, LconeCols, MconeRows, MconeCols, SconeRows, SconeCols] = generateIsomerizationMaps(scanSensor, photoCurrents);
 
-        
-       
-        
         
         % Compute upsampled isomerization maps for visualization
         fprintf('Upsampling isomerization maps.\n');
