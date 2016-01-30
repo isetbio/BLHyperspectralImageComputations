@@ -12,9 +12,9 @@ function computeIsomerizations
     
     % Spacify images
     imageSources = {...
-        {'manchester_database', 'scene1'} ...
+    %    {'manchester_database', 'scene1'} ...
     %    {'manchester_database', 'scene2'} ...
-    %    {'manchester_database', 'scene3'} ...
+        {'manchester_database', 'scene3'} ...
     %    {'manchester_database', 'scene4'} ...
     %    {'stanford_database', 'StanfordMemorial'} ...
         };
@@ -29,13 +29,13 @@ function computeIsomerizations
     coneApertureInMicrons = 3.0;
     randomSeed = 1552784;
     fixationDurationInMilliseconds = 100;   % 100 millisecond fixations - stimulus duration
-    fixationOverlapFactor = 0.03;           % overlapFactor of 1 results in sensor positions that just abut each other, 2 more dense, 0.5 less dense
+    fixationOverlapFactor = 0.1;           % overlapFactor of 1 results in sensor positions that just abut each other, 2 more dense, 0.5 less dense
     saccadesPerScan = 3;                   % parse the eye movement data into scans, each scan having this many saccades
     saccadicScanMode = 'sequential';        % 'randomized' or 'sequential', to visit eye position grid sequentially
     debug = true                            % set to true, to see the eye scanning and the responses
     
-    coneCols = 5;
-    coneRows = 10;
+    coneCols = 17;
+    coneRows = 20;
     
     
     sensorParams = struct(...
@@ -126,22 +126,20 @@ function computeIsomerizations
         sensorAdaptationField = customizeSensor(sensorAdaptationField, sensorAdaptationFieldParams, oiAdaptationField);
         
         % compute isomerization rage for all positions
+        fprintf('Computing isomerization rates.\n');
         sensor = coneAbsorptions(sensor, oi);
         sensorAdaptationField = coneAbsorptions(sensorAdaptationField, oiAdaptationField);
         
         % Retrieve retinal microns/degree
         retinalMicronsPerDegree = oiGet(oi, 'wres','microns') ./ oiGet(oi, 'angular resolution');
-        visualizeEncodingProcess = false;
         
         % Extract the LMS cone stimulus sequence encoded by sensor at all visited positions
+        fprintf('Computing Stockman LMS excitation sequence.\n');
         [LMSAdaptionFieldSequence, LMSadaptationFieldSequenceTime, LMSadaptationFieldXdataInRetinalMicrons, LMSadaptationFieldYdataInRetinalMicrons] = ...
             computeSceneLMSstimulusSequenceGeneratedBySensorMovements(sceneAdaptationField, sensorAdaptationField, retinalMicronsPerDegree);
         [LMSexcitationSequence, LMSexcitationSequenceTime, LMSexcitationXdataInRetinalMicrons, LMSexcitationYdataInRetinalMicrons] = ...
             computeSceneLMSstimulusSequenceGeneratedBySensorMovements(scene, sensor, retinalMicronsPerDegree);
-        
-%          [LMSstimulusSequence, LMSstimulusSequenceTime] = computeLMSstimulusSequenceOLD(sensor, scene, retinalMicronsPerDegree, visualizeEncodingProcess);
-%          [LMSAdaptionFieldSequence, LMSAdaptionFieldSequenceTime] = computeLMSstimulusSequenceOLD(sensorAdaptationField, sceneAdaptationField, retinalMicronsPerDegree, visualizeEncodingProcess);
-%         
+           
         
         % extract the full isomerization rate sequence across all positions
         isomerizationRate = sensorGet(sensor, 'photon rate');
@@ -149,7 +147,6 @@ function computeIsomerizations
         
         isomerizationRateAdaptationField = sensorGet(sensorAdaptationField, 'photon rate');
         sensorPositionsAdaptationField   = sensorGet(sensorAdaptationField, 'positions');
-        
         
         % parse the data into scans, each scan having saccadesPerScansaccades
         positionsPerFixation = round(sensorParams.eyeMovementScanningParams.fixationDurationInMilliseconds / sensorParams.eyeMovementScanningParams.samplingIntervalInMilliseconds);
@@ -170,6 +167,8 @@ function computeIsomerizations
             positionIndices = 1 + (((startingSaccade-1)*positionsPerFixation : endingSaccade*positionsPerFixation-1));
             fprintf('\tAnalyzing scan %d (positions: %d-%4d)\n', scanIndex, positionIndices(1), positionIndices(end));
             
+            scanLMSexcitationSequence = LMSexcitationSequence(positionIndices, :,:,:);
+            scanLMSAdaptionFieldSequence = LMSAdaptionFieldSequence;
             scanIsomerizationRates = isomerizationRate(:,:,positionIndices);
             scanPositions          = sensorPositions(positionIndices,:);
             
@@ -187,14 +186,14 @@ function computeIsomerizations
                 binIndices2 = (1+timeBins2):timeBins2+positionsPerFixationAdaptationField;
                 scanPlusAdaptationFieldIsomerizationRates(:,:,binIndices2) = isomerizationRateAdaptationField;
                 scanPlusAdaptationFieldPositions(binIndices2,:)            = sensorPositionsAdaptationField;
-                scanPlusAdaptationFieldLMSexcitationSequence(binIndices2,:,:,:) = LMSAdaptionFieldSequence;
+                scanPlusAdaptationFieldLMSexcitationSequence(binIndices2,:,:,:) = scanLMSAdaptionFieldSequence;
                 
                 % part2: isomerizations due to the scanned scene
                 binIndices1 = (1+timeBins1):timeBins1+positionsPerFixation;
                 binIndices2 = binIndices2(end) + (1:positionsPerFixation);
                 scanPlusAdaptationFieldIsomerizationRates(:,:,binIndices2) = scanIsomerizationRates(:,:, binIndices1);
                 scanPlusAdaptationFieldPositions(binIndices2, :)           = scanPositions(binIndices1,:);
-                scanPlusAdaptationFieldLMSexcitationSequence(binIndices2, :,:,:) = LMSexcitationSequence(binIndices1,:,:,:);
+                scanPlusAdaptationFieldLMSexcitationSequence(binIndices2, :,:,:) = scanLMSexcitationSequence(binIndices1,:,:,:);
             end
             
             % add trailing adaptation field data
@@ -210,10 +209,29 @@ function computeIsomerizations
             scanSensor = sensorSet(scanSensor, 'photon rate', scanPlusAdaptationFieldIsomerizationRates);
             scanSensor = sensorSet(scanSensor, 'positions',   scanPlusAdaptationFieldPositions);
 
+            % Compute outer-segment response
+            fprintf('Computing outer segment response\n');
+            osB = osBioPhys();
+            osB.osSet('noiseFlag', 1);
+            osB.osCompute(scanSensor);
+            photoCurrents = osGet(osB, 'ConeCurrentSignal');
+        
+            % Downsample all time series to a resolution of 1 millisecond to save space and make decoding faster
+            newTimeStepInMilliseconds = 1.0;
+            visualizePart = false;
+            fprintf('Downsampling to a resolution of %2.2f milliseconds\n', newTimeStepInMilliseconds);
+            [scanPlusAdaptationFieldTimeAxis, scanPlusAdaptationFieldLMSexcitationSequence, photoCurrents, scanSensor] = ...
+                downSample(scanPlusAdaptationFieldTimeAxis, scanPlusAdaptationFieldLMSexcitationSequence, photoCurrents, scanSensor, newTimeStepInMilliseconds/1000.0, visualizePart);
+            sensorParams.samplingIntervalInMilliseconds = newTimeStepInMilliseconds;
+            sensorParams.eyeMovementScanningParams.samplingIntervalInMilliseconds = newTimeStepInMilliseconds;
+            sensorAdaptationFieldParams.samplingIntervalInMilliseconds = newTimeStepInMilliseconds;
+            sensorAdaptationFieldParams.eyeMovementScanningParams.samplingIntervalInMilliseconds = newTimeStepInMilliseconds;
+            
+    
             fprintf('\n\tSaving data ...');
             % save the scanSensor and the corresponding LMS excitation sequence
             fileName = sprintf('%s_%s_scan%d.mat', imsource{1}, imsource{2}, scanIndex);
-            save(fileName, 'scanSensor', 'scanPlusAdaptationFieldLMSexcitationSequence', ...
+            save(fileName, 'scanSensor', 'photoCurrents', 'scanPlusAdaptationFieldLMSexcitationSequence', ...
                 'scanPlusAdaptationFieldTimeAxis', 'LMSexcitationXdataInRetinalMicrons', 'LMSexcitationYdataInRetinalMicrons', ...
                 'oi', 'oiAdaptationField', 'scene', 'sceneAdaptationField', ...
                 'sensorParams', 'sensorAdaptationFieldParams', ...
@@ -221,9 +239,6 @@ function computeIsomerizations
             fprintf('Saved scene scan LMS excitation and isomerization responses in %s\n', fileName);
             
             if (debug)
-                osB = osBioPhys();
-                osB.osSet('noiseFlag', 1);
-                osB.osCompute(scanSensor);
                 figNum = 200+scanIndex;
                 osWindow(figNum, 'biophys-based outer segment', osB, scanSensor, oi, scene);
             end
@@ -233,6 +248,118 @@ function computeIsomerizations
         fileName = sprintf('%s_%s_opticalImage.mat', imsource{1}, imsource{2});
         save(fileName, 'oi', 'scansNum');
     end % imageIndex
+end
+
+
+function [timeAxisSubSampled, LMSexcitationSequenceSubSampled, photoCurrentsSubSampled, sensorSubSampled] = ...
+                downSample(timeAxis, LMSexcitationSequence, photoCurrents, sensor, newSensorTimeInterval, visualizePart)
+       
+    % Before downsampling, convolve with a Gaussian kernel whose 6*sigma = newSensorTimeInterval
+    originalTimeInterval = sensorGet(sensor, 'time interval');
+    tauInSeconds = 2*newSensorTimeInterval/6.0;
+    fprintf('Lowpassing raw photocurrents with a filter with %2.2f msec time constant\n', tauInSeconds*1000);
+    tauInSamples = round(tauInSeconds / originalTimeInterval);
+    tN = round(3*tauInSamples);
+    kernelTimeSupport = (-tN:tN)*originalTimeInterval;
+    kernel = exp(-0.5*(kernelTimeSupport/tauInSeconds).^2);
+    tStep = round(newSensorTimeInterval / originalTimeInterval);
+    [~,tOffset] = max(kernel);
+    
+    kernel = kernel / sum(kernel);
+   
+    % Compute subsampling sample indices
+    subSampledIndices = tOffset + 0:tStep:numel(timeAxis);
+    subSampledIndices = subSampledIndices(subSampledIndices>0);
+     
+    % time axis
+    timeAxisSubSampled = timeAxis(subSampledIndices);
+    
+    % photo currents
+    photoCurrentsSubSampled = zeros(size(photoCurrents,1), size(photoCurrents,2), numel(timeAxisSubSampled), 'single');
+    for i = 1:size(photoCurrents,1)
+        for j = 1:size(photoCurrents,2)
+             tmp = conv(squeeze(photoCurrents(i,j,:)), kernel, 'same');
+             photoCurrentsSubSampled(i,j,:) = single(tmp(subSampledIndices));
+        end
+    end
+
+
+    % LMS excitation sequence
+    LMSexcitationSequenceSubSampled = zeros(numel(timeAxisSubSampled), size(LMSexcitationSequence,2), size(LMSexcitationSequence,3), size(LMSexcitationSequence,4), 'single');
+    for i = 1:size(LMSexcitationSequence,2)
+         for j = 1:size(LMSexcitationSequence, 3)
+             for k = 1:size(LMSexcitationSequence, 4)
+                 tmp = conv(squeeze(LMSexcitationSequence(:,i, j, k)), kernel, 'same');
+                 LMSexcitationSequenceSubSampled(:, i, j, k) = single(tmp(subSampledIndices));
+             end
+         end
+    end
+     
+    % The sensor positions and photon rate
+    originalPositions = sensorGet(sensor, 'positions');
+    subSampledPositions = zeros(numel(timeAxisSubSampled), size(originalPositions,2), 'single');
+    for i = 1:size(originalPositions,2)
+        % we do not low pass the positions
+        subSampledPositions(:,i) = single(squeeze(originalPositions(subSampledIndices,i)));
+    end
+    
+    originalIsomerizations = sensorGet(sensor, 'photon rate');
+    subSampledIsomerizations = zeros(size(originalIsomerizations,1), size(originalIsomerizations,2), numel(timeAxisSubSampled), 'single');
+    for i = 1:size(originalIsomerizations,1)
+         for j = 1:size(originalIsomerizations, 2)
+             tmp = conv(squeeze(originalIsomerizations(i, j, :)), kernel, 'same');
+             subSampledIsomerizations(i,j,:) = single(tmp(subSampledIndices));
+         end
+    end
+    
+    sensorSubSampled = sensor;
+    sensorSubSampled = sensorSet(sensorSubSampled, 'time interval', newSensorTimeInterval);
+    sensorSubSampled = sensorSet(sensorSubSampled, 'photon rate',  subSampledIsomerizations);
+    sensorSubSampled = sensorSet(sensorSubSampled, 'positions',   subSampledPositions);
+    
+    if (visualizePart)
+        figure(1);
+        clf;
+        subplot(4,1,1);
+        plot(timeAxis, squeeze(photoCurrents(1,1,:)), 'ks-', 'LineWidth', 1.0, 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 0.7]);
+        hold on
+        plot(timeAxisSubSampled, squeeze(photoCurrentsSubSampled(1,1,:)), 'g.-','LineWidth', 1.0, 'MarkerSize', 10, 'MarkerFaceColor', [0.7 1.0 0.7]);
+        plot(0.94+kernelTimeSupport, -45+20*kernel, 'bs-');
+        legend('orig',  'subSamp', 'smooth ker');
+        set(gca, 'XLim', [0.8 1.2], 'YLim', [-80 -20]);
+        ylabel('photocurrent');
+
+        subplot(4,1,2)
+        plot(timeAxis, squeeze(LMSexcitationSequence(:, 40, 20, 1)), 'rs-', 'LineWidth', 1.0, 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 0.7]);
+        hold on;
+        plot(timeAxisSubSampled, squeeze(LMSexcitationSequenceSubSampled(:, 40, 20, 1)), 'k.-', 'LineWidth', 1.0, 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 0.7]);
+        set(gca, 'XLim', [0.8 1.2]);
+        legend('orig',  'subSamp');
+        ylabel('L excitation (Stockman)');
+
+        subplot(4,1,3)
+        hold on;
+        plot(timeAxis, squeeze(originalIsomerizations(1,1,:)), 'ks-', 'LineWidth', 1.0, 'MarkerSize', 10, 'MarkerFaceColor', [0.7 1.0 0.7]);
+        plot(timeAxisSubSampled, squeeze(subSampledIsomerizations(1,1,:)), 'g.-', 'LineWidth', 1.0, 'MarkerSize', 10, 'MarkerFaceColor', [0.7 1.0 0.7]);
+        hold off;
+        legend('orig',  'subSamp');
+        set(gca, 'XLim', [0.8 1.2]);
+        ylabel('Isomerization rate');
+
+        subplot(4,1,4)
+        hold on;
+        plot(timeAxis, squeeze(originalPositions(:,1)), 'ms-', 'LineWidth', 1.0, 'MarkerSize', 10, 'MarkerFaceColor', [1.0 0.7 1.0]);
+        plot(timeAxis, squeeze(originalPositions(:,2)), 'c-', 'LineWidth', 1.0, 'MarkerSize', 10, 'MarkerFaceColor', [0.7 1.0 1.0]);
+        plot(timeAxisSubSampled, squeeze(subSampledPositions(:,1)), 'r.-', 'LineWidth', 1.0, 'MarkerSize', 10, 'MarkerFaceColor', [0.7 1.0 0.7]);
+        plot(timeAxisSubSampled, squeeze(subSampledPositions(:,2)), 'b.-', 'LineWidth', 1.0, 'MarkerSize', 10, 'MarkerFaceColor', [0.7 1.0 0.7]);
+        legend('orig X', 'orig Y', 'subSamp X', 'subSampl Y');
+        hold off;
+        ylabel('eye positions');
+        set(gca, 'XLim', [0.8 1.2]);
+        drawnow;
+        pause
+    end
+    
 end
 
 
@@ -278,7 +405,7 @@ function [LMSexcitationSequence, timeAxis, sceneSensorViewXdataInRetinalMicrons,
     % Compute the sequence of scene LMS excitation (Stockman) excitations generated by the sensor's eye movements.
     % 1. Begin by preallocating memory to hold the generated sequence
     posIndex = 1;
-    currentSensorPositionInRetinalMicrons = sensorPositionsInRetinalMicrons(posIndex,:)
+    currentSensorPositionInRetinalMicrons = sensorPositionsInRetinalMicrons(posIndex,:);
 
     % Determine the scene row range and col range that define the scene area that is 
     % under the sensor's current position (we add one extra cone on each side)
