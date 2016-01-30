@@ -31,11 +31,11 @@ function computeIsomerizations
         if (useParallelEngine)
             parpoolOBJ = gcp('nocreate');
             parfor imageIndex = 1:numel(trainingImageSet)
-                computeIsomerizationsForImage(trainingImageSet{imageIndex}, artifactData{imageIndex}, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug);
+                computeIsomerizationsForImage(useParallelEngine, trainingImageSet{imageIndex}, artifactData{imageIndex}, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug);
             end
         else
             for imageIndex = 1:numel(trainingImageSet)
-                computeIsomerizationsForImage(trainingImageSet{imageIndex}, artifactData{imageIndex}, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug);
+                computeIsomerizationsForImage(useParallelEngine, trainingImageSet{imageIndex}, artifactData{imageIndex}, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug);
             end
         end
         
@@ -48,10 +48,14 @@ function computeIsomerizations
     
 end
 
-function computeIsomerizationsForImage(imsource, artifactData, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug)
+function computeIsomerizationsForImage(useParallelEngine, imsource, artifactData, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug)
 
-  currentTask = getCurrentTask();
-  workerID = currentTask.ID;
+    if (useParallelEngine)
+        currentTask = getCurrentTask();
+        workerID = currentTask.ID;
+    else
+        workerID = 1;
+    end
   
     % Extract scene
     if ismember('scene', fieldnames(artifactData))
@@ -336,7 +340,7 @@ function [LMSexcitationSequence, timeAxis, sceneSensorViewXdataInRetinalMicrons,
     sceneYdataInRetinalMicrons = single(squeeze(sceneYgridInRetinalMicrons(:,1)));
     
     % make it int16 to save space
-    if (any(abs(sceneLMSexcitations>32)))
+    if (any(abs(sceneLMSexitations>32)))
         error('This will result in overflow');
     end
     sceneLMSexitations = int16(1000.0*sceneLMSexitations);
