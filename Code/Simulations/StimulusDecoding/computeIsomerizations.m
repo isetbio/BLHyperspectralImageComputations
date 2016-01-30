@@ -25,13 +25,24 @@ function computeIsomerizations
     end
     
     debug = false;
+    useParallelEngine = false;
+    
     try
-        parpoolOBJ = gcp('nocreate');
-        parfor imageIndex = 1:numel(trainingImageSet)
-            computeIsomerizationsForImage(trainingImageSet{imageIndex}, artifactData{imageIndex}, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug);
+        if (useParallelEngine)
+            parpoolOBJ = gcp('nocreate');
+            parfor imageIndex = 1:numel(trainingImageSet)
+                computeIsomerizationsForImage(trainingImageSet{imageIndex}, artifactData{imageIndex}, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug);
+            end
+        else
+            for imageIndex = 1:numel(trainingImageSet)
+                computeIsomerizationsForImage(trainingImageSet{imageIndex}, artifactData{imageIndex}, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug);
+            end
         end
+        
     catch err
-        delete(parpoolOBJ);
+        if (useParallelEngine)
+            delete(parpoolOBJ);
+        end
         rethrow(err);
     end
     
