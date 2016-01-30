@@ -163,7 +163,7 @@ function computeIsomerizationsForImage(useParallelEngine, imsource, artifactData
         timeBinsNum = saccadesPerScan*(positionsPerFixation+positionsPerFixationAdaptationField)+positionsPerFixationAdaptationField;
         scanPlusAdaptationFieldIsomerizationRates    = zeros(size(isomerizationRate,1), size(isomerizationRate, 2), timeBinsNum);
         scanPlusAdaptationFieldPositions             = zeros(timeBinsNum,2);
-        scanPlusAdaptationFieldLMSexcitationSequence = zeros(timeBinsNum, size(LMSAdaptionFieldSequence,2), size(LMSAdaptionFieldSequence,3), size(LMSAdaptionFieldSequence,4), 'single');
+        scanPlusAdaptationFieldLMSexcitationSequence = zeros(timeBinsNum, size(LMSAdaptionFieldSequenceINT16,2), size(LMSAdaptionFieldSequenceINT16,3), size(LMSAdaptionFieldSequenceINT16,4), 'single');
 
         for saccadeIndex = 1:saccadesPerScan
             timeBins1 = (saccadeIndex-1)*positionsPerFixation;
@@ -188,7 +188,7 @@ function computeIsomerizationsForImage(useParallelEngine, imsource, artifactData
         binIndices2 = (1+timeBins2):timeBins2+positionsPerFixationAdaptationField;
         scanPlusAdaptationFieldIsomerizationRates(:,:,binIndices2) = isomerizationRateAdaptationField;
         scanPlusAdaptationFieldPositions(binIndices2,:)            = sensorPositionsAdaptationField;
-        scanPlusAdaptationFieldLMSexcitationSequence(binIndices2,:,:,:) = LMSAdaptionFieldSequence;
+        scanPlusAdaptationFieldLMSexcitationSequence(binIndices2,:,:,:) = LMSAdaptionFieldSequenceINT16;
         scanPlusAdaptationFieldTimeAxis = (0:size(scanPlusAdaptationFieldLMSexcitationSequence,1)-1)*sensorGet(sensor, 'time interval');
 
         % generate new sensor with given sub-sequence of saccades with injected adaptationField isomerization rates
