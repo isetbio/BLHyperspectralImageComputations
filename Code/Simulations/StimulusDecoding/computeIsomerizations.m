@@ -139,7 +139,7 @@ function computeIsomerizationsForImage(useParallelEngine, imsource, artifactData
 
     fixationsNum = size(sensorGet(sensor,'positions'),1) / positionsPerFixation;
     scansNum = floor(fixationsNum/saccadesPerScan);
-    fprintf('[Worker %d]: Number of scan files generated for image %s: %d\n', workerID, imsource, scansNum);
+    fprintf('[Worker %d]: Number of scan files generated for image %s: %d\n', workerID, imsource{2}, scansNum);
 
     % reset sensor positions and isomerization rate
     sensor = sensorSet(sensor, 'photon rate', []);
@@ -340,8 +340,8 @@ function [LMSexcitationSequence, timeAxis, sceneSensorViewXdataInRetinalMicrons,
     sceneYdataInRetinalMicrons = single(squeeze(sceneYgridInRetinalMicrons(:,1)));
     
     % make it int16 to save space
-    if (any(abs(sceneLMSexitations>32)))
-        error('This will result in overflow');
+    if (any(abs(sceneLMSexitations>=(2^16-1)/1000)))
+        error('This will result in overflow ');
     end
     sceneLMSexitations = int16(1000.0*sceneLMSexitations);
     
