@@ -36,7 +36,7 @@ function [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorPar
     
     % eye movement params
     fixationDurationInMilliseconds = 100;       % 100 millisecond fixations - stimulus duration
-    fixationOverlapFactor = 1.0;                % overlapFactor of 1 results in sensor positions that just abut each other, 2 more dense, 0.5 less dense
+    fixationOverlapFactor = 0.75;                % overlapFactor of 1 results in sensor positions that just abut each other, 2 more dense, 0.5 less dense
     saccadicScanMode = 'sequential';            % 'randomized' or 'sequential', to visit eye position grid sequentially
     
     % fix this to ensure repeatable results
