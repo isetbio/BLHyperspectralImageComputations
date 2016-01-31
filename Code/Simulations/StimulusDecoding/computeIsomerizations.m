@@ -18,7 +18,7 @@ function computeIsomerizations(configuration)
     for imageIndex = 1:numel(trainingImageSet)
         % Retrieve scene
         imsource = trainingImageSet{imageIndex};
-        fprintf('Fetching %s data from %s. Please wait ...\n', imsource{2}, imsource{2});
+        fprintf('Fetching data for ''%s'' / ''%s''. Please wait ...\n', imsource{1}, imsource{2});
         remoteDataToolboxClient.crp(sprintf('/resources/scenes/hyperspectral/%s', imsource{1}));
         [artifactData{imageIndex}, artifactInfo] = remoteDataToolboxClient.readArtifact(imsource{2}, 'type', 'mat');
         fprintf('Done fetching scene data.\n');
@@ -47,15 +47,13 @@ function computeIsomerizationsForImage(useParallelEngine, imsource, artifactData
         scene = uncompressScene(artifactData);
     end
 
-
     % Set mean luminance of all scenes to same value
     scene = sceneAdjustLuminance(scene, forcedSceneMeanLuminance);
-
 
     % Generate adapting scene: equal size as test scene containing a uniform field
     adaptingFieldIlluminant = 'D65';         % either 'from scene', or the name of a known illuminant, such as 'D65', 'illuminant c'
     adaptingFieldLuminance = sceneGet(scene, 'mean luminance');
-    adaptingFieldReflectance = 0.18;
+    adaptingFieldReflectance = 1.0;
     sceneAdaptationField = makeAdaptingScene(scene, adaptingFieldReflectance, adaptingFieldLuminance, adaptingFieldIlluminant);
     fprintf('[Worker %d]: Adapting scene  mean luminance: %2.2f cd/m2\n', workerID, sceneGet(sceneAdaptationField, 'mean luminance'));
     fprintf('[Worker %d]: Testing  scene mean luminance: %2.2f cd/m2\n',  workerID, sceneGet(scene, 'mean luminance'));
@@ -65,9 +63,11 @@ function computeIsomerizationsForImage(useParallelEngine, imsource, artifactData
     sceneAdaptationFieldLMS = sceneGet(sceneAdaptationField, 'lms');
     
     % Show scene and adaptationField scene
-    vcAddAndSelectObject(scene); sceneWindow;
-    vcAddAndSelectObject(sceneAdaptationField); sceneWindow;
-
+    if (debug)
+        vcAddAndSelectObject(scene); sceneWindow;
+        vcAddAndSelectObject(sceneAdaptationField); sceneWindow;
+    end
+    
     fprintf('[Worker %d]: Computing optical images.\n', workerID);
     % Compute optical image with human optics
     oi = oiCreate('human');
@@ -78,9 +78,11 @@ function computeIsomerizationsForImage(useParallelEngine, imsource, artifactData
     oiAdaptationField = oiCompute(oiAdaptationField, sceneAdaptationField);
 
     % Show optical images
-    vcAddAndSelectObject(oi); oiWindow;
-    vcAddAndSelectObject(oiAdaptationField); oiWindow;
-
+    if (debug)
+        vcAddAndSelectObject(oi); oiWindow;
+        vcAddAndSelectObject(oiAdaptationField); oiWindow;
+    end
+    
     % create custom human sensor
     sensor = sensorCreate('human');
     sensor = customizeSensor(sensor, sensorParams, oi);
@@ -107,7 +109,7 @@ function computeIsomerizationsForImage(useParallelEngine, imsource, artifactData
 
     % compute the LMS sequence for the adaptation field scene
     [LMSAdaptionFieldSequence,  ~, ~] = ...
-        computeSceneLMSstimulusSequenceGeneratedBySensorMovements(sceneAdaptationField, sensorAdaptationField, sensorPositionsAdaptationField, sceneAdaptationFieldLMS, retinalMicronsPerDegree, []);
+        computeSceneLMSstimulusSequenceGeneratedBySensorMovements(sensorAdaptationFieldParams.sceneResamplingResolutionInRetinalMicrons, sceneAdaptationField, sensorAdaptationField, sensorPositionsAdaptationField, sceneAdaptationFieldLMS, retinalMicronsPerDegree, []);
 
     % parse the data into scans, each scan having saccadesPerScansaccades
     positionsPerFixation = round(sensorParams.eyeMovementScanningParams.fixationDurationInMilliseconds / sensorParams.eyeMovementScanningParams.samplingIntervalInMilliseconds);
@@ -122,17 +124,16 @@ function computeIsomerizationsForImage(useParallelEngine, imsource, artifactData
     sensor = sensorSet(sensor, 'positions', zeros(1,2));
     
     for scanIndex = 1:scansNum   
-        
         % select a subsequence of saccades (a scan)
         startingSaccade = 1+(scanIndex-1)*saccadesPerScan;
         endingSaccade = startingSaccade + (saccadesPerScan-1);
         positionIndices = 1 + (((startingSaccade-1)*positionsPerFixation : endingSaccade*positionsPerFixation-1));
-        fprintf('[Worker %d]: Analyzing scan %d of %d (positions: %d-%4d)\n', workerID, scanIndex, scansNum  , positionIndices(1), positionIndices(end));
+        fprintf('\t[Worker %d]: Analyzing scan %d of %d (positions: %d-%4d)\n', workerID, scanIndex, scansNum  , positionIndices(1), positionIndices(end));
 
         % Extract the LMS cone stimulus sequence encoded by sensor at all visited positions
-        fprintf('[Worker %d]: Computing Stockman LMS excitation sequence.\n', workerID);
+        fprintf('\t[Worker %d]: Computing Stockman LMS excitation sequence.\n', workerID);
         [scanLMSexcitationSequence, LMSexcitationXdataInRetinalMicrons, LMSexcitationYdataInRetinalMicrons] = ...
-             computeSceneLMSstimulusSequenceGeneratedBySensorMovements(scene, sensor, sensorPositions, sceneLMS, retinalMicronsPerDegree, positionIndices);
+             computeSceneLMSstimulusSequenceGeneratedBySensorMovements(sensorParams.sceneResamplingResolutionInRetinalMicrons, scene, sensor, sensorPositions, sceneLMS, retinalMicronsPerDegree, positionIndices);
 
         scanLMSAdaptionFieldSequence = LMSAdaptionFieldSequence;
         scanIsomerizationRates       = isomerizationRate(:,:,positionIndices);
@@ -164,12 +165,19 @@ function computeIsomerizationsForImage(useParallelEngine, imsource, artifactData
             scanPlusAdaptationFieldLMSexcitationSequence(binIndices2, :,:,:) = scanLMSexcitationSequence(binIndices1,:,:,:);
         end
 
-        % add trailing response data from  adaptationField
+        % add trailing response data from adaptationField
         timeBins2 = saccadesPerScan*(positionsPerFixation+positionsPerFixationAdaptationField);
-        binIndices2 = (1+timeBins2):timeBins2+positionsPerFixationAdaptationField;
+        binIndices2 = (1+timeBins2): (timeBins2 + positionsPerFixationAdaptationField);
         scanPlusAdaptationFieldIsomerizationRates(:,:,binIndices2) = isomerizationRateAdaptationField;
         scanPlusAdaptationFieldPositions(binIndices2,:)            = sensorPositionsAdaptationField;
         scanPlusAdaptationFieldLMSexcitationSequence(binIndices2,:,:,:) = LMSAdaptionFieldSequence;
+        
+        % add one more trailing response data from adaptationField
+        binIndices2 = binIndices2 + positionsPerFixationAdaptationField;
+        scanPlusAdaptationFieldIsomerizationRates(:,:,binIndices2) = isomerizationRateAdaptationField;
+        scanPlusAdaptationFieldPositions(binIndices2,:)            = sensorPositionsAdaptationField;
+        scanPlusAdaptationFieldLMSexcitationSequence(binIndices2,:,:,:) = LMSAdaptionFieldSequence;
+        
         
         % generate new sensor with given sub-sequence of saccades with injected adaptationField isomerization rates
         scanSensor = sensor;
@@ -197,7 +205,7 @@ function computeIsomerizationsForImage(useParallelEngine, imsource, artifactData
 
         % Save data
         fileName = sprintf('%s_%s_scan%d.mat', imsource{1}, imsource{2}, scanIndex);
-        fprintf('\t[Worker %d]: Saving data for scan %d in %s', workerID, scanIndex, fileName);
+        fprintf('\t[Worker %d]: Saving data for scan %d in %s\n', workerID, scanIndex, fileName);
         save(fileName, 'scansNum', 'scanSensor', 'photoCurrents', 'scanPlusAdaptationFieldLMSexcitationSequence', ...
                 'LMSexcitationXdataInRetinalMicrons', 'LMSexcitationYdataInRetinalMicrons', ...
                 'sensorParams', 'sensorAdaptationFieldParams', ...
@@ -281,7 +289,7 @@ end
 
 
 function [LMSexcitationSequence, sceneSensorViewXdataInRetinalMicrons, sceneSensorViewYdataInRetinalMicrons] = ...
-    computeSceneLMSstimulusSequenceGeneratedBySensorMovements(scene, sensor, sensorPositions, sceneLMS, retinalMicronsPerDegree, positionIndices)
+    computeSceneLMSstimulusSequenceGeneratedBySensorMovements(sceneResamplingResolutionInRetinalMicrons, scene, sensor, sensorPositions, sceneLMS, retinalMicronsPerDegree, positionIndices)
     
     if (~isempty(positionIndices))
         sensorPositions = sensorPositions(positionIndices,:);
@@ -312,7 +320,6 @@ function [LMSexcitationSequence, sceneSensorViewXdataInRetinalMicrons, sceneSens
     sceneSpatialSupportInRetinalMicrons(:,:,2) = sceneSpatialSupportInDegrees(:,:,2) * retinalMicronsPerDegree(2);
     
     % Obtain the scene's Stockman LMS excitation maps with a spatial resolution = 0.5 microns
-    sceneResamplingResolutionInRetinalMicrons = 0.5;
     sceneXdataInRetinalMicrons = squeeze(sceneSpatialSupportInRetinalMicrons(1,:,1));
     sceneYdataInRetinalMicrons = squeeze(sceneSpatialSupportInRetinalMicrons(:,1,2));
 
