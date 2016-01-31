@@ -1,12 +1,17 @@
-function [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams] = configureExperiment
+function [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams] = configureExperiment(configuration)
 
-%    [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams] = configureSmallImageTrainingSet();
-   [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams] = configureLargeImageTrainingSet();
+    if (configuration == 1)
+        [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams] = configureSmallImageTrainingSet();
+    else
+        [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams] = configureLargeImageTrainingSet();
+    end
+    
 end
 
 
 function [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams] = configureLargeImageTrainingSet()
 
+    fprintf('\nUsing LARGE configuration set\n');
     trainingImageSet = {...
         {'manchester_database', 'scene1'} ...
         {'manchester_database', 'scene2'} ...
@@ -25,8 +30,8 @@ function [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorPar
     saccadesPerScan = 20;                        
     
     % smosaic configuration
-    coneCols = 7;
-    coneRows = 9;
+    coneCols = 16;
+    coneRows = 16;
     coneApertureInMicrons = 3.0;                % custom cone aperture
     LMSdensities = [0.6 0.3 0.1];               % custom percentages of L,M and S cones
     integrationTimeInMilliseconds = 50;
@@ -37,7 +42,7 @@ function [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorPar
     % eye movement params
     fixationDurationInMilliseconds = 100;       % 100 millisecond fixations - stimulus duration
     fixationOverlapFactor = 1.0;                % overlapFactor of 1 results in sensor positions that just abut each other, 2 more dense, 0.5 less dense
-    saccadicScanMode = 'sequential';            % 'randomized' or 'sequential', to visit eye position grid sequentially
+    saccadicScanMode = 'randomized';            % 'randomized' or 'sequential', to visit eye position grid sequentially
     
     % fix this to ensure repeatable results
     randomSeed = 1552784;
@@ -68,6 +73,8 @@ end
 
 function [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams] = configureSmallImageTrainingSet()
     
+    fprintf('\nUsing LARGE configuration set\n');
+
     % images used to train the decoder
     trainingImageSet = {...
         {'manchester_database', 'scene1'} ...
@@ -77,11 +84,11 @@ function [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorPar
     forcedSceneMeanLuminance = 200;             
      
     % parse the eye movement data into scans, each scan having this many saccades
-    saccadesPerScan = 10;                        
+    saccadesPerScan = 5;                        
     
     % smosaic configuration
-    coneCols = 7;
-    coneRows = 9;
+    coneCols = 16;
+    coneRows = 16;
     coneApertureInMicrons = 3.0;                % custom cone aperture
     LMSdensities = [0.6 0.3 0.1];               % custom percentages of L,M and S cones
     integrationTimeInMilliseconds = 50;
@@ -91,7 +98,7 @@ function [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorPar
     
     % eye movement params
     fixationDurationInMilliseconds = 100;       % 100 millisecond fixations - stimulus duration
-    fixationOverlapFactor = 1.0;                % overlapFactor of 1 results in sensor positions that just abut each other, 2 more dense, 0.5 less dense
+    fixationOverlapFactor = 0.25;                % overlapFactor of 1 results in sensor positions that just abut each other, 2 more dense, 0.5 less dense
     saccadicScanMode = 'sequential';            % 'randomized' or 'sequential', to visit eye position grid sequentially
     
     % fix this to ensure repeatable results

@@ -1,6 +1,6 @@
 % Method to generate custom sensor and compute isomerizations rates
 % for a bunch of images, each scanned by eye movements 
-function computeIsomerizations
+function computeIsomerizations(configuration)
 
     % reset
     %ieInit; close all;
@@ -9,7 +9,7 @@ function computeIsomerizations
     cd(rootPath);
     
     % configure experiment
-    [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams] = configureExperiment();
+    [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams] = configureExperiment(configuration);
     
     % Set up remote data toolbox client
     remoteDataToolboxClient = RdtClient(getpref('HyperSpectralImageIsetbioComputations','remoteDataToolboxConfig')); 
