@@ -375,8 +375,8 @@ function [LMSexcitationSequence, timeAxis, sceneSensorViewXdataInRetinalMicrons,
         % Determine the scene row range and col range that define the scene area that is 
         % under the sensor's current position (we add one extra cone on each side)
         pixelIndices = find(...
-            (abs(sceneXgridInRetinalMicrons-currentSensorPositionInRetinalMicrons(1)) <= sensorHalfWidth)) & ...
-            (abs(sceneYgridInRetinalMicrons-currentSensorPositionInRetinalMicrons(2)) <= sensorHalfHeight)));
+            (abs(sceneXgridInRetinalMicrons-currentSensorPositionInRetinalMicrons(1)) <= sensorHalfWidth) & ...
+            (abs(sceneYgridInRetinalMicrons-currentSensorPositionInRetinalMicrons(2)) <= sensorHalfHeight));
         [rows, cols] = ind2sub(size(sceneXgridInRetinalMicrons), pixelIndices);
         
         % Retrieve LMS excitations for current position
