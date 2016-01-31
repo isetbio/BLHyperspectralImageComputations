@@ -25,37 +25,17 @@ function computeIsomerizations
     end
     
     debug = false;
-    useParallelEngine = false;
+    useParallelEngine = true;
     
-    try
-        if (useParallelEngine)
-            parpoolOBJ = gcp('nocreate');
-            parfor imageIndex = 1:numel(trainingImageSet)
-                computeIsomerizationsForImage(useParallelEngine, trainingImageSet{imageIndex}, artifactData{imageIndex}, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug);
-            end
-        else
-            for imageIndex = 1:numel(trainingImageSet)
-                computeIsomerizationsForImage(useParallelEngine, trainingImageSet{imageIndex}, artifactData{imageIndex}, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug);
-            end
-        end
-        
-    catch err
-        if (useParallelEngine)
-            delete(parpoolOBJ);
-        end
-        rethrow(err);
+    for imageIndex = 1:numel(trainingImageSet)
+        computeIsomerizationsForImage(useParallelEngine, trainingImageSet{imageIndex}, artifactData{imageIndex}, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug);
     end
-    
+
 end
 
 function computeIsomerizationsForImage(useParallelEngine, imsource, artifactData, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug)
 
-    if (useParallelEngine)
-        currentTask = getCurrentTask();
-        workerID = currentTask.ID;
-    else
-        workerID = 1;
-    end
+    workerID = 1;
   
     % Extract scene
     if ismember('scene', fieldnames(artifactData))
@@ -104,7 +84,7 @@ function computeIsomerizationsForImage(useParallelEngine, imsource, artifactData
     sensorAdaptationField = sensorCreate('human');
     sensorAdaptationField = customizeSensor(sensorAdaptationField, sensorAdaptationFieldParams, oiAdaptationField);
 
-    % compute isomerization rage for all positions
+    % compute isomerization rate for all positions
     fprintf('[Worker %d]: Computing isomerization rates.\n', workerID);
     sensor = coneAbsorptions(sensor, oi);
     sensorAdaptationField = coneAbsorptions(sensorAdaptationField, oiAdaptationField);
@@ -114,17 +94,18 @@ function computeIsomerizationsForImage(useParallelEngine, imsource, artifactData
 
     % Extract the LMS cone stimulus sequence encoded by sensor at all visited positions
     fprintf('[Worker %d]: Computing Stockman LMS excitation sequence.\n', workerID);
-    [LMSAdaptionFieldSequenceINT16, LMSadaptationFieldSequenceTime, LMSadaptationFieldXdataInRetinalMicrons, LMSadaptationFieldYdataInRetinalMicrons] = ...
+    [LMSexcitationSequence, LMSexcitationSequenceTime, LMSexcitationXdataInRetinalMicrons, LMSexcitationYdataInRetinalMicrons] = ...
+        computeSceneLMSstimulusSequenceGeneratedBySensorMovements(scene, sensor, retinalMicronsPerDegree);
+    if (~debug)
+        clear 'scene'
+    end
+    
+    [LMSAdaptionFieldSequence, LMSadaptationFieldSequenceTime, LMSadaptationFieldXdataInRetinalMicrons, LMSadaptationFieldYdataInRetinalMicrons] = ...
         computeSceneLMSstimulusSequenceGeneratedBySensorMovements(sceneAdaptationField, sensorAdaptationField, retinalMicronsPerDegree);
     if (~debug)
         clear 'sceneAdaptationField'
     end
-    [LMSexcitationSequenceINT16, LMSexcitationSequenceTime, LMSexcitationXdataInRetinalMicrons, LMSexcitationYdataInRetinalMicrons] = ...
-        computeSceneLMSstimulusSequenceGeneratedBySensorMovements(scene, sensor, retinalMicronsPerDegree);
-    if (~debug)
-        clear 'sceneAdaptationField'
-    end
-
+    
     % extract the full isomerization rate sequence across all positions
     isomerizationRate = sensorGet(sensor, 'photon rate');
     sensorPositions   = sensorGet(sensor, 'positions');
@@ -152,9 +133,8 @@ function computeIsomerizationsForImage(useParallelEngine, imsource, artifactData
         positionIndices = 1 + (((startingSaccade-1)*positionsPerFixation : endingSaccade*positionsPerFixation-1));
         fprintf('\n\t[Worker %d]: Analyzing scan %d of %d (positions: %d-%4d)\n', workerID, scanIndex, scansNum  , positionIndices(1), positionIndices(end));
 
-        % back to single from INT16
-        scanLMSexcitationSequence = single(LMSexcitationSequenceINT16(positionIndices, :,:,:))/1000.0;
-        scanLMSAdaptionFieldSequence = single(LMSAdaptionFieldSequenceINT16)/1000.0;
+        scanLMSexcitationSequence = LMSexcitationSequence(positionIndices, :,:,:);
+        scanLMSAdaptionFieldSequence = LMSAdaptionFieldSequence;
         
         scanIsomerizationRates = isomerizationRate(:,:,positionIndices);
         scanPositions          = sensorPositions(positionIndices,:);
@@ -163,7 +143,7 @@ function computeIsomerizationsForImage(useParallelEngine, imsource, artifactData
         timeBinsNum = saccadesPerScan*(positionsPerFixation+positionsPerFixationAdaptationField)+positionsPerFixationAdaptationField;
         scanPlusAdaptationFieldIsomerizationRates    = zeros(size(isomerizationRate,1), size(isomerizationRate, 2), timeBinsNum);
         scanPlusAdaptationFieldPositions             = zeros(timeBinsNum,2);
-        scanPlusAdaptationFieldLMSexcitationSequence = zeros(timeBinsNum, size(LMSAdaptionFieldSequenceINT16,2), size(LMSAdaptionFieldSequenceINT16,3), size(LMSAdaptionFieldSequenceINT16,4), 'single');
+        scanPlusAdaptationFieldLMSexcitationSequence = zeros(timeBinsNum, size(LMSAdaptionFieldSequence,2), size(LMSAdaptionFieldSequence,3), size(LMSAdaptionFieldSequence,4), 'single');
 
         for saccadeIndex = 1:saccadesPerScan
             timeBins1 = (saccadeIndex-1)*positionsPerFixation;
@@ -188,7 +168,7 @@ function computeIsomerizationsForImage(useParallelEngine, imsource, artifactData
         binIndices2 = (1+timeBins2):timeBins2+positionsPerFixationAdaptationField;
         scanPlusAdaptationFieldIsomerizationRates(:,:,binIndices2) = isomerizationRateAdaptationField;
         scanPlusAdaptationFieldPositions(binIndices2,:)            = sensorPositionsAdaptationField;
-        scanPlusAdaptationFieldLMSexcitationSequence(binIndices2,:,:,:) = LMSAdaptionFieldSequenceINT16;
+        scanPlusAdaptationFieldLMSexcitationSequence(binIndices2,:,:,:) = LMSAdaptionFieldSequence;
         scanPlusAdaptationFieldTimeAxis = (0:size(scanPlusAdaptationFieldLMSexcitationSequence,1)-1)*sensorGet(sensor, 'time interval');
 
         % generate new sensor with given sub-sequence of saccades with injected adaptationField isomerization rates
@@ -306,6 +286,7 @@ function [LMSexcitationSequence, timeAxis, sceneSensorViewXdataInRetinalMicrons,
     
     % Retrieve sensor positions - this is in units of cones
     sensorPositions = sensorGet(sensor,'positions');
+    positionsNum = size(sensorPositions,1);
     
     % Convert to units of retinal microns
     sensorSampleSeparationInMicrons = sensorGet(sensor,'pixel size','um');
@@ -334,17 +315,14 @@ function [LMSexcitationSequence, timeAxis, sceneSensorViewXdataInRetinalMicrons,
     sceneResamplingResolutionInRetinalMicrons = 0.75;
     sceneXdataInRetinalMicrons = squeeze(sceneSpatialSupportInRetinalMicrons(1,:,1));
     sceneYdataInRetinalMicrons = squeeze(sceneSpatialSupportInRetinalMicrons(:,1,2));
+
     [sceneLMSexitations, sceneXgridInRetinalMicrons, sceneYgridInRetinalMicrons] = ...
         resampleScene(sceneGet(scene, 'lms'), sceneXdataInRetinalMicrons, sceneYdataInRetinalMicrons, sceneResamplingResolutionInRetinalMicrons);
+
     sceneXdataInRetinalMicrons = single(squeeze(sceneXgridInRetinalMicrons(1,:)));
     sceneYdataInRetinalMicrons = single(squeeze(sceneYgridInRetinalMicrons(:,1)));
     
-    % make it int16 to save space
-    if (any(abs(sceneLMSexitations>=(2^16-1)/1000)))
-        error('This will result in overflow ');
-    end
-    sceneLMSexitations = int16(1000.0*sceneLMSexitations);
-    
+
     % Compute the sequence of scene LMS excitation (Stockman) excitations generated by the sensor's eye movements.
     % 1. Begin by preallocating memory to hold the generated sequence
     posIndex = 1;
@@ -358,8 +336,12 @@ function [LMSexcitationSequence, timeAxis, sceneSensorViewXdataInRetinalMicrons,
     [rows, cols] = ind2sub(size(sceneXgridInRetinalMicrons), pixelIndices);
     rowRange = min(rows):max(rows);
     colRange = min(cols):max(cols);  
-    positionsNum = size(sensorPositionsInRetinalMicrons,1);
-    LMSexcitationSequence = zeros(positionsNum, numel(rowRange), numel(colRange), 3, 'int16');
+    
+
+    fprintf('Will generate array of dimensions: %d x %d x %d x %d\n', positionsNum, numel(rowRange), numel(colRange), 3);
+    pause(0.2);
+    
+    LMSexcitationSequence = zeros(positionsNum, numel(rowRange), numel(colRange), 3, 'single');
     
     % compute spatial support for the sensor's view of the scene
     sceneSensorViewXdataInRetinalMicrons = sceneXdataInRetinalMicrons(1,colRange(1):colRange(end));
@@ -367,8 +349,8 @@ function [LMSexcitationSequence, timeAxis, sceneSensorViewXdataInRetinalMicrons,
     sceneSensorViewXdataInRetinalMicrons = sceneSensorViewXdataInRetinalMicrons - mean(sceneSensorViewXdataInRetinalMicrons(:));
     sceneSensorViewYdataInRetinalMicrons = sceneSensorViewYdataInRetinalMicrons - mean(sceneSensorViewYdataInRetinalMicrons(:));
     
+    tic
     for posIndex = 1:positionsNum
-        
         % Retrieve sensor current position
         currentSensorPositionInRetinalMicrons = sensorPositionsInRetinalMicrons(posIndex,:);
         
@@ -384,6 +366,7 @@ function [LMSexcitationSequence, timeAxis, sceneSensorViewXdataInRetinalMicrons,
         currentColRange = min(cols) + (0:numel(colRange)-1);
         LMSexcitationSequence(posIndex,:,:,:) = sceneLMSexitations(currentRowRange,currentColRange,:);
     end % posIndex
+    toc
     
     % compute time axis
     timeAxis = (0:positionsNum-1) * sensorGet(sensor, 'time interval');
@@ -463,15 +446,17 @@ function sensor = customizeSensor(sensor, sensorParams, opticalImage)
         yNodes = 0;
         fx = 1.0;
     else
-        xNodes = round(0.35*oiGet(opticalImage, 'width',  'microns')/sensorGet(sensor, 'width', 'microns')*eyeMovementScanningParams.fixationOverlapFactor);
-        yNodes = round(0.35*oiGet(opticalImage, 'height', 'microns')/sensorGet(sensor, 'height', 'microns')*eyeMovementScanningParams.fixationOverlapFactor);
+        xNodes = (round(0.3*oiGet(opticalImage, 'width',  'microns')/sensorGet(sensor, 'width', 'microns')*eyeMovementScanningParams.fixationOverlapFactor));
+        yNodes = (round(0.3*oiGet(opticalImage, 'height', 'microns')/sensorGet(sensor, 'height', 'microns')*eyeMovementScanningParams.fixationOverlapFactor));
         if ((xNodes == 0) || (yNodes == 0))
             error(sprintf('\nZero saccadic eye nodes were generated. Consider increasing the fixationOverlapFactor (currently set to: %2.4f)\n', eyeMovementScanningParams.fixationOverlapFactor));
         end
-        fx = sensorParams.spatialGrid(1)/eyeMovementScanningParams.fixationOverlapFactor;  
+        fx = max(sensorParams.spatialGrid) * sensorParams.coneApertureInMicrons / eyeMovementScanningParams.fixationOverlapFactor;  
     end
     
-    saccadicTargetPos = generateSaccadicTargets(xNodes, yNodes, fx, sensorParams.coneApertureInMicrons, sensorParams.eyeMovementScanningParams.saccadicScanMode,  oiGet(opticalImage, 'size',  'microns'));
+    fprintf('Saccadic grid: %d x %d\n', 2*xNodes+1, 2*yNodes+1);
+    
+    saccadicTargetPos = generateSaccadicTargets(xNodes, yNodes, fx, sensorParams.coneApertureInMicrons, sensorParams.eyeMovementScanningParams.saccadicScanMode,  oiGet(opticalImage, 'width',  'microns'), oiGet(opticalImage, 'height',  'microns'));
     eyeMovementsNum = size(saccadicTargetPos,1) * round(eyeMovementScanningParams.fixationDurationInMilliseconds / eyeMovementScanningParams.samplingIntervalInMilliseconds);
     eyeMovementPositions = zeros(eyeMovementsNum,2);
     sensor = sensorSet(sensor,'positions', eyeMovementPositions);
@@ -479,7 +464,7 @@ function sensor = customizeSensor(sensor, sensorParams, opticalImage)
 
     % add saccadic targets
     eyeMovementPositions = sensorGet(sensor,'positions');
-
+    
     for eyeMovementIndex = 1:eyeMovementsNum
         kk = 1+floor((eyeMovementIndex-1)/round(eyeMovementScanningParams.fixationDurationInMilliseconds / eyeMovementScanningParams.samplingIntervalInMilliseconds));
         eyeMovementPositions(eyeMovementIndex,:) = eyeMovementPositions(eyeMovementIndex,:) + saccadicTargetPos(kk,:);
@@ -488,7 +473,7 @@ function sensor = customizeSensor(sensor, sensorParams, opticalImage)
     sensor = sensorSet(sensor,'positions', eyeMovementPositions);
 end
 
-function saccadicTargetPos = generateSaccadicTargets(xNodes, yNodes, fx, coneApertureInMicrons, saccadicScanMode, opticalImageSizeInMicrons)
+function saccadicTargetPos = generateSaccadicTargets(xNodes, yNodes, fx, coneApertureInMicrons, saccadicScanMode, opticalImageWidthInMicrons, opticalImageHeightInMicrons)
     [gridXX,gridYY] = meshgrid(-xNodes:xNodes,-yNodes:yNodes); 
     gridXX = gridXX(:); gridYY = gridYY(:); 
     
@@ -501,13 +486,15 @@ function saccadicTargetPos = generateSaccadicTargets(xNodes, yNodes, fx, coneApe
     end
 
     % these are in units of cone separations
-    saccadicTargetPos(:,1) = round(gridXX(indices)*fx/coneApertureInMicrons); 
+    saccadicTargetPos(:,1) = round(gridXX(indices)*fx/coneApertureInMicrons);
     saccadicTargetPos(:,2) = round(gridYY(indices)*fx/coneApertureInMicrons);
-
-    if (any(abs(saccadicTargetPos(:,1)*coneApertureInMicrons) > opticalImageSizeInMicrons(2)/2))
+    
+    if (any(abs(saccadicTargetPos(:,1)*coneApertureInMicrons) > opticalImageWidthInMicrons/2))
+       [max(abs(squeeze(saccadicTargetPos(:,1))*coneApertureInMicrons)) opticalImageWidthInMicrons/2]
        error('saccadic position (x) outside of optical image size'); 
     end
-    if (any(abs(saccadicTargetPos(:,2)*coneApertureInMicrons) > opticalImageSizeInMicrons(1)/2))
+    if (any(abs(saccadicTargetPos(:,2)*coneApertureInMicrons) > opticalImageHeightInMicrons/2))
+        [max(abs(squeeze(saccadicTargetPos(:,2))*coneApertureInMicrons)) opticalImageHeightInMicrons/2]
         error('saccadic position (y) outside of optical image size');
     end
     

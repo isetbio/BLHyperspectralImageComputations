@@ -1,7 +1,7 @@
 function [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams] = configureExperiment
 
-%    [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams] = configureSmallImageTrainingSet()
-    [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams] = configureLargeImageTrainingSet()
+%    [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams] = configureSmallImageTrainingSet();
+   [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams] = configureLargeImageTrainingSet();
 end
 
 
@@ -16,7 +16,7 @@ function [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorPar
         {'manchester_database', 'scene7'} ...
         {'manchester_database', 'scene8'} ...
         {'stanford_database', 'StanfordMemorial'} ...
-    };
+    }
     
     % force all scenes to have this mean luminance
     forcedSceneMeanLuminance = 200;             
@@ -71,8 +71,8 @@ function [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorPar
     % images used to train the decoder
     trainingImageSet = {...
         {'manchester_database', 'scene1'} ...
-        {'manchester_database', 'scene2'} ...
-        };
+%        {'manchester_database', 'scene2'} ...
+        }
     
 
     % force all scenes to have this mean luminance
@@ -89,11 +89,11 @@ function [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorPar
     integrationTimeInMilliseconds = 50;
     
     % time step for simulation,  eye movements, outersegment computations
-    timeStepInMilliseconds = 0.1;               % (0.1 millisecond or smaller)
+    timeStepInMilliseconds = 0.2;               % (0.1 millisecond or smaller)
     
     % eye movement params
     fixationDurationInMilliseconds = 100;       % 100 millisecond fixations - stimulus duration
-    fixationOverlapFactor = 0.25;                % overlapFactor of 1 results in sensor positions that just abut each other, 2 more dense, 0.5 less dense
+    fixationOverlapFactor = 0.1;                % overlapFactor of 1 results in sensor positions that just abut each other, 2 more dense, 0.5 less dense
     saccadicScanMode = 'sequential';            % 'randomized' or 'sequential', to visit eye position grid sequentially
     
     % fix this to ensure repeatable results
