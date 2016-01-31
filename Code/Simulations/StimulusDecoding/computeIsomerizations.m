@@ -350,8 +350,8 @@ function [LMSexcitationSequence, timeAxis, sceneSensorViewXdataInRetinalMicrons,
     sceneSensorViewYdataInRetinalMicrons = sceneSensorViewYdataInRetinalMicrons - mean(sceneSensorViewYdataInRetinalMicrons(:));
     
     tic
-    sensorHalfWidth = round(sensorWidthInMicrons/2  + sensorSampleSeparationInMicrons(2);
-    sensorHalfHeight = round(sensorHeightInMicrons/2 + sensorSampleSeparationInMicrons(1);
+    sensorHalfWidth = round(sensorWidthInMicrons/2  + sensorSampleSeparationInMicrons(2));
+    sensorHalfHeight = round(sensorHeightInMicrons/2 + sensorSampleSeparationInMicrons(1));
     
     for posIndex = 1:positionsNum
         % Retrieve sensor current position
