@@ -350,15 +350,33 @@ function [LMSexcitationSequence, timeAxis, sceneSensorViewXdataInRetinalMicrons,
     sceneSensorViewYdataInRetinalMicrons = sceneSensorViewYdataInRetinalMicrons - mean(sceneSensorViewYdataInRetinalMicrons(:));
     
     tic
+    sensorHalfWidth = round(sensorWidthInMicrons/2  + sensorSampleSeparationInMicrons(2);
+    sensorHalfHeight = round(sensorHeightInMicrons/2 + sensorSampleSeparationInMicrons(1);
+    
     for posIndex = 1:positionsNum
         % Retrieve sensor current position
         currentSensorPositionInRetinalMicrons = sensorPositionsInRetinalMicrons(posIndex,:);
         
+        % force currentSensorPosition to boundaries
+        if (currentSensorPositionInRetinalMicrons(1)-sensorHalfWidth <= sceneXgridInRetinalMicrons(1))
+            currentSensorPositionInRetinalMicrons(1) = sceneXgridInRetinalMicrons(1) + sensorHalfWidth + 1;
+        end
+        if (currentSensorPositionInRetinalMicrons(1)+sensorHalfWidth >= sceneXgridInRetinalMicrons(end))
+            currentSensorPositionInRetinalMicrons(1) = sceneXgridInRetinalMicrons(end) - sensorHalfWidth - 1;
+        end
+        
+        if (currentSensorPositionInRetinalMicrons(2)-sensorHalfHeight <= sceneYgridInRetinalMicrons(1))
+            currentSensorPositionInRetinalMicrons(2) = sceneYgridInRetinalMicrons(1) + sensorHalfHeight + 1;
+        end
+        if (currentSensorPositionInRetinalMicrons(2)+sensorHalfHeight >= sceneYgridInRetinalMicrons(end))
+            currentSensorPositionInRetinalMicrons(2) = sceneYgridInRetinalMicrons(end) - sensorHalfHeight - 1;
+        end
+        
         % Determine the scene row range and col range that define the scene area that is 
         % under the sensor's current position (we add one extra cone on each side)
         pixelIndices = find(...
-            (abs(sceneXgridInRetinalMicrons-currentSensorPositionInRetinalMicrons(1)) <= round(sensorWidthInMicrons/2  + sensorSampleSeparationInMicrons(2))) & ...
-            (abs(sceneYgridInRetinalMicrons-currentSensorPositionInRetinalMicrons(2)) <= round(sensorHeightInMicrons/2 + sensorSampleSeparationInMicrons(1))));
+            (abs(sceneXgridInRetinalMicrons-currentSensorPositionInRetinalMicrons(1)) <= sensorHalfWidth)) & ...
+            (abs(sceneYgridInRetinalMicrons-currentSensorPositionInRetinalMicrons(2)) <= sensorHalfHeight)));
         [rows, cols] = ind2sub(size(sceneXgridInRetinalMicrons), pixelIndices);
         
         % Retrieve LMS excitations for current position
