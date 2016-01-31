@@ -72,7 +72,6 @@ function viewSelectedScan(scanFilename, scanIndex)
   
     % Reset all fields
     scanSensor = [];
-    scanPlusAdaptationFieldTimeAxis = [];
     scanPlusAdaptationFieldLMSexcitationSequence = [];
     LMSexcitationXdataInRetinalMicrons = [];
     LMSexcitationYdataInRetinalMicrons = [];
@@ -83,12 +82,14 @@ function viewSelectedScan(scanFilename, scanIndex)
     load(scanFilename, ...
         'scanSensor', ...
         'photoCurrents', ...
-        'scanPlusAdaptationFieldTimeAxis', ...
         'scanPlusAdaptationFieldLMSexcitationSequence', ...
         'LMSexcitationXdataInRetinalMicrons', ...
         'LMSexcitationYdataInRetinalMicrons', ...
         'sensorAdaptationFieldParams');
-               
+      
+    timeStep = sensorGet(scanSensor, 'time interval');
+    scanPlusAdaptationFieldTimeAxis = (0:(round(sensorGet(scanSensor, 'total time')/timeStep)-1))*timeStep;
+    
     % Substract baseline (determined by the last point in the photocurrent time series)
     referenceBin = round(0.25*sensorAdaptationFieldParams.eyeMovementScanningParams.fixationDurationInMilliseconds/1000/sensorGet(scanSensor, 'time interval'));
 
@@ -164,7 +165,7 @@ function viewSelectedScan(scanFilename, scanIndex)
     ConeColors = [1 0 0; 0 1 0; 0 0 1];
     % Initial visualization time
     currentTime = 0.2;
-    timeStep = sensorGet(scanSensor, 'time interval');
+    
     binIndex = round(currentTime/timeStep);
 
     % Generate the time series plots
