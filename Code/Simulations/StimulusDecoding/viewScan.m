@@ -1,14 +1,10 @@
-function viewScan
+function viewScan(configuration)
 
     % cd to here
     [rootPath,~] = fileparts(which(mfilename));
     cd(rootPath);
     
-    [trainingImageSet, ~, ~, ~, ~] = configureExperiment();
-    for k = 1:numel(trainingImageSet)
-        imsource = trainingImageSet{k};
-        fprintf('%2d. %s / %s \n', k, imsource{1}, imsource{2});
-    end
+    [trainingImageSet, ~, ~, ~, ~] = configureExperiment(configuration);
     % select an image
     imageIndex = input(sprintf('Enter image index [1 - %d]: ', numel(trainingImageSet)));
     imsource = trainingImageSet{imageIndex};
@@ -474,3 +470,15 @@ function [LconeIsomerizationMap, MconeIsomerizationMap, SconeIsomerizationMap, i
     
 end
 
+function scene = uncompressScene(artifactData)
+    basis      = artifactData.basis;
+    comment    = artifactData.comment;
+    illuminant = artifactData.illuminant;
+    mcCOEF     = artifactData.mcCOEF;
+    save('tmp.mat', 'basis', 'comment', 'illuminant', 'mcCOEF');
+    wList = 380:5:780;
+    scene = sceneFromFile('tmp.mat', 'multispectral', [],[],wList);
+    scene = sceneSet(scene, 'distance', artifactData.dist);
+    scene = sceneSet(scene, 'wangular', artifactData.fov);
+    delete('tmp.mat');
+end
