@@ -87,7 +87,7 @@ function viewSelectedScan(scanFilename, scanIndex)
     scanPlusAdaptationFieldTimeAxis = (0:(round(sensorGet(scanSensor, 'total time')/timeStep)-1))*timeStep;
     
     % Compute baseline estimation bins (determined by the last points in the photocurrent time series)
-    referenceBin = round(0.25*sensorAdaptationFieldParams.eyeMovementScanningParams.fixationDurationInMilliseconds/1000/timeStep);
+    referenceBin = round(0.50*sensorAdaptationFieldParams.eyeMovementScanningParams.fixationDurationInMilliseconds/1000/timeStep);
     baselineEstimationBins = size(photoCurrents,3)-referenceBin+(-round(referenceBin/2):round(referenceBin/2));
     fprintf('Offsetting photocurrents by their baseline levels (estimated in [%2.2f - %2.2f] seconds.\n', baselineEstimationBins(1)*timeStep, baselineEstimationBins(end)*timeStep);
     
