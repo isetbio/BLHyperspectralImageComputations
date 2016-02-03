@@ -3,7 +3,7 @@
 function computeIsomerizations(configuration)
 
     % reset
-    %ieInit; close all;
+    ieInit;
     
     [rootPath,~] = fileparts(which(mfilename));
     cd(rootPath);
@@ -25,15 +25,19 @@ function computeIsomerizations(configuration)
     end
     
     debug = false;
+    showRenderingOfSceneAndAdaptationField = true;
     useParallelEngine = true;
     
+%    adaptingFieldType = 'MacBethGrayD65MatchSceneLuminance';
+    adaptingFieldType = 'MatchSpatiallyAveragedPhotonSPD';
+    
     for imageIndex = 1:numel(trainingImageSet)
-        computeIsomerizationsForImage(useParallelEngine, trainingImageSet{imageIndex}, artifactData{imageIndex}, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug);
+        computeIsomerizationsForImage(useParallelEngine, showRenderingOfSceneAndAdaptationField, trainingImageSet{imageIndex}, artifactData{imageIndex}, forcedSceneMeanLuminance, adaptingFieldType, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug);
     end
 
 end
 
-function computeIsomerizationsForImage(useParallelEngine, imsource, artifactData, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug)
+function computeIsomerizationsForImage(useParallelEngine, showRenderingOfSceneAndAdaptationField, imsource, artifactData, forcedSceneMeanLuminance, adaptingFieldType, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug)
 
     workerID = 1;
   
@@ -50,18 +54,77 @@ function computeIsomerizationsForImage(useParallelEngine, imsource, artifactData
     % Set mean luminance of all scenes to same value
     scene = sceneAdjustLuminance(scene, forcedSceneMeanLuminance);
 
-    % Generate adapting scene: equal size as test scene containing a uniform field
-    adaptingFieldIlluminant = 'D65';         % either 'from scene', or the name of a known illuminant, such as 'D65', 'illuminant c'
-    adaptingFieldLuminance = sceneGet(scene, 'mean luminance');
-    adaptingFieldReflectance = 1.0;
-    sceneAdaptationField = makeAdaptingScene(scene, adaptingFieldReflectance, adaptingFieldLuminance, adaptingFieldIlluminant);
-    fprintf('[Worker %d]: Adapting scene  mean luminance: %2.2f cd/m2\n', workerID, sceneGet(sceneAdaptationField, 'mean luminance'));
-    fprintf('[Worker %d]: Testing  scene mean luminance: %2.2f cd/m2\n',  workerID, sceneGet(scene, 'mean luminance'));
+    % Generate uniform-field adapting scene with equal size as test scene
+    if strcmp(adaptingFieldType, 'MacBethGrayD65MatchSceneLuminance')
+        % Reflectance that of a gray MacBeth chip with a reflectance = 0.6, illuminated by D65 illuminant and 
+        % a mean luminance adjusted to match that of the test scene.
+        adaptingFieldIlluminant = 'D65';         % either 'from scene', or the name of a known illuminant, such as 'D65', 'illuminant c'
+        adaptingFieldLuminance = sceneGet(scene, 'mean luminance');
+        adaptingFieldReflectance = 0.7;
+        sceneAdaptationField = makeMacBethWhiteChipAdaptingScene(scene, adaptingFieldReflectance, adaptingFieldLuminance, adaptingFieldIlluminant);
+        fprintf('[Worker %d]: Adapting scene  mean luminance: %2.2f cd/m2\n', workerID, sceneGet(sceneAdaptationField, 'mean luminance'));
+        fprintf('[Worker %d]: Testing  scene mean luminance: %2.2f cd/m2\n',  workerID, sceneGet(scene, 'mean luminance'));
+        
+    elseif strcmp(adaptingFieldType, 'MatchSpatiallyAveragedPhotonSPD')
+        
+        % Compute the spatially-averaged median photon SPD of the test scene
+        photons = sceneGet(scene, 'photons');
+        spatiallyAveragedPhotonSPD = zeros(1, size(photons,3));
+        %  percentileToInclude: when set to 50,  we compute the median of the photons, 
+        %                       when set to 100: we compute the mean of the photons
+        percentileToInclude = 100;
+        percentileToInclude = min([100 max([50.001 percentileToInclude])]);
+        for wavebandIndex = 1:size(photons,3)
+            wavebandPhotons = squeeze(photons(:,:,wavebandIndex));
+            wavebandPhotons = wavebandPhotons(:);
+            p = prctile(wavebandPhotons, [100-percentileToInclude percentileToInclude]);
+            indices = find((wavebandPhotons >= p(1)) & (wavebandPhotons <= p(2)));
+            spatiallyAveragedPhotonSPD(wavebandIndex) = mean(wavebandPhotons(indices));
+        end
+
+        % make adaptation field scene
+        sceneAdaptationField = scene;
+        % set a different name
+        sceneAdaptationField = sceneSet(sceneAdaptationField, 'name', sprintf('%s - adaptation field', sceneGet(scene, 'name')));
+        % set photons to the spatially-averaged median photon SPD of the test scene
+        sceneAdaptationField = sceneSet(sceneAdaptationField, 'photons', bsxfun(@times, ones(size(photons)), reshape(spatiallyAveragedPhotonSPD, [1 1 numel(spatiallyAveragedPhotonSPD)])));
+        % when setting the photons of a scene, isetbio clears the scene luminance, so let's refill the luminance slot
+        [lum, meanL] = sceneCalculateLuminance(sceneAdaptationField);
+        sceneAdaptationField = sceneSet(sceneAdaptationField,'luminance',lum);
+    end
+    
 
     % compute Stockman LMS excitations for both scenes
     sceneLMS = sceneGet(scene, 'lms');
     sceneAdaptationFieldLMS = sceneGet(sceneAdaptationField, 'lms');
     
+    if (showRenderingOfSceneAndAdaptationField)
+        sceneXYZ = sceneGet(scene, 'xyz');
+        sceneAdaptationFieldXYZ = sceneGet(sceneAdaptationField, 'xyz');
+
+        [tmp, nCols, mRows] = ImageToCalFormat(sceneXYZ);
+        tmp = XYZToSRGBPrimary(tmp);
+        sceneRGB = CalFormatToImage(tmp, nCols, mRows);
+        [tmp, nCols, mRows] = ImageToCalFormat(sceneAdaptationFieldXYZ);
+        tmp = XYZToSRGBPrimary(tmp);
+        sceneAdaptationFieldRGB = CalFormatToImage(tmp, nCols, mRows);
+        boost = 2.0;
+        maxAll = 1.0/boost*max([max(sceneRGB(:)) max(sceneAdaptationFieldRGB(:))]);
+        sceneRGB = sceneRGB  / maxAll;
+        sceneAdaptationFieldRGB =  sceneAdaptationFieldRGB / maxAll;
+        sceneRGB(sceneRGB>1) = 1;
+        sceneAdaptationFieldRGB(sceneAdaptationFieldRGB>1) = 1;
+        hfig = figure(123); clf; set(hfig, 'Position', [10 10 650 960]);
+        subplot('Position', [0.01 0.5 0.99 0.46]); imshow(sceneRGB.^0.5); title('scene');
+        subplot('Position', [0.01 0.01 0.99 0.46]); imshow(sceneAdaptationFieldRGB.^0.5); title('adaptation field');
+        drawnow;
+    end
+
+    
+    % print the mean LMS excitations
+    computeSceneMeanAndMedianLMSexcitations(sceneLMS, sprintf('%s / %s', imsource{1}, imsource{2}));
+    computeSceneMeanAndMedianLMSexcitations(sceneAdaptationFieldLMS, sprintf('%s / %s - adaptation field', imsource{1}, imsource{2}));
+        
     % Show scene and adaptationField scene
     if (debug)
         vcAddAndSelectObject(scene); sceneWindow;
@@ -429,7 +492,7 @@ function sensor = customizeSensor(sensor, sensorParams, opticalImage)
     
     % custom aperture
     pixel  = sensorGet(sensor,'pixel');
-    pixel  = pixelSet(pixel, 'size', [1.0 1.0]*sensorParams.coneApertureInMicrons*1e-6);  % specified in meters);
+    pixel  = pixelSet(pixel, 'size', [1.0 1.0]*sensorParams.coneApertureInMicrons*1e-6);  % specified in meters;
     sensor = sensorSet(sensor, 'pixel', pixel);
     
     % custom LMS densities
@@ -471,8 +534,8 @@ function sensor = customizeSensor(sensor, sensorParams, opticalImage)
         yNodes = 0;
         fx = 1.0;
     else
-        xNodes = (round(0.3*oiGet(opticalImage, 'width',  'microns')/sensorGet(sensor, 'width', 'microns')*eyeMovementScanningParams.fixationOverlapFactor));
-        yNodes = (round(0.3*oiGet(opticalImage, 'height', 'microns')/sensorGet(sensor, 'height', 'microns')*eyeMovementScanningParams.fixationOverlapFactor));
+        xNodes = (round(0.35*oiGet(opticalImage, 'width',  'microns')/sensorGet(sensor, 'width', 'microns')*eyeMovementScanningParams.fixationOverlapFactor));
+        yNodes = (round(0.35*oiGet(opticalImage, 'height', 'microns')/sensorGet(sensor, 'height', 'microns')*eyeMovementScanningParams.fixationOverlapFactor));
         if ((xNodes == 0) || (yNodes == 0))
             error(sprintf('\nZero saccadic eye nodes were generated. Consider increasing the fixationOverlapFactor (currently set to: %2.4f)\n', eyeMovementScanningParams.fixationOverlapFactor));
         end
@@ -534,9 +597,23 @@ function saccadicTargetPos = generateSaccadicTargets(xNodes, yNodes, fx, coneApe
     end
 end
 
-function scene = makeAdaptingScene(originalScene, adaptingFieldReflectance, adaptingFieldLuminance, adaptingFieldIlluminant)
+function computeSceneMeanAndMedianLMSexcitations(sceneLMS, sceneName)
+    meanLMSexcitations = zeros(1,3);
+    medianLMSexcitations = zeros(1,3);
+    for coneIndex = 1:3
+        sceneExcitationSingleCone = squeeze(sceneLMS(:,:,coneIndex));
+        meanLMSexcitations(coneIndex) = mean(sceneExcitationSingleCone(:));
+        medianLMSexcitations(coneIndex) = median(sceneExcitationSingleCone(:));
+    end
+    fprintf('%60s: %8s LMS excitations = < %2.3f, %2.3f, %2.3f >\n', sceneName, 'mean',   meanLMSexcitations(1),   meanLMSexcitations(2),   meanLMSexcitations(3));
+    fprintf('%60s: %8s LMS excitations = < %2.3f, %2.3f, %2.3f >\n', sceneName, 'median', medianLMSexcitations(1), medianLMSexcitations(2), medianLMSexcitations(3));
+end
+
+function scene = makeMacBethWhiteChipAdaptingScene(originalScene, adaptingFieldReflectance, adaptingFieldLuminance, adaptingFieldIlluminant)
 
     scene = originalScene;
+    scene = sceneSet(scene, 'name', sprintf('%s - adaptation field', sceneGet(originalScene, 'name')));
+    
     % Retrieve scene wavelength sampling 
     wavelengthSampling = sceneGet(scene,'wave');
     

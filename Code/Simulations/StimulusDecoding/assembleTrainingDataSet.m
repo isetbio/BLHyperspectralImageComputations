@@ -6,14 +6,19 @@ function assembleTrainingDataSet
     
     [trainingImageSet, ~, ~, ~, ~] = configureExperiment('manchester');
     
+    % change to see data from one image only
+    trainingImageSet = {trainingImageSet{3}}
+    
     trainingDataPercentange = input('Enter % of data to use for training [ e.g, 90]: ');
     if (trainingDataPercentange < 1) || (trainingDataPercentange > 100)
         error('% must be in [0 .. 100]\n');
     end
+
     
     % Compute number of training and testing scans
     totalTrainingScansNum = 0;
     totalTestingScansNum = 0;
+    numel(trainingImageSet)
     for imageIndex = 1:numel(trainingImageSet)
         imsource = trainingImageSet{imageIndex};
         
@@ -23,7 +28,6 @@ function assembleTrainingDataSet
         
         trainingScans = round(trainingDataPercentange/100.0*scansNum);
         fprintf('image %s/%s contains %d scans. Will use %d of these for training. \n', imsource{1}, imsource{2}, scansNum, trainingScans);
-        
         totalTrainingScansNum = totalTrainingScansNum + trainingScans;
         totalTestingScansNum = totalTestingScansNum + (scansNum-trainingScans);
     end
@@ -43,11 +47,11 @@ function assembleTrainingDataSet
     % paertition the data into training and testing components
     trainingScanIndex = 0;
     testingScanIndex = 0;
+   
     
-    trainingImageSet = {trainingImageSet{1}}
     totalImages = numel(trainingImageSet);
     for imageIndex = 1:totalImages
-        imageIndex
+  
         imsource = trainingImageSet{imageIndex};
         
         % See how many scan files there are for this image
@@ -100,41 +104,56 @@ function assembleTrainingDataSet
             
             % max cone contrast
             maxContrast = max([max(abs(trainingLcontrastSequence(:))) max(abs(trainingMcontrastSequence(:)))  max(abs(trainingScontrastSequence(:))) ]);
+            deltaContrast = maxContrast/25;
+            binEdges = (-maxContrast-deltaContrast:deltaContrast:0);
+            zeroContrastBin = numel(binEdges);
+            binEdges = [binEdges [deltaContrast:deltaContrast:maxContrast+deltaContrast]]-deltaContrast/2;
+            nonZeroContrastBins = setdiff((1:(numel(binEdges)-1)), zeroContrastBin);
             
+            d = trainingLcontrastSequence(:,binIndicesToPlot);
+            medianLcontrast = median(d(abs(d)>maxContrast/1000));
+            meanLcontrast   = mean(d(abs(d)>maxContrast/1000));
+            d = trainingMcontrastSequence(:,binIndicesToPlot);
+            medianMcontrast = median(d(abs(d)>maxContrast/1000));
+            meanMcontrast   = mean(d(abs(d)>maxContrast/1000));
+            d = trainingScontrastSequence(:,binIndicesToPlot);
+            medianScontrast = median(d(abs(d)>maxContrast/1000));
+            meanScontrast   = mean(d(abs(d)>maxContrast/1000));
+            
+        
             hFig = figure(1);
             clf;
-            set(hFig, 'Color', [1 1 1], 'Name', sprintf('Scans: 1 - %d of %d', scanIndex, trainingScans), 'Position', [10 10 470 1000]);
+            set(hFig, 'Color', [1 1 1], 'Name', sprintf('Scans: 1 - %d of %d', scanIndex, trainingScans), 'Position', [10 300 500 1200]);
             subplotPosVectors = NicePlot.getSubPlotPosVectors(...
                 'rowsNum',      3, ...
                 'colsNum',      1, ...
-                'heightMargin', 0.05, ...
+                'heightMargin', 0.08, ...
                 'leftMargin',   0.03, ...
-                'bottomMargin', 0.05, ...
-                'topMargin',    0.05);
-            
-            
+                'bottomMargin', 0.04, ...
+                'topMargin',    0.04);
             
             subplot('Position', subplotPosVectors(1,1).v);
             hold on;
             plot(maxContrast*[-1 1], [0 0], 'k-');
             plot([0 0], maxContrast*[-1 1], 'k-');
-            plotHistograms(trainingLcontrastSequence(:,binIndicesToPlot), trainingMcontrastSequence(:,binIndicesToPlot), [1 0 0], [0 1 0], maxContrast);
+            plotHistograms(trainingLcontrastSequence(:,binIndicesToPlot), trainingMcontrastSequence(:,binIndicesToPlot), [1 0 0], [0 1 0]);
             plot(trainingLcontrastSequence(:,binIndicesToPlot), trainingMcontrastSequence(:,binIndicesToPlot), 'k.');
-            
             hold off;
-            xlabel('Lcontrast'); ylabel('Mcontrast');
+            xlabel('Weber contrast (Lcone)'); ylabel('Weber contrast (Mcone)');
             axis 'square'
+            title(sprintf('%s:%+2.2f(L) %+2.2f(M)\n%s:%+2.2f(L) %+2.2f(M)', 'medians', medianLcontrast, medianMcontrast, '  means', meanLcontrast, meanMcontrast));
             set(gca, 'XLim', maxContrast*[-1 1], 'YLim', maxContrast*[-1 1]);
             
             subplot('Position', subplotPosVectors(2,1).v);
             hold on;
             plot(maxContrast*[-1 1], [0 0], 'k-');
             plot([0 0], maxContrast*[-1 1], 'k-');
-            plotHistograms(trainingLcontrastSequence(:,binIndicesToPlot), trainingScontrastSequence(:,binIndicesToPlot),  [1 0 0], [0 0 1], maxContrast);
+            plotHistograms(trainingLcontrastSequence(:,binIndicesToPlot), trainingScontrastSequence(:,binIndicesToPlot),  [1 0 0], [0 0 1]);
             plot(trainingLcontrastSequence(:,binIndicesToPlot), trainingScontrastSequence(:,binIndicesToPlot), 'k.');
             hold off;
-            box on
-            xlabel('Lcontrast'); ylabel('Scontrast');
+            xlabel('Weber contrast (Lcone)'); ylabel('Weber contrast (Scone)');
+            axis 'square'
+            title(sprintf('%s:%+2.2f(L) %+2.2f(S)\n%s:%+2.2f(L) %+2.2f(S)', 'medians', medianLcontrast, medianScontrast, '  means', meanLcontrast, meanScontrast));
             axis 'square'
             set(gca, 'XLim', maxContrast*[-1 1], 'YLim', maxContrast*[-1 1]);
             
@@ -142,24 +161,26 @@ function assembleTrainingDataSet
             hold on;
             plot(maxContrast*[-1 1], [0 0], 'k-');
             plot([0 0], maxContrast*[-1 1], 'k-');
-            plotHistograms(trainingMcontrastSequence(:,binIndicesToPlot), trainingScontrastSequence(:,binIndicesToPlot), [0 1 0], [0 0 1], maxContrast);
+            plotHistograms(trainingMcontrastSequence(:,binIndicesToPlot), trainingScontrastSequence(:,binIndicesToPlot), [0 1 0], [0 0 1]);
             plot(trainingMcontrastSequence(:,binIndicesToPlot), trainingScontrastSequence(:,binIndicesToPlot), 'k.');
             hold off;
-            box on
-            xlabel('Mcontrast'); ylabel('Scontrast');
+            xlabel('Weber contrast (Mcone)'); ylabel('Weber contrast (Scone)');
+            axis 'square'
+            title(sprintf('%s:%+2.2f(M) %+2.2f(S)\n%s:%+2.2f(M) %+2.2f(S)', 'medians', medianMcontrast, medianScontrast, '  means', meanMcontrast, meanScontrast));
             axis 'square'
             set(gca, 'XLim', maxContrast*[-1 1], 'YLim', maxContrast*[-1 1]);
             drawnow;
             
             % Set fonts for all axes, legends, and titles
-            NicePlot.setFontSizes(hFig, 'FontSize', 12); 
-            NicePlot.exportFigToPNG(sprintf('LMScontrastsImage%dScan%d.png', imageIndex, scanIndex), hFig, 300);
+            NicePlot.setFontSizes(hFig, 'FontSize', 12, 'fontName', 'FixedWidth'); 
+            if (scanIndex == trainingScans)
+                NicePlot.exportFigToPNG(sprintf('%s_%s_LMScontrasts_Scans%d-%d.png', imsource{1}, imsource{2}, 1, scanIndex), hFig, 300);
+            end
             
-            
-            h = figure(2);
-            set(h, 'Color', [0 0 0], 'Name', sprintf('Scans: 1 - %d of %d', scanIndex, trainingScans));
+            hFig = figure(2);
+            set(hFig, 'Color', [0 0 0], 'Name', sprintf('Scans: 1 - %d of %d', scanIndex, trainingScans), 'Position', [10 60 2880 520]);
             clf;
-            subplot('Position', [0.02 0.54 0.97 0.46]);
+            subplot('Position', [0.02 0.56 0.97 0.44]);
             hold on;
             plot(trainingTimeAxis(binIndicesToPlot), trainingLcontrastSequence(:,binIndicesToPlot), 'r-');
             plot(trainingTimeAxis(binIndicesToPlot), trainingMcontrastSequence(:,binIndicesToPlot), 'g-');
@@ -168,19 +189,23 @@ function assembleTrainingDataSet
             set(gca, 'Color', [0 0 0 ], 'XColor', [0.8 0.8 0.8], 'YColor', [0.8 0.8 0.8], 'XLim', [trainingTimeAxis(1) trainingTimeAxis(theTimeBins(end))], 'YLim', maxContrast*[-1 1]);
             hold off;
             box on
-            subplot('Position', [0.02 0.05 0.97 0.46]);
+            subplot('Position', [0.02 0.07 0.97 0.44]);
             imagesc(trainingTimeAxis(binIndicesToPlot), 1:conesNum, trainingPhotocurrents(:,binIndicesToPlot));
             set(gca, 'Color', [0 0 0 ], 'XColor', [0.8 0.8 0.8], 'YColor', [0.8 0.8 0.8], 'XLim', [trainingTimeAxis(1) trainingTimeAxis(theTimeBins(end))]);
             xlabel('time (sec)');
             ylabel('cone id');
             colormap(bone(512));
             drawnow
-           
+            
+            NicePlot.setFontSizes(hFig, 'FontSize', 12); 
+            if scanIndex == trainingScans
+                NicePlot.exportFigToPNG(sprintf('%s_%s_LMScontrastsAndResponseSequence_Scans%d-%d.png.png', imsource{1}, imsource{2}, 1, scanIndex), hFig, 300);
+            end
             
         end % scanIndex
         fprintf('Added training data from image %d (%d scans)\n', imageIndex, trainingScanIndex);
+
         
-         pause
     
         % load testing data
         for scanIndex = trainingScans+1:scansNum
@@ -226,29 +251,35 @@ function assembleTrainingDataSet
         
     end % imageIndex
     
-    function plotHistograms(data1, data2, data1Color, data2Color, maxContrast)
-        delta = maxContrast/20;
-        edges0 = [-maxContrast:delta:0];
-        edges0 = [edges0 [delta:delta:maxContrast]];
+    
+        
+    function plotHistograms(data1, data2, data1Color, data2Color)
+        
+        data1 = data1(:);
+        data1(abs(data1) < maxContrast/1000) = 0;
+        
+        data2 = data2(:);
+        data2(abs(data2) < maxContrast/1000) = 0;
         % data1 (along x-axis)
-        [n,edges] = histcounts(data1(:), edges0);
-        edges = edges(1:end-1);
-        % if the zero contrast bin count is too large, reduce it
-        [~,zeroContrastBin] = min(abs(edges));
-        if (n(zeroContrastBin) > 2*max(n(find(abs(edges) > 0))))
-            n(zeroContrastBin) = 2*max(n(find(abs(edges) > 0)));
+        [n,edges] = histcounts(data1(:), binEdges);
+        edges = edges(1:end-1)+deltaContrast/2;
+        % the zero contrast bin is too large, because of the adaptation
+        % field, so make it equal to the average of its 2 neighbors
+        if (n(zeroContrastBin) > max(n(nonZeroContrastBins)))
+            n(zeroContrastBin) = 0.5*(n(zeroContrastBin-1)+n(zeroContrastBin+1));
         end
+        
         b1 = bar(edges, -maxContrast+0.9*maxContrast*(n/max(n)), 1, 'FaceColor', [0.7 0.7 0.7], 'EdgeColor', data1Color);
         b1.BaseValue = -maxContrast;
         b1.BaseLine.Color = 'none';
 
          % data2 (along y-axis)
-        [n,edges] = histcounts(data2(:), edges0);
-        edges = edges(1:end-1);
-        % if the zero contrast bin count is too large, reduce it
-        [~,zeroContrastBin] = min(abs(edges));
-        if (n(zeroContrastBin) > 2*max(n(find(abs(edges) > 0))))
-            n(zeroContrastBin) = 2*max(n(find(abs(edges) > 0)));
+        [n,edges] = histcounts(data2(:), binEdges);
+        edges = edges(2:end)-deltaContrast;
+        % the zero contrast bin is too large, because of the adaptation
+        % field, so make it equal to the average of its 2 neighbors
+        if (n(zeroContrastBin) > max(n(nonZeroContrastBins)))
+            n(zeroContrastBin) = 0.5*(n(zeroContrastBin-1)+n(zeroContrastBin+1));
         end
         b2 = barh(edges, -maxContrast+0.9*maxContrast*(n/max(n)), 1, 'FaceColor', [0.7 0.7 0.7], 'EdgeColor', data2Color);
         b2.BaseValue = -maxContrast;
@@ -266,8 +297,8 @@ function contrastSequence = subSampleSpatially(originalContrastSequence, subSamp
     if ((subSampledSpatialBins(1) == 1) && (subSampledSpatialBins(2) == 1))
         xRange = numel(spatialXdataInRetinalMicrons) * (spatialXdataInRetinalMicrons(2)-spatialXdataInRetinalMicrons(1));
         yRange = numel(spatialYdataInRetinalMicrons) * (spatialYdataInRetinalMicrons(2)-spatialYdataInRetinalMicrons(1));
-        fprintf('\nOriginal spatial data %d x %d, covering an area of %2.2f x %2.2f microns\n', numel(spatialXdataInRetinalMicrons), numel(spatialYdataInRetinalMicrons), xRange, yRange);
-        fprintf('\nWill downsample to [1 x 1]\n');
+        fprintf('\nOriginal spatial data %d x %d, covering an area of %2.2f x %2.2f microns.', numel(spatialXdataInRetinalMicrons), numel(spatialYdataInRetinalMicrons), xRange, yRange);
+        fprintf('Will downsample to [1 x 1].');
         contrastSequence = mean(originalContrastSequence,1);
     else
        subSampledSpatialBins
@@ -324,8 +355,8 @@ function [timeAxis, spatialXdataInRetinalMicrons, spatialYdataInRetinalMicrons, 
     
     
     % Finally, cut the initial 200 and trailing 50 mseconds of data
-    timeBinsToCutFromStart = round(200/1000/timeStep)
-    timeBinsToCutFromEnd = round(50/1000/timeStep)
+    timeBinsToCutFromStart = round(200/1000/timeStep);
+    timeBinsToCutFromEnd = round(50/1000/timeStep);
     timeBinsToKeep = (timeBinsToCutFromStart+1):(timeBins-timeBinsToCutFromEnd);
     
     LcontrastSequence = LcontrastSequence(:, timeBinsToKeep);

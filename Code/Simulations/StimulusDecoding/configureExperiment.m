@@ -2,7 +2,7 @@ function [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorPar
 
     if (strcmp(configuration, 'manchester'))
         
-        fprintf('\nUsing LARGE configuration set with the following images: \n');
+        fprintf('\nUsing the Manchester configuration set with the following images: \n');
         trainingImageSet = {...
             {'manchester_database', 'scene1'} ...
             {'manchester_database', 'scene2'} ...
@@ -24,9 +24,6 @@ function [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorPar
         % the higher the overlapFactor the more dense the saccades sample the scene
         % 1 results in sensor positions that just abut each other, 2 more dense, 0.5 less dense
         fixationOverlapFactor = 1.0;               
-      
-        % 'randomized' or 'sequential', to visit eye position grid sequentially
-        saccadicScanMode = 'randomized';  
         
     elseif (strcmp(configuration, 'large'))
         
@@ -53,9 +50,6 @@ function [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorPar
         % the higher the overlapFactor the more dense the saccades sample the scene
         % 1 results in sensor positions that just abut each other, 2 more dense, 0.5 less dense
         fixationOverlapFactor = 1.0;               
-      
-        % 'randomized' or 'sequential', to visit eye position grid sequentially
-        saccadicScanMode = 'randomized';  
         
     elseif (strcmp(configuration, 'small'))
         
@@ -77,12 +71,13 @@ function [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorPar
         % 1 results in sensor positions that just abut each other, 2 more dense, 0.5 less dense
         fixationOverlapFactor = 0.5;   
         
-        % 'randomized' or 'sequential', to visit eye position grid sequentially
-        saccadicScanMode = 'sequential';
     else
-        error('Unknown configuration. Must be either ''small'', or ''large''\n');
+        error('Unknown configuration. Must be either ''small'', or ''large'', or ''manchester''. \n');
     end
     
+    % 'randomized' or 'sequential', to visit eye position grid sequentially
+    saccadicScanMode = 'randomized';
+        
     % force all scenes to have this mean luminance
     forcedSceneMeanLuminance = 200;             
      
@@ -100,7 +95,7 @@ function [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorPar
     timeStepInMilliseconds = 0.1;               % (0.1 millisecond or smaller)
     
     % eye movement params
-    fixationDurationInMilliseconds = 100;       % 100 millisecond fixations - stimulus duration
+    fixationDurationInMilliseconds = 200;       % 200 millisecond fixations - stimulus duration
     
     % fix this to ensure repeatable results
     randomSeed = 1552784;
