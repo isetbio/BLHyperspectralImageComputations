@@ -1,6 +1,34 @@
 function [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams] = configureExperiment(configuration)
 
-    if (strcmp(configuration, 'large'))
+    if (strcmp(configuration, 'manchester'))
+        
+        fprintf('\nUsing LARGE configuration set with the following images: \n');
+        trainingImageSet = {...
+            {'manchester_database', 'scene1'} ...
+            {'manchester_database', 'scene2'} ...
+            {'manchester_database', 'scene3'} ...
+            {'manchester_database', 'scene4'} ...
+            {'manchester_database', 'scene6'} ...
+            {'manchester_database', 'scene7'} ...
+            {'manchester_database', 'scene8'} ...
+        };
+        for k = 1:numel(trainingImageSet)
+           imsource = trainingImageSet{k};
+           fprintf('%2d. ''%s'' / ''%s''\n', k, imsource{1}, imsource{2}); 
+        end
+        fprintf('\n');
+        
+        % parse the eye movement data into scans, each scan having this many saccades
+        saccadesPerScan = 20;    
+        
+        % the higher the overlapFactor the more dense the saccades sample the scene
+        % 1 results in sensor positions that just abut each other, 2 more dense, 0.5 less dense
+        fixationOverlapFactor = 1.0;               
+      
+        % 'randomized' or 'sequential', to visit eye position grid sequentially
+        saccadicScanMode = 'randomized';  
+        
+    elseif (strcmp(configuration, 'large'))
         
         fprintf('\nUsing LARGE configuration set with the following images: \n');
         trainingImageSet = {...
@@ -14,7 +42,7 @@ function [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorPar
             {'stanford_database', 'StanfordMemorial'} ...
         };
         for k = 1:numel(trainingImageSet)
-           imsource = trainingImageSet{1};
+           imsource = trainingImageSet{k};
            fprintf('%2d. ''%s'' / ''%s''\n', k, imsource{1}, imsource{2}); 
         end
         fprintf('\n');

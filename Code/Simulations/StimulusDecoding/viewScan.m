@@ -1,14 +1,10 @@
-function viewScan
+function viewScan(configuration)
 
     % cd to here
     [rootPath,~] = fileparts(which(mfilename));
     cd(rootPath);
     
-    [trainingImageSet, ~, ~, ~, ~] = configureExperiment();
-    for k = 1:numel(trainingImageSet)
-        imsource = trainingImageSet{k};
-        fprintf('%2d. %s / %s \n', k, imsource{1}, imsource{2});
-    end
+    [trainingImageSet, ~, ~, ~, ~] = configureExperiment(configuration);
     % select an image
     imageIndex = input(sprintf('Enter image index [1 - %d]: ', numel(trainingImageSet)));
     imsource = trainingImageSet{imageIndex};
@@ -90,12 +86,20 @@ function viewSelectedScan(scanFilename, scanIndex)
     timeStep = sensorGet(scanSensor, 'time interval');
     scanPlusAdaptationFieldTimeAxis = (0:(round(sensorGet(scanSensor, 'total time')/timeStep)-1))*timeStep;
     
-    % Substract baseline (determined by the last point in the photocurrent time series)
-    referenceBin = round(0.25*sensorAdaptationFieldParams.eyeMovementScanningParams.fixationDurationInMilliseconds/1000/sensorGet(scanSensor, 'time interval'));
+    % Compute baseline estimation bins (determined by the last points in the photocurrent time series)
+    referenceBin = round(0.25*sensorAdaptationFieldParams.eyeMovementScanningParams.fixationDurationInMilliseconds/1000/timeStep);
+    baselineEstimationBins = size(photoCurrents,3)-referenceBin+(-round(referenceBin/2):round(referenceBin/2));
+    fprintf('Offsetting photocurrents by their baseline levels (estimated in [%2.2f - %2.2f] seconds.\n', baselineEstimationBins(1)*timeStep, baselineEstimationBins(end)*timeStep);
+    
+    % substract baseline from photocurrents
+    photoCurrents = bsxfun(@minus, photoCurrents, mean(photoCurrents(:,:, baselineEstimationBins),3));
 
-    photoCurrentBaselineEstimationBins = size(photoCurrents,3)-referenceBin+(-round(referenceBin/2):round(referenceBin/2));
-    photoCurrents = bsxfun(@minus, photoCurrents, mean(photoCurrents(:,:, photoCurrentBaselineEstimationBins),3));
-
+    % substract baseline from isomerization rates
+    isomerizationRates = sensorGet(scanSensor, 'photon rate');
+    % isomerizationRates = bsxfun(@minus, isomerizationRates, mean(isomerizationRates(:,:, baselineEstimationBins),3));
+    
+    %scanPlusAdaptationFieldLMSexcitationSequence = bsxfun(@minus, scanPlusAdaptationFieldLMSexcitationSequence, mean(scanPlusAdaptationFieldLMSexcitationSequence(baselineEstimationBins,:,:,:),1));
+    
     % Compute upsampled photocurrent maps for visualization
     fprintf('Upsampling photocurrent maps.\n');
     [LconePhotocurrentMap, MconePhotocurrentMap, SconePhotocurrentMap, photocurrentMapXdataInRetinalMicrons, photocurrentMapYdataInRetinalMicrons, ...
@@ -103,7 +107,7 @@ function viewSelectedScan(scanFilename, scanIndex)
 
     % Compute upsampled isomerization maps for visualization
     fprintf('Upsampling isomerization maps.\n');
-    isomerizationRates = sensorGet(scanSensor, 'photon rate');
+    
     [LconeIsomerizationMap, MconeIsomerizationMap, SconeIsomerizationMap, isomerizationMapXdataInRetinalMicrons, isomerizationMapYdataInRetinalMicrons, ...
         LconeRows, LconeCols, MconeRows, MconeCols, SconeRows, SconeCols] = generateUpsampledSpatialMaps(scanSensor, isomerizationRates);
 
@@ -223,8 +227,8 @@ function viewSelectedScan(scanFilename, scanIndex)
         plot(scanPlusAdaptationFieldTimeAxis, targetConePhotoCurrent/abs(photocurrentRange(2)), '-', 'Color', [0.3 0.7 0.7], 'LineWidth', 1.0);
 
         % Finally, the limits for computing the baseline correction
-        plot(scanPlusAdaptationFieldTimeAxis(photoCurrentBaselineEstimationBins(1))*[1 1], [-1 1], '-', 'Color', [0.5 0.5 1.0]);
-        plot(scanPlusAdaptationFieldTimeAxis(photoCurrentBaselineEstimationBins(end))*[1 1], [-1 1], '-', 'Color', [0.5 0.5 1.0]);
+        plot(scanPlusAdaptationFieldTimeAxis(baselineEstimationBins(1))*[1 1], [-1 1], '-', 'Color', [0.5 0.5 1.0]);
+        plot(scanPlusAdaptationFieldTimeAxis(baselineEstimationBins(end))*[1 1], [-1 1], '-', 'Color', [0.5 0.5 1.0]);
         currentTimePlotHandles(targetCone) = plot(currentTime*[1 1], [-1 1], 'y--');
         hold off;
         box on
@@ -474,3 +478,15 @@ function [LconeIsomerizationMap, MconeIsomerizationMap, SconeIsomerizationMap, i
     
 end
 
+function scene = uncompressScene(artifactData)
+    basis      = artifactData.basis;
+    comment    = artifactData.comment;
+    illuminant = artifactData.illuminant;
+    mcCOEF     = artifactData.mcCOEF;
+    save('tmp.mat', 'basis', 'comment', 'illuminant', 'mcCOEF');
+    wList = 380:5:780;
+    scene = sceneFromFile('tmp.mat', 'multispectral', [],[],wList);
+    scene = sceneSet(scene, 'distance', artifactData.dist);
+    scene = sceneSet(scene, 'wangular', artifactData.fov);
+    delete('tmp.mat');
+end
