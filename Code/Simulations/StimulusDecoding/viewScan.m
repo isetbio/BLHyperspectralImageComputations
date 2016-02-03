@@ -234,7 +234,7 @@ function viewSelectedScan(scanFilename, scanIndex)
         box on
 
         h1 = legend('local L-fund excitation (Stockman)', 'local M-fund excitation (Stockman)', 'local S-fund excitation (Stockman)', legend4label, legend5label);
-        set(h1, 'Location', 'NorthWest', 'FontSize', 12, 'Color', [0.2 0.2 0.2], 'TextColor', [0.8 0.8 0.8]);
+        set(h1, 'Location', 'SouthWest', 'FontSize', 12, 'Color', [0.2 0.2 0.2], 'TextColor', [0.8 0.8 0.8]);
         set(gca, 'Color', [0.2 0.2 0.2], 'XColor', [1 1 1], 'YColor', [1 1 1], 'FontSize', 12, 'XLim', [scanPlusAdaptationFieldTimeAxis(1) scanPlusAdaptationFieldTimeAxis(end)], 'YLim', [-1 1]);
 
         if (targetCone == 3)
