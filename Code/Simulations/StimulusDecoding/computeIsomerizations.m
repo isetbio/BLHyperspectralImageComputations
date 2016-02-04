@@ -113,7 +113,9 @@ function computeIsomerizationsForImage(useParallelEngine, showRenderingOfSceneAn
         sceneRGB = sceneRGB  / maxAll;
         sceneAdaptationFieldRGB =  sceneAdaptationFieldRGB / maxAll;
         sceneRGB(sceneRGB>1) = 1;
+        sceneRGB(sceneRGB<0) = 0;
         sceneAdaptationFieldRGB(sceneAdaptationFieldRGB>1) = 1;
+        sceneAdaptationFieldRGB(sceneAdaptationFieldRGB<0) = 0;
         hfig = figure(123); clf; set(hfig, 'Position', [10 10 650 960]);
         subplot('Position', [0.01 0.5 0.99 0.46]); imshow(sceneRGB.^0.5); title('scene');
         subplot('Position', [0.01 0.01 0.99 0.46]); imshow(sceneAdaptationFieldRGB.^0.5); title('adaptation field');
