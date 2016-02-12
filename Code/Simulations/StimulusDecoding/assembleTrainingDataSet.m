@@ -6,8 +6,9 @@ function assembleTrainingDataSet
     
     [trainingImageSet, ~, ~, ~, ~] = configureExperiment('manchester');
     
-    % change to see data from one image only
-    trainingImageSet = {trainingImageSet{3}}
+    % change to see data from one scene only
+    theSceneIndex = input(sprintf('Which scene to use ? [1 - %d] : ', numel(trainingImageSet)));
+    trainingImageSet = {trainingImageSet{theSceneIndex}};
     
     trainingDataPercentange = input('Enter % of data to use for training [ e.g, 90]: ');
     if (trainingDataPercentange < 1) || (trainingDataPercentange > 100)
@@ -41,10 +42,8 @@ function assembleTrainingDataSet
     % Here we subsample this. To first approximation, we take the mean over
     % all space, so we have only 1 spatial bin
     subSampledSpatialBins = [1 1];
-            
     
-    
-    % paertition the data into training and testing components
+    % partition the data into training and testing components
     trainingScanIndex = 0;
     testingScanIndex = 0;
    
