@@ -25,7 +25,7 @@ function assembleTrainingDataSet
         
         % See how many scan files there are for this image
         scanFilename = sprintf('%s_%s_scan1.mat', imsource{1}, imsource{2});
-        load(scanFilename, 'scansNum');
+        load(scanFilename, 'scansNum', 'scanSensor');
         
         trainingScans = round(trainingDataPercentange/100.0*scansNum);
         fprintf('image %s/%s contains %d scans. Will use %d of these for training. \n', imsource{1}, imsource{2}, scansNum, trainingScans);
@@ -36,18 +36,26 @@ function assembleTrainingDataSet
     fprintf('Total training scans: %d\n', totalTrainingScansNum)
     fprintf('Total testing scans:  %d\n', totalTestingScansNum);
     
-    
     % Parameters of decoding
-    % The contrast sequences [space x time] to be decoded, have an original spatial resolution whose retinal dimension would be 1 micron
+    % The contrast sequences [space x time] to be decoded, have an original spatial resolution whose retinal size would be 1 micron
     % Here we subsample this. To first approximation, we take the mean over
     % all space, so we have only 1 spatial bin
     subSampledSpatialBins = [1 1];
+    
+    % Select how to subsample the cone mosaic.
+    % thresholdConeSeparation = 0 to use the entire mosaic
+    % thresholdConeSeparation = sqrt(2^2 + 2^2) to use cones separated by at least 2 cone apertures
+    thresholdConeSeparation = sqrt(2^2 + 2^2);
+    [keptLconeIndices, keptMconeIndices, keptSconeIndices] = determineConeIndicesToKeep(scanSensor, thresholdConeSeparation);
+    
+    % Hot to subsample time
+    temporalSubSamplingResolutionInMilliseconds = 4;
+    
     
     % partition the data into training and testing components
     trainingScanIndex = 0;
     testingScanIndex = 0;
    
-    
     totalImages = numel(trainingImageSet);
     for imageIndex = 1:totalImages
   
@@ -66,7 +74,11 @@ function assembleTrainingDataSet
             scanFilename = sprintf('%s_%s_scan%d.mat', imsource{1}, imsource{2}, scanIndex);
             
             % Load scan data
-            [timeAxis, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons, scanLcontrastSequence, scanMcontrastSequence, scanScontrastSequence, scanPhotoCurrents] = loadScanData(scanFilename);
+            [timeAxis, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons, ...
+                scanLcontrastSequence, scanMcontrastSequence, scanScontrastSequence, ...
+                scanPhotoCurrents] = ...
+                loadScanData(scanFilename, temporalSubSamplingResolutionInMilliseconds, keptLconeIndices, keptMconeIndices, keptSconeIndices);
+            
             timeBins = numel(timeAxis);
             conesNum = size(scanPhotoCurrents,1);
             spatialBins = size(scanLcontrastSequence,1);
@@ -82,7 +94,7 @@ function assembleTrainingDataSet
                 trainingLcontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTrainingScansNum*totalImages, 'single');
                 trainingMcontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTrainingScansNum*totalImages, 'single');
                 trainingScontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTrainingScansNum*totalImages, 'single');
-                trainingPhotocurrents       = zeros(conesNum,    timeBins*totalTrainingScansNum*totalImages, 'single');
+                trainingPhotocurrents       = zeros(conesNum, timeBins*totalTrainingScansNum*totalImages, 'single');
             end
             
             % determine insertion time point
@@ -96,124 +108,73 @@ function assembleTrainingDataSet
             trainingMcontrastSequence(:, theTimeBins) = scanMcontrastSequence;
             trainingScontrastSequence(:, theTimeBins) = scanScontrastSequence;
             trainingPhotocurrents(:, theTimeBins) = scanPhotoCurrents;
+            size(trainingPhotocurrents)
+            
+            maxContrast = max([max(trainingLcontrastSequence(:)) max(trainingMcontrastSequence(:)) max(trainingScontrastSequence(:))]);
             
             % update training scan index
             trainingScanIndex = trainingScanIndex + 1;
-            
-            
-            % max cone contrast
-            maxContrast = max([max(abs(trainingLcontrastSequence(:))) max(abs(trainingMcontrastSequence(:)))  max(abs(trainingScontrastSequence(:))) ]);
-            deltaContrast = maxContrast/25;
-            binEdges = (-maxContrast-deltaContrast:deltaContrast:0);
-            zeroContrastBin = numel(binEdges);
-            binEdges = [binEdges [deltaContrast:deltaContrast:maxContrast+deltaContrast]]-deltaContrast/2;
-            nonZeroContrastBins = setdiff((1:(numel(binEdges)-1)), zeroContrastBin);
-            
-            d = trainingLcontrastSequence(:,binIndicesToPlot);
-            medianLcontrast = median(d(abs(d)>maxContrast/1000));
-            meanLcontrast   = mean(d(abs(d)>maxContrast/1000));
-            d = trainingMcontrastSequence(:,binIndicesToPlot);
-            medianMcontrast = median(d(abs(d)>maxContrast/1000));
-            meanMcontrast   = mean(d(abs(d)>maxContrast/1000));
-            d = trainingScontrastSequence(:,binIndicesToPlot);
-            medianScontrast = median(d(abs(d)>maxContrast/1000));
-            meanScontrast   = mean(d(abs(d)>maxContrast/1000));
-            
-        
-            hFig = figure(1);
-            clf;
-            set(hFig, 'Color', [1 1 1], 'Name', sprintf('Scans: 1 - %d of %d', scanIndex, trainingScans), 'Position', [10 300 500 1200]);
-            subplotPosVectors = NicePlot.getSubPlotPosVectors(...
-                'rowsNum',      3, ...
-                'colsNum',      1, ...
-                'heightMargin', 0.08, ...
-                'leftMargin',   0.03, ...
-                'bottomMargin', 0.04, ...
-                'topMargin',    0.04);
-            
-            subplot('Position', subplotPosVectors(1,1).v);
-            hold on;
-            plot(maxContrast*[-1 1], [0 0], 'k-');
-            plot([0 0], maxContrast*[-1 1], 'k-');
-            plotHistograms(trainingLcontrastSequence(:,binIndicesToPlot), trainingMcontrastSequence(:,binIndicesToPlot), [1 0 0], [0 1 0]);
-            plot(trainingLcontrastSequence(:,binIndicesToPlot), trainingMcontrastSequence(:,binIndicesToPlot), 'k.');
-            hold off;
-            xlabel('Weber contrast (Lcone)'); ylabel('Weber contrast (Mcone)');
-            axis 'square'
-            title(sprintf('%s:%+2.2f(L) %+2.2f(M)\n%s:%+2.2f(L) %+2.2f(M)', 'medians', medianLcontrast, medianMcontrast, '  means', meanLcontrast, meanMcontrast));
-            set(gca, 'XLim', maxContrast*[-1 1], 'YLim', maxContrast*[-1 1]);
-            
-            subplot('Position', subplotPosVectors(2,1).v);
-            hold on;
-            plot(maxContrast*[-1 1], [0 0], 'k-');
-            plot([0 0], maxContrast*[-1 1], 'k-');
-            plotHistograms(trainingLcontrastSequence(:,binIndicesToPlot), trainingScontrastSequence(:,binIndicesToPlot),  [1 0 0], [0 0 1]);
-            plot(trainingLcontrastSequence(:,binIndicesToPlot), trainingScontrastSequence(:,binIndicesToPlot), 'k.');
-            hold off;
-            xlabel('Weber contrast (Lcone)'); ylabel('Weber contrast (Scone)');
-            axis 'square'
-            title(sprintf('%s:%+2.2f(L) %+2.2f(S)\n%s:%+2.2f(L) %+2.2f(S)', 'medians', medianLcontrast, medianScontrast, '  means', meanLcontrast, meanScontrast));
-            axis 'square'
-            set(gca, 'XLim', maxContrast*[-1 1], 'YLim', maxContrast*[-1 1]);
-            
-            subplot('Position', subplotPosVectors(3,1).v);
-            hold on;
-            plot(maxContrast*[-1 1], [0 0], 'k-');
-            plot([0 0], maxContrast*[-1 1], 'k-');
-            plotHistograms(trainingMcontrastSequence(:,binIndicesToPlot), trainingScontrastSequence(:,binIndicesToPlot), [0 1 0], [0 0 1]);
-            plot(trainingMcontrastSequence(:,binIndicesToPlot), trainingScontrastSequence(:,binIndicesToPlot), 'k.');
-            hold off;
-            xlabel('Weber contrast (Mcone)'); ylabel('Weber contrast (Scone)');
-            axis 'square'
-            title(sprintf('%s:%+2.2f(M) %+2.2f(S)\n%s:%+2.2f(M) %+2.2f(S)', 'medians', medianMcontrast, medianScontrast, '  means', meanMcontrast, meanScontrast));
-            axis 'square'
-            set(gca, 'XLim', maxContrast*[-1 1], 'YLim', maxContrast*[-1 1]);
-            drawnow;
-            
-            % Set fonts for all axes, legends, and titles
-            NicePlot.setFontSizes(hFig, 'FontSize', 12, 'fontName', 'FixedWidth'); 
-            if (scanIndex == trainingScans)
-                NicePlot.exportFigToPNG(sprintf('%s_%s_LMScontrasts_Scans%d-%d.png', imsource{1}, imsource{2}, 1, scanIndex), hFig, 300);
-            end
+      
+            timeLims = [trainingTimeAxis(1) trainingTimeAxis(theTimeBins(end))]; %[0 1];
             
             hFig = figure(2);
-            set(hFig, 'Color', [0 0 0], 'Name', sprintf('Scans: 1 - %d of %d', scanIndex, trainingScans), 'Position', [10 60 2880 520]);
+            set(hFig, 'Color', [0 0 0], 'Name', sprintf('Scans: 1 - %d of %d', scanIndex, trainingScans), 'Position', [10 60 2880 1000]);
             clf;
-            subplot('Position', [0.02 0.56 0.97 0.44]);
+            subplot('Position', [0.02 0.70 0.97 0.25]);
             hold on;
-            plot(trainingTimeAxis(binIndicesToPlot), trainingLcontrastSequence(:,binIndicesToPlot), 'r-');
-            plot(trainingTimeAxis(binIndicesToPlot), trainingMcontrastSequence(:,binIndicesToPlot), 'g-');
-            plot(trainingTimeAxis(binIndicesToPlot), trainingScontrastSequence(:,binIndicesToPlot), 'b-');
+            plot(trainingTimeAxis(binIndicesToPlot), trainingLcontrastSequence(:,binIndicesToPlot), 'r.-');
+            plot(trainingTimeAxis(binIndicesToPlot), trainingMcontrastSequence(:,binIndicesToPlot), 'g.-');
+            plot(trainingTimeAxis(binIndicesToPlot), trainingScontrastSequence(:,binIndicesToPlot), 'b.-');
             ylabel('Weber cone contrast');
-            set(gca, 'Color', [0 0 0 ], 'XColor', [0.8 0.8 0.8], 'YColor', [0.8 0.8 0.8], 'XLim', [trainingTimeAxis(1) trainingTimeAxis(theTimeBins(end))], 'YLim', maxContrast*[-1 1]);
+            set(gca, 'Color', [0 0 0 ], 'XColor', [0.8 0.8 0.8], 'YColor', [0.8 0.8 0.8], 'XLim', timeLims, 'YLim', maxContrast*[-1 1]);
             hold off;
             box on
-            subplot('Position', [0.02 0.07 0.97 0.44]);
+            
+            subplot('Position', [0.02 0.40 0.97 0.25]);
+            hold on;
+            lconeIndex = 1; 
+            mconeIndex = numel(keptLconeIndices) + 1;
+            sconeIndex = numel(keptLconeIndices) + numel(keptMconeIndices) + 1;
+            plot(trainingTimeAxis(binIndicesToPlot), trainingPhotocurrents(lconeIndex,binIndicesToPlot), 'r.-');
+            plot(trainingTimeAxis(binIndicesToPlot), trainingPhotocurrents(mconeIndex,binIndicesToPlot), 'g.-');
+            plot(trainingTimeAxis(binIndicesToPlot), trainingPhotocurrents(sconeIndex,binIndicesToPlot), 'b.-');
+            hold off;
+            maxPhotoCurrent = max([...
+                max(max(abs(trainingPhotocurrents(lconeIndex,binIndicesToPlot)))) ...
+                max(max(abs(trainingPhotocurrents(mconeIndex,binIndicesToPlot)))) ...
+                max(max(abs(trainingPhotocurrents(sconeIndex,binIndicesToPlot)))) 
+                ]);
+                
+            set(gca, 'Color', [0 0 0 ], 'XColor', [0.8 0.8 0.8], 'YColor', [0.8 0.8 0.8], 'XLim', timeLims, 'YLim', [-1 1]*maxPhotoCurrent);
+            xlabel('time (sec)');
+            ylabel('cone %1');
+            
+            subplot('Position', [0.02 0.07 0.97 0.25]);
             imagesc(trainingTimeAxis(binIndicesToPlot), 1:conesNum, trainingPhotocurrents(:,binIndicesToPlot));
-            set(gca, 'Color', [0 0 0 ], 'XColor', [0.8 0.8 0.8], 'YColor', [0.8 0.8 0.8], 'XLim', [trainingTimeAxis(1) trainingTimeAxis(theTimeBins(end))]);
+            set(gca, 'Color', [0 0 0 ], 'XColor', [0.8 0.8 0.8], 'YColor', [0.8 0.8 0.8], 'XLim', timeLims);
+            set(gca, 'CLim', max(max(abs(trainingPhotocurrents(:,binIndicesToPlot))))*[-1 1]);
             xlabel('time (sec)');
             ylabel('cone id');
             colormap(bone(512));
             drawnow
-            
-            NicePlot.setFontSizes(hFig, 'FontSize', 12); 
-            if scanIndex == trainingScans
-                NicePlot.exportFigToPNG(sprintf('%s_%s_LMScontrastsAndResponseSequence_Scans%d-%d.png.png', imsource{1}, imsource{2}, 1, scanIndex), hFig, 300);
-            end
+            pause
             
         end % scanIndex
         fprintf('Added training data from image %d (%d scans)\n', imageIndex, trainingScanIndex);
 
-        
-    
+
         % load testing data
         for scanIndex = trainingScans+1:scansNum
             
             % filename for this scan
             scanFilename = sprintf('%s_%s_scan%d.mat', imsource{1}, imsource{2}, scanIndex);
             
-            % Load scan data
-            [timeAxis, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons, scanLcontrastSequence, scanMcontrastSequence, scanScontrastSequence, scanPhotoCurrents] = loadScanData(scanFilename);
+            % Load scan data   
+            [timeAxis, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons, ...
+                scanLcontrastSequence, scanMcontrastSequence, scanScontrastSequence, ...
+                scanPhotoCurrents] = ...
+                loadScanData(scanFilename, temporalSubSamplingResolutionInMilliseconds, keptLconeIndices, keptMconeIndices, keptSconeIndices);
+            
             timeBins = numel(timeAxis);
             conesNum = size(scanPhotoCurrents,1);
             spatialBins = size(scanLcontrastSequence,1);
@@ -249,41 +210,6 @@ function assembleTrainingDataSet
         fprintf('Added testing data from image %d (%d scans)\n', imageIndex, testingScanIndex);
         
     end % imageIndex
-    
-    
-        
-    function plotHistograms(data1, data2, data1Color, data2Color)
-        
-        data1 = data1(:);
-        data1(abs(data1) < maxContrast/1000) = 0;
-        
-        data2 = data2(:);
-        data2(abs(data2) < maxContrast/1000) = 0;
-        % data1 (along x-axis)
-        [n,edges] = histcounts(data1(:), binEdges);
-        edges = edges(1:end-1)+deltaContrast/2;
-        % the zero contrast bin is too large, because of the adaptation
-        % field, so make it equal to the average of its 2 neighbors
-        if (n(zeroContrastBin) > max(n(nonZeroContrastBins)))
-            n(zeroContrastBin) = 0.5*(n(zeroContrastBin-1)+n(zeroContrastBin+1));
-        end
-        
-        b1 = bar(edges, -maxContrast+0.9*maxContrast*(n/max(n)), 1, 'FaceColor', [0.7 0.7 0.7], 'EdgeColor', data1Color);
-        b1.BaseValue = -maxContrast;
-        b1.BaseLine.Color = 'none';
-
-         % data2 (along y-axis)
-        [n,edges] = histcounts(data2(:), binEdges);
-        edges = edges(2:end)-deltaContrast;
-        % the zero contrast bin is too large, because of the adaptation
-        % field, so make it equal to the average of its 2 neighbors
-        if (n(zeroContrastBin) > max(n(nonZeroContrastBins)))
-            n(zeroContrastBin) = 0.5*(n(zeroContrastBin-1)+n(zeroContrastBin+1));
-        end
-        b2 = barh(edges, -maxContrast+0.9*maxContrast*(n/max(n)), 1, 'FaceColor', [0.7 0.7 0.7], 'EdgeColor', data2Color);
-        b2.BaseValue = -maxContrast;
-        b2.BaseLine.Color = 'none';
-    end
 end
 
 function contrastSequence = subSampleSpatially(originalContrastSequence, subSampledSpatialBins, spatialXdataInRetinalMicrons, spatialYdataInRetinalMicrons)
@@ -307,7 +233,13 @@ function contrastSequence = subSampleSpatially(originalContrastSequence, subSamp
 end
 
 
-function [timeAxis, spatialXdataInRetinalMicrons, spatialYdataInRetinalMicrons, LcontrastSequence, McontrastSequence, ScontrastSequence, photoCurrents] = loadScanData(scanFilename)
+
+
+
+
+function [timeAxis, spatialXdataInRetinalMicrons, spatialYdataInRetinalMicrons, ...
+    LcontrastSequence, McontrastSequence, ScontrastSequence, ...
+    photoCurrents] = loadScanData(scanFilename, temporalSubSamplingInMilliseconds, keptLconeIndices, keptMconeIndices, keptSconeIndices)
     % load stimulus LMS excitations and photocurrents 
     scanPlusAdaptationFieldLMSexcitationSequence = [];
     photoCurrents = [];
@@ -319,8 +251,8 @@ function [timeAxis, spatialXdataInRetinalMicrons, spatialYdataInRetinalMicrons, 
         'LMSexcitationXdataInRetinalMicrons', ...
         'LMSexcitationYdataInRetinalMicrons', ...
         'sensorAdaptationFieldParams');
-        
-   
+    
+
     timeStep = sensorGet(scanSensor, 'time interval');
     timeBins = round(sensorGet(scanSensor, 'total time')/timeStep);
     timeAxis = (0:(timeBins-1))*timeStep;
@@ -329,7 +261,7 @@ function [timeAxis, spatialXdataInRetinalMicrons, spatialYdataInRetinalMicrons, 
     % Compute baseline estimation bins (determined by the last points in the photocurrent time series)
     referenceBin = round(0.50*sensorAdaptationFieldParams.eyeMovementScanningParams.fixationDurationInMilliseconds/1000/timeStep);
     baselineEstimationBins = size(photoCurrents,3)-referenceBin+(-round(referenceBin/2):round(referenceBin/2));
-    %fprintf('Offsetting photocurrents by their baseline levels (estimated in [%2.2f - %2.2f] seconds.\n', baselineEstimationBins(1)*timeStep, baselineEstimationBins(end)*timeStep);
+    fprintf('Offsetting photocurrents by their baseline levels (estimated in [%2.2f - %2.2f] seconds.\n', baselineEstimationBins(1)*timeStep, baselineEstimationBins(end)*timeStep);
     
     % substract baseline from photocurrents
     photoCurrents = single(bsxfun(@minus, photoCurrents, mean(photoCurrents(:,:, baselineEstimationBins),3)));
@@ -352,23 +284,194 @@ function [timeAxis, spatialXdataInRetinalMicrons, spatialYdataInRetinalMicrons, 
     ScontrastSequence = squeeze(LMScontrastSequences(3, :, :, :));
     ScontrastSequence = reshape(ScontrastSequence(:), [spatialBins timeBins]);
     
+    % Select a subset of the cones based on the thresholdConeSeparation
+    coneTypes = sensorGet(scanSensor, 'coneType');
+    lConeIndices = find(coneTypes == 2);
+    mConeIndices = find(coneTypes == 3);
+    sConeIndices = find(coneTypes == 4);
+    coneIndicesToKeep = [keptLconeIndices(:); keptMconeIndices(:); keptSconeIndices(:) ];
     
-    % Finally, cut the initial 200 and trailing 50 mseconds of data
-    timeBinsToCutFromStart = round(200/1000/timeStep);
-    timeBinsToCutFromEnd = round(50/1000/timeStep);
-    timeBinsToKeep = (timeBinsToCutFromStart+1):(timeBins-timeBinsToCutFromEnd);
+    plotTrainingMosaic = true;
+    if (plotTrainingMosaic)
+        xy = sensorGet(scanSensor, 'xy');
+        figure(1);
+        clf;
+        hold on
+        plot(xy(lConeIndices, 1), xy(lConeIndices, 2), 'ro', 'MarkerSize', 12, 'MarkerEdgeColor', [1 0.7 0.7]);
+        plot(xy(mConeIndices, 1), xy(mConeIndices, 2), 'go', 'MarkerSize', 12, 'MarkerEdgeColor', [0.7 1.0 0.7]);
+        plot(xy(sConeIndices, 1), xy(sConeIndices, 2), 'bo', 'MarkerSize', 12, 'MarkerEdgeColor', [0.7 0.7 1.0]);
+
+        plot(xy(keptLconeIndices, 1), xy(keptLconeIndices, 2), 'ro', 'MarkerFaceColor', [1 0.2 0.2], 'MarkerSize', 8);
+        plot(xy(keptMconeIndices, 1), xy(keptMconeIndices, 2), 'go', 'MarkerFaceColor', [0.2 1.0 0.2], 'MarkerSize', 8);
+        plot(xy(keptSconeIndices, 1), xy(keptSconeIndices, 2), 'bo', 'MarkerFaceColor', [0.2 0.2 1.0], 'MarkerSize', 8);
+        axis 'equal'; axis 'square'
+    end
+    photoCurrents = photoCurrents(coneIndicesToKeep, :);
     
-    LcontrastSequence = LcontrastSequence(:, timeBinsToKeep);
-    McontrastSequence = McontrastSequence(:, timeBinsToKeep);
-    ScontrastSequence = ScontrastSequence(:, timeBinsToKeep);
-    photoCurrents = photoCurrents(:, timeBinsToKeep);
+    if (temporalSubSamplingInMilliseconds > 1)
+        
+        % According to Peter Kovasi:
+        % http://www.peterkovesi.com/papers/FastGaussianSmoothing.pdf (equation 1)
+        % Given a box average filter of width w x w, the equivalent 
+        % standard deviation to apply to achieve roughly the same effect 
+        % when using a Gaussian blur can be found by.
+        % sigma = sqrt((w^2-1)/12)
+        decimationFactor = round(temporalSubSamplingInMilliseconds/1000/timeStep);
+        tauInSamples = sqrt((decimationFactor^2-1)/12);
+        filterTime = -round(3*tauInSamples):1:round(3*tauInSamples);
+        kernel = exp(-0.5*(filterTime/tauInSamples).^2);
+        kernel = kernel / sum(kernel);
+        
+        for spatialSampleIndex = 1:spatialBins
+            if (spatialSampleIndex == 1)
+                % preallocate arrays
+                tmp = single(downsample(conv(double(squeeze(LcontrastSequence(spatialSampleIndex,:))), kernel, 'same'),decimationFactor));
+                LcontrastSequence2 = zeros(spatialBins, numel(tmp), 'single');
+                McontrastSequence2 = zeros(spatialBins, numel(tmp), 'single');
+                ScontrastSequence2 = zeros(spatialBins, numel(tmp), 'single');
+                photoCurrents2     = zeros(size(photoCurrents,1), numel(tmp), 'single');
+            end
+            % Subsample LMS contrast sequences by a factor decimationFactor using a lowpass Chebyshev Type I IIR filter of order 8.
+            LcontrastSequence2(spatialSampleIndex,:) = single(downsample(conv(double(squeeze(LcontrastSequence(spatialSampleIndex,:))), kernel, 'same'),decimationFactor));
+            McontrastSequence2(spatialSampleIndex,:) = single(downsample(conv(double(squeeze(McontrastSequence(spatialSampleIndex,:))), kernel, 'same'),decimationFactor));
+            ScontrastSequence2(spatialSampleIndex,:) = single(downsample(conv(double(squeeze(ScontrastSequence(spatialSampleIndex,:))), kernel, 'same'),decimationFactor));
+        end
+ 
+        for coneIndex = 1:size(photoCurrents,1)
+            % Subsample photocurrents by a factor decimationFactor using a HammingWindow.
+            photoCurrents2(coneIndex,:) = single(downsample(conv(double(squeeze(photoCurrents(coneIndex,:))), kernel, 'same'), decimationFactor));
+        end
+
+        % Also decimate time axis
+        timeAxis = timeAxis(1:decimationFactor:end);
+    end
+    
+    
+    % Cut the initial 250 and trailing 50 mseconds of data
+    initialPeriodInMilliseconds = 250;
+    trailingPeriodInMilliseconds = 50;
+    timeBinsToCutFromStart = round((initialPeriodInMilliseconds/decimationFactor)/1000/timeStep);
+    timeBinsToCutFromEnd = round((trailingPeriodInMilliseconds/decimationFactor)/1000/timeStep);
+    timeBinsToKeep = (timeBinsToCutFromStart+1):(numel(timeAxis)-timeBinsToCutFromEnd);
+    
+    
+    
+    LcontrastSequence = LcontrastSequence2(:, timeBinsToKeep);
+    McontrastSequence = McontrastSequence2(:, timeBinsToKeep);
+    ScontrastSequence = ScontrastSequence2(:, timeBinsToKeep);
+    
+    % Only return photocurrents for the cones we are keeping
+    photoCurrents = photoCurrents2(:, timeBinsToKeep);
+    
     timeAxis = timeAxis(timeBinsToKeep);
     % reset time axis to start at t = 0;
     timeAxis = timeAxis - timeAxis(1);
     
-    
     spatialXdataInRetinalMicrons = LMSexcitationXdataInRetinalMicrons;
     spatialYdataInRetinalMicrons = LMSexcitationYdataInRetinalMicrons;
+end
+
+
+function [keptLconeIndices, keptMconeIndices, keptSconeIndices] = determineConeIndicesToKeep(scanSensor, thresholdConeSeparation)
+
+    % Select a subset of the cones based on the thresholdConeSeparation
+    coneTypes = sensorGet(scanSensor, 'coneType');
+    lConeIndices = find(coneTypes == 2);
+    mConeIndices = find(coneTypes == 3);
+    sConeIndices = find(coneTypes == 4);
+ 
+    [keptLconeIndices, keptMconeIndices, keptSconeIndices] = determineConesToKeep(coneTypes,  lConeIndices, mConeIndices, sConeIndices, thresholdConeSeparation);
+end
+
+function [keptLconeIndices, keptMconeIndices, keptSconeIndices] = determineConesToKeep(coneTypes,  lConeIndices, mConeIndices, sConeIndices, thresholdConeSeparation)
+    
+    % Eliminate cones separately for each of the L,M and S cone mosaics
+    keptLconeIndices = determineConesToKeepForThisMosaic(coneTypes,  lConeIndices, thresholdConeSeparation);
+    keptMconeIndices = determineConesToKeepForThisMosaic(coneTypes,  mConeIndices, thresholdConeSeparation);
+    keptSconeIndices = determineConesToKeepForThisMosaic(coneTypes,  sConeIndices, thresholdConeSeparation);
+    
+    % Eliminate further so that we obtain the original LMS densities
+    originalLconeDensity = numel(lConeIndices)/numel(coneTypes);
+    newLconeDensity = numel(keptLconeIndices) / (numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices));
+    f = newLconeDensity/originalLconeDensity;
+    
+    originalMconeDensity = numel(mConeIndices)/numel(coneTypes);
+    newMconeDensity = numel(keptMconeIndices) / (numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices));
+    desiredNumOfMcones = round(f*numel(keptMconeIndices) / newMconeDensity * originalMconeDensity);
+    if (desiredNumOfMcones < numel(keptMconeIndices))
+        randomIndices = randperm(numel(keptMconeIndices));
+        keptMconeIndices = keptMconeIndices(randomIndices(1:desiredNumOfMcones));
+    end
+    
+    originalSconeDensity = numel(sConeIndices)/numel(coneTypes);
+    newSconeDensity = numel(keptSconeIndices) / (numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices));
+    desiredNumOfScones = round(f*numel(keptSconeIndices) / newSconeDensity * originalSconeDensity);
+    if (desiredNumOfScones < numel(keptSconeIndices))
+        randomIndices = randperm(numel(keptSconeIndices));
+        keptSconeIndices = keptSconeIndices(randomIndices(1:desiredNumOfScones));
+    end
+    
+    % Do the subsampling
+    coneIndicesToKeep = [keptLconeIndices(:); keptMconeIndices(:); keptSconeIndices(:) ];
+    subsampledLconeDensity = numel(keptLconeIndices) / numel(coneIndicesToKeep);
+    subsampledMconeDensity = numel(keptMconeIndices) / numel(coneIndicesToKeep);
+    subsampledSconeDensity = numel(keptSconeIndices) / numel(coneIndicesToKeep);
+
+    fprintf('kept L cones    : %d out of %d\n', numel(keptLconeIndices), numel(lConeIndices));
+    fprintf('kept M cones    : %d out of %d\n', numel(keptMconeIndices), numel(mConeIndices));
+    fprintf('kept S cones    : %d out of %d\n', numel(keptSconeIndices), numel(sConeIndices));
+    fprintf('total kept cones: %d out of %d \n',  numel(coneIndicesToKeep), numel(lConeIndices)+numel(mConeIndices)+numel(sConeIndices));
+    fprintf('original LMSratios  : %2.2f %2.2f %2.2f\n', originalLconeDensity, originalMconeDensity, originalSconeDensity);
+    fprintf('subsampled LMSratios: %2.2f %2.2f %2.2f\n', subsampledLconeDensity, subsampledMconeDensity, subsampledSconeDensity);
+    
+    function keptConeIndices = determineConesToKeepForThisMosaic(coneTypes, theConeIndices, thresholdDistance)
+    
+        if (thresholdDistance <= 0)
+            keptConeIndices = theConeIndices;
+            return;
+        end
+    
+        coneRowPositions = zeros(1, numel(theConeIndices));
+        coneColPositions = zeros(1, numel(theConeIndices));
+        for theConeIndex = 1:numel(theConeIndices)
+            [coneRowPositions(theConeIndex), coneColPositions(theConeIndex)] = ind2sub(size(coneTypes), theConeIndices(theConeIndex));
+        end
+
+        originalConeRowPositions = coneRowPositions;
+        originalConeColPositions = coneColPositions;
+    
+        % Lets keep the cone that is closest to the center.
+        [~, idx] = min(sqrt(coneRowPositions.^2 + coneColPositions.^2));
+        keptConeIndices(1) = idx;
+        keptConeRows(1) = coneRowPositions(idx);
+        keptConeCols(1) = coneColPositions(idx);
+
+        remainingConeIndices = setdiff(1:numel(theConeIndices), keptConeIndices);
+
+        scanNo = 1;
+        while (~isempty(remainingConeIndices))
+
+            for keptConeIndex = 1:numel(keptConeIndices) 
+                % compute all distances between cones in the kept indices and all other cones
+                distances = sqrt( (coneRowPositions - keptConeRows(keptConeIndex)).^2 + (coneColPositions - keptConeCols(keptConeIndex)).^2);
+                coneIndicesThatAreTooClose = find(distances <= thresholdDistance);
+
+                remainingConeIndices = setdiff(remainingConeIndices, remainingConeIndices(coneIndicesThatAreTooClose));
+                coneRowPositions = originalConeRowPositions(remainingConeIndices);
+                coneColPositions = originalConeColPositions(remainingConeIndices);
+            end
+            if (~isempty(remainingConeIndices))
+                % Select next cone to keep
+                keptConeIndices = [keptConeIndices remainingConeIndices(1)];
+                keptConeRows(numel(keptConeIndices)) = originalConeRowPositions(remainingConeIndices(1));
+                keptConeCols(numel(keptConeIndices)) = originalConeColPositions(remainingConeIndices(1));
+                scanNo = scanNo + 1;
+            end
+        end
+
+        keptConeIndices = theConeIndices(keptConeIndices);
+    end
+
 end
 
 

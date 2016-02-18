@@ -287,22 +287,19 @@ end
 function [LMSexcitationSequenceSubSampled, photoCurrentsSubSampled, sensorSubSampled] = ...
                 subSampleSequences(LMSexcitationSequence, photoCurrents, sensor, newSensorTimeInterval)
        
-    % Before downsampling, convolve with a Gaussian kernel whose 3*sigma = newSensorTimeInterval
+    % Before downsampling, convolve with a Gaussian kernel
     originalTimeInterval = sensorGet(sensor, 'time interval');
-    tauInSeconds = newSensorTimeInterval/3.0;
-    
-    tauInSamples = round(tauInSeconds / originalTimeInterval);
-    tN = round(3*tauInSamples);
-    kernelTimeSupport = (-tN:tN)*originalTimeInterval;
-    kernel = exp(-0.5*(kernelTimeSupport/tauInSeconds).^2);
+    decimationFactor = round(newSensorTimeInterval/originalTimeInterval);
+    tauInSamples = sqrt((decimationFactor^2-1)/12);
+    filterTime = -round(3*tauInSamples):1:round(3*tauInSamples);
+    kernel = exp(-0.5*(filterTime/tauInSamples).^2);
     kernel = kernel / sum(kernel);
     
 
     % Compute subsampling sample indices
     originalTimePoints = round(sensorGet(sensor, 'total time')/originalTimeInterval);
-    tStep = round(newSensorTimeInterval / originalTimeInterval);
     [~,tOffset] = max(kernel);
-    subSampledIndices = tOffset + 0:tStep:originalTimePoints;
+    subSampledIndices = tOffset + 0:decimationFactor:originalTimePoints;
     subSampledIndices = subSampledIndices(subSampledIndices>0);
      
     fprintf('\tLowpassing signals with a filter with %2.2f msec time constant and subsampling with a resolution of %2.2f msec.\n', tauInSeconds*1000, newSensorTimeInterval*1000);
