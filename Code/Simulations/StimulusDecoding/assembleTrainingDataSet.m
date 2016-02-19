@@ -6,10 +6,6 @@ function assembleTrainingDataSet
     
     [trainingImageSet, ~, ~, ~, ~] = configureExperiment('manchester');
     
-    % change to see data from one scene only
-    theSceneIndex = input(sprintf('Which scene to use ? [1 - %d] : ', numel(trainingImageSet)));
-    trainingImageSet = {trainingImageSet{theSceneIndex}};
-    
     trainingDataPercentange = input('Enter % of data to use for training [ e.g, 90]: ');
     if (trainingDataPercentange < 1) || (trainingDataPercentange > 100)
         error('% must be in [0 .. 100]\n');
@@ -37,19 +33,51 @@ function assembleTrainingDataSet
     fprintf('Total testing scans:  %d\n', totalTestingScansNum);
     
     % Parameters of decoding
+    % 1. Select how to spatially subsample the input stimulus (scene window).
     % The contrast sequences [space x time] to be decoded, have an original spatial resolution whose retinal size would be 1 micron
     % Here we subsample this. To first approximation, we take the mean over
     % all space, so we have only 1 spatial bin
     subSampledSpatialBins = [1 1];
     
-    % Select how to subsample the cone mosaic.
+    % 2. Select how to subsample the cone mosaic.
     % thresholdConeSeparation = 0 to use the entire mosaic
     % thresholdConeSeparation = sqrt(2^2 + 2^2) to use cones separated by at least 2 cone apertures
-    thresholdConeSeparation = sqrt(2^2 + 2^2);
+    thresholdConeSeparation = 3;
+    thresholdConeSeparation = sqrt(thresholdConeSeparation^2 + thresholdConeSeparation^2);
     [keptLconeIndices, keptMconeIndices, keptSconeIndices] = determineConeIndicesToKeep(scanSensor, thresholdConeSeparation);
     
-    % Hot to subsample time
+    
+    
+    plotTrainingMosaic = true;
+    if (plotTrainingMosaic)
+        xy = sensorGet(scanSensor, 'xy');
+        coneTypes = sensorGet(scanSensor, 'cone type');
+        lConeIndices = find(coneTypes == 2);
+        mConeIndices = find(coneTypes == 3);
+        sConeIndices = find(coneTypes == 4);
+        figure(1);
+        clf;
+        hold on
+        plot(xy(lConeIndices, 1), xy(lConeIndices, 2), 'ro', 'MarkerSize', 12, 'MarkerEdgeColor', [1 0.7 0.7]);
+        plot(xy(mConeIndices, 1), xy(mConeIndices, 2), 'go', 'MarkerSize', 12, 'MarkerEdgeColor', [0.7 1.0 0.7]);
+        plot(xy(sConeIndices, 1), xy(sConeIndices, 2), 'bo', 'MarkerSize', 12, 'MarkerEdgeColor', [0.7 0.7 1.0]);
+
+        plot(xy(keptLconeIndices, 1), xy(keptLconeIndices, 2), 'ro', 'MarkerFaceColor', [1 0.2 0.2], 'MarkerSize', 8);
+        plot(xy(keptMconeIndices, 1), xy(keptMconeIndices, 2), 'go', 'MarkerFaceColor', [0.2 1.0 0.2], 'MarkerSize', 8);
+        plot(xy(keptSconeIndices, 1), xy(keptSconeIndices, 2), 'bo', 'MarkerFaceColor', [0.2 0.2 1.0], 'MarkerSize', 8);
+        axis 'equal'; axis 'square'; box on;
+        drawnow;
+    end
+    
+    % 3. Hot to subsample along the time dimension
     temporalSubSamplingResolutionInMilliseconds = 4;
+    
+    % 4. Select the latency and memory of the decoding filter
+    decodingLatencyInMilliseconds = -32; % negative to get the before stimulus onset partc
+    decondingLatencyInBins = round(decodingLatencyInMilliseconds/temporalSubSamplingResolutionInMilliseconds);
+    
+    decodingMemoryInMilliseconds = 200;
+    decodingMemoryInBins = round(decodingMemoryInMilliseconds/temporalSubSamplingResolutionInMilliseconds);
     
     
     % partition the data into training and testing components
@@ -72,6 +100,7 @@ function assembleTrainingDataSet
             
             % filename for this scan
             scanFilename = sprintf('%s_%s_scan%d.mat', imsource{1}, imsource{2}, scanIndex);
+            fprintf('Loading training data from %s\n', scanFilename);
             
             % Load scan data
             [timeAxis, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons, ...
@@ -95,81 +124,93 @@ function assembleTrainingDataSet
                 trainingMcontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTrainingScansNum*totalImages, 'single');
                 trainingScontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTrainingScansNum*totalImages, 'single');
                 trainingPhotocurrents       = zeros(conesNum, timeBins*totalTrainingScansNum*totalImages, 'single');
+                
+                designMatrix.n = numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices);
+                designMatrix.lat = decondingLatencyInBins;
+                designMatrix.m = decodingMemoryInBins;
+                designMatrix.T = size(trainingPhotocurrents,2) - (designMatrix.lat + designMatrix.m);
+                fprintf('Decoding filter will have %d coefficients\n', 1+(designMatrix.n*designMatrix.m));
+                fprintf('Design matrix will have: %d rows and %d cols\n' , designMatrix.T, 1+(designMatrix.n*designMatrix.m));
             end
             
             % determine insertion time point
             currentTimeBin = trainingScanIndex*timeBins+1;
             timeBinRange = (0:timeBins-1);
             theTimeBins = currentTimeBin + timeBinRange;
-            binIndicesToPlot = 1:theTimeBins(end);
+            
             
             % insert
             trainingLcontrastSequence(:, theTimeBins) = scanLcontrastSequence;
             trainingMcontrastSequence(:, theTimeBins) = scanMcontrastSequence;
             trainingScontrastSequence(:, theTimeBins) = scanScontrastSequence;
             trainingPhotocurrents(:, theTimeBins) = scanPhotoCurrents;
-            size(trainingPhotocurrents)
-            
-            maxContrast = max([max(trainingLcontrastSequence(:)) max(trainingMcontrastSequence(:)) max(trainingScontrastSequence(:))]);
             
             % update training scan index
             trainingScanIndex = trainingScanIndex + 1;
       
-            timeLims = [trainingTimeAxis(1) trainingTimeAxis(theTimeBins(end))]; %[0 1];
-            
-            hFig = figure(2);
-            set(hFig, 'Color', [0 0 0], 'Name', sprintf('Scans: 1 - %d of %d', scanIndex, trainingScans), 'Position', [10 60 2880 1000]);
-            clf;
-            subplot('Position', [0.02 0.70 0.97 0.25]);
-            hold on;
-            plot(trainingTimeAxis(binIndicesToPlot), trainingLcontrastSequence(:,binIndicesToPlot), 'r.-');
-            plot(trainingTimeAxis(binIndicesToPlot), trainingMcontrastSequence(:,binIndicesToPlot), 'g.-');
-            plot(trainingTimeAxis(binIndicesToPlot), trainingScontrastSequence(:,binIndicesToPlot), 'b.-');
-            ylabel('Weber cone contrast');
-            set(gca, 'Color', [0 0 0 ], 'XColor', [0.8 0.8 0.8], 'YColor', [0.8 0.8 0.8], 'XLim', timeLims, 'YLim', maxContrast*[-1 1]);
-            hold off;
-            box on
-            
-            subplot('Position', [0.02 0.40 0.97 0.25]);
-            hold on;
-            lconeIndex = 1; 
-            mconeIndex = numel(keptLconeIndices) + 1;
-            sconeIndex = numel(keptLconeIndices) + numel(keptMconeIndices) + 1;
-            plot(trainingTimeAxis(binIndicesToPlot), trainingPhotocurrents(lconeIndex,binIndicesToPlot), 'r.-');
-            plot(trainingTimeAxis(binIndicesToPlot), trainingPhotocurrents(mconeIndex,binIndicesToPlot), 'g.-');
-            plot(trainingTimeAxis(binIndicesToPlot), trainingPhotocurrents(sconeIndex,binIndicesToPlot), 'b.-');
-            hold off;
-            maxPhotoCurrent = max([...
-                max(max(abs(trainingPhotocurrents(lconeIndex,binIndicesToPlot)))) ...
-                max(max(abs(trainingPhotocurrents(mconeIndex,binIndicesToPlot)))) ...
-                max(max(abs(trainingPhotocurrents(sconeIndex,binIndicesToPlot)))) 
-                ]);
+            displayStimulusAndResponse = false;
+            if (displayStimulusAndResponse)   
+                binIndicesToPlot = 1:theTimeBins(end);
+                timeLims = [trainingTimeAxis(1) trainingTimeAxis(binIndicesToPlot(end))];
                 
-            set(gca, 'Color', [0 0 0 ], 'XColor', [0.8 0.8 0.8], 'YColor', [0.8 0.8 0.8], 'XLim', timeLims, 'YLim', [-1 1]*maxPhotoCurrent);
-            xlabel('time (sec)');
-            ylabel('cone %1');
+                maxContrast = max([max(trainingLcontrastSequence(:)) max(trainingMcontrastSequence(:)) max(trainingScontrastSequence(:))]);
+                maxPhotoCurrent = max([...
+                    max(max(abs(trainingPhotocurrents(lconeIndex,binIndicesToPlot)))) ...
+                    max(max(abs(trainingPhotocurrents(mconeIndex,binIndicesToPlot)))) ...
+                    max(max(abs(trainingPhotocurrents(sconeIndex,binIndicesToPlot)))) 
+                ]);
             
-            subplot('Position', [0.02 0.07 0.97 0.25]);
-            imagesc(trainingTimeAxis(binIndicesToPlot), 1:conesNum, trainingPhotocurrents(:,binIndicesToPlot));
-            set(gca, 'Color', [0 0 0 ], 'XColor', [0.8 0.8 0.8], 'YColor', [0.8 0.8 0.8], 'XLim', timeLims);
-            set(gca, 'CLim', max(max(abs(trainingPhotocurrents(:,binIndicesToPlot))))*[-1 1]);
-            xlabel('time (sec)');
-            ylabel('cone id');
-            colormap(bone(512));
-            drawnow
-            pause
+                hFig = figure(2);
+                set(hFig, 'Color', [0 0 0], 'Name', sprintf('Scans: 1 - %d of %d', scanIndex, trainingScans), 'Position', [10 60 2880 1000]);
+                clf;
+                subplot('Position', [0.02 0.70 0.97 0.25]);
+                hold on;
+                plot(trainingTimeAxis(binIndicesToPlot), trainingLcontrastSequence(:,binIndicesToPlot), 'r.-');
+                plot(trainingTimeAxis(binIndicesToPlot), trainingMcontrastSequence(:,binIndicesToPlot), 'g.-');
+                plot(trainingTimeAxis(binIndicesToPlot), trainingScontrastSequence(:,binIndicesToPlot), 'b.-');
+                ylabel('Weber cone contrast');
+                set(gca, 'Color', [0 0 0 ], 'XColor', [0.8 0.8 0.8], 'YColor', [0.8 0.8 0.8], 'XLim', timeLims, 'YLim', maxContrast*[-1 1]);
+                hold off;
+                box on
+
+                subplot('Position', [0.02 0.40 0.97 0.25]);
+                hold on;
+                lconeIndex = 1; 
+                mconeIndex = numel(keptLconeIndices) + 1;
+                sconeIndex = numel(keptLconeIndices) + numel(keptMconeIndices) + 1;
+                plot(trainingTimeAxis(binIndicesToPlot), trainingPhotocurrents(lconeIndex,binIndicesToPlot), 'r.-');
+                plot(trainingTimeAxis(binIndicesToPlot), trainingPhotocurrents(mconeIndex,binIndicesToPlot), 'g.-');
+                plot(trainingTimeAxis(binIndicesToPlot), trainingPhotocurrents(sconeIndex,binIndicesToPlot), 'b.-');
+                hold off;
             
+                set(gca, 'Color', [0 0 0 ], 'XColor', [0.8 0.8 0.8], 'YColor', [0.8 0.8 0.8], 'XLim', timeLims, 'YLim', [-1 1]*maxPhotoCurrent);
+                xlabel('time (sec)');
+                ylabel('current [pAmps]');
+            
+                subplot('Position', [0.02 0.07 0.97 0.25]);
+                imagesc(trainingTimeAxis(binIndicesToPlot), 1:conesNum, trainingPhotocurrents(:,binIndicesToPlot));
+                set(gca, 'Color', [0 0 0 ], 'XColor', [0.8 0.8 0.8], 'YColor', [0.8 0.8 0.8], 'XLim', timeLims);
+                set(gca, 'CLim', max(max(abs(trainingPhotocurrents(:,binIndicesToPlot))))*[-1 1]);
+                xlabel('time (sec)');
+                ylabel('cone id');
+                colormap(bone(512));
+                drawnow
+                pause
+            end % displayStimulusAndResponse
         end % scanIndex
+        
         fprintf('Added training data from image %d (%d scans)\n', imageIndex, trainingScanIndex);
 
+        
 
-        % load testing data
+        % Now load testing data
         for scanIndex = trainingScans+1:scansNum
             
             % filename for this scan
             scanFilename = sprintf('%s_%s_scan%d.mat', imsource{1}, imsource{2}, scanIndex);
+            fprintf('Loading testing data from %s\n', scanFilename);
             
-            % Load scan data   
+            % Load scan data
             [timeAxis, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons, ...
                 scanLcontrastSequence, scanMcontrastSequence, scanScontrastSequence, ...
                 scanPhotoCurrents] = ...
@@ -183,14 +224,14 @@ function assembleTrainingDataSet
             scanLcontrastSequence = subSampleSpatially(scanLcontrastSequence, subSampledSpatialBins, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons);
             scanMcontrastSequence = subSampleSpatially(scanMcontrastSequence, subSampledSpatialBins, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons);
             scanScontrastSequence = subSampleSpatially(scanScontrastSequence, subSampledSpatialBins, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons);
-            
+             
             % pre-allocate memory
             if (testingScanIndex == 0)
                 testingTimeAxis            = (0:(timeBins*totalTestingScansNum*totalImages-1))*(timeAxis(2)-timeAxis(1));
                 testingLcontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTestingScansNum*totalImages, 'single');
                 testingMcontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTestingScansNum*totalImages, 'single');
                 testingScontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTestingScansNum*totalImages, 'single');
-                testingPhotocurrents       = zeros(conesNum,    timeBins*totalTestingScansNum*totalImages, 'single');
+                testingPhotocurrents       = zeros(conesNum,  timeBins*totalTestingScansNum*totalImages, 'single');
             end
             
             % determine insertion time point
@@ -210,6 +251,28 @@ function assembleTrainingDataSet
         fprintf('Added testing data from image %d (%d scans)\n', imageIndex, testingScanIndex);
         
     end % imageIndex
+    
+    fprintf('Sizes of training data sets \n');
+    size(trainingTimeAxis)
+    size(trainingLcontrastSequence)
+    size(trainingMcontrastSequence)
+    size(trainingScontrastSequence)
+    size(trainingPhotocurrents)
+    
+    fprintf('Sizes of testing data sets \n');
+    size(testingTimeAxis)
+    size(testingLcontrastSequence)
+    size(testingMcontrastSequence)
+    size(testingScontrastSequence)
+    size(testingPhotocurrents)
+    
+    fprintf('Saving decoding data ...');
+    decodingDataFileName = 'decodingData.mat';
+    save(decodingDataFileName, 'designMatrix', ...
+        'trainingTimeAxis', 'trainingPhotocurrents', 'trainingLcontrastSequence', 'trainingMcontrastSequence', 'trainingScontrastSequence', ...
+        'testingTimeAxis',  'testingPhotocurrents', 'testingLcontrastSequence',  'testingMcontrastSequence',  'testingScontrastSequence', ...
+        '-v7.3');
+    fprintf('Decoding data saved to %s', decodingDataFileName);
 end
 
 function contrastSequence = subSampleSpatially(originalContrastSequence, subSampledSpatialBins, spatialXdataInRetinalMicrons, spatialYdataInRetinalMicrons)
@@ -222,8 +285,8 @@ function contrastSequence = subSampleSpatially(originalContrastSequence, subSamp
     if ((subSampledSpatialBins(1) == 1) && (subSampledSpatialBins(2) == 1))
         xRange = numel(spatialXdataInRetinalMicrons) * (spatialXdataInRetinalMicrons(2)-spatialXdataInRetinalMicrons(1));
         yRange = numel(spatialYdataInRetinalMicrons) * (spatialYdataInRetinalMicrons(2)-spatialYdataInRetinalMicrons(1));
-        fprintf('\nOriginal spatial data %d x %d, covering an area of %2.2f x %2.2f microns.', numel(spatialXdataInRetinalMicrons), numel(spatialYdataInRetinalMicrons), xRange, yRange);
-        fprintf('Will downsample to [1 x 1].');
+        fprintf('Original spatial data %d x %d, covering an area of %2.2f x %2.2f microns.\n', numel(spatialXdataInRetinalMicrons), numel(spatialYdataInRetinalMicrons), xRange, yRange);
+        fprintf('Will downsample to [1 x 1].\n');
         contrastSequence = mean(originalContrastSequence,1);
     else
        subSampledSpatialBins
@@ -284,32 +347,11 @@ function [timeAxis, spatialXdataInRetinalMicrons, spatialYdataInRetinalMicrons, 
     ScontrastSequence = squeeze(LMScontrastSequences(3, :, :, :));
     ScontrastSequence = reshape(ScontrastSequence(:), [spatialBins timeBins]);
     
-    % Select a subset of the cones based on the thresholdConeSeparation
-    coneTypes = sensorGet(scanSensor, 'coneType');
-    lConeIndices = find(coneTypes == 2);
-    mConeIndices = find(coneTypes == 3);
-    sConeIndices = find(coneTypes == 4);
+    % Only use photocurrents from the selected cone indices
     coneIndicesToKeep = [keptLconeIndices(:); keptMconeIndices(:); keptSconeIndices(:) ];
-    
-    plotTrainingMosaic = true;
-    if (plotTrainingMosaic)
-        xy = sensorGet(scanSensor, 'xy');
-        figure(1);
-        clf;
-        hold on
-        plot(xy(lConeIndices, 1), xy(lConeIndices, 2), 'ro', 'MarkerSize', 12, 'MarkerEdgeColor', [1 0.7 0.7]);
-        plot(xy(mConeIndices, 1), xy(mConeIndices, 2), 'go', 'MarkerSize', 12, 'MarkerEdgeColor', [0.7 1.0 0.7]);
-        plot(xy(sConeIndices, 1), xy(sConeIndices, 2), 'bo', 'MarkerSize', 12, 'MarkerEdgeColor', [0.7 0.7 1.0]);
-
-        plot(xy(keptLconeIndices, 1), xy(keptLconeIndices, 2), 'ro', 'MarkerFaceColor', [1 0.2 0.2], 'MarkerSize', 8);
-        plot(xy(keptMconeIndices, 1), xy(keptMconeIndices, 2), 'go', 'MarkerFaceColor', [0.2 1.0 0.2], 'MarkerSize', 8);
-        plot(xy(keptSconeIndices, 1), xy(keptSconeIndices, 2), 'bo', 'MarkerFaceColor', [0.2 0.2 1.0], 'MarkerSize', 8);
-        axis 'equal'; axis 'square'
-    end
     photoCurrents = photoCurrents(coneIndicesToKeep, :);
     
     if (temporalSubSamplingInMilliseconds > 1)
-        
         % According to Peter Kovasi:
         % http://www.peterkovesi.com/papers/FastGaussianSmoothing.pdf (equation 1)
         % Given a box average filter of width w x w, the equivalent 
@@ -354,8 +396,6 @@ function [timeAxis, spatialXdataInRetinalMicrons, spatialYdataInRetinalMicrons, 
     timeBinsToCutFromEnd = round((trailingPeriodInMilliseconds/decimationFactor)/1000/timeStep);
     timeBinsToKeep = (timeBinsToCutFromStart+1):(numel(timeAxis)-timeBinsToCutFromEnd);
     
-    
-    
     LcontrastSequence = LcontrastSequence2(:, timeBinsToKeep);
     McontrastSequence = McontrastSequence2(:, timeBinsToKeep);
     ScontrastSequence = ScontrastSequence2(:, timeBinsToKeep);
@@ -399,16 +439,16 @@ function [keptLconeIndices, keptMconeIndices, keptSconeIndices] = determineCones
     newMconeDensity = numel(keptMconeIndices) / (numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices));
     desiredNumOfMcones = round(f*numel(keptMconeIndices) / newMconeDensity * originalMconeDensity);
     if (desiredNumOfMcones < numel(keptMconeIndices))
-        randomIndices = randperm(numel(keptMconeIndices));
-        keptMconeIndices = keptMconeIndices(randomIndices(1:desiredNumOfMcones));
+        conesNumToBeEliminated = numel(keptMconeIndices) - desiredNumOfMcones;
+        keptMconeIndices = eliminateConesBasedOnSeparation(coneTypes, keptMconeIndices, mConeIndices, conesNumToBeEliminated);
     end
     
     originalSconeDensity = numel(sConeIndices)/numel(coneTypes);
     newSconeDensity = numel(keptSconeIndices) / (numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices));
     desiredNumOfScones = round(f*numel(keptSconeIndices) / newSconeDensity * originalSconeDensity);
     if (desiredNumOfScones < numel(keptSconeIndices))
-        randomIndices = randperm(numel(keptSconeIndices));
-        keptSconeIndices = keptSconeIndices(randomIndices(1:desiredNumOfScones));
+        conesNumToBeEliminated = numel(keptSconeIndices) - desiredNumOfScones;
+        keptSconeIndices = eliminateConesBasedOnSeparation(coneTypes, keptSconeIndices, sConeIndices, conesNumToBeEliminated);
     end
     
     % Do the subsampling
@@ -424,8 +464,25 @@ function [keptLconeIndices, keptMconeIndices, keptSconeIndices] = determineCones
     fprintf('original LMSratios  : %2.2f %2.2f %2.2f\n', originalLconeDensity, originalMconeDensity, originalSconeDensity);
     fprintf('subsampled LMSratios: %2.2f %2.2f %2.2f\n', subsampledLconeDensity, subsampledMconeDensity, subsampledSconeDensity);
     
+    function reducedKeptConeIndices = eliminateConesBasedOnSeparation(coneTypes, keptConeIndices, theConeIndices, conesNumToBeEliminated)  
+        coneRowPositions = zeros(1, numel(keptConeIndices));
+        coneColPositions = zeros(1, numel(keptConeIndices));
+        for theConeIndex = 1:numel(keptConeIndices)
+            [coneRowPositions(theConeIndex), coneColPositions(theConeIndex)] = ind2sub(size(coneTypes), theConeIndices(theConeIndex));
+        end
+            
+        conesToBeEliminated = [];
+        while (numel(conesToBeEliminated) < conesNumToBeEliminated)
+            % find cones with the minimum distance
+            [~, idx] = min(sqrt(coneRowPositions.^2 + coneColPositions.^2));
+            conesToBeEliminated = [conesToBeEliminated keptConeIndices(idx)];
+            coneRowPositions(idx)= Inf;
+        end
+        
+        reducedKeptConeIndices = setdiff(keptConeIndices, conesToBeEliminated);
+    end
+
     function keptConeIndices = determineConesToKeepForThisMosaic(coneTypes, theConeIndices, thresholdDistance)
-    
         if (thresholdDistance <= 0)
             keptConeIndices = theConeIndices;
             return;
