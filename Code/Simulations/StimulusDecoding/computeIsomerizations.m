@@ -8,6 +8,8 @@ function computeIsomerizations(configuration)
     [rootPath,~] = fileparts(which(mfilename));
     cd(rootPath);
     
+    scansDir = 'ScansData';
+    
     % configure experiment
     [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams] = configureExperiment(configuration);
     
@@ -32,12 +34,12 @@ function computeIsomerizations(configuration)
     adaptingFieldType = 'MatchSpatiallyAveragedPhotonSPD';
     
     for imageIndex = 1:numel(trainingImageSet)
-        computeIsomerizationsForImage(useParallelEngine, showRenderingOfSceneAndAdaptationField, trainingImageSet{imageIndex}, artifactData{imageIndex}, forcedSceneMeanLuminance, adaptingFieldType, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug);
+        computeIsomerizationsForImage(scansDir, useParallelEngine, showRenderingOfSceneAndAdaptationField, trainingImageSet{imageIndex}, artifactData{imageIndex}, forcedSceneMeanLuminance, adaptingFieldType, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug);
     end
 
 end
 
-function computeIsomerizationsForImage(useParallelEngine, showRenderingOfSceneAndAdaptationField, imsource, artifactData, forcedSceneMeanLuminance, adaptingFieldType, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug)
+function computeIsomerizationsForImage(scansDir, useParallelEngine, showRenderingOfSceneAndAdaptationField, imsource, artifactData, forcedSceneMeanLuminance, adaptingFieldType, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug)
 
     workerID = 1;
   
@@ -269,7 +271,7 @@ function computeIsomerizationsForImage(useParallelEngine, showRenderingOfSceneAn
         sensorAdaptationFieldParams.eyeMovementScanningParams.samplingIntervalInMilliseconds = newTimeStepInMilliseconds;
 
         % Save data
-        fileName = sprintf('%s_%s_scan%d.mat', imsource{1}, imsource{2}, scanIndex);
+        fileName = fullfile(scansDir, sprintf('%s_%s_scan%d.mat', imsource{1}, imsource{2}, scanIndex));
         fprintf('\t[Worker %d]: Saving data for scan %d in %s\n', workerID, scanIndex, fileName);
         save(fileName, 'scansNum', 'scanSensor', 'photoCurrents', 'scanPlusAdaptationFieldLMSexcitationSequence', ...
                 'LMSexcitationXdataInRetinalMicrons', 'LMSexcitationYdataInRetinalMicrons', ...
