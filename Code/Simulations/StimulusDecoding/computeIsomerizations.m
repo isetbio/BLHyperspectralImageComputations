@@ -304,7 +304,7 @@ function [LMSexcitationSequenceSubSampled, photoCurrentsSubSampled, sensorSubSam
     subSampledIndices = tOffset + 0:decimationFactor:originalTimePoints;
     subSampledIndices = subSampledIndices(subSampledIndices>0);
      
-    fprintf('\tLowpassing signals with a filter with %2.2f msec time constant and subsampling with a resolution of %2.2f msec.\n', tauInSeconds*1000, newSensorTimeInterval*1000);
+    fprintf('\tLowpassing signals with a filter with %2.2f msec time constant and subsampling with a resolution of %2.2f msec.\n', tauInSamples*originalTimeInterval*1000, newSensorTimeInterval*1000);
 
     % LMS excitation sequence
     LMSexcitationSequenceSubSampled = zeros(numel(subSampledIndices), size(LMSexcitationSequence,2), size(LMSexcitationSequence,3), size(LMSexcitationSequence,4), 'single');
