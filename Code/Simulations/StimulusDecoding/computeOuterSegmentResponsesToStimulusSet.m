@@ -1,7 +1,17 @@
 % Method to generate custom sensor and compute isomerizations rates
 % for a bunch of images, each scanned by eye movements 
-function computeIsomerizations(configuration)
+function computeOuterSegmentResponsesToStimulusSet(varargin)
 
+    minargs = 0;
+    maxargs = 1;
+    narginchk(minargs, maxargs);
+    
+    if (nargin == 0)
+        configuration = 'manchester'
+    else
+        configuration = varargin{1}
+    end
+    
     % reset
     ieInit;
     

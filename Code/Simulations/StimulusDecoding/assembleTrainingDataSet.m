@@ -1,12 +1,21 @@
-function assembleTrainingDataSet
+function assembleTrainingDataSet(varargin)
 
+    minargs = 0;
+    maxargs = 1;
+    narginchk(minargs, maxargs);
+    
+    if (nargin == 0)
+        configuration = 'manchester'
+    else
+        configuration = varargin{1}
+    end
+    
     % cd to here
     [rootPath,~] = fileparts(which(mfilename));
     cd(rootPath);
-    
     scanDir = 'ScansData';
     
-    [trainingImageSet, ~, ~, ~, ~] = configureExperiment('manchester');
+    [trainingImageSet, ~, ~, ~, ~] = configureExperiment(configuration);
     
     trainingDataPercentange = input('Enter % of data to use for training [ e.g, 90]: ');
     if (trainingDataPercentange < 1) || (trainingDataPercentange > 100)
@@ -209,7 +218,7 @@ function assembleTrainingDataSet
         for scanIndex = trainingScans+1:scansNum
             
             % filename for this scan
-            scanFilename = sprintf('%s_%s_scan%d.mat', imsource{1}, imsource{2}, scanIndex);
+            scanFilename = fullfile(scanDir, sprintf('%s_%s_scan%d.mat', imsource{1}, imsource{2}, scanIndex));
             fprintf('Loading testing data from %s\n', scanFilename);
             
             % Load scan data
@@ -269,7 +278,7 @@ function assembleTrainingDataSet
     size(testingPhotocurrents)
     
     fprintf('Saving decoding data ...');
-    decodingDataFileName = 'decodingData.mat';
+    decodingDataFileName = sprintf('decodingData_%s.mat', configuration);
     save(decodingDataFileName, 'designMatrix', ...
         'trainingTimeAxis', 'trainingPhotocurrents', 'trainingLcontrastSequence', 'trainingMcontrastSequence', 'trainingScontrastSequence', ...
         'testingTimeAxis',  'testingPhotocurrents', 'testingLcontrastSequence',  'testingMcontrastSequence',  'testingScontrastSequence', ...
