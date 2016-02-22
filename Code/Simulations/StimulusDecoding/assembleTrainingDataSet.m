@@ -4,6 +4,8 @@ function assembleTrainingDataSet
     [rootPath,~] = fileparts(which(mfilename));
     cd(rootPath);
     
+    scanDir = 'ScansData';
+    
     [trainingImageSet, ~, ~, ~, ~] = configureExperiment('manchester');
     
     trainingDataPercentange = input('Enter % of data to use for training [ e.g, 90]: ');
@@ -20,7 +22,7 @@ function assembleTrainingDataSet
         imsource = trainingImageSet{imageIndex};
         
         % See how many scan files there are for this image
-        scanFilename = sprintf('%s_%s_scan1.mat', imsource{1}, imsource{2});
+        scanFilename = fullfile(scanDir, sprintf('%s_%s_scan1.mat', imsource{1}, imsource{2}));
         load(scanFilename, 'scansNum', 'scanSensor');
         
         trainingScans = round(trainingDataPercentange/100.0*scansNum);
@@ -90,7 +92,7 @@ function assembleTrainingDataSet
         imsource = trainingImageSet{imageIndex};
         
         % See how many scan files there are for this image
-        scanFilename = sprintf('%s_%s_scan1.mat', imsource{1}, imsource{2});
+        scanFilename = fullfile(scanDir, sprintf('%s_%s_scan1.mat', imsource{1}, imsource{2}));
         load(scanFilename, 'scansNum');
         
         trainingScans = round(trainingDataPercentange/100.0*scansNum);
@@ -99,7 +101,7 @@ function assembleTrainingDataSet
         for scanIndex = 1:trainingScans
             
             % filename for this scan
-            scanFilename = sprintf('%s_%s_scan%d.mat', imsource{1}, imsource{2}, scanIndex);
+            scanFilename = fullfile(scanDir, sprintf('%s_%s_scan%d.mat', imsource{1}, imsource{2}, scanIndex));
             fprintf('Loading training data from %s\n', scanFilename);
             
             % Load scan data
