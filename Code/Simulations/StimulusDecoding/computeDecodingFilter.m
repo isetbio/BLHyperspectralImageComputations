@@ -1,7 +1,21 @@
 function computeDecodingFilter
 
-    decodingDataFileName = 'decodingData.mat';
-    load(decodingDataFileName, 'designMatrix', ...
+    minargs = 0;
+    maxargs = 1;
+    narginchk(minargs, maxargs);
+    
+    if (nargin == 0)
+        configuration = 'manchester'
+    else
+        configuration = varargin{1}
+    end
+    
+    decodingDataFileName = sprintf('decodingData_%s.mat', configuration);
+    load(decodingDataFileName, ...
+        'scanSensor',   ...
+        'subSampledSpatialBins', 'thresholdConeSeparation', ...
+        'keptLconeIndices', 'keptMconeIndices', 'keptSconeIndices', ...
+        'designMatrix', 'trainingDataPercentange', ...
         'trainingTimeAxis', 'trainingPhotocurrents', 'trainingLcontrastSequence', 'trainingMcontrastSequence', 'trainingScontrastSequence');
     
     minTimeBin = min([0 min([designMatrix.lat 0])])
