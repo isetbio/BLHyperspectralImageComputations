@@ -2,9 +2,9 @@ function [X, C] = assembleDesignMatrixAndStimulusVector(totalBins, latencyBins, 
 
     minTimeBin = min([0 min([latencyBins 0])]);
     rowsOfX = totalBins + minTimeBin;
-    
+    stimulusDimensions = size(stimulus,2);
     X = zeros(rowsOfX, 1+(conesNum*memoryBins), 'single');
-    C = zeros(rowsOfX, size(stimulus,2));
+    C = zeros(rowsOfX, stimulusDimensions);
     
     X(:,1) = 1;
     for row = 1:rowsOfX

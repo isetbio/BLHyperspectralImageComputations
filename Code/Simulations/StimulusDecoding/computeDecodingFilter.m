@@ -11,15 +11,64 @@ function computeDecodingFilter
     end
     
     decodingDataFileName = sprintf('decodingData_%s.mat', configuration);
-    load(decodingDataFileName, ...
-        'scanSensor',   ...
-        'subSampledSpatialBins', 'thresholdConeSeparation', ...
-        'keptLconeIndices', 'keptMconeIndices', 'keptSconeIndices', ...
-        'designMatrix', 'trainingDataPercentange', ...
-        'trainingTimeAxis', 'trainingPhotocurrents', 'trainingLcontrastSequence', 'trainingMcontrastSequence', 'trainingScontrastSequence');
+    trainingVarList = {...
+        'designMatrix', ...
+        'trainingTimeAxis', ...
+        'trainingPhotocurrents', ...
+        'trainingLcontrastSequence', ...
+        'trainingMcontrastSequence', ...
+        'trainingScontrastSequence' ...
+        };
+    
+    for k = 1:numel(trainingVarList)
+        load(decodingDataFileName, trainingVarList{k});
+    end
+    
+    whos
+    pause
+    
+    trainingStimulusTrain = [
+        trainingLcontrastSequence', ...
+        trainingMcontrastSequence', ...
+        trainingScontrastSequence' ...
+        ];
+    
+    % Assemble X and c matrices
+    [Xtrain, cTrain] = assembleDesignMatrixAndStimulusVector(designMatrix.T, designMatrix.lat, designMatrix.m, designMatrix.n, trainingPhotocurrents, trainingStimulusTrain);
+    clear(trainingVarList{:});
+    
+    % Compute decoding filter, wVector
+    pseudoInverseOfX = pinv(Xtrain);
+    featuresNum = size(Xtrain,2)
+    stimulusDimensions = size(cTrain,2)
+    wVector = zeros(featuresNum, stimulusDimensions);
+    for stimDim = 1:stimulusDimensions
+        wVector(:,stimDim) = pseudoInverseOfX * cTrain(:,stimDim);
+    end
+    
+    % Compute in-sample predictions
+    cTrainPrediction = cTrain*0;
+    for stimDim = 1:stimulusDimensions
+        cTrainPrediction(:, stimDim) = Xtrain * wVector(:,stimDim);
+    end
+    
+    save(sprintf('DecodingFilters_%s.mat', configuration), 'wVector', 'cTrainPrediction', 'cTrain'); 
+    
+    
+
+    return;
+    
+    wLcone = pseudoInverseOfX  * lConeC;
+    wMcone = pseudoInverseOfX  * mConeC;
+    wScone = pseudoInverseOfX  * sConeC;
+    
+    size(trainingTimeAxis)
+    size(trainingPhotocurrents)
+    
     
     minTimeBin = min([0 min([designMatrix.lat 0])])
-    rowsOfX = designMatrix.T + minTimeBin;
+    rowsOfX = designMatrix.T + minTimeBin
+
     
     X = zeros(rowsOfX, 1+(designMatrix.n*designMatrix.m), 'single');
     lConeC= zeros(rowsOfX, 1, 'single');
@@ -62,6 +111,8 @@ function computeDecodingFilter
     wMcone = pseudoInverseOfX  * mConeC;
     wScone = pseudoInverseOfX  * sConeC;
     
-    save('DecodingFilters.mat', 'wLcone', 'wMcone', 'wScone'); 
+    decoding
+    save(sprintf('DecodingFilters_%s.mat', configuration), 'wLcone', 'wMcone', 'wScone'); 
 end
 
+    
