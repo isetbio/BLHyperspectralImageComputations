@@ -1,7 +1,7 @@
-function assembleTrainingDataSet(varargin)
+function assembleTrainingDataSet(trainingDataPercentange, varargin)
 
-    minargs = 0;
-    maxargs = 1;
+    minargs = 1;
+    maxargs = 2;
     narginchk(minargs, maxargs);
     
     if (nargin == 0)
@@ -13,15 +13,10 @@ function assembleTrainingDataSet(varargin)
     % cd to here
     [rootPath,~] = fileparts(which(mfilename));
     cd(rootPath);
-    scanDir = 'ScansData';
+    scansDir = sprintf('ScansData.%sConfig', configuration)
+    
     
     [trainingImageSet, ~, ~, ~, ~] = configureExperiment(configuration);
-    
-    trainingDataPercentange = input('Enter % of data to use for training [ e.g, 90]: ');
-    if (trainingDataPercentange < 1) || (trainingDataPercentange > 100)
-        error('% must be in [0 .. 100]\n');
-    end
-
     
     % Compute number of training and testing scans
     totalTrainingScansNum = 0;
@@ -31,7 +26,7 @@ function assembleTrainingDataSet(varargin)
         imsource = trainingImageSet{imageIndex};
         
         % See how many scan files there are for this image
-        scanFilename = fullfile(scanDir, sprintf('%s_%s_scan1.mat', imsource{1}, imsource{2}));
+        scanFilename = fullfile(scansDir, sprintf('%s_%s_scan1.mat', imsource{1}, imsource{2}));
         load(scanFilename, 'scansNum', 'scanSensor');
         
         trainingScans = round(trainingDataPercentange/100.0*scansNum);
@@ -100,7 +95,7 @@ function assembleTrainingDataSet(varargin)
         imsource = trainingImageSet{imageIndex};
         
         % See how many scan files there are for this image
-        scanFilename = fullfile(scanDir, sprintf('%s_%s_scan1.mat', imsource{1}, imsource{2}));
+        scanFilename = fullfile(scansDir, sprintf('%s_%s_scan1.mat', imsource{1}, imsource{2}));
         load(scanFilename, 'scansNum');
         
         trainingScans = round(trainingDataPercentange/100.0*scansNum);
@@ -109,7 +104,7 @@ function assembleTrainingDataSet(varargin)
         for scanIndex = 1:trainingScans
             
             % filename for this scan
-            scanFilename = fullfile(scanDir, sprintf('%s_%s_scan%d.mat', imsource{1}, imsource{2}, scanIndex));
+            scanFilename = fullfile(scansDir, sprintf('%s_%s_scan%d.mat', imsource{1}, imsource{2}, scanIndex));
             fprintf('Loading training data from %s\n', scanFilename);
             
             % Load scan data
@@ -129,11 +124,11 @@ function assembleTrainingDataSet(varargin)
             
             % pre-allocate memory
             if (trainingScanIndex == 0)
-                trainingTimeAxis            = (0:(timeBins*totalTrainingScansNum*totalImages-1))*(timeAxis(2)-timeAxis(1));
-                trainingLcontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTrainingScansNum*totalImages, 'single');
-                trainingMcontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTrainingScansNum*totalImages, 'single');
-                trainingScontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTrainingScansNum*totalImages, 'single');
-                trainingPhotocurrents       = zeros(conesNum, timeBins*totalTrainingScansNum*totalImages, 'single');
+                trainingTimeAxis            = (0:(timeBins*totalTrainingScansNum-1))*(timeAxis(2)-timeAxis(1));
+                trainingLcontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTrainingScansNum, 'single');
+                trainingMcontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTrainingScansNum, 'single');
+                trainingScontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTrainingScansNum, 'single');
+                trainingPhotocurrents       = zeros(conesNum, timeBins*totalTrainingScansNum, 'single');
                 
                 designMatrix.n = numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices);
                 designMatrix.lat = decondingLatencyInBins;
@@ -148,6 +143,7 @@ function assembleTrainingDataSet(varargin)
             timeBinRange = (0:timeBins-1);
             theTimeBins = currentTimeBin + timeBinRange;
             
+            fprintf('last bin for scan %d, image: %d, : %d (allocated: %d)\n', scanIndex, imageIndex, theTimeBins(end), numel(trainingTimeAxis))
             
             % insert
             trainingLcontrastSequence(:, theTimeBins) = scanLcontrastSequence;
@@ -158,20 +154,16 @@ function assembleTrainingDataSet(varargin)
             % update training scan index
             trainingScanIndex = trainingScanIndex + 1;
       
-            displayStimulusAndResponse = false;
+            displayStimulusAndResponse = true;
             if (displayStimulusAndResponse)   
                 binIndicesToPlot = 1:theTimeBins(end);
                 timeLims = [trainingTimeAxis(1) trainingTimeAxis(binIndicesToPlot(end))];
                 
                 maxContrast = max([max(trainingLcontrastSequence(:)) max(trainingMcontrastSequence(:)) max(trainingScontrastSequence(:))]);
-                maxPhotoCurrent = max([...
-                    max(max(abs(trainingPhotocurrents(lconeIndex,binIndicesToPlot)))) ...
-                    max(max(abs(trainingPhotocurrents(mconeIndex,binIndicesToPlot)))) ...
-                    max(max(abs(trainingPhotocurrents(sconeIndex,binIndicesToPlot)))) 
-                ]);
+                maxPhotoCurrent = max(max(abs(trainingPhotocurrents(:, binIndicesToPlot))));
             
                 hFig = figure(2);
-                set(hFig, 'Color', [0 0 0], 'Name', sprintf('Scans: 1 - %d of %d', scanIndex, trainingScans), 'Position', [10 60 2880 1000]);
+                set(hFig, 'Color', [0 0 0], 'Name', sprintf('Scans: 1 - %d of %d', scanIndex, trainingScans), 'Position', [10 60 2880/2 1000]);
                 clf;
                 subplot('Position', [0.02 0.70 0.97 0.25]);
                 hold on;
@@ -205,7 +197,6 @@ function assembleTrainingDataSet(varargin)
                 ylabel('cone id');
                 colormap(bone(512));
                 drawnow
-                pause
             end % displayStimulusAndResponse
         end % scanIndex
         
@@ -217,7 +208,7 @@ function assembleTrainingDataSet(varargin)
         for scanIndex = trainingScans+1:scansNum
             
             % filename for this scan
-            scanFilename = fullfile(scanDir, sprintf('%s_%s_scan%d.mat', imsource{1}, imsource{2}, scanIndex));
+            scanFilename = fullfile(scansDir, sprintf('%s_%s_scan%d.mat', imsource{1}, imsource{2}, scanIndex));
             fprintf('Loading testing data from %s\n', scanFilename);
             
             % Load scan data
@@ -237,11 +228,14 @@ function assembleTrainingDataSet(varargin)
              
             % pre-allocate memory
             if (testingScanIndex == 0)
-                testingTimeAxis            = (0:(timeBins*totalTestingScansNum*totalImages-1))*(timeAxis(2)-timeAxis(1));
-                testingLcontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTestingScansNum*totalImages, 'single');
-                testingMcontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTestingScansNum*totalImages, 'single');
-                testingScontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTestingScansNum*totalImages, 'single');
-                testingPhotocurrents       = zeros(conesNum,  timeBins*totalTestingScansNum*totalImages, 'single');
+                testingTimeAxis            = (0:(timeBins*totalTestingScansNum-1))*(timeAxis(2)-timeAxis(1));
+                testingLcontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTestingScansNum, 'single');
+                testingMcontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTestingScansNum, 'single');
+                testingScontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTestingScansNum, 'single');
+                testingPhotocurrents       = zeros(conesNum,  timeBins*totalTestingScansNum, 'single');
+                
+                designMatrixTest = designMatrix;
+                designMatrixTest.T = size(testingPhotocurrents,2) - (designMatrix.lat + designMatrix.m);
             end
             
             % determine insertion time point
@@ -277,13 +271,13 @@ function assembleTrainingDataSet(varargin)
     size(testingPhotocurrents)
     
     fprintf('Saving decoding data ...');
-    decodingDataFileName = sprintf('decodingData_%s.mat', configuration);
+    decodingDataFileName = fullfile(scansDir, sprintf('DecodingData_%s.mat', configuration));
     save(decodingDataFileName, 'scanSensor',   ...
         'subSampledSpatialBins', 'thresholdConeSeparation', ...
         'keptLconeIndices', 'keptMconeIndices', 'keptSconeIndices', ...
-        'designMatrix', 'trainingDataPercentange', ...
-        'trainingTimeAxis', 'trainingPhotocurrents', 'trainingLcontrastSequence', 'trainingMcontrastSequence', 'trainingScontrastSequence', ...
-        'testingTimeAxis',  'testingPhotocurrents', 'testingLcontrastSequence',  'testingMcontrastSequence',  'testingScontrastSequence', ...
+        'trainingDataPercentange', ...
+        'designMatrix', 'trainingTimeAxis', 'trainingPhotocurrents', 'trainingLcontrastSequence', 'trainingMcontrastSequence', 'trainingScontrastSequence', ...
+        'designMatrixTest','testingTimeAxis',  'testingPhotocurrents', 'testingLcontrastSequence',  'testingMcontrastSequence',  'testingScontrastSequence', ...
         '-v7.3');
     fprintf('Decoding data saved to %s', decodingDataFileName);
 end

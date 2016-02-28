@@ -1,4 +1,4 @@
-function computeDecodingFilter
+function computeDecodingFilter(varargin)
 
     minargs = 0;
     maxargs = 1;
@@ -10,7 +10,12 @@ function computeDecodingFilter
         configuration = varargin{1}
     end
     
-    decodingDataFileName = sprintf('decodingData_%s.mat', configuration);
+    % cd to here
+    [rootPath,~] = fileparts(which(mfilename));
+    cd(rootPath);
+    
+    scansDir = sprintf('ScansData.%sConfig', configuration);
+    decodingDataFileName = fullfile(scansDir,sprintf('DecodingData_%s.mat', configuration));
     trainingVarList = {...
         'designMatrix', ...
         'trainingTimeAxis', ...
@@ -23,15 +28,14 @@ function computeDecodingFilter
     for k = 1:numel(trainingVarList)
         load(decodingDataFileName, trainingVarList{k});
     end
-    
-    whos
-    pause
+
     
     trainingStimulusTrain = [
         trainingLcontrastSequence', ...
         trainingMcontrastSequence', ...
         trainingScontrastSequence' ...
         ];
+    
     
     % Assemble X and c matrices
     [Xtrain, cTrain] = assembleDesignMatrixAndStimulusVector(designMatrix.T, designMatrix.lat, designMatrix.m, designMatrix.n, trainingPhotocurrents, trainingStimulusTrain);
@@ -52,7 +56,8 @@ function computeDecodingFilter
         cTrainPrediction(:, stimDim) = Xtrain * wVector(:,stimDim);
     end
     
-    save(sprintf('DecodingFilters_%s.mat', configuration), 'wVector', 'cTrainPrediction', 'cTrain'); 
+    decodingFiltersFileName = fullfile(scansDir, sprintf('DecodingFilters_%s.mat', configuration));
+    save(decodingFiltersFileName, 'wVector', 'cTrainPrediction', 'cTrain'); 
     
     
 
@@ -68,7 +73,7 @@ function computeDecodingFilter
     
     minTimeBin = min([0 min([designMatrix.lat 0])])
     rowsOfX = designMatrix.T + minTimeBin
-
+pause
     
     X = zeros(rowsOfX, 1+(designMatrix.n*designMatrix.m), 'single');
     lConeC= zeros(rowsOfX, 1, 'single');

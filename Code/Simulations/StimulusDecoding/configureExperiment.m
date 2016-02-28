@@ -57,19 +57,21 @@ function [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorPar
         % images used to train the decoder
         trainingImageSet = {...
             {'manchester_database', 'scene1'} ...
+            {'manchester_database', 'scene2'} ...
+            {'manchester_database', 'scene3'} ...
         };
         for k = 1:numel(trainingImageSet)
-           imsource = trainingImageSet{1};
+           imsource = trainingImageSet{k};
            fprintf('%2d. ''%s'' / ''%s''\n', k, imsource{1}, imsource{2}); 
         end
         fprintf('\n');
         
         % parse the eye movement data into scans, each scan having this many saccades
-        saccadesPerScan = 5;  
+        saccadesPerScan = 2;  
     
         % the higher the overlapFactor the more dense the saccades sample the scene
         % 1 results in sensor positions that just abut each other, 2 more dense, 0.5 less dense
-        fixationOverlapFactor = 0.5;   
+        fixationOverlapFactor = 0.125;   
         
     else
         error('Unknown configuration. Must be either ''small'', or ''large'', or ''manchester''. \n');

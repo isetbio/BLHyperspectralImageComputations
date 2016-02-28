@@ -15,8 +15,20 @@ function [X, C] = assembleDesignMatrixAndStimulusVector(totalBins, latencyBins, 
 %             if (endingColumn > size(X,2))
 %                 [startingColumn endingColumn size(X,2)]
 %             end
-            X(row, startingColumn:endingColumn) = signals(coneIndex, timeBins);
-            C(row, :) = stimulus(row-minTimeBin,:);
+%            [timeBins(end) size(signals,2)]
+            if (timeBins(end) <= size(signals,2))
+                X(row, startingColumn:endingColumn) = signals(coneIndex, timeBins);
+            else
+                fprintf('column %d > size(signals): %d\n', timeBins(end), size(signals,2));
+            end
+            
         end % coneIndex
+        if (row-minTimeBin <= size(stimulus,1))
+            C(row, :) = stimulus(row-minTimeBin,:);
+        else
+            fprintf('index %d > size(stimulus): %d\n', row-minTimeBin, size(stimulus,1));
+        end
+        
     end % row
+
 end

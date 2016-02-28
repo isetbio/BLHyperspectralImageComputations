@@ -18,7 +18,7 @@ function computeOuterSegmentResponsesToStimulusSet(varargin)
     [rootPath,~] = fileparts(which(mfilename));
     cd(rootPath);
     
-    scansDir = 'ScansData';
+    scansDir = sprintf('ScansData.%sConfig', configuration)
     
     % configure experiment
     [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams] = configureExperiment(configuration);
@@ -229,13 +229,13 @@ function computeIsomerizationsForImage(scansDir, useParallelEngine, showRenderin
             timeBins2 = (saccadeIndex-1)*(positionsPerFixation+positionsPerFixationAdaptationField);
 
             % part1: response data from  adaptationField
-            binIndices2 = (1+timeBins2):timeBins2+positionsPerFixationAdaptationField;
+            binIndices2 = (1+timeBins2):(timeBins2+positionsPerFixationAdaptationField);
             scanPlusAdaptationFieldIsomerizationRates(:,:,binIndices2) = isomerizationRateAdaptationField;
             scanPlusAdaptationFieldPositions(binIndices2,:)            = sensorPositionsAdaptationField;
             scanPlusAdaptationFieldLMSexcitationSequence(binIndices2,:,:,:) = scanLMSAdaptionFieldSequence;
 
             % part2: response data from current saccade
-            binIndices1 = (1+timeBins1):timeBins1+positionsPerFixation;
+            binIndices1 = (1+timeBins1):(timeBins1+positionsPerFixation);
             binIndices2 = binIndices2(end) + (1:positionsPerFixation);
             scanPlusAdaptationFieldIsomerizationRates(:,:,binIndices2) = scanIsomerizationRates(:,:, binIndices1);
             scanPlusAdaptationFieldPositions(binIndices2, :)           = scanPositions(binIndices1,:);
@@ -445,25 +445,25 @@ function [LMSexcitationSequence, sceneSensorViewXdataInRetinalMicrons, sceneSens
     
     function [rows, cols] = determineSceneRowsColsWithinSensor()
         pixelIndices = find(...
-            (abs(sceneXgridInRetinalMicrons-currentSensorPositionInRetinalMicrons(1)) <= sensorHalfWidth) & ...
-            (abs(sceneYgridInRetinalMicrons-currentSensorPositionInRetinalMicrons(2)) <= sensorHalfHeight));
+            (abs(floor(sceneXgridInRetinalMicrons)-currentSensorPositionInRetinalMicrons(1)) <= sensorHalfWidth) & ...
+            (abs(floor(sceneYgridInRetinalMicrons)-currentSensorPositionInRetinalMicrons(2)) <= sensorHalfHeight));
         [rows, cols] = ind2sub(size(sceneXgridInRetinalMicrons), pixelIndices);
     end
 
     function forceSensorPositionToBoundaries()
         % force currentSensorPosition to boundaries
         if (currentSensorPositionInRetinalMicrons(1)-sensorHalfWidth <= sceneXgridInRetinalMicrons(1))
-            currentSensorPositionInRetinalMicrons(1) = sceneXgridInRetinalMicrons(1) + sensorHalfWidth + sensorSampleSeparationInMicrons(2);
+            currentSensorPositionInRetinalMicrons(1) = floor(sceneXgridInRetinalMicrons(1)) + sensorHalfWidth + sensorSampleSeparationInMicrons(2);
         end
         if (currentSensorPositionInRetinalMicrons(1)+sensorHalfWidth >= sceneXgridInRetinalMicrons(end))
-            currentSensorPositionInRetinalMicrons(1) = sceneXgridInRetinalMicrons(end) - sensorHalfWidth - sensorSampleSeparationInMicrons(2);
+            currentSensorPositionInRetinalMicrons(1) = floor(sceneXgridInRetinalMicrons(end)) - sensorHalfWidth - sensorSampleSeparationInMicrons(2);
         end
 
         if (currentSensorPositionInRetinalMicrons(2)-sensorHalfHeight <= sceneYgridInRetinalMicrons(1))
-            currentSensorPositionInRetinalMicrons(2) = sceneYgridInRetinalMicrons(1) + sensorHalfHeight + sensorSampleSeparationInMicrons(1);
+            currentSensorPositionInRetinalMicrons(2) = round(sceneYgridInRetinalMicrons(1)) + sensorHalfHeight + sensorSampleSeparationInMicrons(1);
         end
         if (currentSensorPositionInRetinalMicrons(2)+sensorHalfHeight >= sceneYgridInRetinalMicrons(end))
-            currentSensorPositionInRetinalMicrons(2) = sceneYgridInRetinalMicrons(end) - sensorHalfHeight - sensorSampleSeparationInMicrons(1);
+            currentSensorPositionInRetinalMicrons(2) = round(sceneYgridInRetinalMicrons(end)) - sensorHalfHeight - sensorSampleSeparationInMicrons(1);
         end
     end
 
