@@ -3,16 +3,16 @@ function runExperiment
     [rootPath,~] = fileparts(which(mfilename));
     cd(rootPath);
     
-    experimentConfiguration = 'manchester'
+    experimentConfiguration = 'manchester';
     osType = 'biophysics-based';  % 'biophysics-based' or 'linear'
-    adaptingFieldType = 'MatchSpatiallyAveragedPhotonSPD';   % 'MacBethGrayD65MatchSceneLuminance' or 'MatchSpatiallyAveragedPhotonSPD'
+    adaptingFieldType = 'MacBethGrayD65MatchSceneLuminance';   % 'MacBethGrayD65MatchSceneLuminance' or 'MatchSpatiallyAveragedPhotonSPD'
    
-    runMode = {'compute outer segment responses', 'assembleTrainingDataSet', 'computeDecodingFilter', 'computeOutOfSamplePredictions'};
+    % runMode possible value: 'compute outer segment responses', 'assembleTrainingDataSet', 'computeDecodingFilter', 'computeOutOfSamplePredictions';
     
     runMode = {'compute outer segment responses'};
-    runMode = {'assembleTrainingDataSet'}
-    runMode = {'computeDecodingFilter'};
-    runMode = {'computeOutOfSamplePredictions'};
+%     runMode = {'assembleTrainingDataSet'}
+%     runMode = {'computeDecodingFilter'};
+%     runMode = {'computeOutOfSamplePredictions'};
     
     if (ismember('compute outer segment responses', runMode))
         % 1. compute figuration@osBiophys responses for the ensemble of scenes  defined in experimentConfiguration
@@ -22,7 +22,7 @@ function runExperiment
         % Here we also define the spatial resolution with which to represent
         % the input stimulus, the subset of cones to use, and the temporal 
         % resolution with which to sample responses and stimuli
-        trainingDataPercentange = GetTrainingDataPercentage();
+        trainingDataPercentange = 50; % GetTrainingDataPercentage();
         assembleTrainingDataSet(trainingDataPercentange, rootPath, osType, adaptingFieldType, experimentConfiguration);
         
         % 3. Compute decoding filter
@@ -36,7 +36,7 @@ function runExperiment
         % Here we also define the spatial resolution with which to represent
         % the input stimulus, the subset of cones to use, and the temporal 
         % resolution with which to sample responses and stimuli
-        trainingDataPercentange = GetTrainingDataPercentage();
+        trainingDataPercentange = 50; % GetTrainingDataPercentage();
         assembleTrainingDataSet(trainingDataPercentange, rootPath, osType, adaptingFieldType, experimentConfiguration);
         % 3. Compute decoding filter
         computeDecodingFilter(rootPath, osType, adaptingFieldType, experimentConfiguration);
