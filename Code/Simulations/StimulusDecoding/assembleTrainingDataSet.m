@@ -13,10 +13,11 @@ function assembleTrainingDataSet(trainingDataPercentange, varargin)
     % cd to here
     [rootPath,~] = fileparts(which(mfilename));
     cd(rootPath);
-    scansDir = sprintf('ScansData.%sConfig', configuration)
-    
-    
+    scansDir = sprintf('ScansData.%sConfig', configuration);
     [trainingImageSet, ~, ~, ~, ~] = configureExperiment(configuration);
+    
+    displayTrainingMosaic = true;
+    displayStimulusAndResponse = true;
     
     % Compute number of training and testing scans
     totalTrainingScansNum = 0;
@@ -53,8 +54,9 @@ function assembleTrainingDataSet(trainingDataPercentange, varargin)
     [keptLconeIndices, keptMconeIndices, keptSconeIndices] = determineConeIndicesToKeep(scanSensor, thresholdConeSeparation);
     
    
-    plotTrainingMosaic = true;
-    if (plotTrainingMosaic)
+    
+    
+    if (displayTrainingMosaic)
         xy = sensorGet(scanSensor, 'xy');
         coneTypes = sensorGet(scanSensor, 'cone type');
         lConeIndices = find(coneTypes == 2);
@@ -154,7 +156,7 @@ function assembleTrainingDataSet(trainingDataPercentange, varargin)
             % update training scan index
             trainingScanIndex = trainingScanIndex + 1;
       
-            displayStimulusAndResponse = true;
+            
             if (displayStimulusAndResponse)   
                 binIndicesToPlot = 1:theTimeBins(end);
                 timeLims = [trainingTimeAxis(1) trainingTimeAxis(binIndicesToPlot(end))];

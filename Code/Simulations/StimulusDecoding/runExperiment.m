@@ -1,6 +1,6 @@
 function runExperiment
 
-    experimentConfiguration = 'small'
+    experimentConfiguration = 'manchester'
     trainingDataPercentange = input('Enter % of data to use for training [ e.g, 90]: ');
     if (trainingDataPercentange < 1) || (trainingDataPercentange > 100)
         error('% must be in [0 .. 100]\n');
