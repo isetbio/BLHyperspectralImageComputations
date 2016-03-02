@@ -1,19 +1,10 @@
-function assembleTrainingDataSet(trainingDataPercentange, varargin)
+function assembleTrainingDataSet(trainingDataPercentange, rootPath, osType, adaptingFieldType, configuration)
 
-    minargs = 1;
-    maxargs = 2;
+    minargs = 5;
+    maxargs = 5;
     narginchk(minargs, maxargs);
     
-    if (nargin == 0)
-        configuration = 'manchester'
-    else
-        configuration = varargin{1}
-    end
-    
-    % cd to here
-    [rootPath,~] = fileparts(which(mfilename));
-    cd(rootPath);
-    scansDir = sprintf('ScansData.%sConfig', configuration);
+    scansDir = getScansDir(rootPath, configuration, adaptingFieldType, osType);
     [trainingImageSet, ~, ~, ~, ~] = configureExperiment(configuration);
     
     displayTrainingMosaic = true;

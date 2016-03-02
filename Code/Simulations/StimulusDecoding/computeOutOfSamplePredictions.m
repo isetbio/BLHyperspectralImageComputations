@@ -1,20 +1,10 @@
-function computeOutOfSamplePredictions(varargin)
+function computeOutOfSamplePredictions(rootPath, osType, adaptingFieldType, configuration)
     
-    minargs = 0;
-    maxargs = 1;
+    minargs = 4;
+    maxargs = 4;
     narginchk(minargs, maxargs);
-    
-    if (nargin == 0)
-        configuration = 'manchester'
-    else
-        configuration = varargin{1}
-    end
-    
-    % cd to here
-    [rootPath,~] = fileparts(which(mfilename));
-    cd(rootPath);
-    
-    scansDir = sprintf('ScansData.%sConfig', configuration);
+
+    scansDir = getScansDir(rootPath, configuration, adaptingFieldType, osType)
     decodingFiltersFileName = fullfile(scansDir, sprintf('DecodingFilters_%s.mat', configuration));
     
     % First, lets plot in-sample predictions
@@ -70,6 +60,7 @@ function computeOutOfSamplePredictions(varargin)
     drawnow; 
     
 
+    fprintf('\nPlease wait. Computing out-of-sample predictions ....');
     decodingDataFileName = fullfile(scansDir, sprintf('DecodingData_%s.mat', configuration));
     
     testingVarList = {...
@@ -90,15 +81,16 @@ function computeOutOfSamplePredictions(varargin)
         testingScontrastSequence' ...
         ];
     [Xtest, cTest] = assembleDesignMatrixAndStimulusVector(designMatrixTest.T, designMatrixTest.lat, designMatrixTest.m, designMatrixTest.n, testingPhotocurrents, testingStimulusTrain);
-    
-    
-    
+
     stimulusDimensions = size(cTest,2)
     cTestPrediction = cTest*0;
     for stimDim = 1:stimulusDimensions
         cTestPrediction(:, stimDim) = Xtest * wVector(:,stimDim);
     end
     
+    fprintf('Done \n');
+     
+     
      % select a range to plot
     timeBins = 1:size(cTest,1);
     

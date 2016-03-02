@@ -1,32 +1,23 @@
 % Method to generate custom sensor and compute isomerizations rates
 % for a bunch of images, each scanned by eye movements 
-function computeOuterSegmentResponsesToStimulusSet(varargin)
+function computeOuterSegmentResponsesToStimulusSet(rootPath, osType, adaptingFieldType, configuration)
 
-    minargs = 0;
-    maxargs = 1;
+    minargs = 4;
+    maxargs = 4;
     narginchk(minargs, maxargs);
-    
-    if (nargin == 0)
-        configuration = 'manchester'
-    else
-        configuration = varargin{1}
-    end
     
     % reset
     ieInit;
     
-    [rootPath,~] = fileparts(which(mfilename));
-    cd(rootPath);
-    
-    scansDir = sprintf('ScansData.%sConfig', configuration)
-    
+
     % configure experiment
     [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams] = configureExperiment(configuration);
+    pause
     
     % Set up remote data toolbox client
     remoteDataToolboxClient = RdtClient(getpref('HyperSpectralImageIsetbioComputations','remoteDataToolboxConfig')); 
     
-    % Fecth the scene dataset
+    % Fetch the scene dataset
     for imageIndex = 1:numel(trainingImageSet)
         % Retrieve scene
         imsource = trainingImageSet{imageIndex};
@@ -39,17 +30,15 @@ function computeOuterSegmentResponsesToStimulusSet(varargin)
     debug = false;
     showRenderingOfSceneAndAdaptationField = true;
     useParallelEngine = true;
-    
-%    adaptingFieldType = 'MacBethGrayD65MatchSceneLuminance';
-    adaptingFieldType = 'MatchSpatiallyAveragedPhotonSPD';
+    scansDir = getScansDir(rootPath, configuration, adaptingFieldType, osType);
     
     for imageIndex = 1:numel(trainingImageSet)
-        computeIsomerizationsForImage(scansDir, useParallelEngine, showRenderingOfSceneAndAdaptationField, trainingImageSet{imageIndex}, artifactData{imageIndex}, forcedSceneMeanLuminance, adaptingFieldType, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug);
+        computeOuterSegmentResponsesForImage(scansDir, osType, useParallelEngine, showRenderingOfSceneAndAdaptationField, trainingImageSet{imageIndex}, artifactData{imageIndex}, forcedSceneMeanLuminance, adaptingFieldType, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug);
     end
 
 end
 
-function computeIsomerizationsForImage(scansDir, useParallelEngine, showRenderingOfSceneAndAdaptationField, imsource, artifactData, forcedSceneMeanLuminance, adaptingFieldType, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug)
+function computeOuterSegmentResponsesForImage(scansDir, osType, useParallelEngine, showRenderingOfSceneAndAdaptationField, imsource, artifactData, forcedSceneMeanLuminance, adaptingFieldType, saccadesPerScan, sensorParams, sensorAdaptationFieldParams, debug)
 
     workerID = 1;
   
@@ -263,10 +252,16 @@ function computeIsomerizationsForImage(scansDir, useParallelEngine, showRenderin
         
         % Compute outer-segment response
         fprintf('\t[Worker %d]: Computing outer segment response\n', workerID);
-        osB = osBioPhys();
-        osB.osSet('noiseFlag', 1);
-        osB.osCompute(scanSensor);
-        photoCurrents = osGet(osB, 'ConeCurrentSignal');
+        
+        if (strcmp(osType, 'biophysics-based'))
+            osOBJ = osBioPhys();
+        else
+            osOBJ = osLinear();
+        end
+        
+        osOBJ.osSet('noiseFlag', 1);
+        osOBJ.osCompute(scanSensor);
+        photoCurrents = osGet(osOBJ, 'ConeCurrentSignal');
 
         % Lowpass and downsample all time series to a resolution of 1 millisecond to save space and make decoding faster
         newTimeStepInMilliseconds = 1.0;

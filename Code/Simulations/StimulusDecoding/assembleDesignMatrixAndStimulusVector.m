@@ -6,6 +6,8 @@ function [X, C] = assembleDesignMatrixAndStimulusVector(totalBins, latencyBins, 
     X = zeros(rowsOfX, 1+(conesNum*memoryBins), 'single');
     C = zeros(rowsOfX, stimulusDimensions);
     
+    fprintf('\nAssembling design matrix (%d x %x) and stimulus vector (%d x %d).\nThis will take a while. Please wait ...', size(X, 1), size(X, 2), size(C, 1), size(C, 2));
+    
     X(:,1) = 1;
     for row = 1:rowsOfX
         timeBins = latencyBins + row + (0:(memoryBins-1)) - minTimeBin;
