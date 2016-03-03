@@ -1,18 +1,21 @@
-function computeDecodingFilter(rootPath, osType, adaptingFieldType, configuration)
+function computeDecodingFilter(rootPath, decodingExportSubDirectory, osType, adaptingFieldType, configuration)
 
-    minargs = 4;
-    maxargs = 4;
+    minargs = 5;
+    maxargs = 5;
     narginchk(minargs, maxargs);
     
     scansDir = getScansDir(rootPath, configuration, adaptingFieldType, osType);
-    decodingDataFileName = fullfile(scansDir,sprintf('DecodingData_%s.mat', configuration));
+    decodingDirectory = getDecodingSubDirectory(scansDir, decodingExportSubDirectory); 
+    decodingDataFileName = fullfile(decodingDirectory, 'DecodingData.mat');
     trainingVarList = {...
         'designMatrix', ...
         'trainingTimeAxis', ...
         'trainingPhotocurrents', ...
         'trainingLcontrastSequence', ...
         'trainingMcontrastSequence', ...
-        'trainingScontrastSequence' ...
+        'trainingScontrastSequence', ...
+        'filterSpatialXdataInRetinalMicrons', ...
+        'filterSpatialYdataInRetinalMicrons' ...
         };
     
     fprintf('\nLoading ''%s'' ...', decodingDataFileName);
@@ -47,8 +50,8 @@ function computeDecodingFilter(rootPath, osType, adaptingFieldType, configuratio
         cTrainPrediction(:, stimDim) = Xtrain * wVector(:,stimDim);
     end
     
-    decodingFiltersFileName = fullfile(scansDir, sprintf('DecodingFilters_%s.mat', configuration));
-    save(decodingFiltersFileName, 'wVector', 'cTrainPrediction', 'cTrain'); 
+    decodingFiltersFileName = fullfile(decodingDirectory, sprintf('DecodingFilters.mat'));
+    save(decodingFiltersFileName, 'wVector', 'cTrainPrediction', 'cTrain', 'filterSpatialXdataInRetinalMicrons', 'filterSpatialYdataInRetinalMicrons'); 
     
 end
 

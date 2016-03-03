@@ -8,10 +8,10 @@ function scansDir = getScansDir(rootPath, configuration, adaptingFieldType, osTy
     
     scansDir = sprintf('%s/ScansData.%sConfig/%s/%s', rootPath, configuration, adaptingFieldType, osDir);
     if (exist(scansDir, 'dir') == false)
-        fprintf('%s folder does not exist. Will create it\n', scansDir);
+        fprintf('\n%s folder does not exist. Will create it.\n', scansDir);
         mkdir(scansDir);
     else
-        fprintf('\nFolder exists at %s.', scansDir);
+        fprintf('\nFolder exists at %s.\n', scansDir);
     end
 
 end

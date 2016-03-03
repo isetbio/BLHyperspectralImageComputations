@@ -1,14 +1,17 @@
-function assembleTrainingDataSet(trainingDataPercentange, rootPath, osType, adaptingFieldType, configuration)
+function assembleTrainingDataSet(trainingDataPercentange, decodingParams, rootPath, osType, adaptingFieldType, configuration)
 
-    minargs = 5;
-    maxargs = 5;
+    minargs = 6;
+    maxargs = 6;
     narginchk(minargs, maxargs);
     
     scansDir = getScansDir(rootPath, configuration, adaptingFieldType, osType);
+    decodingDirectory = getDecodingSubDirectory(scansDir, decodingParams.exportSubDirectory); 
+    
     [trainingImageSet, ~, ~, ~, ~] = configureExperiment(configuration);
     
     displayTrainingMosaic = true;
-    displayStimulusAndResponse = true;
+    displayStimulusAndResponse = false; % true;
+    displaySceneSampling = true;
     
     % Compute number of training and testing scans
     totalTrainingScansNum = 0;
@@ -30,22 +33,8 @@ function assembleTrainingDataSet(trainingDataPercentange, rootPath, osType, adap
     fprintf('Total training scans: %d\n', totalTrainingScansNum)
     fprintf('Total testing scans:  %d\n', totalTestingScansNum);
     
-    % Parameters of decoding
-    % 1. Select how to spatially subsample the input stimulus (scene window).
-    % The contrast sequences [space x time] to be decoded, have an original spatial resolution whose retinal size would be 1 micron
-    % Here we subsample this. To first approximation, we take the mean over
-    % all space, so we have only 1 spatial bin
-    subSampledSpatialBins = [1 1];
-    
-    % 2. Select how to subsample the cone mosaic.
-    % thresholdConeSeparation = 0 to use the entire mosaic
-    % thresholdConeSeparation = sqrt(2^2 + 2^2) to use cones separated by at least 2 cone apertures
-    thresholdConeSeparation = 3;
-    thresholdConeSeparation = sqrt(thresholdConeSeparation^2 + thresholdConeSeparation^2);
-    [keptLconeIndices, keptMconeIndices, keptSconeIndices] = determineConeIndicesToKeep(scanSensor, thresholdConeSeparation);
-    
-   
-    
+    % Compute L,M, and S-cone indices to keep (based on thesholdConeSeparation)
+    [keptLconeIndices, keptMconeIndices, keptSconeIndices] = determineConeIndicesToKeep(scanSensor, decodingParams.thresholdConeSeparation);
     
     if (displayTrainingMosaic)
         xy = sensorGet(scanSensor, 'xy');
@@ -53,8 +42,10 @@ function assembleTrainingDataSet(trainingDataPercentange, rootPath, osType, adap
         lConeIndices = find(coneTypes == 2);
         mConeIndices = find(coneTypes == 3);
         sConeIndices = find(coneTypes == 4);
-        figure(1);
+        hFigSampling = figure(1);
+        set(hFigSampling, 'Position', [10 10 1200 450]);
         clf;
+        subplot(1,3,1);
         hold on
         plot(xy(lConeIndices, 1), xy(lConeIndices, 2), 'ro', 'MarkerSize', 12, 'MarkerEdgeColor', [1 0.7 0.7]);
         plot(xy(mConeIndices, 1), xy(mConeIndices, 2), 'go', 'MarkerSize', 12, 'MarkerEdgeColor', [0.7 1.0 0.7]);
@@ -67,16 +58,9 @@ function assembleTrainingDataSet(trainingDataPercentange, rootPath, osType, adap
         drawnow;
     end
     
-    % 3. Hot to subsample along the time dimension
-    temporalSubSamplingResolutionInMilliseconds = 4;
-    
-    % 4. Select the latency and memory of the decoding filter
-    decodingLatencyInMilliseconds = -32; % negative to get the before stimulus onset partc
-    decondingLatencyInBins = round(decodingLatencyInMilliseconds/temporalSubSamplingResolutionInMilliseconds);
-    
-    decodingMemoryInMilliseconds = 200;
-    decodingMemoryInBins = round(decodingMemoryInMilliseconds/temporalSubSamplingResolutionInMilliseconds);
-    
+
+    decondingLatencyInBins = round(decodingParams.decodingLatencyInMilliseconds/decodingParams.temporalSubSamplingResolutionInMilliseconds);
+    decodingMemoryInBins   = round(decodingParams.decodingMemoryInMilliseconds/decodingParams.temporalSubSamplingResolutionInMilliseconds); 
     
     % partition the data into training and testing components
     trainingScanIndex = 0;
@@ -104,23 +88,23 @@ function assembleTrainingDataSet(trainingDataPercentange, rootPath, osType, adap
             [timeAxis, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons, ...
                 scanLcontrastSequence, scanMcontrastSequence, scanScontrastSequence, ...
                 scanPhotoCurrents] = ...
-                loadScanData(scanFilename, temporalSubSamplingResolutionInMilliseconds, keptLconeIndices, keptMconeIndices, keptSconeIndices);
+                loadScanData(scanFilename, decodingParams.temporalSubSamplingResolutionInMilliseconds, keptLconeIndices, keptMconeIndices, keptSconeIndices);
             
             timeBins = numel(timeAxis);
             conesNum = size(scanPhotoCurrents,1);
             spatialBins = size(scanLcontrastSequence,1);
             
-            % Spatially subsample LMS contrast sequences according to subSampledSpatialBins, e.g, [2 2]
-            scanLcontrastSequence = subSampleSpatially(scanLcontrastSequence, subSampledSpatialBins, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons);
-            scanMcontrastSequence = subSampleSpatially(scanMcontrastSequence, subSampledSpatialBins, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons);
-            scanScontrastSequence = subSampleSpatially(scanScontrastSequence, subSampledSpatialBins, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons);
+            % Spatially subsample LMS contrast sequences according to subSampledSpatialGrid, e.g, [2 2]
+            [scanLcontrastSequence, resampledSpatialXdataInRetinalMicrons, resampledSpatialYdataInRetinalMicrons] = subSampleSpatially(scanLcontrastSequence, decodingParams.subSampledSpatialGrid, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons, displaySceneSampling, hFigSampling);
+            [scanMcontrastSequence, resampledSpatialXdataInRetinalMicrons, resampledSpatialYdataInRetinalMicrons] = subSampleSpatially(scanMcontrastSequence, decodingParams.subSampledSpatialGrid, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons, displaySceneSampling, hFigSampling);
+            [scanScontrastSequence, resampledSpatialXdataInRetinalMicrons, resampledSpatialYdataInRetinalMicrons] = subSampleSpatially(scanScontrastSequence, decodingParams.subSampledSpatialGrid, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons, displaySceneSampling, hFigSampling);
             
             % pre-allocate memory
             if (trainingScanIndex == 0)
                 trainingTimeAxis            = (0:(timeBins*totalTrainingScansNum-1))*(timeAxis(2)-timeAxis(1));
-                trainingLcontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTrainingScansNum, 'single');
-                trainingMcontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTrainingScansNum, 'single');
-                trainingScontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTrainingScansNum, 'single');
+                trainingLcontrastSequence   = zeros(prod(decodingParams.subSampledSpatialGrid), timeBins*totalTrainingScansNum, 'single');
+                trainingMcontrastSequence   = zeros(prod(decodingParams.subSampledSpatialGrid), timeBins*totalTrainingScansNum, 'single');
+                trainingScontrastSequence   = zeros(prod(decodingParams.subSampledSpatialGrid), timeBins*totalTrainingScansNum, 'single');
                 trainingPhotocurrents       = zeros(conesNum, timeBins*totalTrainingScansNum, 'single');
                 
                 designMatrix.n = numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices);
@@ -208,23 +192,23 @@ function assembleTrainingDataSet(trainingDataPercentange, rootPath, osType, adap
             [timeAxis, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons, ...
                 scanLcontrastSequence, scanMcontrastSequence, scanScontrastSequence, ...
                 scanPhotoCurrents] = ...
-                loadScanData(scanFilename, temporalSubSamplingResolutionInMilliseconds, keptLconeIndices, keptMconeIndices, keptSconeIndices);
+                loadScanData(scanFilename, decodingParams.temporalSubSamplingResolutionInMilliseconds, keptLconeIndices, keptMconeIndices, keptSconeIndices);
             
             timeBins = numel(timeAxis);
             conesNum = size(scanPhotoCurrents,1);
             spatialBins = size(scanLcontrastSequence,1);
             
-            % Spatially subsample LMS contrast sequences according to subSampledSpatialBins, e.g, [2 2]
-            scanLcontrastSequence = subSampleSpatially(scanLcontrastSequence, subSampledSpatialBins, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons);
-            scanMcontrastSequence = subSampleSpatially(scanMcontrastSequence, subSampledSpatialBins, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons);
-            scanScontrastSequence = subSampleSpatially(scanScontrastSequence, subSampledSpatialBins, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons);
-             
+            % Spatially subsample LMS contrast sequences according to subSampledSpatialGrid, e.g, [2 2]
+            [scanLcontrastSequence, resampledSpatialXdataInRetinalMicrons, resampledSpatialYdataInRetinalMicrons] = subSampleSpatially(scanLcontrastSequence, decodingParams.subSampledSpatialGrid, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons, displaySceneSampling, hFigSampling);
+            [scanMcontrastSequence, resampledSpatialXdataInRetinalMicrons, resampledSpatialYdataInRetinalMicrons] = subSampleSpatially(scanMcontrastSequence, decodingParams.subSampledSpatialGrid, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons, displaySceneSampling, hFigSampling);
+            [scanScontrastSequence, resampledSpatialXdataInRetinalMicrons, resampledSpatialYdataInRetinalMicrons] = subSampleSpatially(scanScontrastSequence, decodingParams.subSampledSpatialGrid, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons, displaySceneSampling, hFigSampling);
+            
             % pre-allocate memory
             if (testingScanIndex == 0)
                 testingTimeAxis            = (0:(timeBins*totalTestingScansNum-1))*(timeAxis(2)-timeAxis(1));
-                testingLcontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTestingScansNum, 'single');
-                testingMcontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTestingScansNum, 'single');
-                testingScontrastSequence   = zeros(prod(subSampledSpatialBins), timeBins*totalTestingScansNum, 'single');
+                testingLcontrastSequence   = zeros(prod(decodingParams.subSampledSpatialGrid), timeBins*totalTestingScansNum, 'single');
+                testingMcontrastSequence   = zeros(prod(decodingParams.subSampledSpatialGrid), timeBins*totalTestingScansNum, 'single');
+                testingScontrastSequence   = zeros(prod(decodingParams.subSampledSpatialGrid), timeBins*totalTestingScansNum, 'single');
                 testingPhotocurrents       = zeros(conesNum,  timeBins*totalTestingScansNum, 'single');
                 
                 designMatrixTest = designMatrix;
@@ -263,11 +247,15 @@ function assembleTrainingDataSet(trainingDataPercentange, rootPath, osType, adap
     size(testingScontrastSequence)
     size(testingPhotocurrents)
     
+    filterSpatialXdataInRetinalMicrons = resampledSpatialXdataInRetinalMicrons;
+    filterSpatialYdataInRetinalMicrons = resampledSpatialYdataInRetinalMicrons;
+    
     fprintf('Saving decoding data ...');
-    decodingDataFileName = fullfile(scansDir, sprintf('DecodingData_%s.mat', configuration));
+    decodingDataFileName = fullfile(decodingDirectory, 'DecodingData.mat');
     save(decodingDataFileName, 'scanSensor',   ...
-        'subSampledSpatialBins', 'thresholdConeSeparation', ...
+        'decodingParams', ...
         'keptLconeIndices', 'keptMconeIndices', 'keptSconeIndices', ...
+        'filterSpatialXdataInRetinalMicrons', 'filterSpatialYdataInRetinalMicrons', ...
         'trainingDataPercentange', ...
         'designMatrix', 'trainingTimeAxis', 'trainingPhotocurrents', 'trainingLcontrastSequence', 'trainingMcontrastSequence', 'trainingScontrastSequence', ...
         'designMatrixTest','testingTimeAxis',  'testingPhotocurrents', 'testingLcontrastSequence',  'testingMcontrastSequence',  'testingScontrastSequence', ...
@@ -275,34 +263,64 @@ function assembleTrainingDataSet(trainingDataPercentange, rootPath, osType, adap
     fprintf('Decoding data saved to %s', decodingDataFileName);
 end
 
-function contrastSequence = subSampleSpatially(originalContrastSequence, subSampledSpatialBins, spatialXdataInRetinalMicrons, spatialYdataInRetinalMicrons)
+function [contrastSequence, resampledSpatialXdataInRetinalMicrons, resampledSpatialYdataInRetinalMicrons] = subSampleSpatially(originalContrastSequence, subSampledSpatialGrid, spatialXdataInRetinalMicrons, spatialYdataInRetinalMicrons, displaySceneSampling, figHandle)
     
-    if (numel(subSampledSpatialBins) ~= 2)
-        subSampledSpatialBins
+    if (numel(subSampledSpatialGrid) ~= 2)
+        subSampledSpatialGrid
         error('Expecting a 2 element vector');
     end
     
-    if ((subSampledSpatialBins(1) == 1) && (subSampledSpatialBins(2) == 1))
+    if ((subSampledSpatialGrid(1) == 1) && (subSampledSpatialGrid(2) == 1))
         xRange = numel(spatialXdataInRetinalMicrons) * (spatialXdataInRetinalMicrons(2)-spatialXdataInRetinalMicrons(1));
         yRange = numel(spatialYdataInRetinalMicrons) * (spatialYdataInRetinalMicrons(2)-spatialYdataInRetinalMicrons(1));
         fprintf('Original spatial data %d x %d, covering an area of %2.2f x %2.2f microns.\n', numel(spatialXdataInRetinalMicrons), numel(spatialYdataInRetinalMicrons), xRange, yRange);
         fprintf('Will downsample to [1 x 1].\n');
         contrastSequence = mean(originalContrastSequence,1);
+        resampledSpatialXdataInRetinalMicrons = 0;
+        resampledSpatialYdataInRetinalMicrons = 0;
     else
-       subSampledSpatialBins
-       error('This subsampling is not yet implemented\n'); 
+
+        resampledSpatialXdataInRetinalMicrons = linspace(spatialXdataInRetinalMicrons(1), spatialXdataInRetinalMicrons(end), subSampledSpatialGrid(1));
+        resampledSpatialYdataInRetinalMicrons = linspace(spatialYdataInRetinalMicrons(1), spatialYdataInRetinalMicrons(end), subSampledSpatialGrid(2));
+        contrastSequence = zeros(numel(resampledSpatialXdataInRetinalMicrons)*numel(resampledSpatialYdataInRetinalMicrons), size(originalContrastSequence,2));
+
+        [Xo,Yo] = meshgrid(spatialXdataInRetinalMicrons,spatialYdataInRetinalMicrons);
+        [Xr,Yr] = meshgrid(resampledSpatialXdataInRetinalMicrons, resampledSpatialYdataInRetinalMicrons);
+        method = 'linear';
+        
+        
+        for tBin = 1:size(originalContrastSequence,2)
+           originalFrame = reshape(squeeze(originalContrastSequence(:,tBin)), [numel(spatialYdataInRetinalMicrons) numel(spatialXdataInRetinalMicrons)]);
+           resampledFrame = interp2(Xo,Yo,originalFrame,Xr,Yr,method);
+           contrastSequence(:,tBin) = resampledFrame(:);
+           
+           if (displaySceneSampling)
+               figure(figHandle);
+               colormap(gray(512));
+               cLim = [0 max([max(abs(originalFrame(:))) max(abs(resampledFrame(:)))])];
+               if (tBin == 1)
+                   gca1 = subplot(1,3,2);
+                   p1 = imagesc(spatialXdataInRetinalMicrons, spatialYdataInRetinalMicrons, originalFrame, cLim);
+                   axis 'image'
+                   gca2 = subplot(1,3,3);
+                   p2 = imagesc(resampledSpatialXdataInRetinalMicrons, resampledSpatialYdataInRetinalMicrons, resampledFrame, cLim);
+                   axis 'image'
+               else
+                   set(p1, 'CData', originalFrame);  set(gca1, 'CLim', cLim);
+                   set(p2, 'CData', resampledFrame); set(gca2, 'CLim', cLim);
+               end
+               drawnow
+           end
+       end % tBin
+       
     end
-    
 end
 
 
-
-
-
-
 function [timeAxis, spatialXdataInRetinalMicrons, spatialYdataInRetinalMicrons, ...
-    LcontrastSequence, McontrastSequence, ScontrastSequence, ...
-    photoCurrents] = loadScanData(scanFilename, temporalSubSamplingInMilliseconds, keptLconeIndices, keptMconeIndices, keptSconeIndices)
+          LcontrastSequence, McontrastSequence, ScontrastSequence, photoCurrents] = ...
+    loadScanData(scanFilename, temporalSubSamplingInMilliseconds, keptLconeIndices, keptMconeIndices, keptSconeIndices)
+
     % load stimulus LMS excitations and photocurrents 
     scanPlusAdaptationFieldLMSexcitationSequence = [];
     photoCurrents = [];

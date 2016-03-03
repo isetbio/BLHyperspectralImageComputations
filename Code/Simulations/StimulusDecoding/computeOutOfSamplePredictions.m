@@ -1,14 +1,15 @@
-function computeOutOfSamplePredictions(rootPath, osType, adaptingFieldType, configuration)
+function computeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, osType, adaptingFieldType, configuration)
     
-    minargs = 4;
-    maxargs = 4;
+    minargs = 5;
+    maxargs = 5;
     narginchk(minargs, maxargs);
 
-    scansDir = getScansDir(rootPath, configuration, adaptingFieldType, osType)
-    decodingFiltersFileName = fullfile(scansDir, sprintf('DecodingFilters_%s.mat', configuration));
+    scansDir = getScansDir(rootPath, configuration, adaptingFieldType, osType);
+    decodingDirectory = getDecodingSubDirectory(scansDir, decodingExportSubDirectory); 
+    decodingFiltersFileName = fullfile(decodingDirectory, sprintf('DecodingFilters.mat'));
     
     % First, lets plot in-sample predictions
-    load(decodingFiltersFileName, 'wVector', 'cTrainPrediction', 'cTrain');
+    load(decodingFiltersFileName, 'wVector', 'cTrainPrediction', 'cTrain', 'filterSpatialXdataInRetinalMicrons', 'filterSpatialYdataInRetinalMicrons');
     
     
     for k = 1:size(cTrain, 2)
@@ -61,7 +62,7 @@ function computeOutOfSamplePredictions(rootPath, osType, adaptingFieldType, conf
     
 
     fprintf('\nPlease wait. Computing out-of-sample predictions ....');
-    decodingDataFileName = fullfile(scansDir, sprintf('DecodingData_%s.mat', configuration));
+    decodingDataFileName = fullfile(decodingDirectory, sprintf('DecodingData.mat'));
     
     testingVarList = {...
         'designMatrixTest', ...
