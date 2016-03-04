@@ -11,7 +11,7 @@ function assembleTrainingDataSet(trainingDataPercentange, decodingParams, rootPa
     
     displayTrainingMosaic = true;
     displayStimulusAndResponse = false; % true;
-    displaySceneSampling = true;
+    displaySceneSampling = false;
     
     % Compute number of training and testing scans
     totalTrainingScansNum = 0;
