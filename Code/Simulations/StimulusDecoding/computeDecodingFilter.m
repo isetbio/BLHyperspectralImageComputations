@@ -53,7 +53,7 @@ function computeDecodingFilter(rootPath, decodingExportSubDirectory, osType, ada
     end
     
     decodingFiltersFileName = fullfile(decodingDirectory, sprintf('DecodingFilters.mat'));
-    save(decodingFiltersFileName, 'wVector', 'cTrainPrediction', 'cTrain', 'filterSpatialXdataInRetinalMicrons', 'filterSpatialYdataInRetinalMicrons'); 
+    save(decodingFiltersFileName, 'wVector', 'cTrainPrediction', 'cTrain', 'filterSpatialXdataInRetinalMicrons', 'filterSpatialYdataInRetinalMicrons', '-v7.3'); 
     
 end
 
