@@ -7,7 +7,7 @@ function assembleTrainingDataSet(trainingDataPercentange, decodingParams, rootPa
     scansDir = getScansDir(rootPath, configuration, adaptingFieldType, osType);
     decodingDirectory = getDecodingSubDirectory(scansDir, decodingParams.exportSubDirectory); 
     
-    [trainingImageSet, ~, ~, ~, ~] = configureExperiment(configuration);
+    [trainingImageSet, ~, ~, ~, ~] = configureExperiment(configuration)
     
     displayTrainingMosaic = true;
     displayStimulusAndResponse = false; % true;
@@ -16,7 +16,7 @@ function assembleTrainingDataSet(trainingDataPercentange, decodingParams, rootPa
     % Compute number of training and testing scans
     totalTrainingScansNum = 0;
     totalTestingScansNum = 0;
-    numel(trainingImageSet)
+    
     for imageIndex = 1:numel(trainingImageSet)
         imsource = trainingImageSet{imageIndex};
         
@@ -34,7 +34,7 @@ function assembleTrainingDataSet(trainingDataPercentange, decodingParams, rootPa
     fprintf('Total testing scans:  %d\n', totalTestingScansNum);
     
     % Compute L,M, and S-cone indices to keep (based on thesholdConeSeparation)
-    [keptLconeIndices, keptMconeIndices, keptSconeIndices] = determineConeIndicesToKeep(scanSensor, decodingParams.thresholdConeSeparation);
+    [keptLconeIndices, keptMconeIndices, keptSconeIndices] = cherryPickConesToKeep(scanSensor, decodingParams.thresholdConeSeparation);
     
     if (displayTrainingMosaic)
         xy = sensorGet(scanSensor, 'xy');
@@ -47,13 +47,13 @@ function assembleTrainingDataSet(trainingDataPercentange, decodingParams, rootPa
         clf;
         subplot(1,3,1);
         hold on
-        plot(xy(lConeIndices, 1), xy(lConeIndices, 2), 'ro', 'MarkerSize', 12, 'MarkerEdgeColor', [1 0.7 0.7]);
-        plot(xy(mConeIndices, 1), xy(mConeIndices, 2), 'go', 'MarkerSize', 12, 'MarkerEdgeColor', [0.7 1.0 0.7]);
-        plot(xy(sConeIndices, 1), xy(sConeIndices, 2), 'bo', 'MarkerSize', 12, 'MarkerEdgeColor', [0.7 0.7 1.0]);
+        plot(xy(lConeIndices, 1), xy(lConeIndices, 2), 'o', 'MarkerSize', 12, 'MarkerEdgeColor', [0.8 0.5 0.6]);
+        plot(xy(mConeIndices, 1), xy(mConeIndices, 2), 'o', 'MarkerSize', 12, 'MarkerEdgeColor', [0.2 0.6 0.6]);
+        plot(xy(sConeIndices, 1), xy(sConeIndices, 2), 'o', 'MarkerSize', 12, 'MarkerEdgeColor', [0.7 0.4 1.0]);
 
-        plot(xy(keptLconeIndices, 1), xy(keptLconeIndices, 2), 'ro', 'MarkerFaceColor', [1 0.2 0.2], 'MarkerSize', 8);
-        plot(xy(keptMconeIndices, 1), xy(keptMconeIndices, 2), 'go', 'MarkerFaceColor', [0.2 1.0 0.2], 'MarkerSize', 8);
-        plot(xy(keptSconeIndices, 1), xy(keptSconeIndices, 2), 'bo', 'MarkerFaceColor', [0.2 0.2 1.0], 'MarkerSize', 8);
+        plot(xy(keptLconeIndices, 1), xy(keptLconeIndices, 2), 'ro', 'MarkerFaceColor', [1 0.2 0.5], 'MarkerEdgeColor', [0.8 0.5 0.6], 'MarkerSize', 8);
+        plot(xy(keptMconeIndices, 1), xy(keptMconeIndices, 2), 'go', 'MarkerFaceColor', [0.2 0.8 0.5], 'MarkerEdgeColor', [0.2 0.6 0.6], 'MarkerSize', 8);
+        plot(xy(keptSconeIndices, 1), xy(keptSconeIndices, 2), 'bo', 'MarkerFaceColor', [0.5 0.2 1.0], 'MarkerEdgeColor', [0.7 0.4 1.0], 'MarkerSize', 8);
         axis 'equal'; axis 'square'; box on;
         drawnow;
     end
@@ -426,148 +426,3 @@ function [timeAxis, spatialXdataInRetinalMicrons, spatialYdataInRetinalMicrons, 
     spatialXdataInRetinalMicrons = LMSexcitationXdataInRetinalMicrons;
     spatialYdataInRetinalMicrons = LMSexcitationYdataInRetinalMicrons;
 end
-
-
-function [keptLconeIndices, keptMconeIndices, keptSconeIndices] = determineConeIndicesToKeep(scanSensor, thresholdConeSeparation)
-
-    % Select a subset of the cones based on the thresholdConeSeparation
-    coneTypes = sensorGet(scanSensor, 'coneType');
-    lConeIndices = find(coneTypes == 2);
-    mConeIndices = find(coneTypes == 3);
-    sConeIndices = find(coneTypes == 4);
- 
-    [keptLconeIndices, keptMconeIndices, keptSconeIndices] = determineConesToKeep(coneTypes,  lConeIndices, mConeIndices, sConeIndices, thresholdConeSeparation);
-end
-
-function [keptLconeIndices, keptMconeIndices, keptSconeIndices] = determineConesToKeep(coneTypes,  lConeIndices, mConeIndices, sConeIndices, thresholdConeSeparation)
-    
-    % Eliminate cones separately for each of the L,M and S cone mosaics
-    keptLconeIndices = determineConesToKeepForThisMosaic(coneTypes,  lConeIndices, thresholdConeSeparation);
-    keptMconeIndices = determineConesToKeepForThisMosaic(coneTypes,  mConeIndices, thresholdConeSeparation);
-    keptSconeIndices = determineConesToKeepForThisMosaic(coneTypes,  sConeIndices, thresholdConeSeparation);
-    
-    % Eliminate further so that we obtain the original LMS densities
-    originalLconeDensity = numel(lConeIndices)/numel(coneTypes);
-    originalMconeDensity = numel(mConeIndices)/numel(coneTypes);
-    originalSconeDensity = numel(sConeIndices)/numel(coneTypes);
-    
-    
-    newLconeDensity = numel(keptLconeIndices) / (numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices))
-    newMconeDensity = numel(keptMconeIndices) / (numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices))
-    newSconeDensity = numel(keptSconeIndices) / (numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices))
-    
-    f = originalLconeDensity/newLconeDensity
-    desiredNumOfMcones = round(numel(keptLconeIndices)*originalMconeDensity/originalLconeDensity)
-    conesNumToBeEliminated = numel(keptMconeIndices) - desiredNumOfMcones
-    keptMconeIndices = eliminateConesBasedOnSeparation(coneTypes, keptMconeIndices, mConeIndices, conesNumToBeEliminated);
-    
-    desiredNumOfScones = round(numel(keptLconeIndices)*originalSconeDensity/originalLconeDensity)
-    conesNumToBeEliminated = numel(keptSconeIndices) - desiredNumOfScones
-    keptSconeIndices = eliminateConesBasedOnSeparation(coneTypes, keptSconeIndices, sConeIndices, conesNumToBeEliminated);
-    
-    
-    % Do the subsampling
-    coneIndicesToKeep = [keptLconeIndices(:); keptMconeIndices(:); keptSconeIndices(:) ];
-    subsampledLconeDensity = numel(keptLconeIndices) / numel(coneIndicesToKeep);
-    subsampledMconeDensity = numel(keptMconeIndices) / numel(coneIndicesToKeep);
-    subsampledSconeDensity = numel(keptSconeIndices) / numel(coneIndicesToKeep);
-
-    fprintf('kept L cones    : %d out of %d\n', numel(keptLconeIndices), numel(lConeIndices));
-    fprintf('kept M cones    : %d out of %d\n', numel(keptMconeIndices), numel(mConeIndices));
-    fprintf('kept S cones    : %d out of %d\n', numel(keptSconeIndices), numel(sConeIndices));
-    fprintf('total kept cones: %d out of %d \n',  numel(coneIndicesToKeep), numel(lConeIndices)+numel(mConeIndices)+numel(sConeIndices));
-    fprintf('original LMSratios  : %2.2f %2.2f %2.2f\n', originalLconeDensity, originalMconeDensity, originalSconeDensity);
-    fprintf('subsampled LMSratios: %2.2f %2.2f %2.2f\n', subsampledLconeDensity, subsampledMconeDensity, subsampledSconeDensity);
-    
-    function reducedKeptConeIndices = eliminateConesBasedOnSeparation(coneTypes, keptConeIndices, theConeIndices, conesNumToBeEliminated)  
-        coneRowPositions = zeros(1, numel(keptConeIndices));
-        coneColPositions = zeros(1, numel(keptConeIndices));
-        for theConeIndex = 1:numel(keptConeIndices)
-            [coneRowPositions(theConeIndex), coneColPositions(theConeIndex)] = ind2sub(size(coneTypes), theConeIndices(theConeIndex));
-        end
-        
-        conesToBeEliminated = [];
-        while (numel(conesToBeEliminated) < conesNumToBeEliminated)
-
-            k = 0;
-            ii = [];
-            jj = []
-            dist = [];
-            for i = 1:numel(coneRowPositions)
-                r = coneRowPositions(i);
-                c = coneColPositions(i);
-                for j = i+1:numel(coneColPositions)
-                    rr = coneRowPositions(j);
-                    cc = coneColPositions(j);
-                    k = k + 1;
-                    dist(k) = sqrt((r-rr)^2 + (c-cc)^2);
-                    ii(k) = i;
-                    jj(k) = j;
-                end
-            end
-            
-            [~,kmin] = min(dist);
-            if (mod(numel(conesToBeEliminated),2) == 0) 
-                eliminated = ii(kmin); 
-            else
-                eliminated = jj(kmin); 
-            end
-            coneRowPositions(eliminated) = Inf;
-            coneColPositions(eliminated) = Inf;
-            conesToBeEliminated = [conesToBeEliminated keptConeIndices(eliminated)];
-        end
-        
-        
-        reducedKeptConeIndices = setdiff(keptConeIndices, conesToBeEliminated);
-    end
-
-    function keptConeIndices = determineConesToKeepForThisMosaic(coneTypes, theConeIndices, thresholdDistance)
-        if (thresholdDistance <= 0)
-            keptConeIndices = theConeIndices;
-            return;
-        end
-    
-        coneRowPositions = zeros(1, numel(theConeIndices));
-        coneColPositions = zeros(1, numel(theConeIndices));
-        for theConeIndex = 1:numel(theConeIndices)
-            [coneRowPositions(theConeIndex), coneColPositions(theConeIndex)] = ind2sub(size(coneTypes), theConeIndices(theConeIndex));
-        end
-
-        originalConeRowPositions = coneRowPositions;
-        originalConeColPositions = coneColPositions;
-    
-        % Lets keep the cone that is closest to the center.
-        [~, idx] = min(sqrt(coneRowPositions.^2 + coneColPositions.^2));
-        keptConeIndices(1) = idx;
-        keptConeRows(1) = coneRowPositions(idx);
-        keptConeCols(1) = coneColPositions(idx);
-
-        remainingConeIndices = setdiff(1:numel(theConeIndices), keptConeIndices);
-
-        scanNo = 1;
-        while (~isempty(remainingConeIndices))
-
-            for keptConeIndex = 1:numel(keptConeIndices) 
-                % compute all distances between cones in the kept indices and all other cones
-                distances = sqrt( (coneRowPositions - keptConeRows(keptConeIndex)).^2 + (coneColPositions - keptConeCols(keptConeIndex)).^2);
-                coneIndicesThatAreTooClose = find(distances <= thresholdDistance);
-
-                remainingConeIndices = setdiff(remainingConeIndices, remainingConeIndices(coneIndicesThatAreTooClose));
-                coneRowPositions = originalConeRowPositions(remainingConeIndices);
-                coneColPositions = originalConeColPositions(remainingConeIndices);
-            end
-            if (~isempty(remainingConeIndices))
-                % Select next cone to keep
-                keptConeIndices = [keptConeIndices remainingConeIndices(1)];
-                keptConeRows(numel(keptConeIndices)) = originalConeRowPositions(remainingConeIndices(1));
-                keptConeCols(numel(keptConeIndices)) = originalConeColPositions(remainingConeIndices(1));
-                scanNo = scanNo + 1;
-            end
-        end
-
-        keptConeIndices = theConeIndices(keptConeIndices);
-    end
-
-end
-
-
