@@ -452,9 +452,9 @@ function [keptLconeIndices, keptMconeIndices, keptSconeIndices] = determineCones
     originalSconeDensity = numel(sConeIndices)/numel(coneTypes);
     
     
-    newLconeDensity = numel(keptLconeIndices) / (numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices));
-    newMconeDensity = numel(keptMconeIndices) / (numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices));
-    newSconeDensity = numel(keptSconeIndices) / (numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices));
+    newLconeDensity = numel(keptLconeIndices) / (numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices))
+    newMconeDensity = numel(keptMconeIndices) / (numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices))
+    newSconeDensity = numel(keptSconeIndices) / (numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices))
     
     
     desiredNumOfMcones = round(numel(mConeIndices)/numel(lConeIndices) * keptLconeIndices);
