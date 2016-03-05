@@ -486,11 +486,14 @@ function [keptLconeIndices, keptMconeIndices, keptSconeIndices] = determineCones
         for theConeIndex = 1:numel(keptConeIndices)
             [coneRowPositions(theConeIndex), coneColPositions(theConeIndex)] = ind2sub(size(coneTypes), theConeIndices(theConeIndex));
         end
-            
+        
         conesToBeEliminated = [];
         while (numel(conesToBeEliminated) < conesNumToBeEliminated)
-            % find cones with the minimum distance
+            % find the cone closest to the center
             [~, idx] = min(sqrt(coneRowPositions.^2 + coneColPositions.^2));
+            % find the cone closet to that cone
+            otherConeIndices = setdiff(1:numel(keptConeIndices), idx);
+            [~, idx] = min(sqrt((coneRowPositions(idx)-coneRowPositions(otherConeIndices)).^2 + (coneColPositions(idx)-coneColPositions(otherConeIndices)).^2));
             conesToBeEliminated = [conesToBeEliminated keptConeIndices(idx)];
             coneRowPositions(idx)= Inf;
         end
