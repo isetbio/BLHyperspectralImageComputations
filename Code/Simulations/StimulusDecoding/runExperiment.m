@@ -14,8 +14,8 @@ function runExperiment
     decodingParams.subSampledSpatialGrid = [20 20];  % Here we parcelate the scene within the moaic's FOV using an 20x20 grid
     
     % Parameters of decoding: cone response subsampling
-    coneSep = 3;
-    decodingParams.thresholdConeSeparation = sqrt(3^2 + 3^2);  % Here we only include responses from cones with are at least 3 cone apertures apart along both x- and y-dimensions
+    coneSep = 2;
+    decodingParams.thresholdConeSeparation = sqrt(coneSep^2 + coneSep^2);  % Here we only include responses from cones with are at least 3 cone apertures apart along both x- and y-dimensions
     
     % Parameters of decoding: temporal response subsampling
     decodingParams.temporalSubSamplingResolutionInMilliseconds = 4;
