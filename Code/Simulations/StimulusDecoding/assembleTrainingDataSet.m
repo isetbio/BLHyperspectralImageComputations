@@ -456,13 +456,13 @@ function [keptLconeIndices, keptMconeIndices, keptSconeIndices] = determineCones
     newMconeDensity = numel(keptMconeIndices) / (numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices))
     newSconeDensity = numel(keptSconeIndices) / (numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices))
     
-    
-    desiredNumOfMcones = round(numel(keptMconeIndices)  / newMconeDensity * originalMconeDensity);
-    conesNumToBeEliminated = numel(keptMconeIndices) - desiredNumOfMcones;
+    f = originalLconeDensity/newLconeDensity
+    desiredNumOfMcones = round(numel(keptLconeIndices)*originalMconeDensity/originalLconeDensity)
+    conesNumToBeEliminated = numel(keptMconeIndices) - desiredNumOfMcones
     keptMconeIndices = eliminateConesBasedOnSeparation(coneTypes, keptMconeIndices, mConeIndices, conesNumToBeEliminated);
     
-    desiredNumOfScones = round(numel(keptSconeIndices)  / newSconeDensity * originalSconeDensity);
-    conesNumToBeEliminated = numel(keptSconeIndices) - desiredNumOfScones;
+    desiredNumOfScones = round(numel(keptLconeIndices)*originalSconeDensity/originalLconeDensity)
+    conesNumToBeEliminated = numel(keptSconeIndices) - desiredNumOfScones
     keptSconeIndices = eliminateConesBasedOnSeparation(coneTypes, keptSconeIndices, sConeIndices, conesNumToBeEliminated);
     
     
@@ -488,14 +488,35 @@ function [keptLconeIndices, keptMconeIndices, keptSconeIndices] = determineCones
         
         conesToBeEliminated = [];
         while (numel(conesToBeEliminated) < conesNumToBeEliminated)
-            % find the cone closest to the center
-            [~, idx] = min(sqrt(coneRowPositions.^2 + coneColPositions.^2));
-            % find the cone closet to that cone
-            otherConeIndices = setdiff(1:numel(keptConeIndices), idx);
-            [~, idx] = min(sqrt((coneRowPositions(idx)-coneRowPositions(otherConeIndices)).^2 + (coneColPositions(idx)-coneColPositions(otherConeIndices)).^2));
-            conesToBeEliminated = [conesToBeEliminated keptConeIndices(idx)];
-            coneRowPositions(idx)= Inf;
+
+            k = 0;
+            ii = [];
+            jj = []
+            dist = [];
+            for i = 1:numel(coneRowPositions)
+                r = coneRowPositions(i);
+                c = coneColPositions(i);
+                for j = i+1:numel(coneColPositions)
+                    rr = coneRowPositions(j);
+                    cc = coneColPositions(j);
+                    k = k + 1;
+                    dist(k) = sqrt((r-rr)^2 + (c-cc)^2);
+                    ii(k) = i;
+                    jj(k) = j;
+                end
+            end
+            
+            [~,kmin] = min(dist);
+            if (mod(numel(conesToBeEliminated),2) == 0) 
+                eliminated = ii(kmin); 
+            else
+                eliminated = jj(kmin); 
+            end
+            coneRowPositions(eliminated) = Inf;
+            coneColPositions(eliminated) = Inf;
+            conesToBeEliminated = [conesToBeEliminated keptConeIndices(eliminated)];
         end
+        
         
         reducedKeptConeIndices = setdiff(keptConeIndices, conesToBeEliminated);
     end
