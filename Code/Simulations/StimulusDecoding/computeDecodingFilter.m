@@ -18,17 +18,13 @@ function computeDecodingFilter(rootPath, decodingExportSubDirectory, osType, ada
         'resampledSpatialYdataInRetinalMicrons' ...
         };
     
-    filterSpatialXdataInRetinalMicrons = resampledSpatialXdataInRetinalMicrons;
-    filterSpatialYdataInRetinalMicrons = resampledSpatialYdataInRetinalMicrons;
-    
-    
     fprintf('\nLoading ''%s'' ...', decodingDataFileName);
     for k = 1:numel(trainingVarList)
         load(decodingDataFileName, trainingVarList{k});
     end
-
-    filterSpatialXdataInRetinalMicrons
-    filterSpatialYdataInRetinalMicrons
+    
+    filterSpatialXdataInRetinalMicrons = resampledSpatialXdataInRetinalMicrons;
+    filterSpatialYdataInRetinalMicrons = resampledSpatialYdataInRetinalMicrons;
     
     trainingStimulusTrain = [
         trainingLcontrastSequence', ...
