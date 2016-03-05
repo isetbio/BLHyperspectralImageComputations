@@ -457,11 +457,11 @@ function [keptLconeIndices, keptMconeIndices, keptSconeIndices] = determineCones
     newSconeDensity = numel(keptSconeIndices) / (numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices))
     
     
-    desiredNumOfMcones = round(numel(mConeIndices)/numel(lConeIndices) * keptLconeIndices);
+    desiredNumOfMcones = round(numel(keptMconeIndices)  / newMconeDensity * originalMconeDensity);
     conesNumToBeEliminated = numel(keptMconeIndices) - desiredNumOfMcones;
     keptMconeIndices = eliminateConesBasedOnSeparation(coneTypes, keptMconeIndices, mConeIndices, conesNumToBeEliminated);
     
-    desiredNumOfScones = round(numel(sConeIndices)/numel(lConeIndices) * keptLconeIndices);
+    desiredNumOfScones = round(numel(keptSconeIndices)  / newSconeDensity * originalSconeDensity);
     conesNumToBeEliminated = numel(keptSconeIndices) - desiredNumOfScones;
     keptSconeIndices = eliminateConesBasedOnSeparation(coneTypes, keptSconeIndices, sConeIndices, conesNumToBeEliminated);
     
