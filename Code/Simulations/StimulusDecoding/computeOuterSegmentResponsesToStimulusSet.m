@@ -12,7 +12,6 @@ function computeOuterSegmentResponsesToStimulusSet(rootPath, osType, adaptingFie
 
     % configure experiment
     [trainingImageSet, forcedSceneMeanLuminance, saccadesPerScan, sensorParams, sensorAdaptationFieldParams] = configureExperiment(configuration);
-    pause
     
     % Set up remote data toolbox client
     remoteDataToolboxClient = RdtClient(getpref('HyperSpectralImageIsetbioComputations','remoteDataToolboxConfig')); 
