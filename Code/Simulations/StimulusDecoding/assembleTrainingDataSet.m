@@ -448,24 +448,23 @@ function [keptLconeIndices, keptMconeIndices, keptSconeIndices] = determineCones
     
     % Eliminate further so that we obtain the original LMS densities
     originalLconeDensity = numel(lConeIndices)/numel(coneTypes);
-    newLconeDensity = numel(keptLconeIndices) / (numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices));
-    f = newLconeDensity/originalLconeDensity;
-    
     originalMconeDensity = numel(mConeIndices)/numel(coneTypes);
-    newMconeDensity = numel(keptMconeIndices) / (numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices));
-    desiredNumOfMcones = round(f*numel(keptMconeIndices) / newMconeDensity * originalMconeDensity);
-    if (desiredNumOfMcones < numel(keptMconeIndices))
-        conesNumToBeEliminated = numel(keptMconeIndices) - desiredNumOfMcones;
-        keptMconeIndices = eliminateConesBasedOnSeparation(coneTypes, keptMconeIndices, mConeIndices, conesNumToBeEliminated);
-    end
-    
     originalSconeDensity = numel(sConeIndices)/numel(coneTypes);
+    
+    
+    newLconeDensity = numel(keptLconeIndices) / (numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices));
+    newMconeDensity = numel(keptMconeIndices) / (numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices));
     newSconeDensity = numel(keptSconeIndices) / (numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices));
-    desiredNumOfScones = round(f*numel(keptSconeIndices) / newSconeDensity * originalSconeDensity);
-    if (desiredNumOfScones < numel(keptSconeIndices))
-        conesNumToBeEliminated = numel(keptSconeIndices) - desiredNumOfScones;
-        keptSconeIndices = eliminateConesBasedOnSeparation(coneTypes, keptSconeIndices, sConeIndices, conesNumToBeEliminated);
-    end
+    
+    
+    desiredNumOfMcones = round(numel(mConeIndices)/numel(lConeIndices) * keptLconeIndices);
+    conesNumToBeEliminated = numel(keptMconeIndices) - desiredNumOfMcones;
+    keptMconeIndices = eliminateConesBasedOnSeparation(coneTypes, keptMconeIndices, mConeIndices, conesNumToBeEliminated);
+    
+    desiredNumOfScones = round(numel(sConeIndices)/numel(lConeIndices) * keptLconeIndices);
+    conesNumToBeEliminated = numel(keptSconeIndices) - desiredNumOfScones;
+    keptSconeIndices = eliminateConesBasedOnSeparation(coneTypes, keptSconeIndices, sConeIndices, conesNumToBeEliminated);
+    
     
     % Do the subsampling
     coneIndicesToKeep = [keptLconeIndices(:); keptMconeIndices(:); keptSconeIndices(:) ];
