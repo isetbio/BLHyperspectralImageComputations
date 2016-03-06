@@ -10,8 +10,8 @@ function runExperiment
    
     
     % Parameters of decoding: stimulus (scene window) spatial subsampling
-    %decodingParams.subSampledSpatialGrid = [1 1];  % Here we parcelate the scene within the moaic's FOV using a 1x1 grid (mean contrast over mosaic's window)
-    decodingParams.subSampledSpatialGrid = [20 20];  % Here we parcelate the scene within the moaic's FOV using an 20x20 grid
+    decodingParams.subSampledSpatialGrid = [5 5];  % Here we parcelate the scene within the moaic's FOV using a 1x1 grid (mean contrast over mosaic's window)
+    %decodingParams.subSampledSpatialGrid = [20 20];  % Here we parcelate the scene within the moaic's FOV using an 20x20 grid
     
     % Parameters of decoding: cone response subsampling
     coneSep = 1.5;  % results in 107 cones
@@ -61,7 +61,7 @@ function runExperiment
         computeDecodingFilter(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
         
         % 4. Compute out-of-sample predictions
-        computeOutOfSamplePredictions(rootPath, ecodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
+        computeOutOfSamplePredictions(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
         
     elseif (ismember('computeDecodingFilter', runMode))
         % 3. Compute decoding filter
