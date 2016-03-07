@@ -39,8 +39,8 @@ function computeDecodingFilter(rootPath, decodingExportSubDirectory, osType, ada
     
     % Compute decoding filter, wVector
     pseudoInverseOfX = pinv(Xtrain);
-    featuresNum = size(Xtrain,2)
-    stimulusDimensions = size(cTrain,2)
+    featuresNum = size(Xtrain,2);
+    stimulusDimensions = size(cTrain,2);
     wVector = zeros(featuresNum, stimulusDimensions);
     for stimDim = 1:stimulusDimensions
         wVector(:,stimDim) = pseudoInverseOfX * cTrain(:,stimDim);

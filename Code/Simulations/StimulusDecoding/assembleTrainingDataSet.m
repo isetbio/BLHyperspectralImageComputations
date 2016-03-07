@@ -59,7 +59,7 @@ function assembleTrainingDataSet(trainingDataPercentange, decodingParams, rootPa
     end
     
 
-    decondingLatencyInBins = round(decodingParams.decodingLatencyInMilliseconds/decodingParams.temporalSubSamplingResolutionInMilliseconds);
+    decodingLatencyInBins = round(decodingParams.decodingLatencyInMilliseconds/decodingParams.temporalSubSamplingResolutionInMilliseconds);
     decodingMemoryInBins   = round(decodingParams.decodingMemoryInMilliseconds/decodingParams.temporalSubSamplingResolutionInMilliseconds); 
     
     % partition the data into training and testing components
@@ -108,7 +108,7 @@ function assembleTrainingDataSet(trainingDataPercentange, decodingParams, rootPa
                 trainingPhotocurrents       = zeros(conesNum, timeBins*totalTrainingScansNum, 'single');
                 
                 designMatrix.n = numel(keptLconeIndices) + numel(keptMconeIndices) + numel(keptSconeIndices);
-                designMatrix.lat = decondingLatencyInBins;
+                designMatrix.lat = decodingLatencyInBins;
                 designMatrix.m = decodingMemoryInBins;
                 designMatrix.T = size(trainingPhotocurrents,2) - (designMatrix.lat + designMatrix.m);
                 fprintf('Decoding filter will have %d coefficients\n', 1+(designMatrix.n*designMatrix.m));

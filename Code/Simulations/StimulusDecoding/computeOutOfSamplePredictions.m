@@ -5,13 +5,139 @@ function computeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, osT
     narginchk(minargs, maxargs);
 
     scansDir = getScansDir(rootPath, configuration, adaptingFieldType, osType);
+    
     decodingDirectory = getDecodingSubDirectory(scansDir, decodingExportSubDirectory); 
     decodingFiltersFileName = fullfile(decodingDirectory, sprintf('DecodingFilters.mat'));
+    decodingFiltersVarList = {...
+        'wVector', ...
+        'cTrainPrediction', ...
+        'cTrain', ...
+        'filterSpatialXdataInRetinalMicrons', ...
+        'filterSpatialYdataInRetinalMicrons'...
+        };
     
+    fprintf('\nLoading ''%s'' ...', decodingFiltersFileName);
+    for k = 1:numel(decodingFiltersVarList)
+        load(decodingFiltersFileName, decodingFiltersVarList{k});
+    end
+    
+    decodingDataFileName = fullfile(decodingDirectory, sprintf('DecodingData.mat'));
+    testingVarList = {...
+        'scanSensor', ...
+        'keptLconeIndices', 'keptMconeIndices', 'keptSconeIndices', ...
+        'designMatrixTest', ...
+        'testingTimeAxis', ...
+        'testingPhotocurrents', ...
+        'testingLcontrastSequence', ...
+        'testingMcontrastSequence', ...
+        'testingScontrastSequence' ...
+        };
+    
+    for k = 1:numel(testingVarList)
+        load(decodingDataFileName, testingVarList{k});
+    end
+    
+    
+    
+    
+   
+    decodingFilter.conesNum = designMatrixTest.n;
+    decodingFilter.latencyBins = designMatrixTest.lat;
+    decodingFilter.memoryBins =  designMatrixTest.m;
+    
+    decodingFilter.conesNum*decodingFilter.memoryBins
+    
+    featuresNum = size(wVector,1)
+    spatialFeaturesNum = numel(filterSpatialYdataInRetinalMicrons)*numel(filterSpatialXdataInRetinalMicrons)
+    stimulusDimensions = size(wVector,2)
+    
+    dcTerm = 1;
+    figure(3); clf;
+    timeBins = 1:decodingFilter.memoryBins;
+    for stimDimIndex = 1:stimulusDimensions
+        if (spatialFeaturesNum > 1)
+            coneContrastDimIndex = floor((stimDimIndex-1)/spatialFeaturesNum)+1;
+            spatialDimIndex = mod(stimDimIndex-1, spatialFeaturesNum) + 1;
+            [spatialYDimIndex, spatialXDimIndex] = ind2sub([ numel(filterSpatialYdataInRetinalMicrons)  numel(filterSpatialXdataInRetinalMicrons)], spatialDimIndex);
+        end
+        
+        for coneIndex = 1:decodingFilter.conesNum
+            temporalDecodingFilter = wVector(dcTerm + (coneIndex-1)*numel(timeBins) + timeBins, stimDimIndex)/max(abs(wVector(dcTerm+1:end)));
+            if (spatialFeaturesNum == 1)
+                coneContrastDimIndex = stimDimIndex;
+                stimDecoder(coneContrastDimIndex).filter(coneIndex,timeBins) = temporalDecodingFilter;
+            else
+                stimDecoder(coneContrastDimIndex, spatialYDimIndex, spatialXDimIndex).filter(coneIndex,timeBins) = temporalDecodingFilter;
+            end
+            
+            
+%             subplot(1,2,1);
+%             plot(temporalDecodingFilter)
+%             set(gca, 'YLim', [-1 1], 'XLim', [1 numel(temporalDecodingFilter)])
+%             subplot(1,2,2);
+%             hold on;
+%             plot(temporalDecodingFilter)
+%             set(gca, 'YLim', [-1 1], 'XLim', [1 numel(temporalDecodingFilter)])
+%             
+%             drawnow;
+        end % coneIndex
+    end % stimIndex
+    
+    
+    coneTypes = sensorGet(scanSensor, 'coneType');
+    lConeIndices = find(coneTypes == 2);
+    mConeIndices = find(coneTypes == 3);
+    sConeIndices = find(coneTypes == 4);
+    
+    filterConeIDs = [keptLconeIndices(:); keptMconeIndices(:); keptSconeIndices(:) ];
+    
+    stimConeContrastIndex = 2; % s-cone decoding filter
+    
+    for timeBin = 1:numel(timeBins)
+    h = figure(2); set(h, 'Name', sprintf('%d', timeBin));
+    clf;
+    kk = 0;
+    for stimYindex = 1:numel(filterSpatialYdataInRetinalMicrons)
+        for stimXindex = 1:numel(filterSpatialXdataInRetinalMicrons)
+        kk = kk + 1;
+        subplot(numel(filterSpatialYdataInRetinalMicrons),numel(filterSpatialXdataInRetinalMicrons),kk);
+    
+        coneRows = sensorGet(scanSensor, 'rows');
+        coneCols = sensorGet(scanSensor, 'cols');
+        filterMosaicLayoutRGBrepresentation = zeros(coneRows, coneCols, 3)+0.5;
+    
+        for coneIndex = 1:decodingFilter.conesNum
+            % figure out the color of the filter entry
+            if ismember(filterConeIDs(coneIndex), lConeIndices)
+                RGBval = [0.5 0. 0.];
+            elseif ismember(filterConeIDs(coneIndex), mConeIndices)
+                RGBval = [0 0.5 0.0];
+            elseif ismember(filterConeIDs(coneIndex), sConeIndices)
+                RGBval = [0.0 0 0.5];
+            else
+                error('No such cone type')
+            end
+            % figure out the (row,col) position of the filter entry
+            [row, col] = ind2sub([sensorGet(scanSensor, 'row') sensorGet(scanSensor, 'col')], filterConeIDs(coneIndex));
+
+            filterMosaicLayoutRGBrepresentation(row, col, :) = [0.5 0.5 0.5] + RGBval * stimDecoder(stimConeContrastIndex, stimYindex, stimXindex).filter(coneIndex, timeBin);
+        end
+        image(filterMosaicLayoutRGBrepresentation);
+        axis 'image'
+        drawnow;
+        end
+        end
+    
+    
+end
+
+    
+    % Plot the stimDecoder(1,5,1)
+    
+    % Plot the stimDecoder(1,1,5)
+    
+    pause
     % First, lets plot in-sample predictions
-    load(decodingFiltersFileName, 'wVector', 'cTrainPrediction', 'cTrain', 'filterSpatialXdataInRetinalMicrons', 'filterSpatialYdataInRetinalMicrons');
-    
-    
     for k = 1:size(cTrain, 2)
         cLimits(k,:) = max([max(abs(cTrain(:,k))) max(abs(cTrainPrediction(:,k)))])*[-1 1];
     end
@@ -62,19 +188,7 @@ function computeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, osT
     
 
     fprintf('\nPlease wait. Computing out-of-sample predictions ....');
-    decodingDataFileName = fullfile(decodingDirectory, sprintf('DecodingData.mat'));
     
-    testingVarList = {...
-        'designMatrixTest', ...
-        'testingTimeAxis', ...
-        'testingPhotocurrents', ...
-        'testingLcontrastSequence', ...
-        'testingMcontrastSequence', ...
-        'testingScontrastSequence' ...
-        };
-    for k = 1:numel(testingVarList)
-        load(decodingDataFileName, testingVarList{k});
-    end
     
     testingStimulusTrain = [
         testingLcontrastSequence', ...
