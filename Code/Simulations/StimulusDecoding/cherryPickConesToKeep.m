@@ -6,10 +6,16 @@ function  [keptLconeIndices, keptMconeIndices, keptSconeIndices] = cherryPickCon
     mConeIndices = find(coneTypes == 3);
     sConeIndices = find(coneTypes == 4);
  
-    % Eliminate cones separately for each of the L,M and S cone mosaics
-    keptLconeIndices = identifyConesWhoseSeparationExceedsThreshold(coneTypes,  lConeIndices, thresholdConeSeparation, Inf);
-    keptMconeIndices = identifyConesWhoseSeparationExceedsThreshold(coneTypes,  mConeIndices, thresholdConeSeparation, round(numel(mConeIndices)/numel(lConeIndices)*numel(keptLconeIndices)));
-    keptSconeIndices = identifyConesWhoseSeparationExceedsThreshold(coneTypes,  sConeIndices, thresholdConeSeparation*1.3, round(numel(sConeIndices)/numel(lConeIndices)*numel(keptLconeIndices)));
+    if (thresholdConeSeparation <= 0)
+        keptLconeIndices = lConeIndices;
+        keptMconeIndices = mConeIndices;
+        keptSconeIndices = sConeIndices;
+    else
+        % Eliminate cones separately for each of the L,M and S cone mosaics
+        keptLconeIndices = identifyConesWhoseSeparationExceedsThreshold(coneTypes,  lConeIndices, thresholdConeSeparation, Inf);
+        keptMconeIndices = identifyConesWhoseSeparationExceedsThreshold(coneTypes,  mConeIndices, thresholdConeSeparation, round(numel(mConeIndices)/numel(lConeIndices)*numel(keptLconeIndices)));
+        keptSconeIndices = identifyConesWhoseSeparationExceedsThreshold(coneTypes,  sConeIndices, thresholdConeSeparation*1.3, round(numel(sConeIndices)/numel(lConeIndices)*numel(keptLconeIndices)));
+    end
     
     fprintf('original Lcones: %d, satisfying min separation and density: %d\n', numel(lConeIndices), numel(keptLconeIndices));
     fprintf('original Mcones: %d, satisfying min separation and density: %d\n', numel(mConeIndices), numel(keptMconeIndices));

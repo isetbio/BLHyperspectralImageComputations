@@ -10,11 +10,11 @@ function runExperiment
    
     
     % Parameters of decoding: stimulus (scene window) spatial subsampling
-    decodingParams.subSampledSpatialGrid = [5 5];  % Here we parcelate the scene within the moaic's FOV using a 1x1 grid (mean contrast over mosaic's window)
-    %decodingParams.subSampledSpatialGrid = [20 20];  % Here we parcelate the scene within the moaic's FOV using an 20x20 grid
+    decodingParams.subSampledSpatialGrid = 5*[1 1];  % Here we parcelate the scene within the moaic's FOV using a 1x1 grid (mean contrast over mosaic's window)
+    decodingParams.subSampledSpatialGrid = 10*[1 1];  % Here we parcelate the scene within the moaic's FOV using an 20x20 grid
     
     % Parameters of decoding: cone response subsampling
-    coneSep = 1.5;  % results in 107 cones
+    coneSep = 0.0;  % 1.5 results in 107 cones
     decodingParams.thresholdConeSeparation = sqrt(coneSep^2 + coneSep^2);  % Here we only include responses from cones with are at least 3 cone apertures apart along both x- and y-dimensions
     
     % Parameters of decoding: temporal response subsampling
@@ -23,7 +23,7 @@ function runExperiment
     % Parameters of decoding: decoding filter latency and memory
     % (neg. latency to negative to get the before stimulus onset)
     decodingParams.decodingLatencyInMilliseconds = -32;
-    decodingParams.decodingMemoryInMilliseconds = 200;
+    decodingParams.decodingMemoryInMilliseconds = 300;
     decodingParams.exportSubDirectory = sprintf('ConeSeparation_%2.2f__SpatiaGrid_%dx%d', coneSep, decodingParams.subSampledSpatialGrid(1), decodingParams.subSampledSpatialGrid(2));
     
     % runMode possible value: 'compute outer segment responses', 'assembleTrainingDataSet', 'computeDecodingFilter', 'computeOutOfSamplePredictions';
