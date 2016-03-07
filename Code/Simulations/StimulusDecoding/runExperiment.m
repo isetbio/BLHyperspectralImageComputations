@@ -18,18 +18,18 @@ function runExperiment
     decodingParams.thresholdConeSeparation = sqrt(coneSep^2 + coneSep^2);  % Here we only include responses from cones with are at least 3 cone apertures apart along both x- and y-dimensions
     
     % Parameters of decoding: temporal response subsampling
-    decodingParams.temporalSubSamplingResolutionInMilliseconds = 4;
+    decodingParams.temporalSubSamplingResolutionInMilliseconds = 6;
     
     % Parameters of decoding: decoding filter latency and memory
     % (neg. latency to negative to get the before stimulus onset)
-    decodingParams.decodingLatencyInMilliseconds = -32;
-    decodingParams.decodingMemoryInMilliseconds = 300;
+    decodingParams.decodingLatencyInMilliseconds = 0;
+    decodingParams.decodingMemoryInMilliseconds = 240;
     decodingParams.exportSubDirectory = sprintf('ConeSeparation_%2.2f__SpatiaGrid_%dx%d', coneSep, decodingParams.subSampledSpatialGrid(1), decodingParams.subSampledSpatialGrid(2));
     
     % runMode possible value: 'compute outer segment responses', 'assembleTrainingDataSet', 'computeDecodingFilter', 'computeOutOfSamplePredictions';
     %runMode = {'compute outer segment responses'};
      runMode = {'assembleTrainingDataSet'}
- %    runMode = {'computeDecodingFilter'};
+    runMode = {'computeDecodingFilter'}
  %    runMode = {'computeOutOfSamplePredictions'};
     
     if (ismember('compute outer segment responses', runMode))
