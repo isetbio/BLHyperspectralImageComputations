@@ -4,6 +4,7 @@ function computeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, osT
     maxargs = 5;
     narginchk(minargs, maxargs);
 
+    
     scansDir = getScansDir(rootPath, configuration, adaptingFieldType, osType);
     
     decodingDirectory = getDecodingSubDirectory(scansDir, decodingExportSubDirectory); 
@@ -33,13 +34,14 @@ function computeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, osT
         'testingScontrastSequence' ...
         };
     
+    fprintf('\nLoading ''%s'' ...', decodingDataFileName);
     for k = 1:numel(testingVarList)
         load(decodingDataFileName, testingVarList{k});
     end
     
     
-    
-    
+    % display decoding filter
+    fprintf('Displaying decoding filter\n');
    
     decodingFilter.conesNum = designMatrixTest.n;
     decodingFilter.latencyBins = designMatrixTest.lat;
@@ -47,49 +49,77 @@ function computeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, osT
     
     decodingFilter.conesNum*decodingFilter.memoryBins
     
+    dcTerm = 1;
+    wVectorNormalized = wVector / max(abs(wVector(dcTerm+1:end)));
     featuresNum = size(wVector,1)
     spatialFeaturesNum = numel(filterSpatialYdataInRetinalMicrons)*numel(filterSpatialXdataInRetinalMicrons)
     stimulusDimensions = size(wVector,2)
     
-    dcTerm = 1;
-    figure(3); clf;
-    timeBins = 1:decodingFilter.memoryBins;
-    for stimDimIndex = 1:stimulusDimensions
-        if (spatialFeaturesNum > 1)
-            coneContrastDimIndex = floor((stimDimIndex-1)/spatialFeaturesNum)+1;
-            spatialDimIndex = mod(stimDimIndex-1, spatialFeaturesNum) + 1;
-            [spatialYDimIndex, spatialXDimIndex] = ind2sub([ numel(filterSpatialYdataInRetinalMicrons)  numel(filterSpatialXdataInRetinalMicrons)], spatialDimIndex);
-        end
-        
-        for coneIndex = 1:decodingFilter.conesNum
-            temporalDecodingFilter = wVector(dcTerm + (coneIndex-1)*numel(timeBins) + timeBins, stimDimIndex)/max(abs(wVector(dcTerm+1:end)));
-            if (spatialFeaturesNum == 1)
-                coneContrastDimIndex = stimDimIndex;
-                stimDecoder(coneContrastDimIndex).filter(coneIndex,timeBins) = temporalDecodingFilter;
-            else
-                stimDecoder(coneContrastDimIndex, spatialYDimIndex, spatialXDimIndex).filter(coneIndex,timeBins) = temporalDecodingFilter;
-            end
-            
-            
-%             subplot(1,2,1);
-%             plot(temporalDecodingFilter)
-%             set(gca, 'YLim', [-1 1], 'XLim', [1 numel(temporalDecodingFilter)])
-%             subplot(1,2,2);
-%             hold on;
-%             plot(temporalDecodingFilter)
-%             set(gca, 'YLim', [-1 1], 'XLim', [1 numel(temporalDecodingFilter)])
-%             
-%             drawnow;
-        end % coneIndex
-    end % stimIndex
-    
-    
+    filterConeIDs = [keptLconeIndices(:); keptMconeIndices(:); keptSconeIndices(:) ];
     coneTypes = sensorGet(scanSensor, 'coneType');
     lConeIndices = find(coneTypes == 2);
     mConeIndices = find(coneTypes == 3);
     sConeIndices = find(coneTypes == 4);
     
-    filterConeIDs = [keptLconeIndices(:); keptMconeIndices(:); keptSconeIndices(:) ];
+   
+    timeBins = 1:decodingFilter.memoryBins;
+    
+    figure(3); 
+     
+    for stimDimIndex = 1:stimulusDimensions
+        
+        if (spatialFeaturesNum > 1)
+            coneContrastDimIndex = floor((stimDimIndex-1)/spatialFeaturesNum)+1;
+            spatialDimIndex = mod(stimDimIndex-1, spatialFeaturesNum) + 1;
+            [spatialYDimIndex, spatialXDimIndex] = ind2sub([ numel(filterSpatialYdataInRetinalMicrons)  numel(filterSpatialXdataInRetinalMicrons)], spatialDimIndex);
+        elseif (spatialFeaturesNum == 1)
+            coneContrastDimIndex = stimDimIndex; 
+        end
+        
+        clf;
+        for coneIndex = 1:decodingFilter.conesNum
+            temporalDecodingFilter = wVectorNormalized(dcTerm + (coneIndex-1)*numel(timeBins) + timeBins, stimDimIndex);
+            
+            if (spatialFeaturesNum == 1)
+                if (coneIndex == 1) && (stimDimIndex == 1)
+                    a.filter = zeros(decodingFilter.conesNum, numel(temporalDecodingFilter));
+                    stimDecoder = repmat(a, [1 3]);
+                end
+                stimDecoder(coneContrastDimIndex).filter(coneIndex,:) = temporalDecodingFilter;
+            else
+                if (coneIndex == 1) && (stimDimIndex == 1)
+                    a.filter = zeros(decodingFilter.conesNum, numel(temporalDecodingFilter));
+                    stimDecoder = repmat(a, [3 numel(filterSpatialYdataInRetinalMicrons) numel(filterSpatialXdataInRetinalMicrons)]);
+                end
+                stimDecoder(coneContrastDimIndex, spatialYDimIndex, spatialXDimIndex).filter(coneIndex,:) = temporalDecodingFilter;
+            end
+            
+            if ismember(filterConeIDs(coneIndex), lConeIndices)
+                RGBval = [1 0. 0.];
+            elseif ismember(filterConeIDs(coneIndex), mConeIndices)
+                RGBval = [0 1 0.0];
+            elseif ismember(filterConeIDs(coneIndex), sConeIndices)
+                RGBval = [0.0 0 1];
+            else
+                error('No such cone type')
+            end
+            
+            subplot(1,2,1);
+            plot(1:numel(temporalDecodingFilter), temporalDecodingFilter, 'k-', 'Color', RGBval);
+            set(gca, 'YLim', [-1 1], 'XLim', [1 numel(temporalDecodingFilter)])
+            subplot(1,2,2);
+            hold on;
+            plot(1:numel(temporalDecodingFilter), temporalDecodingFilter, 'k-', 'Color', RGBval);
+            set(gca, 'YLim', [-1 1], 'XLim', [1 numel(temporalDecodingFilter)])
+            
+            drawnow;
+        end % coneIndex
+    end % stimIndex
+    
+    
+    
+    
+    
     
     stimConeContrastIndex = 2; % s-cone decoding filter
     
