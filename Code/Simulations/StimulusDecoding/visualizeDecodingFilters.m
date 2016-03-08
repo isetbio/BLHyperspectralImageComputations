@@ -49,7 +49,7 @@ function visualizeDecodingFilters(rootPath, decodingExportSubDirectory, osType, 
     decodingFilter.timeAxis    = (designMatrix.lat + (0:(designMatrix.m-1)))*designMatrix.binWidth;
     
     % Normalize wVector for plotting in [-1 1]
-    wVectorNormalized = wVector / max(abs(wVector(:)));
+    wVectorNormalized = 1.3 * wVector / max(abs(wVector(:)));
     
     % First display the spatial maps of DC decoding coefficients for L-, M-, and S-cone contrast
     figNo = 1;
@@ -60,7 +60,7 @@ function visualizeDecodingFilters(rootPath, decodingExportSubDirectory, osType, 
     % Then display the spatial map of the coefficients for each 
     fprintf('Displaying the spatiotemporal L-, M- and S-contrast decoder for scene position (1,1)\n');
     figNo = 2;
-    generatePlotsOfDecodingMaps(figNo, filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons, wVectorNormalized, scanSensor, keptLconeIndices, keptMconeIndices, keptSconeIndices, decodingFilter)
+    generatePlotsOfDecodingMaps(figNo, decodingDirectory, filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons, wVectorNormalized, scanSensor, keptLconeIndices, keptMconeIndices, keptSconeIndices, decodingFilter)
     
     
     
@@ -169,7 +169,7 @@ function visualizeDecodingFilters(rootPath, decodingExportSubDirectory, osType, 
 end
 
 
-function generatePlotsOfDecodingMaps(figNo, filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons, wVector, scanSensor, keptLconeIndices, keptMconeIndices, keptSconeIndices, decodingFilter)
+function generatePlotsOfDecodingMaps(figNo, decodingDirectory, filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons, wVector, scanSensor, keptLconeIndices, keptMconeIndices, keptSconeIndices, decodingFilter)
     
     filterConeIDs = [keptLconeIndices(:); keptMconeIndices(:); keptSconeIndices(:) ];
     spatialFeaturesNum = numel(filterSpatialYdataInRetinalMicrons)*numel(filterSpatialXdataInRetinalMicrons);
@@ -213,6 +213,9 @@ function generatePlotsOfDecodingMaps(figNo, filterSpatialXdataInRetinalMicrons, 
     end  % coneContrastIndex
     
     
+    satExponent = 1.0;
+    satGain = 1.0;
+    
     coneXYpositions = sensorGet(scanSensor, 'xy');
     coneXpositions = sort(unique(coneXYpositions(:,1)));
     coneYpositions = sort(unique(coneXYpositions(:,2)));
@@ -225,30 +228,43 @@ function generatePlotsOfDecodingMaps(figNo, filterSpatialXdataInRetinalMicrons, 
     
     dx = 0.0*(filterSpatialXdataInRetinalMicrons(2)-filterSpatialXdataInRetinalMicrons(1));
     dy = 0.0*(filterSpatialYdataInRetinalMicrons(2)-filterSpatialYdataInRetinalMicrons(1));
-    XLims = [filterSpatialXdataInRetinalMicrons(1)-dx filterSpatialXdataInRetinalMicrons(end)+dx];
-    YLims = [filterSpatialYdataInRetinalMicrons(1)-dy filterSpatialYdataInRetinalMicrons(end)+dy];
+    dx = 0.5*(coneXpositions(2)-coneXpositions(1));
+    dy = 0.5*(coneYpositions(2)-coneYpositions(1));
+    XLims = [coneXpositions(1)-dx coneXpositions(end)+dx]; % [filterSpatialXdataInRetinalMicrons(1)-dx filterSpatialXdataInRetinalMicrons(end)+dx];
+    YLims = [coneYpositions(1)-dx coneYpositions(end)+dx]; % [filterSpatialYdataInRetinalMicrons(1)-dy filterSpatialYdataInRetinalMicrons(end)+dy];
    
-    for sceneYpos = 1: numel(filterSpatialYdataInRetinalMicrons)
-        for sceneXpos = 1:numel(filterSpatialXdataInRetinalMicrons)
+    videoFilename = sprintf('%s/DecodingFilterAnimation.m4v', decodingDirectory);
+    fprintf('Will export video to %s\n', videoFilename);
+    writerObj = VideoWriter(videoFilename, 'MPEG-4'); % H264 format
+    writerObj.FrameRate = 15; 
+    writerObj.Quality = 100;
+    writerObj.open();
+
+    
+
+    for sceneYpos = 3 : 3 : numel(filterSpatialYdataInRetinalMicrons)-2
+        for sceneXpos = 3 : 3 : numel(filterSpatialXdataInRetinalMicrons)-2
             
             hFig = figure(figNo); clf;
+            set(hFig, 'Position', [10 10 1775 940]);
+
             subplotPosVectors = NicePlot.getSubPlotPosVectors(...
                'rowsNum', 2, ...
                'colsNum', 4, ...
                'heightMargin',   0.08, ...
                'widthMargin',    0.03, ...
-               'leftMargin',     0.02, ...
+               'leftMargin',     0.04, ...
                'rightMargin',    0.01, ...
                'bottomMargin',   0.06, ...
                'topMargin',      0.03);
    
             stimulusPositionAxes = axes('parent', hFig, 'unit','normalized','position',[subplotPosVectors(1,1).v(1) 0.5*(subplotPosVectors(1,1).v(2) + subplotPosVectors(2,1).v(2)) subplotPosVectors(1,1).v(3) subplotPosVectors(1,1).v(4)]);
-            temporalProfileLconeDecoderAxes = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(1,2).v);
-            spatialProfileLconeDecoderAxes  = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(2,2).v);
-            temporalProfileMconeDecoderAxes = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(1,3).v);
-            spatialProfileMconeDecoderAxes  = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(2,3).v);
-            temporalProfileSconeDecoderAxes = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(1,4).v);
-            spatialProfileSconeDecoderAxes  = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(2,4).v);
+            temporalProfileLconeDecoderAxes = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(1,2).v, 'Color', [0 0 0].^(1/satExponent));
+            spatialProfileLconeDecoderAxes  = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(2,2).v, 'Color', [0.5 0.5 0.5].^(1/satExponent));
+            temporalProfileMconeDecoderAxes = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(1,3).v, 'Color', [0 0 0].^(1/satExponent));
+            spatialProfileMconeDecoderAxes  = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(2,3).v, 'Color', [0.5 0.5 0.5].^(1/satExponent));
+            temporalProfileSconeDecoderAxes = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(1,4).v, 'Color', [0 0 0].^(1/satExponent));
+            spatialProfileSconeDecoderAxes  = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(2,4).v, 'Color', [0.5 0.5 0.5].^(1/satExponent));
             
             axis(stimulusPositionAxes, 'square');
             axis(temporalProfileLconeDecoderAxes, 'square');
@@ -260,41 +276,63 @@ function generatePlotsOfDecodingMaps(figNo, filterSpatialXdataInRetinalMicrons, 
             
             axesToDrawOn = {spatialProfileLconeDecoderAxes, spatialProfileMconeDecoderAxes, spatialProfileSconeDecoderAxes};
             for coneContrastIndex = 1:numel(axesToDrawOn)
+                grayImage = 0.5*ones(numel(coneYpositions), numel(coneXpositions),3);
                 axisToDrawOn = axesToDrawOn{coneContrastIndex};
-                densityPlot(coneContrastIndex) = imagesc(coneXpositions, coneYpositions, ones(numel(coneYpositions), numel(coneXpositions),3), 'parent', axisToDrawOn);
-                xlabel(axisToDrawOn, 'microns');
-                ylabel(axisToDrawOn, 'microns');
+                densityPlot(coneContrastIndex) = imagesc(coneXpositions, coneYpositions, grayImage.^(1/satExponent), 'parent', axisToDrawOn);
                 axis(axisToDrawOn, 'xy')
                 axis(axisToDrawOn, 'image');
-                set(axisToDrawOn, 'CLim', [0 1],'XLim', XLims, 'YLim', YLims);
+                set(axisToDrawOn, 'CLim', [0 1],'XLim', XLims, 'YLim', YLims, 'FontSize', 12);
                 set(axisToDrawOn, 'XTick', filterSpatialXdataInRetinalMicrons, 'YTick', filterSpatialYdataInRetinalMicrons);
                 set(axisToDrawOn, 'XTickLabel', sprintf('%2.1f\n', filterSpatialXdataInRetinalMicrons), 'YTickLabel', sprintf('%2.1f\n', filterSpatialYdataInRetinalMicrons));
+                xlabel(axisToDrawOn, 'microns', 'FontSize', 12);
+                if (coneContrastIndex == 1)
+                    ylabel(axisToDrawOn, 'microns', 'FontSize', 12);
+                else
+                    set(axisToDrawOn, 'YTickLabel', {});
+                end
                 grid(axisToDrawOn, 'on');
             end
             
-            % Boost colors for better visualization
-            SaturationBoost = 1.5;
+            axesToDrawOn = {temporalProfileLconeDecoderAxes, temporalProfileMconeDecoderAxes, temporalProfileSconeDecoderAxes};
+            for coneContrastIndex = 1:numel(axesToDrawOn)
+                axisToDrawOn = axesToDrawOn{coneContrastIndex};
+                if (coneContrastIndex == 1)
+                   ylabel(axisToDrawOn, 'decoding coefficient', 'FontSize', 12);
+                else
+                   set(axisToDrawOn, 'YTickLabel', {});
+                end
+                        
+                xlabel(axisToDrawOn, 'time (msec)', 'FontSize', 12);
+                set(axisToDrawOn, 'XLim', [decodingFilter.timeAxis(1) decodingFilter.timeAxis(end)], 'YLim', [-1 1], 'FontSize', 12);
+            end
             
+
+            coneName = {'L', 'M', 'S'};
             for coneContrastIndex = 1:3
                 
                 stimulusPosition = 0.5*ones(numel(filterSpatialYdataInRetinalMicrons), numel(filterSpatialXdataInRetinalMicrons), 3);
                 if (coneContrastIndex == 1)
-                    RGBval = [1 0. 0.];
+                    RGBval = [1 0.2 0.5];
                 elseif (coneContrastIndex == 2)
-                    RGBval = [0 1 0.];
+                    RGBval = [0.2 1 0.5];
                 else
-                    RGBval = [0 0 1];
+                    RGBval = [0.5 0.2 1];
                 end
                 stimulusPosition(sceneYpos, sceneXpos, :) = reshape(RGBval, [1 1 3]);
 
-                imagesc(filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons, stimulusPosition, 'parent', stimulusPositionAxes);
+                imagesc(filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons, stimulusPosition.^(1/satExponent), 'parent', stimulusPositionAxes);
                 axis(stimulusPositionAxes, 'xy');
                 axis(stimulusPositionAxes, 'image');
-                set(stimulusPositionAxes, 'XLim', XLims, 'YLim', YLims);
+                
+                set(stimulusPositionAxes, 'XLim', XLims, 'YLim', YLims, 'FontSize', 12);
                 set(stimulusPositionAxes, 'XTick', filterSpatialXdataInRetinalMicrons, 'YTick', filterSpatialYdataInRetinalMicrons);
                 set(stimulusPositionAxes, 'XTickLabel', sprintf('%2.1f\n', filterSpatialXdataInRetinalMicrons), 'YTickLabel', sprintf('%2.1f\n', filterSpatialYdataInRetinalMicrons));
-                grid(stimulusPositionAxes, 'on');
+                xlabel(stimulusPositionAxes, 'microns', 'FontSize', 12);
+                ylabel(stimulusPositionAxes, 'microns', 'FontSize', 12);
+
                 
+                grid(stimulusPositionAxes, 'on');
+                title(stimulusPositionAxes, sprintf('decoded position, %s-cone contrast', coneName{coneContrastIndex}), 'FontSize', 14);
                 RGBval = zeros(decodingFilter.conesNum,3);
                 
                 maxConeDecodingWeight = 0;
@@ -304,7 +342,7 @@ function generatePlotsOfDecodingMaps(figNo, filterSpatialXdataInRetinalMicrons, 
                     
                     coneWeightsXYTMap = squeeze(stimDecoder(coneContrastIndex, sceneYpos, sceneXpos).filter(:, :, :));
                     coneWeightsXYMap = squeeze(coneWeightsXYTMap(:,:,timeBin));
-                    coneDecodingMapRGBrepresentation = ones(coneMosaicRows, coneMosaicCols,3);
+                    coneDecodingMapRGBrepresentation = nan(coneMosaicRows, coneMosaicCols,3);
                     
                     if (max(abs(coneWeightsXYMap(:))) > maxConeDecodingWeight)
                         maxConeDecodingWeight = max(abs(coneWeightsXYMap(:)));
@@ -317,16 +355,15 @@ function generatePlotsOfDecodingMaps(figNo, filterSpatialXdataInRetinalMicrons, 
                     
                     for coneIndex = 1:decodingFilter.conesNum
                         if ismember(filterConeIDs(coneIndex), lConeIndices)
-                            RGBval(coneIndex,:) = [1 0. 0.];
+                            RGBval(coneIndex,:) = [1 -1 0.2];
                         elseif ismember(filterConeIDs(coneIndex), mConeIndices)
-                            RGBval(coneIndex,:) = [0 0.7 0.0];
+                            RGBval(coneIndex,:) = [-1 1 0.2];
                         elseif ismember(filterConeIDs(coneIndex), sConeIndices)
-                            RGBval(coneIndex,:) = [0.0 0 1];
+                            RGBval(coneIndex,:) = [-0.5 -0.5 1];
                         else
                             error('No such cone type')
                         end
-
-                        coneDecodingMapRGBrepresentation(coneRowPos(coneIndex), coneColPos(coneIndex), :) = reshape([0.5 0.5 0.5] + 0.5*SaturationBoost*squeeze(RGBval(coneIndex,:)) * coneWeightsXYMap(coneRowPos(coneIndex), coneColPos(coneIndex)), [1 1 3]);
+                        coneDecodingMapRGBrepresentation(coneRowPos(coneIndex), coneColPos(coneIndex), :) = reshape([0.5 0.5 0.5] + 0.5*satGain*squeeze(RGBval(coneIndex,:)) * coneWeightsXYMap(coneRowPos(coneIndex), coneColPos(coneIndex)), [1 1 3]);
                     end % coneIndex
             
                     % avoid out of gamut
@@ -341,7 +378,7 @@ function generatePlotsOfDecodingMaps(figNo, filterSpatialXdataInRetinalMicrons, 
                         axisToDrawOn = spatialProfileSconeDecoderAxes;
                     end
                     
-                    set(densityPlot(coneContrastIndex), 'CData', coneDecodingMapRGBrepresentation);
+                    set(densityPlot(coneContrastIndex), 'CData', coneDecodingMapRGBrepresentation.^(1/satExponent));
                     
                     if (coneContrastIndex == 1)
                         axisToDrawOn = temporalProfileLconeDecoderAxes;
@@ -353,17 +390,26 @@ function generatePlotsOfDecodingMaps(figNo, filterSpatialXdataInRetinalMicrons, 
                     
                     if (timeBin == 1)
                         for coneIndex = 1:decodingFilter.conesNum
+                            lineColor = [0.5 0.5 0.5] + 0.5*satGain*squeeze(RGBval(coneIndex,:));
+                            lineColor(lineColor<0) = 0;
+                            lineColor(lineColor>1) = 1;
                             coneData = squeeze(coneWeightsXYTMap(coneRowPos(coneIndex), coneColPos(coneIndex), 1:timeBin));
                             hT(coneIndex) = line(decodingFilter.timeAxis(1:timeBin), coneData, ...
-                                'Color', squeeze(RGBval(coneIndex,:)), 'LineWidth', 2.0, 'parent', axisToDrawOn);
+                                'Color', lineColor, 'LineWidth', 1.0, 'parent', axisToDrawOn);
                             if (coneIndex == 1)
                                 hold(axisToDrawOn, 'on');
                             end
                         end
                         hold(axisToDrawOn, 'off');
                         box(axisToDrawOn, 'on');
-                        xlabel(axisToDrawOn, 'time (msec)');
-                        set(axisToDrawOn, 'XLim', [decodingFilter.timeAxis(1) decodingFilter.timeAxis(end)], 'YLim', [-1 1]);
+                        if (coneContrastIndex == 1)
+                            ylabel(axisToDrawOn, 'decoding coefficient', 'FontSize', 12);
+                        else
+                            set(axisToDrawOn, 'YTickLabel', {});
+                        end
+                        
+                        xlabel(axisToDrawOn, 'time (msec)', 'FontSize', 12);
+                        set(axisToDrawOn, 'XLim', [decodingFilter.timeAxis(1) decodingFilter.timeAxis(end)], 'YLim', [-0.6 1], 'FontSize', 12);
                     else
                         for coneIndex = 1:decodingFilter.conesNum
                             coneData = squeeze(coneWeightsXYTMap(coneRowPos(coneIndex), coneColPos(coneIndex), 1:timeBin));
@@ -387,7 +433,7 @@ function generatePlotsOfDecodingMaps(figNo, filterSpatialXdataInRetinalMicrons, 
                     end
                     
                     drawnow;
-                    
+                    writerObj.writeVideo(getframe(hFig));
                 end  %timeBin
                 
                 title(spatialProfileAxis, sprintf('t of max response: %d ms', decodingFilter.timeAxis(timeBinForFinalDisplay)), 'FontSize', 14);
@@ -397,6 +443,7 @@ function generatePlotsOfDecodingMaps(figNo, filterSpatialXdataInRetinalMicrons, 
         end % sceneXpos
     end % sceneYpos
 
+    writerObj.close();
 end
 
 function generatePlotOfDCdecodingCoeffs(figNo, filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons, wVector, scanSensor, keptLconeIndices, keptMconeIndices, keptSconeIndices)
