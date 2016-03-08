@@ -32,7 +32,9 @@ function computeDecodingFilter(rootPath, decodingExportSubDirectory, osType, ada
         trainingScontrastSequence' ...
         ];
     
-    
+    designMatrix.lat
+    designMatrix.m
+
     % Assemble X and c matrices
     [Xtrain, cTrain] = assembleDesignMatrixAndStimulusVector(designMatrix.T, designMatrix.lat, designMatrix.m, designMatrix.n, trainingPhotocurrents, trainingStimulusTrain);
     clear(trainingVarList{:});

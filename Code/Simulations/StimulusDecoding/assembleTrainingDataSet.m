@@ -60,7 +60,7 @@ function assembleTrainingDataSet(trainingDataPercentange, decodingParams, rootPa
     
 
     decodingLatencyInBins = round(decodingParams.decodingLatencyInMilliseconds/decodingParams.temporalSubSamplingResolutionInMilliseconds);
-    decodingMemoryInBins   = round(decodingParams.decodingMemoryInMilliseconds/decodingParams.temporalSubSamplingResolutionInMilliseconds); 
+    decodingMemoryInBins  = round(decodingParams.decodingMemoryInMilliseconds/decodingParams.temporalSubSamplingResolutionInMilliseconds); 
     
     % partition the data into training and testing components
     trainingScanIndex = 0;

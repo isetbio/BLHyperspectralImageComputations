@@ -1,10 +1,10 @@
-function computeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, osType, adaptingFieldType, configuration)
+function computeOutOfSamplePredictions(rootPath, decodingParams, osType, adaptingFieldType, configuration)
     
     minargs = 5;
     maxargs = 5;
     narginchk(minargs, maxargs);
 
-    
+    decodingExportSubDirectory = decodingParams.exportSubDirectory;
     scansDir = getScansDir(rootPath, configuration, adaptingFieldType, osType);
     
     decodingDirectory = getDecodingSubDirectory(scansDir, decodingExportSubDirectory); 
@@ -40,12 +40,15 @@ function computeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, osT
     end
     
     
+    
+    
     % display decoding filter
     fprintf('Displaying decoding filter\n');
    
     decodingFilter.conesNum = designMatrixTest.n;
     decodingFilter.latencyBins = designMatrixTest.lat;
     decodingFilter.memoryBins =  designMatrixTest.m;
+    decodingFilter.timeAxis   = decodingParams.decodingLatencyInMilliseconds + (0:(decodingFilter.memoryBins-1))*decodingParams.temporalSubSamplingResolutionInMilliseconds;
     
     decodingFilter.conesNum*decodingFilter.memoryBins
     
@@ -83,7 +86,7 @@ function computeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, osT
             if (spatialFeaturesNum == 1)
                 if (coneIndex == 1) && (stimDimIndex == 1)
                     a.filter = zeros(decodingFilter.conesNum, numel(temporalDecodingFilter));
-                    stimDecoder = repmat(a, [1 3]);
+                    stimDecoder = repmat(a, [3 numel(filterSpatialYdataInRetinalMicrons) numel(filterSpatialXdataInRetinalMicrons)]);
                 end
                 stimDecoder(coneContrastDimIndex).filter(coneIndex,:) = temporalDecodingFilter;
             else
@@ -105,13 +108,14 @@ function computeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, osT
             end
             
             subplot(1,2,1);
-            plot(1:numel(temporalDecodingFilter), temporalDecodingFilter, 'k-', 'Color', RGBval);
-            set(gca, 'YLim', [-1 1], 'XLim', [1 numel(temporalDecodingFilter)])
+            plot(decodingFilter.timeAxis, temporalDecodingFilter, 'k-', 'Color', RGBval);
+            set(gca, 'YLim', [-1 1], 'XLim', [decodingFilter.timeAxis(1) decodingFilter.timeAxis(end)]);
+            xlabel('msec');
             subplot(1,2,2);
             hold on;
-            plot(1:numel(temporalDecodingFilter), temporalDecodingFilter, 'k-', 'Color', RGBval);
-            set(gca, 'YLim', [-1 1], 'XLim', [1 numel(temporalDecodingFilter)])
-            
+            plot(decodingFilter.timeAxis, temporalDecodingFilter, 'k-', 'Color', RGBval);
+            set(gca, 'YLim', [-1 1], 'XLim', [decodingFilter.timeAxis(1) decodingFilter.timeAxis(end)])
+            xlabel('msec');
             drawnow;
         end % coneIndex
     end % stimIndex
