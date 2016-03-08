@@ -7,7 +7,7 @@ function runExperiment
     osType = 'biophysics-based';  % 'biophysics-based' or 'linear'
    % adaptingFieldType = 'MatchSpatiallyAveragedPhotonSPD';   % match photon SPD (mean luminance and chromaticity)
     adaptingFieldType = 'MacBethGrayD65MatchSceneLuminance'; % match luminance only (achromatic background) 
-   
+   % adaptingFieldType = 'NoAdaptationField';
     
     % Parameters of decoding: stimulus (scene window) spatial subsampling
     decodingParams.subSampledSpatialGrid = 1*[1 1];  % Here we parcelate the scene within the moaic's FOV using a 1x1 grid (mean contrast over mosaic's window)
@@ -26,10 +26,14 @@ function runExperiment
     decodingParams.decodingMemoryInMilliseconds = 600;
     decodingParams.exportSubDirectory = sprintf('ConeSeparation_%2.2f__SpatiaGrid_%dx%d', coneSep, decodingParams.subSampledSpatialGrid(1), decodingParams.subSampledSpatialGrid(2));
     
-    % runMode possible value: 'compute outer segment responses', 'assembleTrainingDataSet', 'computeDecodingFilter', 'computeOutOfSamplePredictions';
-    %runMode = {'compute outer segment responses'};
-    runMode = {'assembleTrainingDataSet'}
-    runMode = {'computeDecodingFilter'}
+    % runMode possible value: 'compute outer segment responses', 'assembleTrainingDataSet', 'computeDecodingFilter', ''visualizeDecodingFilter', 'visualizeInSamplePerformance', 'computeOutOfSamplePredictions';
+    runMode = {'compute outer segment responses'};
+   % runMode = {'assembleTrainingDataSet'}
+   % runMode = {'computeDecodingFilter'}
+   runMode = {'visualizeDecodingFilter'}
+  %  runMode = {'visualizeInSamplePerformance'}
+   % runMode = {'visualizeDecodingFilter'}
+    
      %runMode = {'computeOutOfSamplePredictions'}
     
     if (ismember('compute outer segment responses', runMode))
@@ -46,7 +50,13 @@ function runExperiment
         % 3. Compute decoding filter
         computeDecodingFilter(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
         
-        % 4. Compute out-of-sample predictions
+        % 4a. Visualize decoding filter and in-sample performance
+        visualizeDecodingFilters(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
+        
+        % 4b. Visualize in-sample performance
+        visualizeInSamplePerformance(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
+        
+        % 5. Compute out-of-sample predictions
         computeOutOfSamplePredictions(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
         
     elseif (ismember('assembleTrainingDataSet', runMode))
@@ -60,17 +70,44 @@ function runExperiment
         % 3. Compute decoding filter
         computeDecodingFilter(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
         
-        % 4. Compute out-of-sample predictions
+        % 4a. Visualize decoding filter and in-sample performance
+        visualizeDecodingFilters(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
+        
+        % 4b. Visualize in-sample performance
+        visualizeInSamplePerformance(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
+        
+        % 5. Compute out-of-sample predictions
         computeOutOfSamplePredictions(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
         
     elseif (ismember('computeDecodingFilter', runMode))
         % 3. Compute decoding filter
         computeDecodingFilter(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
         
-        % 4. Compute out-of-sample predictions
+        % 4a. Visualize decoding filter and in-sample performance
+        visualizeDecodingFilters(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
+        
+        % 4b. Visualize in-sample performance
+        visualizeInSamplePerformance(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
+        
+        % 5. Compute out-of-sample predictions
         computeOutOfSamplePredictions(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
-    else
-        % 4. Compute out-of-sample predictions
+    
+    elseif (ismember('visualizeDecodingFilter', runMode))
+        % 4a. Visualize decoding filter and in-sample performance
+        visualizeDecodingFilters(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
+        
+        % 4b. Visualize in-sample performance
+        visualizeInSamplePerformance(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
+        
+    elseif (ismember('visualizeInSamplePerformance', runMode))
+        % 4b. Visualize in-sample performance
+        visualizeInSamplePerformance(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
+        
+    elseif (ismember('computeOutOfSamplePredictions', runMode))
+        % 4b. Visualize in-sample performance
+        visualizeInSamplePerformance(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
+       
+        % 5. Compute out-of-sample predictions
         computeOutOfSamplePredictions(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
     end
 end

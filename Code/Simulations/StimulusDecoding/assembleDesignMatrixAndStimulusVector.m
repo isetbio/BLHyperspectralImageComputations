@@ -5,7 +5,7 @@ function [X, C] = assembleDesignMatrixAndStimulusVector(totalBins, latencyBins, 
     else
         minTimeBin = latencyBins;
     end
-    %minTimeBin = min([0 min([latencyBins 0])]);
+  
     rowsOfX = totalBins + minTimeBin;
     stimulusDimensions = size(stimulus,2);
     X = zeros(rowsOfX, 1+(conesNum*memoryBins), 'single');

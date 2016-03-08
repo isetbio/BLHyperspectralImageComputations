@@ -55,13 +55,14 @@ function computeOuterSegmentResponsesForImage(scansDir, osType, useParallelEngin
     scene = sceneAdjustLuminance(scene, forcedSceneMeanLuminance);
 
     % Generate uniform-field adapting scene with equal size as test scene
-    if strcmp(adaptingFieldType, 'MacBethGrayD65MatchSceneLuminance')
+    if (strcmp(adaptingFieldType, 'MacBethGrayD65MatchSceneLuminance')) || (strcmp(adaptingFieldType, 'NoAdaptationField'))
         % Reflectance that of a gray MacBeth chip with a reflectance = 0.6, illuminated by D65 illuminant and 
         % a mean luminance adjusted to match that of the test scene.
         adaptingFieldIlluminant = 'D65';         % either 'from scene', or the name of a known illuminant, such as 'D65', 'illuminant c'
         adaptingFieldLuminance = sceneGet(scene, 'mean luminance');
-        adaptingFieldReflectance = 0.7;
+        adaptingFieldReflectance = 0.85;
         sceneAdaptationField = makeMacBethWhiteChipAdaptingScene(scene, adaptingFieldReflectance, adaptingFieldLuminance, adaptingFieldIlluminant);
+        %sceneAdaptationField = sceneAdjustLuminance(sceneAdaptationField, forcedSceneMeanLuminance);
         fprintf('[Worker %d]: Adapting scene  mean luminance: %2.2f cd/m2\n', workerID, sceneGet(sceneAdaptationField, 'mean luminance'));
         fprintf('[Worker %d]: Testing  scene mean luminance: %2.2f cd/m2\n',  workerID, sceneGet(scene, 'mean luminance'));
         
@@ -92,7 +93,7 @@ function computeOuterSegmentResponsesForImage(scansDir, osType, useParallelEngin
         [lum, meanL] = sceneCalculateLuminance(sceneAdaptationField);
         sceneAdaptationField = sceneSet(sceneAdaptationField,'luminance',lum);
     end
-    
+     
 
     % compute Stockman LMS excitations for both scenes
     sceneLMS = sceneGet(scene, 'lms');
@@ -205,43 +206,86 @@ function computeOuterSegmentResponsesForImage(scansDir, osType, useParallelEngin
         scanPositions                = sensorPositions(positionIndices,:);
 
         % preallocate memory
-        timeBinsNum = saccadesPerScan*(positionsPerFixation+positionsPerFixationAdaptationField)+positionsPerFixationAdaptationField;
+        if (strcmp(adaptingFieldType, 'NoAdaptationField'))
+            % add adaptation field data only before and after scan data
+            timeBinsNum = positionsPerFixationAdaptationField + saccadesPerScan*positionsPerFixation + 2*positionsPerFixationAdaptationField;
+        else
+            timeBinsNum = saccadesPerScan*(positionsPerFixation+positionsPerFixationAdaptationField)+2*positionsPerFixationAdaptationField;
+        end
         scanPlusAdaptationFieldIsomerizationRates    = zeros(size(isomerizationRate,1), size(isomerizationRate, 2), timeBinsNum);
         scanPlusAdaptationFieldPositions             = zeros(timeBinsNum,2);
         scanPlusAdaptationFieldLMSexcitationSequence = zeros(timeBinsNum, size(LMSAdaptionFieldSequence,2), size(LMSAdaptionFieldSequence,3), size(LMSAdaptionFieldSequence,4), 'single');
 
-        % Insert adaptation field isomerizations between saccades to allow
-        % for the outer segment to return to its baseline response
-        for saccadeIndex = 1:saccadesPerScan
-            timeBins1 = (saccadeIndex-1)*positionsPerFixation;
-            timeBins2 = (saccadeIndex-1)*(positionsPerFixation+positionsPerFixationAdaptationField);
-
-            % part1: response data from  adaptationField
-            binIndices2 = (1+timeBins2):(timeBins2+positionsPerFixationAdaptationField);
+        if (strcmp(adaptingFieldType, 'NoAdaptationField'))
+    
+            % esponse data from  adaptationField
+            binIndicesLeadingPart = 1:positionsPerFixationAdaptationField;
+            scanPlusAdaptationFieldIsomerizationRates(:,:,binIndicesLeadingPart) = isomerizationRateAdaptationField;
+            scanPlusAdaptationFieldPositions(binIndicesLeadingPart,:)            = sensorPositionsAdaptationField;
+            scanPlusAdaptationFieldLMSexcitationSequence(binIndicesLeadingPart,:,:,:) = scanLMSAdaptionFieldSequence;
+                
+            binIndices2 = binIndicesLeadingPart;
+            
+            for saccadeIndex = 1:saccadesPerScan
+                timeBins1 = (saccadeIndex-1)*positionsPerFixation;
+                binIndices1 = (1+timeBins1):(timeBins1+positionsPerFixation);
+                
+                timeBins2   = binIndicesLeadingPart(end) + (saccadeIndex-1)*(positionsPerFixation+positionsPerFixationAdaptationField);
+                binIndices2 = binIndices2(end) + (1:positionsPerFixation);
+                
+                scanPlusAdaptationFieldIsomerizationRates(:,:,binIndices2) = scanIsomerizationRates(:,:, binIndices1);
+                scanPlusAdaptationFieldPositions(binIndices2, :)           = scanPositions(binIndices1,:);
+                scanPlusAdaptationFieldLMSexcitationSequence(binIndices2, :,:,:) = scanLMSexcitationSequence(binIndices1,:,:,:);
+            end
+            
+            % add trailing response data from adaptationField
+            timeBins2 = saccadesPerScan*(positionsPerFixation) + positionsPerFixationAdaptationField;
+            binIndices2 = (1+timeBins2): (timeBins2 + positionsPerFixationAdaptationField);
             scanPlusAdaptationFieldIsomerizationRates(:,:,binIndices2) = isomerizationRateAdaptationField;
             scanPlusAdaptationFieldPositions(binIndices2,:)            = sensorPositionsAdaptationField;
-            scanPlusAdaptationFieldLMSexcitationSequence(binIndices2,:,:,:) = scanLMSAdaptionFieldSequence;
+            scanPlusAdaptationFieldLMSexcitationSequence(binIndices2,:,:,:) = LMSAdaptionFieldSequence;
+            
+            % add one more trailing response data from adaptationField
+            binIndices2 = binIndices2 + positionsPerFixationAdaptationField;
+            scanPlusAdaptationFieldIsomerizationRates(:,:,binIndices2) = isomerizationRateAdaptationField;
+            scanPlusAdaptationFieldPositions(binIndices2,:)            = sensorPositionsAdaptationField;
+            scanPlusAdaptationFieldLMSexcitationSequence(binIndices2,:,:,:) = LMSAdaptionFieldSequence;
+            
+        else
+            
+            % Insert adaptation field isomerizations between saccades to allow
+            % for the outer segment to return to its baseline response
+            for saccadeIndex = 1:saccadesPerScan
+                timeBins1 = (saccadeIndex-1)*positionsPerFixation;
+                timeBins2 = (saccadeIndex-1)*(positionsPerFixation+positionsPerFixationAdaptationField);
 
-            % part2: response data from current saccade
-            binIndices1 = (1+timeBins1):(timeBins1+positionsPerFixation);
-            binIndices2 = binIndices2(end) + (1:positionsPerFixation);
-            scanPlusAdaptationFieldIsomerizationRates(:,:,binIndices2) = scanIsomerizationRates(:,:, binIndices1);
-            scanPlusAdaptationFieldPositions(binIndices2, :)           = scanPositions(binIndices1,:);
-            scanPlusAdaptationFieldLMSexcitationSequence(binIndices2, :,:,:) = scanLMSexcitationSequence(binIndices1,:,:,:);
+                % part1: response data from  adaptationField
+                binIndices2 = (1+timeBins2):(timeBins2+positionsPerFixationAdaptationField);
+                scanPlusAdaptationFieldIsomerizationRates(:,:,binIndices2) = isomerizationRateAdaptationField;
+                scanPlusAdaptationFieldPositions(binIndices2,:)            = sensorPositionsAdaptationField;
+                scanPlusAdaptationFieldLMSexcitationSequence(binIndices2,:,:,:) = scanLMSAdaptionFieldSequence;
+
+                % part2: response data from current saccade
+                binIndices1 = (1+timeBins1):(timeBins1+positionsPerFixation);
+                binIndices2 = binIndices2(end) + (1:positionsPerFixation);
+                scanPlusAdaptationFieldIsomerizationRates(:,:,binIndices2) = scanIsomerizationRates(:,:, binIndices1);
+                scanPlusAdaptationFieldPositions(binIndices2, :)           = scanPositions(binIndices1,:);
+                scanPlusAdaptationFieldLMSexcitationSequence(binIndices2, :,:,:) = scanLMSexcitationSequence(binIndices1,:,:,:);
+            end
+
+            % add trailing response data from adaptationField
+            timeBins2 = saccadesPerScan*(positionsPerFixation+positionsPerFixationAdaptationField);
+            binIndices2 = (1+timeBins2): (timeBins2 + positionsPerFixationAdaptationField);
+            scanPlusAdaptationFieldIsomerizationRates(:,:,binIndices2) = isomerizationRateAdaptationField;
+            scanPlusAdaptationFieldPositions(binIndices2,:)            = sensorPositionsAdaptationField;
+            scanPlusAdaptationFieldLMSexcitationSequence(binIndices2,:,:,:) = LMSAdaptionFieldSequence;
+
+            % add one more trailing response data from adaptationField
+            binIndices2 = binIndices2 + positionsPerFixationAdaptationField;
+            scanPlusAdaptationFieldIsomerizationRates(:,:,binIndices2) = isomerizationRateAdaptationField;
+            scanPlusAdaptationFieldPositions(binIndices2,:)            = sensorPositionsAdaptationField;
+            scanPlusAdaptationFieldLMSexcitationSequence(binIndices2,:,:,:) = LMSAdaptionFieldSequence;
         end
-
-        % add trailing response data from adaptationField
-        timeBins2 = saccadesPerScan*(positionsPerFixation+positionsPerFixationAdaptationField);
-        binIndices2 = (1+timeBins2): (timeBins2 + positionsPerFixationAdaptationField);
-        scanPlusAdaptationFieldIsomerizationRates(:,:,binIndices2) = isomerizationRateAdaptationField;
-        scanPlusAdaptationFieldPositions(binIndices2,:)            = sensorPositionsAdaptationField;
-        scanPlusAdaptationFieldLMSexcitationSequence(binIndices2,:,:,:) = LMSAdaptionFieldSequence;
-        
-        % add one more trailing response data from adaptationField
-        binIndices2 = binIndices2 + positionsPerFixationAdaptationField;
-        scanPlusAdaptationFieldIsomerizationRates(:,:,binIndices2) = isomerizationRateAdaptationField;
-        scanPlusAdaptationFieldPositions(binIndices2,:)            = sensorPositionsAdaptationField;
-        scanPlusAdaptationFieldLMSexcitationSequence(binIndices2,:,:,:) = LMSAdaptionFieldSequence;
         
         
         % generate new sensor with given sub-sequence of saccades with injected adaptationField isomerization rates
@@ -284,7 +328,7 @@ function computeOuterSegmentResponsesForImage(scansDir, osType, useParallelEngin
 
         if (debug)
             figNum = 100*workerID+scanIndex;
-            osWindow(figNum, 'biophys-based outer segment', osB, scanSensor, oi, scene);
+            osWindow(figNum, 'biophys-based outer segment', 'horizontalLayout', osOBJ, scanSensor, oi, scene);
         end
     end
 end
