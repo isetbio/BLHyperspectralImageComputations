@@ -1,15 +1,15 @@
-function computeOutOfSamplePredictions(rootPath, decodingParams, osType, adaptingFieldType, configuration)
+function computeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, osType, adaptingFieldType, configuration)
     
     minargs = 5;
     maxargs = 5;
     narginchk(minargs, maxargs);
 
-    decodingExportSubDirectory = decodingParams.exportSubDirectory;
     scansDir = getScansDir(rootPath, configuration, adaptingFieldType, osType);
     
     decodingDirectory = getDecodingSubDirectory(scansDir, decodingExportSubDirectory); 
     decodingFiltersFileName = fullfile(decodingDirectory, sprintf('DecodingFilters.mat'));
     decodingFiltersVarList = {...
+        'designMatrix', ...
         'wVector', ...
         'cTrainPrediction', ...
         'cTrain', ...
@@ -48,9 +48,9 @@ function computeOutOfSamplePredictions(rootPath, decodingParams, osType, adaptin
     decodingFilter.conesNum = designMatrixTest.n;
     decodingFilter.latencyBins = designMatrixTest.lat;
     decodingFilter.memoryBins =  designMatrixTest.m;
-    decodingFilter.timeAxis   = decodingParams.decodingLatencyInMilliseconds + (0:(decodingFilter.memoryBins-1))*decodingParams.temporalSubSamplingResolutionInMilliseconds;
+    decodingFilter.timeAxis   = (designMatrixTest.lat + (0:(designMatrixTest.m-1)))*designMatrixTest.binWidth;
     
-    decodingFilter.conesNum*decodingFilter.memoryBins
+    
     
     dcTerm = 1;
     wVectorNormalized = wVector / max(abs(wVector(dcTerm+1:end)));

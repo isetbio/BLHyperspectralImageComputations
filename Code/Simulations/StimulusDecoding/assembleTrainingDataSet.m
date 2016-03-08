@@ -111,6 +111,7 @@ function assembleTrainingDataSet(trainingDataPercentange, decodingParams, rootPa
                 designMatrix.lat = decodingLatencyInBins;
                 designMatrix.m = decodingMemoryInBins;
                 designMatrix.T = size(trainingPhotocurrents,2) - (designMatrix.lat + designMatrix.m);
+                designMatrix.binWidth = decodingParams.temporalSubSamplingResolutionInMilliseconds;
                 fprintf('Decoding filter will have %d coefficients\n', 1+(designMatrix.n*designMatrix.m));
                 fprintf('Design matrix will have: %d rows and %d cols\n' , designMatrix.T, 1+(designMatrix.n*designMatrix.m));
             end

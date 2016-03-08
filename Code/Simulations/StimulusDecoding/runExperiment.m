@@ -47,7 +47,7 @@ function runExperiment
         computeDecodingFilter(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
         
         % 4. Compute out-of-sample predictions
-        computeOutOfSamplePredictions(rootPath, decodingParams, osType, adaptingFieldType, experimentConfiguration);
+        computeOutOfSamplePredictions(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
         
     elseif (ismember('assembleTrainingDataSet', runMode))
         % 2. Divide responses/stimuli is training and test sets 
@@ -61,17 +61,17 @@ function runExperiment
         computeDecodingFilter(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
         
         % 4. Compute out-of-sample predictions
-        computeOutOfSamplePredictions(rootPath, decodingParams, osType, adaptingFieldType, experimentConfiguration);
+        computeOutOfSamplePredictions(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
         
     elseif (ismember('computeDecodingFilter', runMode))
         % 3. Compute decoding filter
         computeDecodingFilter(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
         
         % 4. Compute out-of-sample predictions
-        computeOutOfSamplePredictions(rootPath, decodingParams, osType, adaptingFieldType, experimentConfiguration);
+        computeOutOfSamplePredictions(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
     else
         % 4. Compute out-of-sample predictions
-        computeOutOfSamplePredictions(rootPath, decodingParams, osType, adaptingFieldType, experimentConfiguration);
+        computeOutOfSamplePredictions(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType, experimentConfiguration);
     end
 end
 

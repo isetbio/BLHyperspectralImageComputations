@@ -34,7 +34,8 @@ function computeDecodingFilter(rootPath, decodingExportSubDirectory, osType, ada
     
     designMatrix.lat
     designMatrix.m
-
+    designMatrix.binWidth
+     
     % Assemble X and c matrices
     [Xtrain, cTrain] = assembleDesignMatrixAndStimulusVector(designMatrix.T, designMatrix.lat, designMatrix.m, designMatrix.n, trainingPhotocurrents, trainingStimulusTrain);
     clear(trainingVarList{:});
@@ -55,7 +56,7 @@ function computeDecodingFilter(rootPath, decodingExportSubDirectory, osType, ada
     end
     
     decodingFiltersFileName = fullfile(decodingDirectory, sprintf('DecodingFilters.mat'));
-    save(decodingFiltersFileName, 'wVector', 'cTrainPrediction', 'cTrain', 'filterSpatialXdataInRetinalMicrons', 'filterSpatialYdataInRetinalMicrons', '-v7.3'); 
+    save(decodingFiltersFileName, 'designMatrix', 'wVector', 'cTrainPrediction', 'cTrain', 'filterSpatialXdataInRetinalMicrons', 'filterSpatialYdataInRetinalMicrons', '-v7.3'); 
     
 end
 
