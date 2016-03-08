@@ -11,7 +11,7 @@ function runExperiment
     
     % Parameters of decoding: stimulus (scene window) spatial subsampling
     decodingParams.subSampledSpatialGrid = 1*[1 1];  % Here we parcelate the scene within the moaic's FOV using a 1x1 grid (mean contrast over mosaic's window)
-    decodingParams.subSampledSpatialGrid = 20*[1 1];  % Here we parcelate the scene within the moaic's FOV using an 20x20 grid
+    decodingParams.subSampledSpatialGrid = 10*[1 1];  % Here we parcelate the scene within the moaic's FOV using an 20x20 grid
     
     % Parameters of decoding: cone response subsampling
     coneSep = 0.0; % 1.5; % 0.0;  % 1.5 results in 107 cones
