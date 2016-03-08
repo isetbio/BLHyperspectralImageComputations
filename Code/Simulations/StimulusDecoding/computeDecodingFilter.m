@@ -31,14 +31,12 @@ function computeDecodingFilter(rootPath, decodingExportSubDirectory, osType, ada
         trainingMcontrastSequence', ...
         trainingScontrastSequence' ...
         ];
-    
-    designMatrix.lat
-    designMatrix.m
-    designMatrix.binWidth
      
     % Assemble X and c matrices
     [Xtrain, cTrain] = assembleDesignMatrixAndStimulusVector(designMatrix.T, designMatrix.lat, designMatrix.m, designMatrix.n, trainingPhotocurrents, trainingStimulusTrain);
     clear(trainingVarList{:});
+    
+    fprintf('\nComputing optimal linear decoding filter...\n');
     
     % Compute decoding filter, wVector
     pseudoInverseOfX = pinv(Xtrain);
@@ -56,8 +54,7 @@ function computeDecodingFilter(rootPath, decodingExportSubDirectory, osType, ada
     end
     
     decodingFiltersFileName = fullfile(decodingDirectory, sprintf('DecodingFilters.mat'));
-    save(decodingFiltersFileName, 'designMatrix', 'wVector', 'cTrainPrediction', 'cTrain', 'filterSpatialXdataInRetinalMicrons', 'filterSpatialYdataInRetinalMicrons', '-v7.3'); 
-    
+    save(decodingFiltersFileName, 'wVector', 'cTrainPrediction', 'cTrain', 'filterSpatialXdataInRetinalMicrons', 'filterSpatialYdataInRetinalMicrons', '-v7.3'); 
 end
 
     
