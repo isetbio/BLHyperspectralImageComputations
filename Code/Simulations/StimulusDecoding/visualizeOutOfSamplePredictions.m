@@ -81,6 +81,13 @@ function visualizeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, o
                'bottomMargin',   0.03, ...
                'topMargin',      0.01);
            
+    videoFilename = sprintf('%s/ReconstructionAnimation.m4v', decodingDirectory);
+    fprintf('Will export video to %s\n', videoFilename);
+    writerObj = VideoWriter(videoFilename, 'MPEG-4'); % H264 format
+    writerObj.FrameRate = 15; 
+    writerObj.Quality = 100;
+    writerObj.open();
+    
     hFig = figure(1); clf;
     set(hFig, 'Position', [10 10 1900 1050]);
     colormap(gray(1024));
@@ -340,7 +347,10 @@ function visualizeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, o
         end % region
         
         drawnow;
+        writerObj.writeVideo(getframe(hFig));
     end
+    
+    writerObj.close();
     
 
     h = figure(11);
