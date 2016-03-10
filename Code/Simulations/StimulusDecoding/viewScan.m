@@ -56,7 +56,7 @@ function [scene, oi] = loadSceneAndDispleySensorWindow(imsource, scanFilename, s
     osB.osSet('noiseFlag', 1);
     fprintf(2,'Computed outersegment response (for visualization) using time step: %2.2f msec.\nThis may be different from the time step used in the actual computation.\n', sensorGet(scanSensor, 'time interval')*1000);
     osB.osCompute(scanSensor);
-    osWindow(figNum, 'biophys-based outer segment', osB, scanSensor, oi, scene);
+    osWindow(figNum, 'biophys-based outer segment', 'horizontalLayout', osB, scanSensor, oi, scene);
 
     % clear what we do not need
     varList = {'osB', 'oi', 'scene'};
