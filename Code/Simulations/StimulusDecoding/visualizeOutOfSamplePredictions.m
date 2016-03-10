@@ -118,7 +118,7 @@ function visualizeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, o
            
     hFig = figure(1); clf;
     set(hFig, 'Position', [10 10 1900 1050]);
-    colormap(gray);
+    colormap(gray(1024));
     
     inputLstimAxes         = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(1,1).v, 'Color', [0.5 0.5 0.5]);
     reconstructedLstimAxes = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(1,2).v, 'Color', [0.5 0.5 0.5]);
@@ -162,6 +162,13 @@ function visualizeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, o
     reconstructedLMSconeContrastTemporalProfilesInMconeRichRegion = squeeze(reconstructedStimulus(:, MconeRichRegionRowPos, MconeRichRegionColPos, :));
     reconstructedLMSconeContrastTemporalProfilesInSconeRichRegion = squeeze(reconstructedStimulus(:, SconeRichRegionRowPos, SconeRichRegionColPos, :));
     
+    
+    videoFilename = sprintf('%s/ReconstructionAnimation.m4v', decodingDirectory);
+    fprintf('Will export video to %s\n', videoFilename);
+    writerObj = VideoWriter(videoFilename, 'MPEG-4'); % H264 format
+    writerObj.FrameRate = 15; 
+    writerObj.Quality = 100;
+    writerObj.open();
     
     timeAxis = 0:size(cTest,1);
     
@@ -356,8 +363,10 @@ function visualizeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, o
         end % region
         
         drawnow;
+        writerObj.writeVideo(getframe(hFig));
     end
     
+    writerObj.close();
 
     h = figure(11);
     set(h, 'Name', 'Out of sample predictions');
@@ -387,7 +396,7 @@ function plotHandles = makeTemporalContrastProfiles(axesToDrawOn, titleString, c
     set(hL, 'FontSize', 12);
     title(titleString, 'FontSize', 14);
     maxContrast = 2;
-    set(axesToDrawOn, 'FontSize', 12, 'XLim', [1 2], 'YLim', maxContrast*[-1 1]);
+    set(axesToDrawOn, 'XTickLabels', {}, 'FontSize', 12, 'XLim', [1 2], 'YLim', maxContrast*[-1 1]);
     axis(axesToDrawOn, 'square');
     title(axesToDrawOn, titleString, 'FontSize', 14);
 end
@@ -415,7 +424,7 @@ function densityPlotHandle = makeStimulusConeMosaicComboPlot(axesToDrawOn, title
             else
                 error('No such cone type')
             end
-            plot(axesToDrawOn, xyConePos(filterConeIDs(coneIndex), 1), xyConePos(filterConeIDs(coneIndex), 2), 's', 'MarkerEdgeColor', RGBval, 'MarkerFaceColor', RGBval, 'MarkerSize', 4);
+            plot(axesToDrawOn, xyConePos(filterConeIDs(coneIndex), 1), xyConePos(filterConeIDs(coneIndex), 2), 's', 'MarkerEdgeColor', RGBval, 'MarkerFaceColor', RGBval, 'MarkerSize', 2);
         end
         hold(axesToDrawOn, 'off');
     end
