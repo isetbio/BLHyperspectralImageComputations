@@ -83,7 +83,7 @@ function visualizeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, o
            
     hFig = figure(1); clf;
     set(hFig, 'Position', [10 10 1900 1050]);
-    colormap(gray);
+    colormap(gray(1024));
     
     inputLstimAxes         = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(1,1).v, 'Color', [0.5 0.5 0.5]);
     reconstructedLstimAxes = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(1,2).v, 'Color', [0.5 0.5 0.5]);
@@ -109,15 +109,34 @@ function visualizeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, o
     stimulusTemporalMContrastProfilesAtSconeRichRegionAxes = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(2,6).v, 'Color', [1 1 1]);
     stimulusTemporalSContrastProfilesAtSconeRichRegionAxes = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(3,6).v, 'Color', [1 1 1]);
     
+    [X,Y] = meshgrid(filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons);
+    DX = filterSpatialXdataInRetinalMicrons(2)-filterSpatialXdataInRetinalMicrons(1);
+    DY = filterSpatialYdataInRetinalMicrons(2)-filterSpatialYdataInRetinalMicrons(1);
     
-    LconeRichRegionRowPos = 5;
-    LconeRichRegionColPos = 5;
+    richLconeRegionXpos =  7.5;
+    richLconeRegionYpos = -7.5;
+    [~, closestConeIndex] = min(sum((abs(bsxfun(@minus, xyConePos, [richLconeRegionXpos richLconeRegionYpos])).^2), 2));
+    fprintf('Coords of closest cone: %2.1f %2.1f\n', xyConePos(closestConeIndex,1), xyConePos(closestConeIndex,2));
+    [~, idx] = min(sqrt((X(:) - xyConePos(closestConeIndex,1)).^2 + (Y(:) - xyConePos(closestConeIndex,2)).^2));
+    [LconeRichRegionRowPos, LconeRichRegionColPos] = ind2sub([numel(filterSpatialYdataInRetinalMicrons) numel(filterSpatialXdataInRetinalMicrons)], idx)
+    LconeTargetOutline(:,1) = filterSpatialXdataInRetinalMicrons(LconeRichRegionColPos) + [-0.5 -0.5 0.5 0.5 -0.5]*DX;
+    LconeTargetOutline(:,2) = filterSpatialYdataInRetinalMicrons(LconeRichRegionRowPos) + [-0.5 0.5 0.5 -0.5 -0.5]*DY;
     
-    MconeRichRegionRowPos = 1;
-    MconeRichRegionColPos = 10;
+    richMconeRegionXpos = -15.5;
+    richMconeRegionYpos = -8.5;
+    [~, closestConeIndex] = min(sum((abs(bsxfun(@minus, xyConePos, [richMconeRegionXpos richMconeRegionYpos])).^2), 2));
+    fprintf('Coords of closest cone: %2.1f %2.1f\n', xyConePos(closestConeIndex,1), xyConePos(closestConeIndex,2));
+    [~, idx] = min(sqrt((X(:) - xyConePos(closestConeIndex,1)).^2 + (Y(:) - xyConePos(closestConeIndex,2)).^2));
+    [MconeRichRegionRowPos, MconeRichRegionColPos] = ind2sub([numel(filterSpatialYdataInRetinalMicrons) numel(filterSpatialXdataInRetinalMicrons)], idx)
+    MconeTargetOutline(:,1) = filterSpatialXdataInRetinalMicrons(MconeRichRegionColPos) + [-0.5 -0.5 0.5 0.5 -0.5]*DX;
+    MconeTargetOutline(:,2) = filterSpatialYdataInRetinalMicrons(MconeRichRegionRowPos) + [-0.5 0.5 0.5 -0.5 -0.5]*DY;
+ 
     
     SconeRichRegionRowPos = 10;
     SconeRichRegionColPos = 10;
+    SconeTargetOutline(:,1) = filterSpatialXdataInRetinalMicrons(SconeRichRegionColPos) + [-0.5 -0.5 0.5 0.5 -0.5]*DX;
+    SconeTargetOutline(:,2) = filterSpatialYdataInRetinalMicrons(SconeRichRegionRowPos) + [-0.5 0.5 0.5 -0.5 -0.5]*DY;
+    
     
     inputLMSconeContrastTemporalProfilesInLconeRichRegion = squeeze(inputStimulus(:, LconeRichRegionRowPos, LconeRichRegionColPos, :));
     inputLMSconeContrastTemporalProfilesInMconeRichRegion = squeeze(inputStimulus(:, MconeRichRegionRowPos, MconeRichRegionColPos, :));
@@ -130,7 +149,8 @@ function visualizeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, o
     
     timeAxis = 0:size(cTest,1);
     
-    for timeBin = 100:size(cTest,1)-100  
+    startingTimeBin = 101;
+    for timeBin = startingTimeBin:size(cTest,1)-100  
         
         inputLconeContrastFrame = squeeze(inputStimulus(timeBin,:,:,1));
         reconstructedLconeContrastFrame = squeeze(reconstructedStimulus(timeBin, :,:,1));
@@ -145,73 +165,72 @@ function visualizeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, o
         residualSconeContrastFrame = inputSconeContrastFrame-reconstructedSconeContrastFrame;
         
         
-        if (timeBin == 100)
-            densityPlotHandleInputLstim = makeStimulusConeMosaicComboPlot(inputLstimAxes, 'input image (L-cone contrast)', inputLconeContrastFrame, false, true, false, filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons,  maxContrastDisplayed, filterConeIDs, lConeIndices, mConeIndices, sConeIndices, xyConePos);
+        if (timeBin == startingTimeBin)
+            densityPlotHandleInputLstim = makeStimulusConeMosaicComboPlot(inputLstimAxes, 'input image (L-cone contrast)', inputLconeContrastFrame, LconeTargetOutline, false, true, false, filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons,  maxContrastDisplayed, filterConeIDs, lConeIndices, mConeIndices, sConeIndices, xyConePos);
         else
             set(densityPlotHandleInputLstim, 'CData', inputLconeContrastFrame);
         end
         
-        if (timeBin == 100)
-            densityPlotHandleInputMstim = makeStimulusConeMosaicComboPlot(inputMstimAxes, 'input image (M-cone contrast)', inputMconeContrastFrame, false, false, false, filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons,  maxContrastDisplayed, filterConeIDs, lConeIndices, mConeIndices, sConeIndices, xyConePos);
+        if (timeBin == startingTimeBin)
+            densityPlotHandleInputMstim = makeStimulusConeMosaicComboPlot(inputMstimAxes, 'input image (M-cone contrast)', inputMconeContrastFrame, MconeTargetOutline, false, false, false, filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons,  maxContrastDisplayed, filterConeIDs, lConeIndices, mConeIndices, sConeIndices, xyConePos);
         else
             set(densityPlotHandleInputMstim, 'CData', inputMconeContrastFrame);
         end
         
-        if (timeBin == 100)
-            densityPlotHandleInputSstim = makeStimulusConeMosaicComboPlot(inputSstimAxes, 'input image (S-cone contrast)', inputSconeContrastFrame, false, false, false, filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons,  maxContrastDisplayed, filterConeIDs, lConeIndices, mConeIndices, sConeIndices, xyConePos);
+        if (timeBin == startingTimeBin)
+            densityPlotHandleInputSstim = makeStimulusConeMosaicComboPlot(inputSstimAxes, 'input image (S-cone contrast)', inputSconeContrastFrame, SconeTargetOutline, false, false, false, filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons,  maxContrastDisplayed, filterConeIDs, lConeIndices, mConeIndices, sConeIndices, xyConePos);
         else
             set(densityPlotHandleInputSstim, 'CData', inputSconeContrastFrame);
         end
         
         
-        if (timeBin == 100)
-            densityPlotHandleReconstructedLstim = makeStimulusConeMosaicComboPlot(reconstructedLstimAxes, 'reconstructed image (L-cone contrast)', reconstructedLconeContrastFrame, false, true, false, filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons,  maxContrastDisplayed, filterConeIDs, lConeIndices, mConeIndices, sConeIndices, xyConePos);
+        if (timeBin == startingTimeBin)
+            densityPlotHandleReconstructedLstim = makeStimulusConeMosaicComboPlot(reconstructedLstimAxes, 'reconstructed image (L-cone contrast)', reconstructedLconeContrastFrame, LconeTargetOutline, false, true, false, filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons,  maxContrastDisplayed, filterConeIDs, lConeIndices, mConeIndices, sConeIndices, xyConePos);
         else
             set(densityPlotHandleReconstructedLstim, 'CData', reconstructedLconeContrastFrame);
         end
         
 
-        if (timeBin == 100)
-            densityPlotHandleReconstructedMstim = makeStimulusConeMosaicComboPlot(reconstructedMstimAxes, 'reconstructed image (M-cone contrast)', reconstructedMconeContrastFrame, false, false, false, filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons,  maxContrastDisplayed, filterConeIDs, lConeIndices, mConeIndices, sConeIndices, xyConePos);
+        if (timeBin == startingTimeBin)
+            densityPlotHandleReconstructedMstim = makeStimulusConeMosaicComboPlot(reconstructedMstimAxes, 'reconstructed image (M-cone contrast)', reconstructedMconeContrastFrame, MconeTargetOutline, false, false, false, filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons,  maxContrastDisplayed, filterConeIDs, lConeIndices, mConeIndices, sConeIndices, xyConePos);
         else
             set(densityPlotHandleReconstructedMstim, 'CData', reconstructedMconeContrastFrame);
         end
         
 
-        if (timeBin == 100)
-            densityPlotHandleReconstructedSstim = makeStimulusConeMosaicComboPlot(reconstructedSstimAxes, 'reconstructed image (S-cone contrast)', reconstructedSconeContrastFrame, false, false, false, filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons,  maxContrastDisplayed, filterConeIDs, lConeIndices, mConeIndices, sConeIndices, xyConePos);
+        if (timeBin == startingTimeBin)
+            densityPlotHandleReconstructedSstim = makeStimulusConeMosaicComboPlot(reconstructedSstimAxes, 'reconstructed image (S-cone contrast)', reconstructedSconeContrastFrame, SconeTargetOutline, false, false, false, filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons,  maxContrastDisplayed, filterConeIDs, lConeIndices, mConeIndices, sConeIndices, xyConePos);
         else
             set(densityPlotHandleReconstructedSstim, 'CData', reconstructedSconeContrastFrame);
         end
         
         
 
-        if (timeBin == 100)
-            residualPlotHandleReconstructedLstim = makeStimulusConeMosaicComboPlot(residualLstimAxes, 'residual image (L-cone contrast)', residualLconeContrastFrame, true, true,  true, filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons,  maxContrastDisplayed, filterConeIDs, lConeIndices, mConeIndices, sConeIndices, xyConePos);
+        if (timeBin == startingTimeBin)
+            residualPlotHandleReconstructedLstim = makeStimulusConeMosaicComboPlot(residualLstimAxes, 'residual image (L-cone contrast)', residualLconeContrastFrame, LconeTargetOutline, true, true,  true, filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons,  maxContrastDisplayed, filterConeIDs, lConeIndices, mConeIndices, sConeIndices, xyConePos);
         else
             set(residualPlotHandleReconstructedLstim, 'CData', residualLconeContrastFrame);
         end
         
 
-        if (timeBin == 100)
-            residualPlotHandleReconstructedMstim = makeStimulusConeMosaicComboPlot(residualMstimAxes, 'residual image (M-cone contrast)', residualMconeContrastFrame, false, false, true, filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons,  maxContrastDisplayed, filterConeIDs, lConeIndices, mConeIndices, sConeIndices, xyConePos);
+        if (timeBin == startingTimeBin)
+            residualPlotHandleReconstructedMstim = makeStimulusConeMosaicComboPlot(residualMstimAxes, 'residual image (M-cone contrast)', residualMconeContrastFrame, MconeTargetOutline, false, false, true, filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons,  maxContrastDisplayed, filterConeIDs, lConeIndices, mConeIndices, sConeIndices, xyConePos);
         else
             set(residualPlotHandleReconstructedMstim, 'CData', residualMconeContrastFrame);
         end
         
 
-        if (timeBin == 100)
-            residualPlotHandleReconstructedSstim = makeStimulusConeMosaicComboPlot(residualSstimAxes, 'residual image (S-cone contrast)', residualSconeContrastFrame, false, false, true, filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons,  maxContrastDisplayed, filterConeIDs, lConeIndices, mConeIndices, sConeIndices, xyConePos);
+        if (timeBin == startingTimeBin)
+            residualPlotHandleReconstructedSstim = makeStimulusConeMosaicComboPlot(residualSstimAxes, 'residual image (S-cone contrast)', residualSconeContrastFrame, SconeTargetOutline, false, false, true, filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons,  maxContrastDisplayed, filterConeIDs, lConeIndices, mConeIndices, sConeIndices, xyConePos);
         else
             set(residualPlotHandleReconstructedSstim, 'CData', residualSconeContrastFrame);
         end
         
         
         % time displayed for temporal profiles
-        timeBinRangeDisplayed = max([1 timeBin-100]) : min([size(cTest,1) timeBin+100]);
+        timeBinRangeDisplayed = timeBin + (-100:100);
         
         for region = 1:3
-            
             if (region == 1)
                 % Lcone rich region
                 inputAndReconstructedLconeContrast = [ ...
@@ -284,38 +303,38 @@ function visualizeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, o
          
             % L cone contrast
             RGBval = [1 0.2 0.5];
-            if (timeBin == 100)
-                stimulusTemporalLContrastProfilesHandle(region,:) = makeTemporalContrastProfiles(temporalProfileAxesL, titleString, RGBval,  timeAxis(timeBinRangeDisplayed), inputAndReconstructedLconeContrast);
+            if (timeBin == startingTimeBin)
+                stimulusTemporalLContrastProfilesHandle(region,:) = makeTemporalContrastProfiles(temporalProfileAxesL, titleString, RGBval,  (-100:100), inputAndReconstructedLconeContrast);
             else
                 for k = 1:2
                     set(stimulusTemporalLContrastProfilesHandle(region,k), 'YData', squeeze(inputAndReconstructedLconeContrast(:,k)));
                 end
                 maxC = max([max(abs(inputAndReconstructedLconeContrast(:)))  maxContrastDisplayed]);
-                set(temporalProfileAxesL, 'XLim', [timeAxis(timeBinRangeDisplayed(1)) timeAxis(timeBinRangeDisplayed(end))], 'YLim', maxC*[-0.6 1.0]);
+                set(temporalProfileAxesL, 'YLim', maxC*[-0.6 1.0]);
             end
         
             % M cone contrast
             RGBval = [0.2 1 0.5];
-            if (timeBin == 100)
-                stimulusTemporalMContrastProfilesHandle(region,:) = makeTemporalContrastProfiles(temporalProfileAxesM, '', RGBval,  timeAxis(timeBinRangeDisplayed), inputAndReconstructedMconeContrast);
+            if (timeBin == startingTimeBin)
+                stimulusTemporalMContrastProfilesHandle(region,:) = makeTemporalContrastProfiles(temporalProfileAxesM, '', RGBval,  (-100:100), inputAndReconstructedMconeContrast);
             else
                 for k = 1:2
                     set(stimulusTemporalMContrastProfilesHandle(region,k), 'YData', squeeze(inputAndReconstructedMconeContrast(:,k)));
                 end
                 maxC = max([max(abs(inputAndReconstructedMconeContrast(:)))  maxContrastDisplayed]);
-                set(temporalProfileAxesM, 'XLim', [timeAxis(timeBinRangeDisplayed(1)) timeAxis(timeBinRangeDisplayed(end))], 'YLim', maxC*[-0.6 1.0]);
+                set(temporalProfileAxesM, 'YLim', maxC*[-0.6 1.0]);
             end
         
             % S cone contrast
             RGBval =  [0.5 0.2 1];
-            if (timeBin == 100)
-                stimulusTemporalSContrastProfilesHandle(region,:) = makeTemporalContrastProfiles(temporalProfileAxesS, '', RGBval,  timeAxis(timeBinRangeDisplayed), inputAndReconstructedSconeContrast);
+            if (timeBin == startingTimeBin)
+                stimulusTemporalSContrastProfilesHandle(region,:) = makeTemporalContrastProfiles(temporalProfileAxesS, '', RGBval,  (-100:100), inputAndReconstructedSconeContrast);
             else
                 for k = 1:2
                     set(stimulusTemporalSContrastProfilesHandle(region,k), 'YData', squeeze(inputAndReconstructedSconeContrast(:,k)));
                 end
                 maxC = max([max(abs(inputAndReconstructedSconeContrast(:)))  maxContrastDisplayed]);
-                set(temporalProfileAxesS, 'XLim', [timeAxis(timeBinRangeDisplayed(1)) timeAxis(timeBinRangeDisplayed(end))], 'YLim', maxC*[-0.6 1.0]);
+                set(temporalProfileAxesS, 'YLim', maxC*[-0.6 1.0]);
             end
             
         end % region
@@ -347,7 +366,7 @@ function plotHandles = makeTemporalContrastProfiles(axesToDrawOn, titleString, c
     hold(axesToDrawOn, 'on');
     plotHandles(1) = plot(axesToDrawOn, timeAxis, squeeze(stimulusContrastTemporalProfiles(:,1)), '-', 'Color',  colorRGB, 'LineWidth', 2.0);
     plotHandles(2) = plot(axesToDrawOn, timeAxis, squeeze(stimulusContrastTemporalProfiles(:,2)), '-', 'Color',  [0 0 0], 'LineWidth', 2.0);
-    plot([0 0], 100*[-1 1], 'r-');
+    plot(axesToDrawOn, [0 0], 100*[-1 1], 'k-');
     hold(axesToDrawOn, 'off');
     hL = legend(axesToDrawOn, 'input stimulus', 'reconstructed');
     set(hL, 'FontSize', 12);
@@ -355,20 +374,22 @@ function plotHandles = makeTemporalContrastProfiles(axesToDrawOn, titleString, c
     maxContrast = 2;
     set(axesToDrawOn, 'FontSize', 12, 'XLim', [-100 100], 'YLim', maxContrast*[-1 1]);
     axis(axesToDrawOn, 'square');
+    box(axesToDrawOn, 'on');
     title(axesToDrawOn, titleString, 'FontSize', 14);
 end
 
 
-function densityPlotHandle = makeStimulusConeMosaicComboPlot(axesToDrawOn, titleString, stimulus, showXlabel, showYlabel, showConePositions, stimulusSpatialSupportXInRetinalMicrons, stimulusSpatialSupportYInRetinalMicrons,  maxContrastDisplayed, ...
+function densityPlotHandle = makeStimulusConeMosaicComboPlot(axesToDrawOn, titleString, stimulus, targetOutline, showXlabel, showYlabel, showConePositions, stimulusSpatialSupportXInRetinalMicrons, stimulusSpatialSupportYInRetinalMicrons,  maxContrastDisplayed, ...
              filterConeIDs, lConeIndices, mConeIndices, sConeIndices, xyConePos)
          
     % density plot of stimulus
     densityPlotHandle = imagesc(stimulusSpatialSupportXInRetinalMicrons, stimulusSpatialSupportYInRetinalMicrons, stimulus, 'parent', axesToDrawOn);
-    set(axesToDrawOn, 'CLim', maxContrastDisplayed *[-1 1]);
+    hold(axesToDrawOn, 'on');
+    plot(axesToDrawOn, targetOutline(:,1), targetOutline(:,2), 'c-', 'LineWidth', 2.0);
+    
     
     if (showConePositions)
-        hold(axesToDrawOn, 'on');
-
+       
         % superimpose mosaic
         for coneIndex = 1:numel(filterConeIDs)
             % figure out the color of the filter entry
@@ -383,8 +404,9 @@ function densityPlotHandle = makeStimulusConeMosaicComboPlot(axesToDrawOn, title
             end
             plot(axesToDrawOn, xyConePos(filterConeIDs(coneIndex), 1), xyConePos(filterConeIDs(coneIndex), 2), 's', 'MarkerEdgeColor', RGBval, 'MarkerFaceColor', RGBval, 'MarkerSize', 4);
         end
-        hold(axesToDrawOn, 'off');
     end
+    
+    hold(axesToDrawOn, 'off');
     
     if (showXlabel)
         xlabel(axesToDrawOn, 'microns', 'FontSize', 14);
@@ -398,6 +420,7 @@ function densityPlotHandle = makeStimulusConeMosaicComboPlot(axesToDrawOn, title
         set(axesToDrawOn, 'YTickLabels', {});
     end
    
+    set(axesToDrawOn, 'CLim', maxContrastDisplayed *[-1 1]);
     
     axis(axesToDrawOn, 'xy');
     axis(axesToDrawOn, 'equal');
