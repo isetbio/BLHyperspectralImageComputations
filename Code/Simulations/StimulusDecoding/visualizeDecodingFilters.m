@@ -94,7 +94,16 @@ function plotDecodingCoefficients(figNo, decodingDirectory, filterSpatialXdataIn
     dcTerm = 1;
     timeBins = 1:decodingFilter.memoryBins;
     
-    decoderWeightRange = max(wVector(:))*0.5*[-1 1]; % [min(wVector(:)) max(wVector(:))*0.5]
+    %decoderWeightRange = max(wVector(:))*0.5*[-1 1]; % [min(wVector(:)) max(wVector(:))*0.5]
+    
+    perentage = 99.9;
+    coeffs = wVector(:);
+    coeffsPos = prctile(abs(coeffs(coeffs>0)), perentage);
+    coeffsNeg = prctile(abs(coeffs(coeffs<0)), perentage);
+    
+    
+    decoderWeightRange = [-coeffsPos coeffsPos]
+    
     
     for stimConeContrastIndex = 1:3
         if (spatialFeaturesNum == 1)
@@ -136,8 +145,10 @@ function plotDecodingCoefficients(figNo, decodingDirectory, filterSpatialXdataIn
                'bottomMargin',   0.05, ...
                'topMargin',      0.03);
            
-    colormap(jet(1024));
-    
+    %colormap(jet(1024));
+    cmap = brewermap(1024,'YlGnBu');
+    colormap(cmap(end:-1:1,:))
+   
     
     videoFilename = sprintf('%s/DecoderSpatialSamplingAnimation.m4v', decodingDirectory);
     fprintf('Will export video to %s\n', videoFilename);
