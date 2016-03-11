@@ -260,7 +260,7 @@ function visualizeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, o
     Scontrasts = squeeze(inputStimulus(:,:,:,3));
     Scontrasts = Scontrasts(:);
     
-    perentage = 97;
+    perentage = 99;
     L95contrastPos = prctile(abs(Lcontrasts(Lcontrasts>0)), perentage);
     M95contrastPos = prctile(abs(Mcontrasts(Mcontrasts>0)), perentage);
     S95contrastPos = prctile(abs(Scontrasts(Scontrasts>0)), perentage);
