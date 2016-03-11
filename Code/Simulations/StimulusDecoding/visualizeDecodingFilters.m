@@ -136,7 +136,7 @@ function plotDecodingCoefficients(figNo, decodingDirectory, filterSpatialXdataIn
                'bottomMargin',   0.05, ...
                'topMargin',      0.03);
            
-    colormap((jet(1024)).^0.8);
+    colormap(jet(1024));
     
     
     videoFilename = sprintf('%s/DecoderSpatialSamplingAnimation.m4v', decodingDirectory);
