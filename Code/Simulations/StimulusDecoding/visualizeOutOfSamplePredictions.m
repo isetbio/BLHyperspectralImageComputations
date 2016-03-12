@@ -33,6 +33,7 @@ function visualizeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, o
     testingVarList = {...
         'scanSensor', ...
         'keptLconeIndices', 'keptMconeIndices', 'keptSconeIndices', ...
+        'designMatrix' ...
         };
     fprintf('\nLoading ''%s'' ...', decodingDataFileName);
     for k = 1:numel(testingVarList)
@@ -75,12 +76,19 @@ function visualizeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, o
     minC = -3;
     maxC = 8;
 
-    testPositionXcoord = numel(filterSpatialXdataInRetinalMicrons)/2;
-    testPositionYcoord = numel(filterSpatialYdataInRetinalMicrons)/2;
+    mConeFreePosXcoord = 10;
+    mConeFreePosYcoord = 6;
+    
+    
+    mConeRichPosXcoord = 7; 
+    mConeRichPosYcoord = 8;
+    
+    testPositionXcoord = mConeRichPosXcoord; % numel(filterSpatialXdataInRetinalMicrons)/2;
+    testPositionYcoord = mConeRichPosYcoord; % numel(filterSpatialYdataInRetinalMicrons)/2;
     
     
     
-    plotPerformanceGraphs = false;
+    plotPerformanceGraphs = true;
     if (plotPerformanceGraphs)
         
         subplotPosVectors = NicePlot.getSubPlotPosVectors(...
@@ -260,7 +268,7 @@ function visualizeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, o
     Scontrasts = squeeze(inputStimulus(:,:,:,3));
     Scontrasts = Scontrasts(:);
     
-    perentage = 97;
+    perentage = 99;
     L95contrastPos = prctile(abs(Lcontrasts(Lcontrasts>0)), perentage);
     M95contrastPos = prctile(abs(Mcontrasts(Mcontrasts>0)), perentage);
     S95contrastPos = prctile(abs(Scontrasts(Scontrasts>0)), perentage);
@@ -270,6 +278,9 @@ function visualizeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, o
     S95contrastNeg = prctile(abs(Scontrasts(Scontrasts<0)), perentage);
     
     contrastRangeDisplayed = [-max([L95contrastNeg M95contrastNeg S95contrastNeg]) max([L95contrastPos M95contrastPos S95contrastPos])]
+    
+    % Note that weber contrast cannot go less than -1
+    contrastRangeDisplayed = [-2 4];
     
     stimulusTestPositionInRetinalMicrons(1) = filterSpatialXdataInRetinalMicrons(testPositionXcoord);
     stimulusTestPositionInRetinalMicrons(2) = filterSpatialYdataInRetinalMicrons(testPositionYcoord);
@@ -446,18 +457,21 @@ function visualizeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, o
         RGBval = squeeze(RGBvals(3,:));
         if (timeBin == 1)
             stimulusTemporalSContrastProfilesHandles = makeTemporalContrastProfiles(stimulusTemporalSContrastProfilesAtTestPositionAxes, '', RGBval,  timeAxis(timeBinRangeDisplayed), inputAndReconstructedSconeContrast);
+            textHandle = text(timeAxis(timeBinRangeDisplayed(1)), contrastRangeDisplayed(1)+0.5, sprintf('%2.0f ms', timeBin*designMatrix.binWidth), 'FontSize', 16, 'parent', stimulusTemporalSContrastProfilesAtTestPositionAxes);
         else
             for k = 1:2
                 set(stimulusTemporalSContrastProfilesHandles(k), 'XData', timeAxis(timeBinRangeDisplayed), 'YData', squeeze(inputAndReconstructedSconeContrast(:,k)));
             end
+            textHandle.String = sprintf('%03.2f seconds', (timeBin*designMatrix.binWidth)/1000);
+            textHandle.Position = [timeAxis(timeBinRangeDisplayed(1)) contrastRangeDisplayed(1)+0.5];
+            
             % 500 msec time bar
             set(stimulusTemporalSContrastProfilesHandles(3), 'XData', timeAxis(timeBinRangeDisplayed(end-1))+[0 -50], 'YData', contrastRangeDisplayed(1)*[1 1]);
-            set(stimulusTemporalSContrastProfilesHandles(4), 'XData', timeAxis(timeBinRangeDisplayed(end-1))*[1 1],   'YData', contrastRangeDisplayed(1)+[0 2]);
+            set(stimulusTemporalSContrastProfilesHandles(4), 'XData', timeAxis(timeBinRangeDisplayed(end-1))*[1 1],   'YData', contrastRangeDisplayed);
             set(stimulusTemporalSContrastProfilesAtTestPositionAxes, 'XLim', [timeAxis(timeBinRangeDisplayed(1)) timeAxis(timeBinRangeDisplayed(end))], 'YLim', contrastRangeDisplayed);
             set(stimulusTemporalSContrastProfilesAtTestPositionAxes, 'XLim', [timeAxis(timeBinRangeDisplayed(1)) timeAxis(timeBinRangeDisplayed(end))], 'YLim', contrastRangeDisplayed);
         end
             
-        
         drawnow;
         if (timeBin > 154)
             writerObj.writeVideo(getframe(hFig));
@@ -466,8 +480,6 @@ function visualizeOutOfSamplePredictions(rootPath, decodingExportSubDirectory, o
     
     writerObj.close();
 
-    
-    
 end
 
 
