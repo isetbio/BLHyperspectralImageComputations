@@ -291,8 +291,8 @@ function visualizeSpatialFilterDynamics(figNo, decodingDirectory, filterSpatialX
     stimulusXpositionsToExamine = mConeRichPosXcoord;
     stimulusYpositionsToExamine = mConeRichPosYcoord;
     
-    %stimulusXpositionsToExamine = 4:numel(filterSpatialXdataInRetinalMicrons)-3;
-    %stimulusYpositionsToExamine = 4:numel(filterSpatialYdataInRetinalMicrons)-3
+    stimulusXpositionsToExamine = 4:numel(filterSpatialXdataInRetinalMicrons)-3;
+    stimulusYpositionsToExamine = 4:numel(filterSpatialYdataInRetinalMicrons)-3
     
     for stimulusTestYpos = stimulusYpositionsToExamine
     for stimulusTestXpos = stimulusXpositionsToExamine
@@ -596,7 +596,6 @@ function visualizeSpatialFilterDynamics(figNo, decodingDirectory, filterSpatialX
     end
 
     writerObj.close();
-    pause;
     
 end
 
