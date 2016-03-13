@@ -5,11 +5,13 @@ function runExperiment
     
     experimentConfiguration = 'manchester';
     osType = 'biophysics-based';  % 'biophysics-based' or 'linear'
-    adaptingFieldType = 'MatchSpatiallyAveragedPhotonSPD';   % match photon SPD (mean luminance and chromaticity)
-    adaptingFieldType = 'MacBethGrayD65MatchSceneLuminance'; % match luminance only (achromatic background) 
-   % adaptingFieldType = 'NoAdaptationField';
+    %osType = 'linear';
     
-    trainingDataPercentange = 80; % GetTrainingDataPercentage();
+    % adaptingFieldType = 'MatchSpatiallyAveragedPhotonSPD';   % match photon SPD (mean luminance and chromaticity)
+    adaptingFieldType = 'MacBethGrayD65MatchSceneLuminance'; % match luminance only (achromatic background) 
+    adaptingFieldType = 'NoAdaptationField';
+    
+    trainingDataPercentange = 50; % GetTrainingDataPercentage();
    
     % Parameters of decoding: stimulus (scene window) spatial subsampling
     decodingParams.subSampledSpatialGrid = 1*[1 1];  % Here we parcelate the scene within the moaic's FOV using a 1x1 grid (mean contrast over mosaic's window)
@@ -30,17 +32,31 @@ function runExperiment
     
     % runMode possible value: 'compute outer segment responses', 'assembleTrainingDataSet', 'computeDecodingFilter', ''visualizeDecodingFilter', 'visualizeInSamplePerformance', 'computeOutOfSamplePredictions';
   %  runMode = {'compute outer segment responses'};
-    runMode = {'assembleTrainingDataSet'}
+   % runMode = {'assembleTrainingDataSet'}
    % runMode = {'computeDecodingFilter'}
    %runMode = {'visualizeDecodingFilter'}
    % runMode = {'visualizeInSamplePerformance'}
    % runMode = {'visualizeDecodingFilter'}
     
    %  runMode = {'computeOutOfSamplePredictions'}
-  %  runMode = {'visualizeOutOfSamplePredictions'}
+   %runMode = {'visualizeOutOfSamplePredictions'}
     
-  
-  
+   runMode = 'decodeAdaptiveOpticsResponses';
+   runMode = 'visualizeAdaptiveOpticsReconstruction';
+   
+   if (strcmp(runMode,'decodeAdaptiveOpticsResponses'))
+        generateArtificialScanDataFromExistingScanData(rootPath, osType, adaptingFieldType)
+        decodeAdaptiveOpticsResponses(rootPath, decodingParams, osType, adaptingFieldType, experimentConfiguration);
+        visualizeAdaptiveOpticsReconstruction(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType);
+        return;
+   end
+   
+   if (strcmp(runMode,'visualizeAdaptiveOpticsReconstruction'))
+        visualizeAdaptiveOpticsReconstruction(rootPath, decodingParams.exportSubDirectory, osType, adaptingFieldType);
+        return;
+   end
+   
+    
     if (ismember('compute outer segment responses', runMode))
         % 1. compute figuration@osBiophys responses for the ensemble of scenes  defined in experimentConfiguration
         computeOuterSegmentResponsesToStimulusSet(rootPath, osType, adaptingFieldType, experimentConfiguration);
