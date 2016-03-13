@@ -7,7 +7,7 @@ function visualizeAdaptiveOpticsReconstruction(rootPath, decodingSubDirectory, o
     
     adaptiveOpticsDecodingDirectory = getDecodingSubDirectory(scansDir, decodingSubDirectory);
     outOfSamplePredictionDataFileName = fullfile(adaptiveOpticsDecodingDirectory, sprintf('OutOfSamplePredicition.mat'));
-    load(outOfSamplePredictionDataFileName, 'cTestPrediction', 'scanSensor', 'filterSpatialXdataInRetinalMicrons', 'filterSpatialYdataInRetinalMicrons');
+    load(outOfSamplePredictionDataFileName, 'cTestPrediction', 'scanSensor', 'scanPhotoCurrents', 'filterSpatialXdataInRetinalMicrons', 'filterSpatialYdataInRetinalMicrons');
     
     coneTypes = sensorGet(scanSensor, 'coneType');
     lConeIndices = find(coneTypes == 2);
@@ -71,10 +71,13 @@ function visualizeAdaptiveOpticsReconstruction(rootPath, decodingSubDirectory, o
     colormap(gray(1024));
     
     photonRateMapAxes = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(1,1).v, 'Color', [0.5 0.5 0.5]);
+    photoCurrentAxes = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(1,2).v, 'Color', [0.5 0.5 0.5]);
+    
     RGBrenderingAxes = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(1,3).v, 'Color', [0.5 0.5 0.5]);
     reconstructedLconeImageAxes = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(2,1).v, 'Color', [0.5 0.5 0.5]);
     reconstructedMconeImageAxes = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(2,2).v, 'Color', [0.5 0.5 0.5]);
     reconstructedSconeImageAxes = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(2,3).v, 'Color', [0.5 0.5 0.5]);
+    
     
     for timeBin = 1:numel(timeAxis)
         
@@ -181,6 +184,17 @@ function visualizeAdaptiveOpticsReconstruction(rootPath, decodingSubDirectory, o
         else
             set(p5, 'CData', RGBim);
         end
+        
+        if (timeBin == 2)
+
+            p6 = plot(photoCurrentAxes, timeAxis(1:timeBin), scanPhotoCurrents(:, 1:timeBin), 'k-');
+            set(photoCurrentAxes ,'YLim', [-20 40], 'XLim', [0 timeAxis(end)]);
+            title(photoCurrentAxes , 'Photocurrents');
+        elseif (timeBin>2)
+            set(p6, 'XData', timeAxis(1:timeBin), 'YData', scanPhotoCurrents(:, 1:timeBin));
+        end
+        
+        
         
         drawnow;
         writerObj.writeVideo(getframe(hFig));

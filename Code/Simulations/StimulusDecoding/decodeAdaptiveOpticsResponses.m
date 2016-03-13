@@ -40,10 +40,6 @@ function decodeAdaptiveOpticsResponses(rootPath, decodingParams, osType, adaptin
     [scanMcontrastSequence, resampledSpatialXdataInRetinalMicrons, resampledSpatialYdataInRetinalMicrons] = subSampleSpatially(scanMcontrastSequence, decodingParams.subSampledSpatialGrid, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons, displaySceneSampling, hFigSampling);
     [scanScontrastSequence, resampledSpatialXdataInRetinalMicrons, resampledSpatialYdataInRetinalMicrons] = subSampleSpatially(scanScontrastSequence, decodingParams.subSampledSpatialGrid, LMSspatialXdataInRetinalMicrons, LMSspatialYdataInRetinalMicrons, displaySceneSampling, hFigSampling);
 
-    
-    
-    
-
    
     % Compute L,M, and S-cone indices to keep (based on thesholdConeSeparation)
     [keptLconeIndices, keptMconeIndices, keptSconeIndices] = cherryPickConesToKeep(scanSensor, decodingParams.thresholdConeSeparation);
@@ -83,7 +79,7 @@ function decodeAdaptiveOpticsResponses(rootPath, decodingParams, osType, adaptin
     
     adaptiveOpticsDecodingDirectory = getDecodingSubDirectory(scansDir, decodingParams.exportSubDirectory);
     outOfSamplePredictionDataFileName = fullfile(adaptiveOpticsDecodingDirectory, sprintf('OutOfSamplePredicition.mat'));
-    save(outOfSamplePredictionDataFileName, 'cTestPrediction', 'scanSensor', 'filterSpatialXdataInRetinalMicrons', 'filterSpatialYdataInRetinalMicrons' ...
+    save(outOfSamplePredictionDataFileName, 'cTestPrediction', 'scanSensor', 'scanPhotoCurrents', 'filterSpatialXdataInRetinalMicrons', 'filterSpatialYdataInRetinalMicrons' ...
         );
     fprintf('Adaptive optics prediction saved to %s\n', outOfSamplePredictionDataFileName);
     fprintf('Done \n');
