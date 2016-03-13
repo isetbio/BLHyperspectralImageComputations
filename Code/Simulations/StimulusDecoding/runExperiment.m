@@ -41,7 +41,7 @@ function runExperiment
    %  runMode = {'computeOutOfSamplePredictions'}
    %runMode = {'visualizeOutOfSamplePredictions'}
     
-   %runMode = 'decodeAdaptiveOpticsResponses';
+   runMode = 'decodeAdaptiveOpticsResponses';
    runMode = 'visualizeAdaptiveOpticsReconstruction';
    
    if (strcmp(runMode,'decodeAdaptiveOpticsResponses'))

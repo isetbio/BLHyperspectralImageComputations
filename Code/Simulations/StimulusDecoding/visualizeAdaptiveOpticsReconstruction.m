@@ -43,10 +43,10 @@ function visualizeAdaptiveOpticsReconstruction(rootPath, decodingSubDirectory, o
     scanSensorPhotonRate = sensorGet(scanSensor, 'photon rate');
     
     photonRateTimeAxis = -0.5 + (0:(size(scanSensorPhotonRate,3)-1))/1000;
-    photonRateTimeAxis(end)
+ 
    
     
-    XYZtoLMS = [0.17156 0.52901 -0.02199; -0.15955 0.48553 0.04298; 0.01916 -0.03989 1.03993]
+    XYZtoLMS = [0.17156 0.52901 -0.02199; -0.15955 0.48553 0.04298; 0.01916 -0.03989 1.03993];
     LMStoXYZ = inv(XYZtoLMS);
     
     LMSfactors = [0.0950/0.271;  0.052/0.230; 0.1531/0.142];
@@ -60,18 +60,18 @@ function visualizeAdaptiveOpticsReconstruction(rootPath, decodingSubDirectory, o
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
                'rowsNum', 2, ...
                'colsNum', 3, ...
-               'heightMargin',   0.04, ...
+               'heightMargin',   0.05, ...
                'widthMargin',    0.04, ...
                'leftMargin',     0.04, ...
                'rightMargin',    0.01, ...
                'bottomMargin',   0.04, ...
-               'topMargin',      0.03);
+               'topMargin',      0.05);
            
     hFig = figure(1); clf; set(hFig, 'position', [10 10 1320 850]);
     colormap(gray(1024));
     
     photonRateMapAxes = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(1,1).v, 'Color', [0.5 0.5 0.5]);
-    photoCurrentAxes = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(1,2).v, 'Color', [0.5 0.5 0.5]);
+    reconstructedContrastTracesAxes = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(1,2).v, 'Color', [0.5 0.5 0.5]);
     
     RGBrenderingAxes = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(1,3).v, 'Color', [0.5 0.5 0.5]);
     reconstructedLconeImageAxes = axes('parent', hFig, 'unit','normalized','position',subplotPosVectors(2,1).v, 'Color', [0.5 0.5 0.5]);
@@ -99,7 +99,7 @@ function visualizeAdaptiveOpticsReconstruction(rootPath, decodingSubDirectory, o
 
         maxXYZ = max(XYZimage(:));
         minXYZ = min(XYZimage(:));
-        [minXYZ maxXYZ]
+
         if (maxXYZ > 0.9)
             XYZimage = 0.9*XYZimage/maxXYZ;
             fprintf('XYZmax: %f\n', maxXYZ);
@@ -113,7 +113,7 @@ function visualizeAdaptiveOpticsReconstruction(rootPath, decodingSubDirectory, o
             axis(reconstructedLconeImageAxes, 'xy')
             axis(reconstructedLconeImageAxes, 'equal');
             set(reconstructedLconeImageAxes,'CLim', contrastRangeDisplayed, 'XLim', [min(filterSpatialXdataInRetinalMicrons) max(filterSpatialXdataInRetinalMicrons)], ...
-                'YLim', [min(filterSpatialYdataInRetinalMicrons) max(filterSpatialYdataInRetinalMicrons)]);
+                'YLim', [min(filterSpatialYdataInRetinalMicrons) max(filterSpatialYdataInRetinalMicrons)], 'XTickLabel', {}, 'YTickLabel', {});
             title(reconstructedLconeImageAxes, 'reconstructed L-contrast image');
         else
             set(p1, 'CData', reconstructedLconeContrastFrame);
@@ -125,7 +125,7 @@ function visualizeAdaptiveOpticsReconstruction(rootPath, decodingSubDirectory, o
             axis(reconstructedMconeImageAxes, 'xy')
             axis(reconstructedMconeImageAxes, 'equal');
             set(reconstructedMconeImageAxes,'CLim', contrastRangeDisplayed, 'XLim', [min(filterSpatialXdataInRetinalMicrons) max(filterSpatialXdataInRetinalMicrons)], ...
-                'YLim', [min(filterSpatialYdataInRetinalMicrons) max(filterSpatialYdataInRetinalMicrons)]);
+                'YLim', [min(filterSpatialYdataInRetinalMicrons) max(filterSpatialYdataInRetinalMicrons)], 'XTickLabel', {}, 'YTickLabel', {});
             title(reconstructedMconeImageAxes, 'reconstructed M-contrast image');
         else
             set(p2, 'CData', reconstructedMconeContrastFrame);
@@ -137,7 +137,7 @@ function visualizeAdaptiveOpticsReconstruction(rootPath, decodingSubDirectory, o
             axis(reconstructedSconeImageAxes, 'xy')
             axis(reconstructedSconeImageAxes, 'equal');
             set(reconstructedSconeImageAxes,'CLim', contrastRangeDisplayed, 'XLim', [min(filterSpatialXdataInRetinalMicrons) max(filterSpatialXdataInRetinalMicrons)], ...
-                'YLim', [min(filterSpatialYdataInRetinalMicrons) max(filterSpatialYdataInRetinalMicrons)]);
+                'YLim', [min(filterSpatialYdataInRetinalMicrons) max(filterSpatialYdataInRetinalMicrons)], 'XTickLabel', {}, 'YTickLabel', {});
             title(reconstructedSconeImageAxes, 'reconstructed S-contrast image');
         else
             set(p3, 'CData', reconstructedSconeContrastFrame);
@@ -165,9 +165,10 @@ function visualizeAdaptiveOpticsReconstruction(rootPath, decodingSubDirectory, o
             hold(photonRateMapAxes, 'off');
             axis(photonRateMapAxes, 'xy')
             axis(photonRateMapAxes, 'equal');
-            set(photonRateMapAxes,'CLim', [0 50000], 'XLim', [min(filterSpatialXdataInRetinalMicrons) max(filterSpatialXdataInRetinalMicrons)], ...
-                'YLim', [min(filterSpatialYdataInRetinalMicrons) max(filterSpatialYdataInRetinalMicrons)]);
-            title(photonRateMapAxes, 'photon map');
+            axis(photonRateMapAxes, 'off');
+            set(photonRateMapAxes, 'Color', [0.5 0.5 0.5], 'CLim', [0 50000], 'XLim', [min(filterSpatialXdataInRetinalMicrons) max(filterSpatialXdataInRetinalMicrons)], ...
+                'YLim', [min(filterSpatialYdataInRetinalMicrons) max(filterSpatialYdataInRetinalMicrons)], 'XTickLabel', {}, 'YTickLabel', {});
+            title(photonRateMapAxes, 'photon map', 'FontSize', 20);
         else
             set(p4, 'CData', photonRateMap);
         end
@@ -179,25 +180,35 @@ function visualizeAdaptiveOpticsReconstruction(rootPath, decodingSubDirectory, o
             axis(RGBrenderingAxes, 'xy')
             axis(RGBrenderingAxes, 'equal');
             set(RGBrenderingAxes,'CLim', [0 1], 'XLim', [min(filterSpatialXdataInRetinalMicrons) max(filterSpatialXdataInRetinalMicrons)], ...
-                'YLim', [min(filterSpatialYdataInRetinalMicrons) max(filterSpatialYdataInRetinalMicrons)]);
-            title(RGBrenderingAxes, 'RGB rendering');
+                'YLim', [min(filterSpatialYdataInRetinalMicrons) max(filterSpatialYdataInRetinalMicrons)], 'XTickLabel', {}, 'YTickLabel', {});
+            title(RGBrenderingAxes, 'RGB rendering', 'FontSize', 20);
         else
             set(p5, 'CData', RGBim);
         end
         
-        if (timeBin == 2)
+        N = numel(filterSpatialXdataInRetinalMicrons)*numel(filterSpatialYdataInRetinalMicrons);
+        reconstructedLconstrasts = reshape(permute(squeeze(reconstructedStimulus(:, :,:,1)), [2 3 1]), [N size(reconstructedStimulus,1)]);
+        reconstructedMconstrasts = reshape(permute(squeeze(reconstructedStimulus(:, :,:,2)), [2 3 1]), [N size(reconstructedStimulus,1)]);
+        reconstructedSconstrasts = reshape(permute(squeeze(reconstructedStimulus(:, :,:,3)), [2 3 1]), [N size(reconstructedStimulus,1)]);
 
-            p6 = plot(photoCurrentAxes, timeAxis(1:timeBin), scanPhotoCurrents(:, 1:timeBin), 'k-');
-            set(photoCurrentAxes ,'YLim', [-20 40], 'XLim', [0 timeAxis(end)]);
-            title(photoCurrentAxes , 'Photocurrents');
-        elseif (timeBin>2)
-            set(p6, 'XData', timeAxis(1:timeBin), 'YData', scanPhotoCurrents(:, 1:timeBin));
+        
+        startingBin = 50;
+        if (timeBin == startingBin+1)
+       
+             p6 = plot(reconstructedContrastTracesAxes, timeAxis(1:size(reconstructedLconstrasts,2)), reconstructedLconstrasts, 'r-');
+             hold(reconstructedContrastTracesAxes, 'on');
+             p7 = plot(reconstructedContrastTracesAxes, timeAxis(1:size(reconstructedLconstrasts,2)), reconstructedMconstrasts, 'g-');
+             p8 = plot(reconstructedContrastTracesAxes, timeAxis(1:size(reconstructedLconstrasts,2)), reconstructedSconstrasts, 'b-');
+             hold(reconstructedContrastTracesAxes, 'off');
+             title(reconstructedContrastTracesAxes, 'Reconstructed contrasts', 'FontSize', 20);
+         elseif (timeBin>startingBin+1)
+             set(reconstructedContrastTracesAxes, 'XLim', [timeAxis(timeBin-startingBin) timeAxis(timeBin)], 'YLim', [-0.6 1.0]);        
         end
         
-        
-        
         drawnow;
+        if (timeBin > 91)
         writerObj.writeVideo(getframe(hFig));
+        end
     end
     
 
