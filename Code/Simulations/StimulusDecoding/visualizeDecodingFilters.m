@@ -276,6 +276,7 @@ function visualizeSpatialFilterDynamics(figNo, decodingDirectory, filterSpatialX
     
     
     videoFilename = sprintf('%s/DecoderSpatialSamplingAnimation.m4v', decodingDirectory);
+    pngFilename = sprintf('%s/DecoderSpatialSamplingLastFrame.png', decodingDirectory);
     fprintf('Will export video to %s\n', videoFilename);
     writerObj = VideoWriter(videoFilename, 'MPEG-4'); % H264 format
     writerObj.FrameRate = 15; 
@@ -291,8 +292,8 @@ function visualizeSpatialFilterDynamics(figNo, decodingDirectory, filterSpatialX
     stimulusXpositionsToExamine = mConeRichPosXcoord;
     stimulusYpositionsToExamine = mConeRichPosYcoord;
     
-    stimulusXpositionsToExamine = 4:numel(filterSpatialXdataInRetinalMicrons)-3;
-    stimulusYpositionsToExamine = 4:numel(filterSpatialYdataInRetinalMicrons)-3
+   % stimulusXpositionsToExamine = 4:numel(filterSpatialXdataInRetinalMicrons)-3;
+   % stimulusYpositionsToExamine = 4:numel(filterSpatialYdataInRetinalMicrons)-3
     
     for stimulusTestYpos = stimulusYpositionsToExamine
     for stimulusTestXpos = stimulusXpositionsToExamine
@@ -596,6 +597,10 @@ function visualizeSpatialFilterDynamics(figNo, decodingDirectory, filterSpatialX
     end
 
     writerObj.close();
+    
+    
+    NicePlot.exportFigToPNG(pngFilename, hFig, 300);
+    
     
 end
 

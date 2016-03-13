@@ -11,11 +11,12 @@ function viewScan(configuration)
     
     % See how many scan files there are for this image
     scanFilename = sprintf('%s_%s_scan1.mat', imsource{1}, imsource{2});
+
     load(scanFilename, 'scansNum');
     
     scanIndex = input(sprintf('Enter scan index [1 - %d]: ', scansNum));
     scanFilename = sprintf('%s_%s_scan%d.mat', imsource{1}, imsource{2}, scanIndex);
-    
+        
     % This is useful for debugging
     showSensorWindow = true;
     if (showSensorWindow)
@@ -56,7 +57,14 @@ function [scene, oi] = loadSceneAndDispleySensorWindow(imsource, scanFilename, s
     osB.osSet('noiseFlag', 1);
     fprintf(2,'Computed outersegment response (for visualization) using time step: %2.2f msec.\nThis may be different from the time step used in the actual computation.\n', sensorGet(scanSensor, 'time interval')*1000);
     osB.osCompute(scanSensor);
-    osWindow(figNum, 'biophys-based outer segment', 'horizontalLayout', osB, scanSensor, oi, scene);
+    osW = osWindow(figNum, 'biophys-based outer segment', 'horizontalLayout', osB, scanSensor, oi, scene);
+   
+    
+    
+    osW.resizeWindow([1256 704]);
+    frameStepInMilliseconds = 1.0;
+    videoFilename = 'test.m4v';
+    osW.generateVideo(frameStepInMilliseconds, videoFilename);
 
     % clear what we do not need
     varList = {'osB', 'oi', 'scene'};

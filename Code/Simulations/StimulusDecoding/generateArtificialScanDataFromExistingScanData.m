@@ -90,40 +90,56 @@ function generateArtificialScanDataFromExistingScanData(rootPath, osType, adapti
     
     singleConePhotonRate = aoBeam.photonRateInIsomerizationsPerConePerSecond;
 
+    targetLconePos = [-7.5 -1.5];   % [4.5 -4.5];
+    targetMconePos = [ -13.5 -10.5]; % [-13.5 19.5];
+    
     maxActivatedConesNum = 30;
     for conditionIndex = 1:numel(stimOnsetTimes)
         
         switch conditionIndex
             case 1
-                aoBeam.positionsInRetinalMicrons = [-7.5 -1.5];   % [4.5 -4.5];
+                aoBeam.positionsInRetinalMicrons = targetLconePos;
                 aoBeam.photonRateInIsomerizationsPerConePerSecond = singleConePhotonRate;
+                
             case 2
-                aoBeam.positionsInRetinalMicrons = [ -13.5 -10.5]; % [-13.5 19.5];
-                aoBeam.photonRateInIsomerizationsPerConePerSecond = singleConePhotonRate;
+                Ro = 10;
+                lconePositions = coneXYpositions(lConeIndices,:);
+                distances = sqrt(sum((bsxfun(@minus, lconePositions, targetLconePos)).^2, 2));
+                stimulatedConeIndices = lConeIndices(find(distances < Ro));
+                aoBeam.positionsInRetinalMicrons = coneXYpositions(stimulatedConeIndices,:);      
+                
             case 3
-                randomConeIndices = randperm(numel(lConeIndices));
-                selectConeIndices = randomConeIndices(1:min([maxActivatedConesNum numel(lConeIndices)]));
-                aoBeam.positionsInRetinalMicrons = coneXYpositions(lConeIndices(selectConeIndices),:);      
+                Ro = 20;
+                lconePositions = coneXYpositions(lConeIndices,:);
+                distances = sqrt(sum((bsxfun(@minus, lconePositions, targetLconePos)).^2, 2));
+                stimulatedConeIndices = lConeIndices(find(distances < Ro));
+                aoBeam.positionsInRetinalMicrons = coneXYpositions(stimulatedConeIndices,:);     
+                
             case 4
-                randomConeIndices = randperm(numel(mConeIndices));
-                selectConeIndices = randomConeIndices(1:min([maxActivatedConesNum numel(mConeIndices)]));
-                aoBeam.positionsInRetinalMicrons = coneXYpositions(mConeIndices(selectConeIndices),:);
+                aoBeam.positionsInRetinalMicrons = targetMconePos;
+                aoBeam.photonRateInIsomerizationsPerConePerSecond = singleConePhotonRate;
+            
             case 5
-                randomConeIndices = randperm(numel(sConeIndices));
-                selectConeIndices = randomConeIndices(1:min([maxActivatedConesNum numel(sConeIndices)]));
-                aoBeam.positionsInRetinalMicrons = coneXYpositions(sConeIndices(selectConeIndices),:);
+                Ro = 10;
+                mconePositions = coneXYpositions(mConeIndices,:);
+                distances = sqrt(sum((bsxfun(@minus, mconePositions, targetMconePos)).^2, 2));
+                stimulatedConeIndices = mConeIndices(find(distances < Ro));
+                aoBeam.positionsInRetinalMicrons = coneXYpositions(stimulatedConeIndices,:); 
             case 6
-                randomConeIndices = randperm(numel(lConeIndices));
-                selectConeIndices1 = randomConeIndices(1:min([maxActivatedConesNum/2 numel(lConeIndices)]));
-                randomConeIndices = randperm(numel(sConeIndices));
-                selectConeIndices2 = randomConeIndices(1:min([maxActivatedConesNum/2 numel(sConeIndices)]));
-                aoBeam.positionsInRetinalMicrons = [coneXYpositions(lConeIndices(selectConeIndices1),:); coneXYpositions(sConeIndices(selectConeIndices2),:)];
+                Ro = 20;
+                mconePositions = coneXYpositions(mConeIndices,:);
+                distances = sqrt(sum((bsxfun(@minus, mconePositions, targetMconePos)).^2, 2));
+                stimulatedConeIndices = mConeIndices(find(distances < Ro));
+                aoBeam.positionsInRetinalMicrons = coneXYpositions(stimulatedConeIndices,:); 
+                
             case 7
-                randomConeIndices = randperm(numel(mConeIndices));
-                selectConeIndices1 = randomConeIndices(1:min([maxActivatedConesNum/2 numel(mConeIndices)]));
-                randomConeIndices = randperm(numel(sConeIndices));
-                selectConeIndices2 = randomConeIndices(1:min([maxActivatedConesNum/2 numel(sConeIndices)]));
-                aoBeam.positionsInRetinalMicrons = [coneXYpositions(mConeIndices(selectConeIndices1),:); coneXYpositions(sConeIndices(selectConeIndices2),:)];
+                Ro = 5;
+                R1 = 12;
+                R2 = 20;
+                lconePositions = coneXYpositions(lConeIndices,:);
+                distances = sqrt(sum((bsxfun(@minus, lconePositions, targetLconePos)).^2, 2));
+                stimulatedConeIndices = lConeIndices(find((distances < Ro) | ((distances > R1) & (distances < R2))));
+                aoBeam.positionsInRetinalMicrons = coneXYpositions(stimulatedConeIndices,:);
         end
             
         aoBeam.photonRateInIsomerizationsPerConePerSecond = singleConePhotonRate/sqrt(size(aoBeam.positionsInRetinalMicrons,1));
