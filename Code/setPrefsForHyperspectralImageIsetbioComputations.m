@@ -1,13 +1,14 @@
 function setPrefsForHyperspectralImageIsetbioComputations
 
-    originalDataBaseDir = '/Users1/HyperSpectralImages';  % valid on Manta
-    isetbioScenesDir = '/Users1/Shared/Matlab/Analysis/isetbioHyperspectralImages';
-    opticalImagesCacheDir  = '/Users1/Shared/Matlab/Analysis/BLHyperspectralImageComputations/OpticalImagesCache';
+    % Settings for Manta
+    originalDataBaseDir = '/Volumes/Manta TM HD/Dropbox (Aguirre-Brainard Lab)/IBIO_data/BLHyperspectralImageComputations/HyperSpectralImages';
+    isetbioSceneDataBaseDir = 'Volumes/Manta TM HD/Dropbox (Aguirre-Brainard Lab)/IBIO_analysis/BLHyperspectralImageComputations/isetbioScenes';
+    opticalImagesCacheDir  = '/Volumes/Manta TM HD/Dropbox (Aguirre-Brainard Lab)/IBIO_analysis/BLHyperspectralImageComputations/isetbioOpticalImages';
    
     % Specify project-specific preferences
     p = struct( ...
         'projectName', 'HyperSpectralImageIsetbioComputations', ...
-        'isetbioSceneDataBaseDir',  isetbioScenesDir, ... % where to put the scene files (before they are uploaded to archiva)
+        'isetbioSceneDataBaseDir',  isetbioSceneDataBaseDir, ... % where to put the scene files (before they are uploaded to archiva)
         'originalDataBaseDir',  originalDataBaseDir,...   % where the original data live
         'remoteDataToolboxConfig', '/Users/nicolas/Documents/1.code/2.matlabDevs/ProjectPrefs/rdt-config-isetbio-nicolas.json', ...
         'opticalImagesCacheDir', opticalImagesCacheDir ...
