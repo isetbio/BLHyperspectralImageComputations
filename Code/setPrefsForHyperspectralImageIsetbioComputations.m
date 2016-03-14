@@ -9,6 +9,8 @@ function setPrefsForHyperspectralImageIsetbioComputations
         case 'Manta'
             % dropbox location for Manta (Nicolas' iMac)
             dropBoxLocation = '/Volumes/Manta TM HD/Dropbox (Aguirre-Brainard Lab)';
+        otherwise
+            error('No dropbox location for computer named ''%s''.\n', sysInfo.localHostName)
     end
     
     originalDataBaseDir     = sprintf('%s/IBIO_data/BLHyperspectralImageComputations/HyperSpectralImages', dropBoxLocation);
