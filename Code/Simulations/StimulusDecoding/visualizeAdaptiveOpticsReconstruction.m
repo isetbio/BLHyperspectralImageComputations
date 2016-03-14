@@ -24,7 +24,7 @@ function visualizeAdaptiveOpticsReconstruction(rootPath, decodingSubDirectory, o
         reconstructedStimulus(timeBin, :,:,:) = reshape(squeeze(cTestPrediction(timeBin,:)), [numel(filterSpatialYdataInRetinalMicrons) numel(filterSpatialXdataInRetinalMicrons) 3]);
     end
     
-    contrastRangeDisplayed = [-2 6];
+    contrastRangeDisplayed = [-2 8];
     
     videoFilename = sprintf('%s/ReconstructionAnimation.m4v', adaptiveOpticsDecodingDirectory );
     fprintf('Will export video to %s\n', videoFilename);
@@ -85,6 +85,10 @@ function visualizeAdaptiveOpticsReconstruction(rootPath, decodingSubDirectory, o
         reconstructedMconeContrastFrame = squeeze(reconstructedStimulus(timeBin, :,:,2));
         reconstructedSconeContrastFrame = squeeze(reconstructedStimulus(timeBin, :,:,3));
         
+        reconstructedLconeContrastFrame(reconstructedLconeContrastFrame<-1) = -1;
+        reconstructedMconeContrastFrame(reconstructedMconeContrastFrame<-1) = -1;
+        reconstructedSconeContrastFrame(reconstructedSconeContrastFrame<-1) = -1;
+        
         LexcitationImage = backgroundLMS(1) * (1.0 + reconstructedLconeContrastFrame);
         MexcitationImage = backgroundLMS(2) * (1.0 + reconstructedMconeContrastFrame);
         SexcitationImage = backgroundLMS(3) * (1.0 + reconstructedSconeContrastFrame);
@@ -97,16 +101,20 @@ function visualizeAdaptiveOpticsReconstruction(rootPath, decodingSubDirectory, o
             end
         end
 
+        
+        
         maxXYZ = max(XYZimage(:));
         minXYZ = min(XYZimage(:));
 
-        if (maxXYZ > 1.2)
-            XYZimage = 1.2*XYZimage/maxXYZ;
+        if (maxXYZ > 1.0)
+            XYZimage = XYZimage/maxXYZ;
             fprintf('XYZmax: %f\n', maxXYZ);
         end
         if (minXYZ < 0)
             fprintf('XYZmin: %f\n', minXYZ);
         end
+        
+        fprintf('XYZmax: %f\n', maxXYZ);
         
         if (timeBin == 1)
             p1 = imagesc(filterSpatialXdataInRetinalMicrons, filterSpatialYdataInRetinalMicrons, reconstructedLconeContrastFrame, 'parent', reconstructedLconeImageAxes);
@@ -149,6 +157,7 @@ function visualizeAdaptiveOpticsReconstruction(rootPath, decodingSubDirectory, o
         
         photonRateMap = squeeze(scanSensorPhotonRate(:,:,idx));
         
+        
         if (timeBin == 1)
             p4 = imagesc(coneMosaicSpatialXdataInRetinalMicrons, coneMosaicSpatialYdataInRetinalMicrons, photonRateMap, 'parent', photonRateMapAxes);
             hold(photonRateMapAxes, 'on');
@@ -166,7 +175,7 @@ function visualizeAdaptiveOpticsReconstruction(rootPath, decodingSubDirectory, o
             axis(photonRateMapAxes, 'xy')
             axis(photonRateMapAxes, 'equal');
             axis(photonRateMapAxes, 'off');
-            set(photonRateMapAxes, 'Color', [0.5 0.5 0.5], 'CLim', [24000 32000], 'XLim', [min(coneMosaicSpatialXdataInRetinalMicrons)-1.5 max(coneMosaicSpatialXdataInRetinalMicrons)+1.5], ...
+            set(photonRateMapAxes, 'Color', [0.5 0.5 0.5], 'CLim', [28000 48000], 'XLim', [min(coneMosaicSpatialXdataInRetinalMicrons)-1.5 max(coneMosaicSpatialXdataInRetinalMicrons)+1.5], ...
                 'YLim', [min(coneMosaicSpatialYdataInRetinalMicrons)-1.5 max(coneMosaicSpatialYdataInRetinalMicrons)+1.5], 'XTickLabel', {}, 'YTickLabel', {});
             title(photonRateMapAxes, 'stimulation map', 'FontSize', 20);
         else
@@ -199,7 +208,7 @@ function visualizeAdaptiveOpticsReconstruction(rootPath, decodingSubDirectory, o
         reconstructedSconstrasts = reshape(permute(squeeze(reconstructedStimulus(:, :,:,3)), [2 3 1]), [N size(reconstructedStimulus,1)]);
 
         
-        startingBin = 20;
+        startingBin =70;
         if (timeBin == startingBin+1)
        
              p6 = plot(reconstructedContrastTracesAxes, timeAxis(1:size(reconstructedLconstrasts,2)), reconstructedLconstrasts, 'r-', 'Color', [1 0.2 0.5], 'LineWidth', 2.0);
@@ -212,7 +221,7 @@ function visualizeAdaptiveOpticsReconstruction(rootPath, decodingSubDirectory, o
              title(reconstructedContrastTracesAxes, 'reconstructed L/M/S contrast', 'FontSize', 20);
              set(reconstructedContrastTracesAxes, 'XColor', [1 1 1], 'YColor', [1 1 1]);
          elseif (timeBin>startingBin+1)
-             set(reconstructedContrastTracesAxes, 'XLim', 0.150+[timeAxis(timeBin-startingBin) timeAxis(timeBin)], 'YLim', [-0.6 1.0]);  
+             set(reconstructedContrastTracesAxes, 'XLim', 0.350+[timeAxis(timeBin-startingBin) timeAxis(timeBin)], 'YLim', [-0.6 1.0]);  
              set(p9, 'XData', timeAxis(timeBin)*[1 1]);
         end
         

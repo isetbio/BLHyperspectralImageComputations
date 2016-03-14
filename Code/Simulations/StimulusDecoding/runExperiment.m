@@ -5,11 +5,11 @@ function runExperiment
     
     experimentConfiguration = 'manchester';
     osType = 'biophysics-based';  % 'biophysics-based' or 'linear'
-    osType = 'linear';
+    %osType = 'linear';
     
     % adaptingFieldType = 'MatchSpatiallyAveragedPhotonSPD';   % match photon SPD (mean luminance and chromaticity)
     adaptingFieldType = 'MacBethGrayD65MatchSceneLuminance'; % match luminance only (achromatic background) 
-    adaptingFieldType = 'NoAdaptationField';
+    %adaptingFieldType = 'NoAdaptationField';
     
     trainingDataPercentange = 50; % GetTrainingDataPercentage();
    
@@ -39,9 +39,9 @@ function runExperiment
    % runMode = {'visualizeDecodingFilter'}
     
    %  runMode = {'computeOutOfSamplePredictions'}
-   %runMode = {'visualizeOutOfSamplePredictions'}
+   runMode = {'visualizeOutOfSamplePredictions'}
     
-   runMode = 'decodeAdaptiveOpticsResponses';
+   %runMode = 'decodeAdaptiveOpticsResponses';
    %runMode = 'visualizeAdaptiveOpticsReconstruction';
    
    if (strcmp(runMode,'decodeAdaptiveOpticsResponses'))

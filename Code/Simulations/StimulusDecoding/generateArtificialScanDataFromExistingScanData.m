@@ -7,9 +7,9 @@ function generateArtificialScanDataFromExistingScanData(rootPath, osType, adapti
     % adaptive optics beam position
     aoBeam = struct(...
         'positionsInRetinalMicrons', [], ...
-    	'spatialSpreadInRetinalMicrons', 1.0, ...
-    	'photonRateInIsomerizationsPerConePerSecond', 100000, ...
-    	'durationInMilliseconds', 100 ...
+    	'spatialSpreadInRetinalMicrons', 0.5, ...
+    	'photonRateInIsomerizationsPerConePerSecond', 50000, ...
+    	'durationInMilliseconds', 200 ...
         );
     
     originalConfiguration = 'manchester';
@@ -40,26 +40,27 @@ function generateArtificialScanDataFromExistingScanData(rootPath, osType, adapti
         stimOnsetBins = 400:600:numel(timeAxis)-1000;
     end
     
-    % Pick every other to space trials apart
-    stimOnsetBins = stimOnsetBins(1:3:end);
+    % Pick every 3rd stim onset to space trials apart
+    stimOnsetBins = stimOnsetBins(1:2:end);
     
     stimOffsetBins = stimOnsetBins+aoBeam.durationInMilliseconds;
     stimOnsetTimes = timeAxis(stimOnsetBins);
     stimOffsetTimes = timeAxis(stimOffsetBins);
     
     
-    figure(1); clf
-    subplot(2,1,1);
-    plot(timeAxis, squeeze(photoCurrents(10,10,:)), 'k-');
-    subplot(2,1,2);
+    h =figure(1); clf
+
     plot(timeAxis, trace, 'k-');
     hold on
     for k = 1:numel(stimOnsetBins)
-        plot(timeAxis(stimOnsetBins(k))*[1 1], [0 50000], 'r-');
-        plot(timeAxis(stimOffsetBins(k))*[1 1], [50000 100000], 'b-');
+        plot(timeAxis(stimOnsetBins(k))*[1 1], [0 1000], 'b-');
+    %    plot(timeAxis(stimOffsetBins(k))*[1 1], [50000 100000], 'b-');
     end
-    set(gca, 'YTick', [1:10]*1e4);
-    
+    set(gca, 'YTick', [1:10]*1e4, 'XLim', [0 5], 'FontSize', 8);
+    xlabel('time (ms)', 'FontSize', 10)
+    ylabel('isomerizations (R*/cone/sec)', 'FontSize', 10)
+    NicePlot.exportFigToPNG('test.png', h, 300);
+    pause
 
     % Generate new sensor describing the adaptive optics conditions
     beforeStimulusTime = 1.0; % 1 second
@@ -96,6 +97,65 @@ function generateArtificialScanDataFromExistingScanData(rootPath, osType, adapti
     maxActivatedConesNum = 30;
     for conditionIndex = 1:numel(stimOnsetTimes)
         
+        switch (mod(conditionIndex-1,7) +1)
+            case 1
+                Ro = 1;
+                lconePositions = coneXYpositions(lConeIndices,:);
+                distances = sqrt(sum((bsxfun(@minus, lconePositions, targetLconePos)).^2, 2));
+                stimulatedConeIndices = lConeIndices(find(distances < Ro));
+                aoBeam.positionsInRetinalMicrons = coneXYpositions(stimulatedConeIndices,:);
+                aoBeam.photonRateInIsomerizationsPerConePerSecond = singleConePhotonRate;
+                
+            case 2
+                Ro = 3;
+                lconePositions = coneXYpositions(lConeIndices,:);
+                distances = sqrt(sum((bsxfun(@minus, lconePositions, targetLconePos)).^2, 2));
+                stimulatedConeIndices = lConeIndices(find(distances < Ro));
+                aoBeam.positionsInRetinalMicrons = coneXYpositions(stimulatedConeIndices,:);
+                aoBeam.photonRateInIsomerizationsPerConePerSecond = singleConePhotonRate;   
+                
+            case 3
+                Ro = 6;
+                mConePositions = coneXYpositions(mConeIndices,:);
+                distances = sqrt(sum((bsxfun(@minus, mConePositions, targetMconePos)).^2, 2));
+                stimulatedConeIndices = mConeIndices(find(distances < Ro));
+                aoBeam.positionsInRetinalMicrons = coneXYpositions(stimulatedConeIndices,:);
+                aoBeam.photonRateInIsomerizationsPerConePerSecond = singleConePhotonRate;       
+                
+            case 4
+                Ro = 9;
+                lconePositions = coneXYpositions(lConeIndices,:);
+                distances = sqrt(sum((bsxfun(@minus, lconePositions, targetLconePos)).^2, 2));
+                stimulatedConeIndices = lConeIndices(find(distances < Ro));
+                aoBeam.positionsInRetinalMicrons = coneXYpositions(stimulatedConeIndices,:);
+                aoBeam.photonRateInIsomerizationsPerConePerSecond = singleConePhotonRate;
+            
+            case 5
+                Ro = 12;
+                lconePositions = coneXYpositions(lConeIndices,:);
+                distances = sqrt(sum((bsxfun(@minus, lconePositions, targetLconePos)).^2, 2));
+                stimulatedConeIndices = lConeIndices(find(distances < Ro));
+                aoBeam.positionsInRetinalMicrons = coneXYpositions(stimulatedConeIndices,:);
+                aoBeam.photonRateInIsomerizationsPerConePerSecond = singleConePhotonRate; 
+            case 6
+                Ro = 15;
+                lconePositions = coneXYpositions(lConeIndices,:);
+                distances = sqrt(sum((bsxfun(@minus, lconePositions, targetLconePos)).^2, 2));
+                stimulatedConeIndices = lConeIndices(find(distances < Ro));
+                aoBeam.positionsInRetinalMicrons = coneXYpositions(stimulatedConeIndices,:);
+                aoBeam.photonRateInIsomerizationsPerConePerSecond = singleConePhotonRate;  
+                
+            case 7
+                Ro = 20;
+                lconePositions = coneXYpositions(lConeIndices,:);
+                distances = sqrt(sum((bsxfun(@minus, lconePositions, targetLconePos)).^2, 2));
+                stimulatedConeIndices = lConeIndices(find(distances < Ro));
+                aoBeam.positionsInRetinalMicrons = coneXYpositions(stimulatedConeIndices,:);  
+                aoBeam.photonRateInIsomerizationsPerConePerSecond = singleConePhotonRate; 
+                
+        end
+        
+        if (1==2)
         switch conditionIndex
             case 1
                 aoBeam.positionsInRetinalMicrons = targetLconePos;
@@ -141,9 +201,9 @@ function generateArtificialScanDataFromExistingScanData(rootPath, osType, adapti
                 stimulatedConeIndices = lConeIndices(find((distances < Ro) | ((distances > R1) & (distances < R2))));
                 aoBeam.positionsInRetinalMicrons = coneXYpositions(stimulatedConeIndices,:);
         end
-            
+        end
+        
         aoBeam.photonRateInIsomerizationsPerConePerSecond = singleConePhotonRate/sqrt(size(aoBeam.positionsInRetinalMicrons,1));
-        size(aoBeam.positionsInRetinalMicrons,1)
         [coneMosaicSpatialXdataInRetinalMicrons, coneMosaicSpatialYdataInRetinalMicrons, photonRateSpatialProfile(conditionIndex,:,:)] = createSpatialProfile(newScanSensor, aoBeam);
         
         if (conditionIndex == 1)
