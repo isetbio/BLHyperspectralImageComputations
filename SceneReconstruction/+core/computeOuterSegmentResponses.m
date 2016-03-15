@@ -1,5 +1,8 @@
 function computeOuterSegmentResponses(expParams)
 
+    showAndExportSceneFigures = true;
+    showAndExportOpticalImages = true;
+        
     % reset isetbio
     ieInit;
     
@@ -19,15 +22,10 @@ function computeOuterSegmentResponses(expParams)
         adaptingFieldScene = core.generateAdaptingFieldScene(...
             scene, expParams.viewingModeParams.adaptingFieldParams);
         
-        % Compute StockmanSharpee 2 deg LMS excitations
+        % Compute StockmanSharpe 2 deg LMS excitations
         sceneLMS = core.imageFromScene(scene, 'LMS');
         adaptingFieldSceneLMS = core.imageFromScene(adaptingFieldScene, 'LMS');
-        
-        showScene = true;
-        if (showScene)
-            core.showSceneAndAdaptingField(scene, adaptingFieldScene); 
-        end
-        
+
         % Compute optical image with human optics
         oi = oiCreate('human');
         oi = oiCompute(oi, scene);
@@ -36,11 +34,14 @@ function computeOuterSegmentResponses(expParams)
         oiAdaptatingField = oiCreate('human');
         oiAdaptatingField = oiCompute(oiAdaptatingField, adaptingFieldScene);
     
-        showOpticalImages = true;
-        if (showOpticalImages);
-            core.showOpticalImagesOfSceneAndAdaptingField(oi, oiAdaptatingField); 
+        % Export figures
+        if (showAndExportSceneFigures)
+            core.showSceneAndAdaptingField(scene, adaptingFieldScene); 
         end
         
+        if (showAndExportOpticalImages)
+            core.showOpticalImagesOfSceneAndAdaptingField(oi, oiAdaptatingField); 
+        end
     end % sceneIndex
 end
 
