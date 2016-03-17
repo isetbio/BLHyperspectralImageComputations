@@ -124,6 +124,9 @@ function computeScanData(scene,  oi,  sensor, ...
     
     
     parfor scanIndex = 1:scansNum
+        
+        d = scanData{scanIndex};
+        
     %for scanIndex = 1:scansNum
         
         if (useParFor)
@@ -133,16 +136,12 @@ function computeScanData(scene,  oi,  sensor, ...
              fprintf('Assembling LMS sequence for scan %d/%d\n', scanIndex, scansNum);
         end
         
-        sceneLMSexcitationSequence = scanData{scanIndex}.sceneLMSexcitationSequence;
-        oiLMSexcitationSequence    = scanData{scanIndex}.oiLMSexcitationSequence;
-
-
-        fprintf('size before');
-        size(sceneLMSexcitationSequence)
+        sceneLMSexcitationSequence = d.sceneLMSexcitationSequence;
+        oiLMSexcitationSequence    = d.oiLMSexcitationSequence;
         
-        for kPosIndex = 1:numel(scanData{scanIndex}.eyePositionIndices)
+        for kPosIndex = 1:numel(d.eyePositionIndices)
            
-            eyePositionIndex = scanData{scanIndex}.eyePositionIndices(kPosIndex);
+            eyePositionIndex = d.eyePositionIndices(kPosIndex);
             
             sensorXpos = sensorPositionsInMicrons(eyePositionIndex,1);
             sensorYpos = sensorPositionsInMicrons(eyePositionIndex,2);
@@ -158,15 +157,15 @@ function computeScanData(scene,  oi,  sensor, ...
             
         end % kPosIndex
         
-        scanData{scanIndex}.sceneLMSexcitationSequence = sceneLMSexcitationSequence;
-        scanData{scanIndex}.oiLMSexcitationSequence = oiLMSexcitationSequence; 
+        d.sceneLMSexcitationSequence = sceneLMSexcitationSequence;
+        d.oiLMSexcitationSequence = oiLMSexcitationSequence; 
+
+        scanData{scanIndex} = d;
         
-        fprintf('size after');
-        size(sceneLMSexcitationSequence)
         
         
         showResults = false;
-        if ((showResults) && (useParFor == false))
+        if ((useParFor == false) && (showResults))
             for k = 1:2:size(scanData{scanIndex}.sceneLMSexcitationSequence,1)
                 scenelContrastFrame = squeeze(scanData{scanIndex}.sceneLMSexcitationSequence(k,:,:,1));
                 oiContrastFrame     = squeeze(scanData{scanIndex}.oiLMSexcitationSequence(k,:,:,1));
@@ -212,6 +211,7 @@ function computeScanData(scene,  oi,  sensor, ...
                 drawnow;
             end
         end % showResults
+        
         
     end % parfor scanIndex
         
