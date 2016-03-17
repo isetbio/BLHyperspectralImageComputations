@@ -85,7 +85,7 @@ function computeScanData(scene,  oi,  sensor, sensorFixationTimes, ...
         scanData{scanIndex}.isomerizationRateSequence = isomerizationRateSequence;  
     end
     
-    useParFor = false;
+    useParFor = true; % false;
     if (useParFor)
         poolOBJ = gcp('nocreate');
         if (isempty(poolOBJ))
@@ -97,8 +97,8 @@ function computeScanData(scene,  oi,  sensor, sensorFixationTimes, ...
     end
     
     
-    %parfor scanIndex = 1:scansNum
-    for scanIndex = 1:scansNum
+    parfor scanIndex = 1:scansNum
+    %for scanIndex = 1:scansNum
         
         if (useParFor)
             t = getCurrentTask(); workerID = t.ID;
@@ -149,51 +149,52 @@ function computeScanData(scene,  oi,  sensor, sensorFixationTimes, ...
         fprintf('size after');
         size(sceneLMSexcitationSequence)
         
+        
         showResults = true;
-        if (showResults)
-        for k = 1:2:size(scanData{scanIndex}.sceneLMSexcitationSequence,1)
-            scenelContrastFrame = squeeze(scanData{scanIndex}.sceneLMSexcitationSequence(k,:,:,1));
-            oiContrastFrame     = squeeze(scanData{scanIndex}.oiLMSexcitationSequence(k,:,:,1));
-            isomerizationFrame  = squeeze(scanData{scanIndex}.isomerizationRateSequence(k,:,:));
+        if ((showResults) && (useParFor == false))
+            for k = 1:2:size(scanData{scanIndex}.sceneLMSexcitationSequence,1)
+                scenelContrastFrame = squeeze(scanData{scanIndex}.sceneLMSexcitationSequence(k,:,:,1));
+                oiContrastFrame     = squeeze(scanData{scanIndex}.oiLMSexcitationSequence(k,:,:,1));
+                isomerizationFrame  = squeeze(scanData{scanIndex}.isomerizationRateSequence(k,:,:));
 
-            if (k == 1)
-                subplot(1,3,1);
-                p1 = imagesc(scanData{scanIndex}.sensorFOVxaxis, scanData{scanIndex}.sensorFOVyaxis, scenelContrastFrame);
-                hold on;
-                plot([0 0 ], [-100 100], 'r-');
-                plot([-100 100], [0 0 ], 'r-');
-                hold off
-                axis 'xy';
-                axis 'image'
-                set(gca, 'XLim', [min(scanData{scanIndex}.sensorFOVxaxis) max(scanData{scanIndex}.sensorFOVxaxis)], 'YLim',  [min(scanData{scanIndex}.sensorFOVyaxis) max(scanData{scanIndex}.sensorFOVyaxis)])
-                
-                subplot(1,3,2);
-                p2 = imagesc(scanData{scanIndex}.sensorFOVxaxis, scanData{scanIndex}.sensorFOVyaxis, oiContrastFrame);
-                hold on;
-                plot([0 0 ], [-100 100], 'r-');
-                plot([-100 100], [0 0 ], 'r-');
-                hold off
-                axis 'xy';
-                axis 'image'
-                set(gca, 'XLim', [min(scanData{scanIndex}.sensorFOVxaxis) max(scanData{scanIndex}.sensorFOVxaxis)], 'YLim',  [min(scanData{scanIndex}.sensorFOVyaxis) max(scanData{scanIndex}.sensorFOVyaxis)])
-                
-                subplot(1,3,3)
-                p3 = imagesc((-10:9)*3, (-10:9)*3, isomerizationFrame);
-                hold on;
-                plot([0 0 ], [-100 100], 'r-');
-                plot([-100 100], [0 0 ], 'r-');
-                hold off
-                axis 'xy';
-                axis 'image'
-                set(gca, 'XLim', [min(scanData{scanIndex}.sensorFOVxaxis) max(scanData{scanIndex}.sensorFOVxaxis)], 'YLim',  [min(scanData{scanIndex}.sensorFOVyaxis) max(scanData{scanIndex}.sensorFOVyaxis)])
-                colormap(gray(1024));
-            else
-                set(p1, 'CData', scenelContrastFrame);
-                set(p2, 'CData', oiContrastFrame);
-                set(p3, 'CData', isomerizationFrame);
+                if (k == 1)
+                    subplot(1,3,1);
+                    p1 = imagesc(scanData{scanIndex}.sensorFOVxaxis, scanData{scanIndex}.sensorFOVyaxis, scenelContrastFrame);
+                    hold on;
+                    plot([0 0 ], [-100 100], 'r-');
+                    plot([-100 100], [0 0 ], 'r-');
+                    hold off
+                    axis 'xy';
+                    axis 'image'
+                    set(gca, 'XLim', [min(scanData{scanIndex}.sensorFOVxaxis) max(scanData{scanIndex}.sensorFOVxaxis)], 'YLim',  [min(scanData{scanIndex}.sensorFOVyaxis) max(scanData{scanIndex}.sensorFOVyaxis)])
+
+                    subplot(1,3,2);
+                    p2 = imagesc(scanData{scanIndex}.sensorFOVxaxis, scanData{scanIndex}.sensorFOVyaxis, oiContrastFrame);
+                    hold on;
+                    plot([0 0 ], [-100 100], 'r-');
+                    plot([-100 100], [0 0 ], 'r-');
+                    hold off
+                    axis 'xy';
+                    axis 'image'
+                    set(gca, 'XLim', [min(scanData{scanIndex}.sensorFOVxaxis) max(scanData{scanIndex}.sensorFOVxaxis)], 'YLim',  [min(scanData{scanIndex}.sensorFOVyaxis) max(scanData{scanIndex}.sensorFOVyaxis)])
+
+                    subplot(1,3,3)
+                    p3 = imagesc((-10:9)*3, (-10:9)*3, isomerizationFrame);
+                    hold on;
+                    plot([0 0 ], [-100 100], 'r-');
+                    plot([-100 100], [0 0 ], 'r-');
+                    hold off
+                    axis 'xy';
+                    axis 'image'
+                    set(gca, 'XLim', [min(scanData{scanIndex}.sensorFOVxaxis) max(scanData{scanIndex}.sensorFOVxaxis)], 'YLim',  [min(scanData{scanIndex}.sensorFOVyaxis) max(scanData{scanIndex}.sensorFOVyaxis)])
+                    colormap(gray(1024));
+                else
+                    set(p1, 'CData', scenelContrastFrame);
+                    set(p2, 'CData', oiContrastFrame);
+                    set(p3, 'CData', isomerizationFrame);
+                end
+                drawnow;
             end
-            drawnow;
-        end
         end % showResults
         
     end % parfor scanIndex
