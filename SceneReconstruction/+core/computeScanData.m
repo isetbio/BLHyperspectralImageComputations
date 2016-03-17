@@ -163,27 +163,29 @@ function computeScanData(scene,  oi,  sensor, sensorFixationTimes, ...
                 plot([0 0 ], [-100 100], 'r-');
                 plot([-100 100], [0 0 ], 'r-');
                 hold off
-                set(gca, 'XLim', [min(scanData{scanIndex}.sensorFOVxaxis) max(scanData{scanIndex}.sensorFOVxaxis)], 'YLim',  [min(scanData{scanIndex}.sensorFOVyaxis) max(scanData{scanIndex}.sensorFOVyaxis)])
                 axis 'xy';
                 axis 'image'
+                set(gca, 'XLim', [min(scanData{scanIndex}.sensorFOVxaxis) max(scanData{scanIndex}.sensorFOVxaxis)], 'YLim',  [min(scanData{scanIndex}.sensorFOVyaxis) max(scanData{scanIndex}.sensorFOVyaxis)])
+                
                 subplot(1,3,2);
                 p2 = imagesc(scanData{scanIndex}.sensorFOVxaxis, scanData{scanIndex}.sensorFOVyaxis, oiContrastFrame);
                 hold on;
                 plot([0 0 ], [-100 100], 'r-');
                 plot([-100 100], [0 0 ], 'r-');
                 hold off
-                set(gca, 'XLim', [min(scanData{scanIndex}.sensorFOVxaxis) max(scanData{scanIndex}.sensorFOVxaxis)], 'YLim',  [min(scanData{scanIndex}.sensorFOVyaxis) max(scanData{scanIndex}.sensorFOVyaxis)])
                 axis 'xy';
                 axis 'image'
+                set(gca, 'XLim', [min(scanData{scanIndex}.sensorFOVxaxis) max(scanData{scanIndex}.sensorFOVxaxis)], 'YLim',  [min(scanData{scanIndex}.sensorFOVyaxis) max(scanData{scanIndex}.sensorFOVyaxis)])
+                
                 subplot(1,3,3)
                 p3 = imagesc((-10:9)*3, (-10:9)*3, isomerizationFrame);
                 hold on;
                 plot([0 0 ], [-100 100], 'r-');
                 plot([-100 100], [0 0 ], 'r-');
                 hold off
-                set(gca, 'XLim', [min(scanData{scanIndex}.sensorFOVxaxis) max(scanData{scanIndex}.sensorFOVxaxis)], 'YLim',  [min(scanData{scanIndex}.sensorFOVyaxis) max(scanData{scanIndex}.sensorFOVyaxis)])
                 axis 'xy';
                 axis 'image'
+                set(gca, 'XLim', [min(scanData{scanIndex}.sensorFOVxaxis) max(scanData{scanIndex}.sensorFOVxaxis)], 'YLim',  [min(scanData{scanIndex}.sensorFOVyaxis) max(scanData{scanIndex}.sensorFOVyaxis)])
                 colormap(gray(1024));
             else
                 set(p1, 'CData', scenelContrastFrame);
