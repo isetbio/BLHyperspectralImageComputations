@@ -78,8 +78,8 @@ function computeScanData(scene,  oi,  sensor, sensorFixationTimes, ...
             
             % Get the isomerization rate sequence for this saccade
             kk = kPosCounter + (1:numel(eyePositionIndices));
-            isomerizationRateSequence(kk,:,:) = reshape(squeeze(isomerizationRate(:,:,eyePositionIndices)), [numel(eyePositionIndices) size(isomerizationRate,1) size(isomerizationRate,2) ]);
-        
+            isomerizationRateSequence(kk,:,:) = permute(isomerizationRate(:,:,eyePositionIndices), [3 1 2]);
+            kPosCounter = kPosCounter + numel(eyePositionIndices);
         end  
         
         scanData{scanIndex}.isomerizationRateSequence = isomerizationRateSequence;  
@@ -176,7 +176,7 @@ function computeScanData(scene,  oi,  sensor, sensorFixationTimes, ...
                 axis 'xy';
                 axis 'image'
                 subplot(1,3,3)
-                p3 = imagesc(1:size(isomerizationFrame,2)*3-30, 1:size(isomerizationFrame,1)*3-30, isomerizationFrame);
+                p3 = imagesc((-10:9)*3, (-10:9)*3, isomerizationFrame);
                 hold on;
                 plot([0 0 ], [-100 100], 'r-');
                 plot([-100 100], [0 0 ], 'r-');
