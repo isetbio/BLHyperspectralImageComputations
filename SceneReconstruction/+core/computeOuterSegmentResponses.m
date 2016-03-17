@@ -46,7 +46,6 @@ function computeOuterSegmentResponses(expParams)
             core.showOpticalImagesOfSceneAndAdaptingField(oi, sensor, sensorFixationTimes, sensorAdaptingFieldFixationTimes); 
         end
         
-        if (1==2)
         % Compute isomerizations
         sensor = coneAbsorptions(sensor, oi);
       
@@ -57,7 +56,7 @@ function computeOuterSegmentResponses(expParams)
             expParams.decoderParams.spatialSamplingInRetinalMicrons, ...
             expParams.decoderParams.extraMicronsAroundSensorBorder ...
         );
-        end
+
         
 
         
