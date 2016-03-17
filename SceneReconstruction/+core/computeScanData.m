@@ -47,51 +47,85 @@ function computeScanData(scene,  oi,  sensor, sensorFixationTimes, ...
         startingSaccade = 1+(scanIndex-1)*fixationsPerScan;
         endingSaccade   = startingSaccade + (fixationsPerScan-1);
         
-        totalEyePositionIndices = 0;
+        scanEyePositionIndicesNum = 0;
         for saccadeIndex = startingSaccade:endingSaccade
             timeIndices = (sensorFixationTimes.onsetBins(saccadeIndex):sensorFixationTimes.offsetBins(saccadeIndex));
             eyePositionIndices.d{saccadeIndex-startingSaccade+1}.timeIndices = single(timeIndices);
-            totalEyePositionIndices = totalEyePositionIndices + numel(timeIndices);
+            scanEyePositionIndicesNum  = scanEyePositionIndicesNum  + numel(timeIndices);
         end
         
         scanData{scanIndex} = struct(...
-            'sceneLMSexcitationSequence',   zeros(totalEyePositionIndices, numel(sensorFOVRowRange), numel(sensorFOVColRange), 3, 'single'), ...
-            'oiLMSexcitationSequence',      zeros(totalEyePositionIndices, numel(sensorFOVRowRange), numel(sensorFOVColRange), 3, 'single'), ...
+            'sceneLMSexcitationSequence',   zeros(scanEyePositionIndicesNum , numel(sensorFOVRowRange), numel(sensorFOVColRange), 3, 'single'), ...
+            'oiLMSexcitationSequence',      zeros(scanEyePositionIndicesNum , numel(sensorFOVRowRange), numel(sensorFOVColRange), 3, 'single'), ...
             'eyePositionIndices',           eyePositionIndices, ...
-            'isomerizationRateSequence',    zeros(totalEyePositionIndices, size(isomerizationRate,1), size(isomerizationRate,2)), ...
+            'isomerizationRateSequence',    zeros(scanEyePositionIndicesNum , size(isomerizationRate,1), size(isomerizationRate,2)), ...
             'sensorFOVxaxis', sensorFOVxaxis, ...
             'sensorFOVyaxis', sensorFOVyaxis ...
         );
     end
     
-    poolOBJ = gcp('nocreate');
-    if (isempty(poolOBJ))
-        parpool(2)
-    else
-        delete(poolOBJ)
-        parpool(2)
+    % Retrieve isomerization sequences
+    fprintf('Assembling isomerization sequences for %d scans.\n',scansNum);
+    for scanIndex = 1:scansNum  
+        
+        isomerizationRateSequence = scanData{scanIndex}.isomerizationRateSequence;
+        kPosCounter = 0; 
+        
+        for saccadeIndex = 1:numel(scanData{scanIndex}.eyePositionIndices.d) 
+  
+            % Get eye positions indices for this saccade
+            eyePositionIndices = scanData{scanIndex}.eyePositionIndices.d{saccadeIndex}.timeIndices;
+            
+            % Get the isomerization rate sequence for this saccade
+            kk = kPosCounter + (1:numel(eyePositionIndices));
+            isomerizationRateSequence(kk,:,:) = reshape(squeeze(isomerizationRate(:,:,eyePositionIndices)), [numel(eyePositionIndices) size(isomerizationRate,1) size(isomerizationRate,2) ]);
+        
+        end  
+        
+        scanData{scanIndex}.isomerizationRateSequence = isomerizationRateSequence;  
     end
     
-    fprintf('Starting parallel job with %d workers\n', poolOBJ.NumWorkers);
+    useParFor = false;
+    if (useParFor)
+        poolOBJ = gcp('nocreate');
+        if (isempty(poolOBJ))
+            parpool()
+        else
+            delete(poolOBJ)
+            parpool()
+        end
+    end
     
-    parfor scanIndex = 1:scansNum  
-       t = getCurrentTask(); workerID = t.ID;
-       fprintf('Worker %d working on scanIndex: %d (of %d)\n', workerID, scanIndex, scansNum);
+    
+    %parfor scanIndex = 1:scansNum
+    for scanIndex = 1:scansNum
+        
+        if (useParFor)
+            t = getCurrentTask(); workerID = t.ID;
+            fprintf('[worker #%d]: Computing LMS sequence for scan %d/%d\n', workerID, scanIndex, scansNum);
+        else
+             fprintf('Assembling LMS sequence for scan %d/%d\n', scanIndex, scansNum);
+        end
         
         sceneLMSexcitationSequence = scanData{scanIndex}.sceneLMSexcitationSequence;
         oiLMSexcitationSequence    = scanData{scanIndex}.oiLMSexcitationSequence;
-        isomerizationRateSequence  = scanData{scanIndex}.isomerizationRateSequence;
-        
+
         startingSaccade = 1+(scanIndex-1)*fixationsPerScan;
         endingSaccade   = startingSaccade+(fixationsPerScan-1);
         
-        kPosCounter = 0;
+        fprintf('size before');
+        size(sceneLMSexcitationSequence)
         
+        kPosCounter = 0;
         for saccadeIndex = 1:numel(scanData{scanIndex}.eyePositionIndices.d)
-            
+            % Get eye positions indices for this saccade
             eyePositionIndices = scanData{scanIndex}.eyePositionIndices.d{saccadeIndex}.timeIndices;
             
-            for k = 1:numel(eyePositionIndices) 
+            % Get the isomerization rate sequence for this saccade
+            eyePositionIndicesNum = numel(eyePositionIndices);
+             
+            % Get the LMS sequences for this saccade
+            for k = 1:eyePositionIndicesNum 
                 kPosCounter = kPosCounter + 1;
                 
                 sensorXpos = sensorPositionsInMicrons(eyePositionIndices(k),1);
@@ -99,25 +133,24 @@ function computeScanData(scene,  oi,  sensor, sensorFixationTimes, ...
             
                 [~,centerCol] = min(abs(sceneRetinalProjectionXData-sensorXpos));
                 [~,centerRow] = min(abs(sceneRetinalProjectionYData-sensorYpos));
+               
                 sceneLMSexcitationSequence(kPosCounter,:,:,:) = single(sceneLMS(centerRow+sensorFOVRowRange, centerCol+sensorFOVColRange, :));
             
                 [~,centerCol] = min(abs(opticalImageXData-sensorXpos));
                 [~,centerRow] = min(abs(opticalImageYData-sensorYpos));
                 oiLMSexcitationSequence(kPosCounter,:,:,:) = single(oiLMS(centerRow+sensorFOVRowRange, centerCol+sensorFOVColRange, :));
-                
-                isomerizationRateSequence(kPosCounter,:,:) = squeeze(isomerizationRate(:,:,eyePositionIndices(k)));
-            end % for k 
+            end % for k
+            
         end % saccadeIndex
         
         scanData{scanIndex}.sceneLMSexcitationSequence = sceneLMSexcitationSequence;
-        scanData{scanIndex}.oiLMSexcitationSequence = oiLMSexcitationSequence;
-        scanData{scanIndex}.isomerizationRateSequence = isomerizationRateSequence;
+        scanData{scanIndex}.oiLMSexcitationSequence = oiLMSexcitationSequence; 
         
-    end % parfor scanIndex
+        fprintf('size after');
+        size(sceneLMSexcitationSequence)
         
-
-    for scanIndex = 1:scansNum  
-        scanIndex
+        showResults = true;
+        if (showResults)
         for k = 1:2:size(scanData{scanIndex}.sceneLMSexcitationSequence,1)
             scenelContrastFrame = squeeze(scanData{scanIndex}.sceneLMSexcitationSequence(k,:,:,1));
             oiContrastFrame     = squeeze(scanData{scanIndex}.oiLMSexcitationSequence(k,:,:,1));
@@ -126,14 +159,29 @@ function computeScanData(scene,  oi,  sensor, sensorFixationTimes, ...
             if (k == 1)
                 subplot(1,3,1);
                 p1 = imagesc(scanData{scanIndex}.sensorFOVxaxis, scanData{scanIndex}.sensorFOVyaxis, scenelContrastFrame);
+                hold on;
+                plot([0 0 ], [-100 100], 'r-');
+                plot([-100 100], [0 0 ], 'r-');
+                hold off
+                set(gca, 'XLim', [min(scanData{scanIndex}.sensorFOVxaxis) max(scanData{scanIndex}.sensorFOVxaxis)], 'YLim',  [min(scanData{scanIndex}.sensorFOVyaxis) max(scanData{scanIndex}.sensorFOVyaxis)])
                 axis 'xy';
                 axis 'image'
                 subplot(1,3,2);
                 p2 = imagesc(scanData{scanIndex}.sensorFOVxaxis, scanData{scanIndex}.sensorFOVyaxis, oiContrastFrame);
+                hold on;
+                plot([0 0 ], [-100 100], 'r-');
+                plot([-100 100], [0 0 ], 'r-');
+                hold off
+                set(gca, 'XLim', [min(scanData{scanIndex}.sensorFOVxaxis) max(scanData{scanIndex}.sensorFOVxaxis)], 'YLim',  [min(scanData{scanIndex}.sensorFOVyaxis) max(scanData{scanIndex}.sensorFOVyaxis)])
                 axis 'xy';
                 axis 'image'
                 subplot(1,3,3)
-                p3 = imagesc(1:size(isomerizationFrame,2), 1:size(isomerizationFrame,1), isomerizationFrame);
+                p3 = imagesc(1:size(isomerizationFrame,2)*3-30, 1:size(isomerizationFrame,1)*3-30, isomerizationFrame);
+                hold on;
+                plot([0 0 ], [-100 100], 'r-');
+                plot([-100 100], [0 0 ], 'r-');
+                hold off
+                set(gca, 'XLim', [min(scanData{scanIndex}.sensorFOVxaxis) max(scanData{scanIndex}.sensorFOVxaxis)], 'YLim',  [min(scanData{scanIndex}.sensorFOVyaxis) max(scanData{scanIndex}.sensorFOVyaxis)])
                 axis 'xy';
                 axis 'image'
                 colormap(gray(1024));
@@ -144,8 +192,12 @@ function computeScanData(scene,  oi,  sensor, sensorFixationTimes, ...
             end
             drawnow;
         end
-    end
-    
+        end % showResults
+        
+    end % parfor scanIndex
+        
+
+  
 
 end
 

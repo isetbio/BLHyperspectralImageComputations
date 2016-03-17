@@ -13,6 +13,8 @@ function setPrefsForHyperspectralImageIsetbioComputations
             error('No dropbox location for computer named ''%s''.\n', sysInfo.localHostName)
     end
     
+    fprintf('Setting project preferences for computer ''%s''.\n', sysInfo.localHostName);
+    
     originalDataBaseDir     = sprintf('%s/IBIO_data/BLHyperspectralImageComputations/HyperSpectralImages', dropBoxLocation);
     isetbioSceneDataBaseDir = sprintf('%s/IBIO_analysis/BLHyperspectralImageComputations/isetbioScenes', dropBoxLocation);
     opticalImagesCacheDir   = sprintf('%s/IBIO_analysis/BLHyperspectralImageComputations/isetbioOpticalImages', dropBoxLocation);

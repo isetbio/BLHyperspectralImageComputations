@@ -14,7 +14,7 @@ function computeOuterSegmentResponses(expParams)
         % Get the scene
         scene = sceneData{sceneIndex};
         
-        % Force it's mean luminance to set value
+        % Force scene mean luminance to a set value
         scene = sceneAdjustLuminance(...
             scene, expParams.viewModeParams.forcedSceneMeanLuminance);
       
@@ -31,7 +31,7 @@ function computeOuterSegmentResponses(expParams)
         oiAdaptingField = oiCompute(oiAdaptingField, sceneAdaptingField);
 
         % Resample the optical images
-        desiredResolution = 1.0;   % 1.0 micron
+        desiredResolution = 1.0;   % 1.0 micron for computations. note: this may be different for decoding
         oi                = oiSpatialResample(oi,desiredResolution,'um', 'linear', false);
         oiAdaptingField   = oiSpatialResample(oiAdaptingField,desiredResolution,'um', 'linear', false);
          
