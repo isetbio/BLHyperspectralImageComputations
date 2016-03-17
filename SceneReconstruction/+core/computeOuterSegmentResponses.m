@@ -17,40 +17,41 @@ function computeOuterSegmentResponses(expParams)
         % Force it's mean luminance to set value
         scene = sceneAdjustLuminance(...
             scene, expParams.viewModeParams.forcedSceneMeanLuminance);
-        
-        % Get the luminance map of the original scene
-        originalResolution = sceneGet(scene, 'spatial resolution', 'um');
       
         % Generate adapting field scene
-        adaptingFieldScene = core.generateAdaptingFieldScene(...
-            scene, expParams.viewModeParams.adaptingFieldParams);
-        
-        
-        adaptingFieldSceneLMS = core.imageFromSceneOrOpticalImage(adaptingFieldScene, 'LMS');
+        sceneAdaptingField = core.generateAdaptingFieldScene(...
+            scene, expParams.viewModeParams.adaptingFieldParams); 
 
         % Compute optical image with human optics
         oi = oiCreate('human');
         oi = oiCompute(oi, scene);
 
         % Compute optical image of adapting scene
-        oiAdaptatingField = oiCreate('human');
-        oiAdaptatingField = oiCompute(oiAdaptatingField, adaptingFieldScene);
+        oiAdaptingField = oiCreate('human');
+        oiAdaptingField = oiCompute(oiAdaptingField, sceneAdaptingField);
 
         % Resample the optical images
-        desiredResolution = expParams.sensorParams.opticalImageResamplingInRetinalMicrons;
+        desiredResolution = 1.0;   % 1.0 micron
         oi                = oiSpatialResample(oi,desiredResolution,'um', 'linear', false);
-        oiAdaptatingField = oiSpatialResample(oiAdaptatingField,desiredResolution,'um', 'linear', false);
+        oiAdaptingField   = oiSpatialResample(oiAdaptingField,desiredResolution,'um', 'linear', false);
          
         % Create custom human sensor
         sensor = sensorCreate('human');
         sensorAdaptingField = sensor;
         [sensor, sensorFixationTimes] = core.customizeSensor(sensor, expParams.sensorParams, oi);
-        [sensorAdaptingField, sensorAdaptingFieldFixationTimes] = core.customizeSensor(sensorAdaptingField, expParams.sensorAdaptingFieldParams, oiAdaptatingField);
+        [sensorAdaptingField, sensorAdaptingFieldFixationTimes] = core.customizeSensor(sensorAdaptingField, expParams.sensorAdaptingFieldParams, oiAdaptingField);
+
+        % Compute isomerizations
+        sensor = coneAbsorptions(sensor, oi);
+        sensorAdaptingField = coneAbsorptions(sensorAdaptingField, oiAdaptingField);
 
         core.computeScanData(scene, oi, sensor, sensorFixationTimes, ...
+            sceneAdaptingField, oiAdaptingField, sensorAdaptingField, sensorAdaptingFieldFixationTimes, ...
             expParams.viewModeParams.fixationsPerScan, ...
-            expParams.decoderParams.sceneResamplingInRetinalMicrons, ...
-            expParams.decoderParams.extraMicronsAroundSensorBorder);
+            expParams.viewModeParams.consecutiveSceneFixationsBetweenAdaptingFieldPresentation, ...
+            expParams.decoderParams.spatialSamplingInRetinalMicrons, ...
+            expParams.decoderParams.extraMicronsAroundSensorBorder ...
+        );
 
         
         pause
@@ -60,8 +61,7 @@ function computeOuterSegmentResponses(expParams)
 %             core.computeSceneLMSstimulusSequence(scene, sensor, sceneLMS, positionIndices);
 %     
 %         % Compute isomerization rates for all positions
-%         sensor = coneAbsorptions(sensor, oi);
-%         sensorAdaptingField = coneAbsorptions(sensorAdaptingField, oiAdaptatingField);
+
 % 
 %         % Generate free-view scan sensor by mixing the two sensors according to the view mode used
 %         scanSensor = core.generateFreeViewScanSensor(sensor, sensorAdaptingField, expParams.viewModeParams, sensorFixationTimes, sensorAdaptingFieldFixationTimes);
@@ -84,7 +84,7 @@ function computeOuterSegmentResponses(expParams)
         end
         
         if (showAndExportOpticalImages)
-            core.showOpticalImagesOfSceneAndAdaptingField(oi, oiAdaptatingField); 
+            core.showOpticalImagesOfSceneAndAdaptingField(oi, oiAdaptingField); 
         end
     end % sceneIndex
 end
