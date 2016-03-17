@@ -18,43 +18,48 @@ function computeOuterSegmentResponses(expParams)
         scene = sceneAdjustLuminance(...
             scene, expParams.viewModeParams.forcedSceneMeanLuminance);
       
-        % Generate adapting field scene
-        sceneAdaptingField = core.generateAdaptingFieldScene(...
-            scene, expParams.viewModeParams.adaptingFieldParams); 
+        % Add to the scene an adapting field border (15% of the total width)
+        borderCols = round(sceneGet(scene, 'cols')*0.15);
+        scene = core.sceneAddAdaptingField(...
+            scene, expParams.viewModeParams.adaptingFieldParams, borderCols); 
 
+        
         % Compute optical image with human optics
         oi = oiCreate('human');
         oi = oiCompute(oi, scene);
 
-        % Compute optical image of adapting scene
-        oiAdaptingField = oiCreate('human');
-        oiAdaptingField = oiCompute(oiAdaptingField, sceneAdaptingField);
-
-        % Resample the optical images
-        desiredResolution = 1.0;   % 1.0 micron for computations. note: this may be different for decoding
-        oi                = oiSpatialResample(oi,desiredResolution,'um', 'linear', false);
-        oiAdaptingField   = oiSpatialResample(oiAdaptingField,desiredResolution,'um', 'linear', false);
+        % Resample the optical image
+        oi = oiSpatialResample(oi, 1.0,'um', 'linear', false); % 1.0 micron for computations. note: this may be different for decoding
          
+        
         % Create custom human sensor
         sensor = sensorCreate('human');
-        sensorAdaptingField = sensor;
-        [sensor, sensorFixationTimes] = core.customizeSensor(sensor, expParams.sensorParams, oi);
-        [sensorAdaptingField, sensorAdaptingFieldFixationTimes] = core.customizeSensor(sensorAdaptingField, expParams.sensorAdaptingFieldParams, oiAdaptingField);
-
+        [sensor, sensorFixationTimes, sensorAdaptingFieldFixationTimes] = ...
+            core.customizeSensor(sensor, expParams.sensorParams, oi, borderCols/sceneGet(scene,'cols'));
+       
+        % Export figures
+        if (showAndExportSceneFigures)
+            core.showSceneAndAdaptingField(scene); 
+        end
+        
+        if (showAndExportOpticalImages)
+            core.showOpticalImagesOfSceneAndAdaptingField(oi, sensor, sensorFixationTimes, sensorAdaptingFieldFixationTimes); 
+        end
+        
+        if (1==2)
         % Compute isomerizations
         sensor = coneAbsorptions(sensor, oi);
-        sensorAdaptingField = coneAbsorptions(sensorAdaptingField, oiAdaptingField);
-
-        core.computeScanData(scene, oi, sensor, sensorFixationTimes, ...
-            sceneAdaptingField, oiAdaptingField, sensorAdaptingField, sensorAdaptingFieldFixationTimes, ...
+      
+        core.computeScanData(scene, oi, sensor, ...
+            sensorFixationTimes, sensorAdaptingFieldFixationTimes, ...
             expParams.viewModeParams.fixationsPerScan, ...
             expParams.viewModeParams.consecutiveSceneFixationsBetweenAdaptingFieldPresentation, ...
             expParams.decoderParams.spatialSamplingInRetinalMicrons, ...
             expParams.decoderParams.extraMicronsAroundSensorBorder ...
         );
-
+        end
         
-        pause
+
         
 %         % Compute the time-series of LMSexcitations for this sensor
 %         [lmsExcitationSequence, sceneSensorViewSpatialSupportInRetinalMicrons] = ...
@@ -78,14 +83,7 @@ function computeOuterSegmentResponses(expParams)
 %         photoCurrents = osGet(osOBJ, 'ConeCurrentSignal');
         
         
-        % Export figures
-        if (showAndExportSceneFigures)
-            core.showSceneAndAdaptingField(scene, adaptingFieldScene); 
-        end
         
-        if (showAndExportOpticalImages)
-            core.showOpticalImagesOfSceneAndAdaptingField(oi, oiAdaptingField); 
-        end
     end % sceneIndex
 end
 

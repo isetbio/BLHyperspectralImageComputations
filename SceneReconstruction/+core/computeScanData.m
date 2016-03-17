@@ -1,5 +1,5 @@
-function computeScanData(scene,  oi,  sensor, sensorFixationTimes, ...
-    sceneAdaptingField, oiAdaptingField, sensorAdaptingField, sensorAdaptingFieldFixationTimes, ...
+function computeScanData(scene,  oi,  sensor, ...
+    sensorFixationTimes, sensorAdaptingFieldFixationTimes, ...
     fixationsPerScan, consecutiveSceneFixationsBetweenAdaptingFieldPresentation, ...
     decodedSceneSpatialSampleSizeInRetinalMicrons, extraMicronsAroundSensorBorder)
 
@@ -7,17 +7,11 @@ function computeScanData(scene,  oi,  sensor, sensorFixationTimes, ...
     [sceneResampledToDecoderResolution, sceneRetinalProjectionXData, sceneRetinalProjectionYData] = ...
         computeResampledRetinalScene(scene, oi, decodedSceneSpatialSampleSizeInRetinalMicrons);
     
-    [sceneAdaptingFieldResampledToDecoderResolution, ~, ~] = ...
-        computeResampledRetinalScene(sceneAdaptingField, oiAdaptingField, decodedSceneSpatialSampleSizeInRetinalMicrons);
-    
     % Compute sensor positions in microns - also force sensor to be within scene's retinal projection limits
     [sensorPositionsInMicrons, sensorFOVHalfWidthInMicrons, sensorFOVHalfHeightInMicrons] = retrieveSensorPositionsAndSizeInMicrons(sensor, sceneRetinalProjectionXData, sceneRetinalProjectionYData, extraMicronsAroundSensorBorder);
 
-    % resample the optical images to decoder resolution
+    % Resample the optical image to decoder resolution
     oiResampledToDecoderResolution = oiSpatialResample(oi, decodedSceneSpatialSampleSizeInRetinalMicrons,'um', 'linear', false);
-    oiAdaptingFieldResampledToDecoderResolution = oiSpatialResample(oiAdaptingField, decodedSceneSpatialSampleSizeInRetinalMicrons,'um', 'linear', false);
-    
-    % Retrieve oi spatial support
     oiSupportInMicrons = oiGet(oiResampledToDecoderResolution,'spatial support','microns');
     opticalImageXData = squeeze(oiSupportInMicrons(1,:,1));
     opticalImageYData = squeeze(oiSupportInMicrons(:,1,2));
@@ -25,9 +19,7 @@ function computeScanData(scene,  oi,  sensor, sensorFixationTimes, ...
     % Compute StockmanSharpe 2 deg LMS excitations for scene and optical image (stimulus + adaptingField)
     sceneLMS              = core.imageFromSceneOrOpticalImage(sceneResampledToDecoderResolution, 'LMS');
     oiLMS                 = core.imageFromSceneOrOpticalImage(oiResampledToDecoderResolution, 'LMS');
-    sceneAdaptingFieldLMS = core.imageFromSceneOrOpticalImage(sceneAdaptingFieldResampledToDecoderResolution, 'LMS');
-    oiAdaptingFielLdMS    = core.imageFromSceneOrOpticalImage(oiAdaptingFieldResampledToDecoderResolution, 'LMS');
-    
+
     % compute sensor extent in pixels and microns
     sensorFOVHalfCols = round(sensorFOVHalfWidthInMicrons/decodedSceneSpatialSampleSizeInRetinalMicrons);
     sensorFOVHalfRows = round(sensorFOVHalfHeightInMicrons/decodedSceneSpatialSampleSizeInRetinalMicrons);
@@ -37,9 +29,8 @@ function computeScanData(scene,  oi,  sensor, sensorFixationTimes, ...
     sensorFOVyaxis = decodedSceneSpatialSampleSizeInRetinalMicrons * sensorFOVRowRange;
     
     % Get isomerizations
-    isomerizationRate                = sensorGet(sensor, 'photon rate');
-    isomerizationRateAdaptingField   = sensorGet(sensorAdaptingField, 'photon rate');
-    
+    isomerizationRate = sensorGet(sensor, 'photon rate');
+
     % Preallocate memory for scanData
     scansNum = floor(numel(sensorFixationTimes.onsetBins)/fixationsPerScan);
     for scanIndex = 1:scansNum
@@ -85,7 +76,7 @@ function computeScanData(scene,  oi,  sensor, sensorFixationTimes, ...
         scanData{scanIndex}.isomerizationRateSequence = isomerizationRateSequence;  
     end
     
-    useParFor = true; % false;
+    useParFor = false;
     if (useParFor)
         poolOBJ = gcp('nocreate');
         if (isempty(poolOBJ))
@@ -97,8 +88,8 @@ function computeScanData(scene,  oi,  sensor, sensorFixationTimes, ...
     end
     
     
-    parfor scanIndex = 1:scansNum
-    %for scanIndex = 1:scansNum
+    %parfor scanIndex = 1:scansNum
+    for scanIndex = 1:scansNum
         
         if (useParFor)
             t = getCurrentTask(); workerID = t.ID;
@@ -158,6 +149,7 @@ function computeScanData(scene,  oi,  sensor, sensorFixationTimes, ...
                 isomerizationFrame  = squeeze(scanData{scanIndex}.isomerizationRateSequence(k,:,:));
 
                 if (k == 1)
+                    h = figure(10);
                     subplot(1,3,1);
                     p1 = imagesc(scanData{scanIndex}.sensorFOVxaxis, scanData{scanIndex}.sensorFOVyaxis, scenelContrastFrame);
                     hold on;

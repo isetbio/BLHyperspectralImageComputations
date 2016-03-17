@@ -1,46 +1,49 @@
-function showSceneAndAdaptingField(scene, adaptingFieldScene)
+function showSceneAndAdaptingField(scene)
         
-    sceneXYZ = core.imageFromScene(scene, 'XYZ');
+    sceneXYZ = core.imageFromSceneOrOpticalImage(scene, 'XYZ');
     sceneLuminanceMap = 683*squeeze(sceneXYZ(:,:,2));
     minLuminance = min(sceneLuminanceMap(:));
     maxLuminance = max(sceneLuminanceMap(:));
     meanLuminance = mean(sceneLuminanceMap(:));
+ 
     
-    sceneXYZ = core.imageFromScene(adaptingFieldScene, 'XYZ');
-    adaptingFieldSceneLuminanceMap = 683*squeeze(sceneXYZ(:,:,2));
-    
-    sceneSRGB          = core.imageFromScene(scene, 'sRGB');
-    adaptingFieldSRGB  = core.imageFromScene(adaptingFieldScene, 'sRGB');
+    sceneSRGB = core.imageFromSceneOrOpticalImage(scene, 'sRGB');
     
     % everything above maxSRGB will be clipped
     maxSRGB = 4; % max(sceneSRGB(:))
     sceneSRGB = sceneSRGB / maxSRGB;
-    adaptingFieldSRGB = adaptingFieldSRGB /maxSRGB;
     sceneSRGB(sceneSRGB>1) = 1;
-    adaptingFieldSRGB(adaptingFieldSRGB>1) = 1;
+    sceneSRGB(sceneSRGB<0) = 0;
     
     p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
     load(fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'), 'spectralLUT');
     
-    hFig = figure(1); clf; set(hFig, 'Position', [10 10 1024 935]); colormap(spectralLUT);
+    hFig = figure(1); clf; set(hFig, 'Position', [10 10 528 768]); colormap(spectralLUT);
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
                'rowsNum', 2, ...
                'colsNum', 1, ...
-               'heightMargin',   0.002, ...
+               'heightMargin',   0.01, ...
                'widthMargin',    0.00, ...
-               'leftMargin',     0.006, ...
+               'leftMargin',     0.03, ...
                'rightMargin',    0.002, ...
-               'bottomMargin',   0.005, ...
+               'bottomMargin',   0.002, ...
                'topMargin',      0.00);
     gamma = 1/1.6;       
     subplot('Position', subplotPosVectors(1,1).v);
-    imshow(cat(2, sceneSRGB.^gamma , adaptingFieldSRGB.^gamma ));  axis 'image';
+    spatialSupport = sceneGet(scene, 'spatial support', 'microns');
+    sceneXdataInRetinalMicrons = squeeze(spatialSupport(1,:,1));
+    sceneYdataInRetinalMicrons = squeeze(spatialSupport(:,1,2));
+    
+    imagesc(sceneXdataInRetinalMicrons, sceneYdataInRetinalMicrons, sceneSRGB.^gamma);  axis 'image';
+    hCbar = colorbar('westoutside');
+    hCbar.Label.String = 'luminance (cd/m2)';
+    hCbar.FontSize = 12;
     set(gca, 'CLim', [0 1]);
     set(gca, 'XTick', [], 'YTick', []);
     
     subplot('Position', subplotPosVectors(2,1).v);
-    imagesc(cat(2, sceneLuminanceMap, adaptingFieldSceneLuminanceMap));  axis 'image';
-    hCbar = colorbar('southoutside');
+    imagesc(sceneXdataInRetinalMicrons, sceneYdataInRetinalMicrons, sceneLuminanceMap);  axis 'image';
+    hCbar = colorbar('westoutside');
     hCbar.Label.String = 'luminance (cd/m2)';
     hCbar.FontSize = 12;
     set(gca, 'CLim', [0 maxLuminance]);
