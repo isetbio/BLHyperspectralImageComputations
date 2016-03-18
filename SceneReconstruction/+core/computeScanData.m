@@ -17,8 +17,8 @@ function computeScanData(scene,  oi,  sensor, ...
     opticalImageYData = squeeze(oiSupportInMicrons(:,1,2));
     
     % Compute StockmanSharpe 2 deg LMS excitations for scene and optical image (stimulus + adaptingField)
-    sceneLMS              = core.imageFromSceneOrOpticalImage(sceneResampledToDecoderResolution, 'LMS');
-    oiLMS                 = core.imageFromSceneOrOpticalImage(oiResampledToDecoderResolution, 'LMS');
+    sceneLMS = core.imageFromSceneOrOpticalImage(sceneResampledToDecoderResolution, 'LMS');
+    oiLMS    = core.imageFromSceneOrOpticalImage(oiResampledToDecoderResolution, 'LMS');
 
     % compute sensor extent in pixels and microns
     sensorFOVHalfCols = round(sensorFOVHalfWidthInMicrons/decodedSceneSpatialSampleSizeInRetinalMicrons);
@@ -43,7 +43,7 @@ function computeScanData(scene,  oi,  sensor, ...
         
         eyePositionIndices = [];
         
-        % Two adaptation saccades
+        % Two adaptation saccades before we start this scan
         for k = 1:2
             % add eye position indices
             adaptingFieldFixationIndex = mod(adaptingFieldFixationIndex, adaptingFieldFixationsNum) + 1;
@@ -80,6 +80,7 @@ function computeScanData(scene,  oi,  sensor, ...
             end
         end
         
+        % Another two adaptation saccades after we start this scan
         for k = 1:2
             % add eye position indices
             adaptingFieldFixationIndex = mod(adaptingFieldFixationIndex, adaptingFieldFixationsNum) + 1;
@@ -92,7 +93,6 @@ function computeScanData(scene,  oi,  sensor, ...
             end
         end
         
-        size(eyePositionIndices)
         scanEyePositionIndicesNum = numel(eyePositionIndices);
         
         % Preallocate memory for scanData
@@ -100,48 +100,25 @@ function computeScanData(scene,  oi,  sensor, ...
             'sceneLMSexcitationSequence',   zeros(scanEyePositionIndicesNum , numel(sensorFOVRowRange), numel(sensorFOVColRange), 3, 'single'), ...
             'oiLMSexcitationSequence',      zeros(scanEyePositionIndicesNum , numel(sensorFOVRowRange), numel(sensorFOVColRange), 3, 'single'), ...
             'eyePositionIndices',           eyePositionIndices, ...
-            'isomerizationRateSequence',    [], ...
+            'isomerizationRateSequence',    permute(isomerizationRate(:,:,eyePositionIndices), [3 1 2]), ...
             'sensorFOVxaxis', sensorFOVxaxis, ...
             'sensorFOVyaxis', sensorFOVyaxis ...
         );
-    
-        % Preallocate memory for scanData
-        isomerizationRateSequence{scanIndex} = permute(isomerizationRate(:,:,eyePositionIndices), [3 1 2]);
-    
+   
     end % scanIndex
     
     
-    useParFor = true;
-    if (useParFor)
-        poolOBJ = gcp('nocreate');
-        if (isempty(poolOBJ))
-            parpool()
-        else
-            delete(poolOBJ)
-            parpool()
-        end
-    end
-    
-    
-    parfor scanIndex = 1:scansNum
+    for scanIndex = 1:scansNum
         
-        d = scanData{scanIndex};
+        tic
+        fprintf('\n Assembling LMS sequence for scan %d/%d ...', scanIndex, scansNum);
         
-    %for scanIndex = 1:scansNum
+        sceneLMSexcitationSequence = scanData{scanIndex}.sceneLMSexcitationSequence;
+        oiLMSexcitationSequence    = scanData{scanIndex}.oiLMSexcitationSequence;
         
-        if (useParFor)
-            t = getCurrentTask(); workerID = t.ID;
-            fprintf('[worker #%d]: Computing LMS sequence for scan %d/%d\n', workerID, scanIndex, scansNum);
-        else
-             fprintf('Assembling LMS sequence for scan %d/%d\n', scanIndex, scansNum);
-        end
-        
-        sceneLMSexcitationSequence = d.sceneLMSexcitationSequence;
-        oiLMSexcitationSequence    = d.oiLMSexcitationSequence;
-        
-        for kPosIndex = 1:numel(d.eyePositionIndices)
+        for kPosIndex = 1:numel(scanData{scanIndex}.eyePositionIndices)
            
-            eyePositionIndex = d.eyePositionIndices(kPosIndex);
+            eyePositionIndex = scanData{scanIndex}.eyePositionIndices(kPosIndex);
             
             sensorXpos = sensorPositionsInMicrons(eyePositionIndex,1);
             sensorYpos = sensorPositionsInMicrons(eyePositionIndex,2);
@@ -157,15 +134,14 @@ function computeScanData(scene,  oi,  sensor, ...
             
         end % kPosIndex
         
-        d.sceneLMSexcitationSequence = sceneLMSexcitationSequence;
-        d.oiLMSexcitationSequence = oiLMSexcitationSequence; 
+        scanData{scanIndex}.sceneLMSexcitationSequence = sceneLMSexcitationSequence;
+        scanData{scanIndex}.oiLMSexcitationSequence = oiLMSexcitationSequence; 
 
-        scanData{scanIndex} = d;
+        fprintf('took %2.2f seconds', toc);
         
         
-        
-        showResults = false;
-        if ((useParFor == false) && (showResults))
+        showResults = true;
+        if (showResults)
             for k = 1:2:size(scanData{scanIndex}.sceneLMSexcitationSequence,1)
                 scenelContrastFrame = squeeze(scanData{scanIndex}.sceneLMSexcitationSequence(k,:,:,1));
                 oiContrastFrame     = squeeze(scanData{scanIndex}.oiLMSexcitationSequence(k,:,:,1));
@@ -213,12 +189,9 @@ function computeScanData(scene,  oi,  sensor, ...
         end % showResults
         
         
-    end % parfor scanIndex
+    end % for scanIndex
         
-    % add the isomerization sequence field
-    for scanIndex = 1:scansNum
-        scanData{scanIndex}.isomerizationRateSequence = isomerizationRateSequence{scanIndex};
-    end
+   
 end
 
     
