@@ -1,4 +1,4 @@
-function scanData = computeScanData(scene,  oi,  sensor, outerSegmentParams, ...
+function scanData = computeScanData(scene,  oi,  sensor, osOBJ, ...
     sceneFixationTimes, adaptingFieldFixationTimes, ...
     fixationsPerScan, consecutiveSceneFixationsBetweenAdaptingFieldPresentation, ...
     decodedSceneSpatialSampleSizeInRetinalMicrons, decodedSceneExtraMicronsAroundSensorBorder, decodedSceneTemporalSampling)
@@ -105,30 +105,14 @@ function scanData = computeScanData(scene,  oi,  sensor, outerSegmentParams, ...
         scanSensor = sensorSet(scanSensor, 'photon rate', isomerizationRateSequence);
         sensorSampleSeparationInMicrons = sensorGet(scanSensor,'pixel size','um');
         scanSensor = sensorSet(scanSensor, 'positions',   sensorPositionSequence/sensorSampleSeparationInMicrons(1));
-        timeIntervalInMilliseconds = sensorGet(scanSensor, 'time interval')*1000
-        
-      
-        
-        
-        % Compute the outersegment sequences for this scanpath
-        % Create outer segment
-        if (strcmp(outerSegmentParams.type, '@osBiophys'))
-            osOBJ = osBioPhys();
-        elseif (strcmp(outerSegmentParams.type, '@osLinear'))
-            osOBJ = osLinear();
-        else
-            error('Unknown outer segment type: ''%s'' \n', expParams.outerSegmentParams.type);
-        end
-        
-        if (outerSegmentParams.addNoise)
-            osOBJ.osSet('noiseFlag', 1);
-        else
-            osOBJ.osSet('noiseFlag', 0);
-        end
-        
+
+        % Compute photocurrents for this scan path
         osOBJ.osCompute(scanSensor);
         photoCurrentSequence = osGet(osOBJ, 'ConeCurrentSignal');
         
+        % Reshape to common format (time dimension = 1)
+        isomerizationRateSequence = permute(isomerizationRateSequence, [3 1 2]);
+        photoCurrentSequence = permute(photoCurrentSequence, [3 1 2]);
         
         % Assemble the LMS excitation sequence for this scanpath (both at the scene level and the optical image level) 
         scanPathLength = numel(scanPathEyePositionIndices);
@@ -149,10 +133,6 @@ function scanData = computeScanData(scene,  oi,  sensor, outerSegmentParams, ...
             [~,centerRow] = min(abs(opticalImageYData-sensorYpos));
             oiLMSexcitationSequence(kPosIndex,:,:,:) = single(oiLMS(centerRow+sensorFOVRowRange, centerCol+sensorFOVColRange, :)); 
         end % kPosIndex
-        
-        % Reshape to common format (time dimension = 1)
-        isomerizationRateSequence = permute(isomerizationRateSequence, [3 1 2]);
-        photoCurrentSequence = permute(photoCurrentSequence, [3 1 2]);
         
         
         % All done. Last step: subsample all the sequences temporally according to decodedSceneTemporalSampling

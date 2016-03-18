@@ -58,8 +58,6 @@ function computeOuterSegmentResponses(expParams)
         
         showResults = true;
         scanIndex = 1
-        size(scanData{scanIndex}.sceneLMSexcitationSequence)
-        size(scanData{scanIndex}.isomerizationRateSequence)
  
         if (showResults)
             timeAxis = scanData{scanIndex}.timeAxis;
@@ -106,7 +104,7 @@ function computeOuterSegmentResponses(expParams)
                     colormap(gray(1024));
                     
                     kMin = 100;
-                    timeBins = max([1, k-M]):k
+                    timeBins = max([1, k-M]):k;
                     p4Axes = subplot(4,3,(4:6));
                     baseRate = mean(mean(mean(squeeze(scanData{scanIndex}.isomerizationRateSequence(1:kMin,:,:)))));
                     d = permute(scanData{scanIndex}.isomerizationRateSequence(timeBins,:,:), [2 3 1]);
