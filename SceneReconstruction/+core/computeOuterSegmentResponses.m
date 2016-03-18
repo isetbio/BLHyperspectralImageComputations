@@ -44,9 +44,25 @@ function computeOuterSegmentResponses(expParams)
             core.showOpticalImagesOfSceneAndAdaptingField(oi, sensor, sensorFixationTimes, sensorAdaptingFieldFixationTimes); 
         end
       
+        % Compute the outersegment sequences for this scanpath
+        % Create outer segment
+        if (strcmp(expParams.outerSegmentParams.type, '@osBiophys'))
+            osOBJ = osBioPhys();
+        elseif (strcmp(expParams.outerSegmentParams.type, '@osLinear'))
+            osOBJ = osLinear();
+        else
+            error('Unknown outer segment type: ''%s'' \n', expParams.outerSegmentParams.type);
+        end
+        
+        if (expParams.outerSegmentParams.addNoise)
+            osOBJ.osSet('noiseFlag', 1);
+        else
+            osOBJ.osSet('noiseFlag', 0);
+        end
+        
 
         
-        scanData = core.computeScanData(scene, oi, sensor, expParams.outerSegmentParams, ...
+        scanData = core.computeScanData(scene, oi, sensor, osOBJ, ...
             sensorFixationTimes, sensorAdaptingFieldFixationTimes, ...
             expParams.viewModeParams.fixationsPerScan, ...
             expParams.viewModeParams.consecutiveSceneFixationsBetweenAdaptingFieldPresentation, ...
