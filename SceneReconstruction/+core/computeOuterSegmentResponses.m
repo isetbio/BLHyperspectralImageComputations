@@ -139,11 +139,6 @@ function computeOuterSegmentResponses(expParams)
                     p7 = plot(timeAxis(timeBins), scanData{scanIndex}.sensorPositionSequence(timeBins,2), 'b-');
                     hold off  
                     
-                    figure(99); clf;
-                    imagesc(timeAxis, (1:400), reshape(permute(scanData{scanIndex}.photoCurrentSequence, [2 3 1]), [400 numel(timeAxis)]));
-                    set(gca, 'CLim', [-100 0]);
-                    drawnow;    
-                    
                 elseif (k > 11)
                     set(p1, 'CData', scenelContrastFrame);
                     set(p1Axes, 'CLim', coneExcitationRange);
