@@ -128,13 +128,11 @@ function computeOuterSegmentResponses(expParams)
                     figure(99); clf;
                     imagesc(timeAxis, (1:400), reshape(permute(scanData{scanIndex}.photoCurrentSequence, [2 3 1]), [400 numel(timeAxis)]));
                     set(gca, 'CLim', [-100 0]);
-                    
-                    pause
                     drawnow;    
                     
                 elseif (k > 11)
                     set(p1, 'CData', scenelContrastFrame);
-                    set(p1Axis, 'CLim', coneExcitationRange);
+                    set(p1Axes, 'CLim', coneExcitationRange);
                     set(p2, 'CData', oiContrastFrame);
                     set(p3, 'CData', isomerizationFrame);
                     

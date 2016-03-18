@@ -129,9 +129,6 @@ function scanData = computeScanData(scene,  oi,  sensor, outerSegmentParams, ...
         osOBJ.osCompute(scanSensor);
         photoCurrentSequence = osGet(osOBJ, 'ConeCurrentSignal');
         
-        [min(isomerizationRateSequence(:)) max(isomerizationRateSequence(:))]
-         [min(photoCurrentSequence(:)) max(photoCurrentSequence(:))]
-        pause
         
         % Assemble the LMS excitation sequence for this scanpath (both at the scene level and the optical image level) 
         scanPathLength = numel(scanPathEyePositionIndices);
@@ -157,11 +154,6 @@ function scanData = computeScanData(scene,  oi,  sensor, outerSegmentParams, ...
         isomerizationRateSequence = permute(isomerizationRateSequence, [3 1 2]);
         photoCurrentSequence = permute(photoCurrentSequence, [3 1 2]);
         
-        size(isomerizationRateSequence)
-        size(photoCurrentSequence)
-        size(sensorPositionSequence)
-        size(sceneLMSexcitationSequence)
-        pause
         
         % All done. Last step: subsample all the sequences temporally according to decodedSceneTemporalSampling
 %         timeDimensionIndex = 1;
