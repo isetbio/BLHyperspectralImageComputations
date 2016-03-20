@@ -104,10 +104,10 @@ function scanData = computeScanData(scene,  oi,  sensor, osOBJ, ...
         [photoCurrentSequence, ~, ~, ~] = core.subsampleTemporally(photoCurrentSequence,  scanTimeAxis, timeDimensionIndex, lowPassSignal, decodedSceneTemporalSampling);
         
         % transform LMS excitation sequence into Weber contrast
-        trailingPeriodForEstimatingBackgroundExcitations = [scanTimeAxis(end-trailingAdaptationPeriodTimeBinsNum)+20 scanTimeAxis(end)-20];
+        trailingPeriodForEstimatingBackgroundExcitations = [scanTimeAxis(end-trailingAdaptationPeriodTimeBinsNum)+10 scanTimeAxis(end)-10]
         timeBinsForEstimatingMeanLMScontrast = find((subSampledScanTimeAxis > trailingPeriodForEstimatingBackgroundExcitations(1)) & ...
                                                     (subSampledScanTimeAxis < trailingPeriodForEstimatingBackgroundExcitations(2)));
-        fprintf('mean cone excitation estimated between %2.1f and %2.1f milliseconds\n', subSampledScanTimeAxis(timeBinsForEstimatingMeanLMScontrast(1)), subSampledScanTimeAxis(timeBinsForEstimatingMeanLMScontrast(2)));
+        fprintf('mean cone excitation estimated between %2.1f and %2.1f milliseconds\n', subSampledScanTimeAxis(timeBinsForEstimatingMeanLMScontrast(1)), subSampledScanTimeAxis(timeBinsForEstimatingMeanLMScontrast(end)));
         
         for k = 1:3
             sceneBackgroundExcitations(k) = mean(mean(mean(squeeze(sceneLMSexcitationSequence(:,:,k,timeBinsForEstimatingMeanLMScontrast)))));

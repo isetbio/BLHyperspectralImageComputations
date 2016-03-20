@@ -2,7 +2,7 @@ function [subSampledSignal, subSampledTimeAxis, kernel, filterTimeInTimeAxisUnit
     
     originalTau = timeAxis(2)-timeAxis(1);
     decimationFactor = round(newTau/originalTau);
-    subSampledIndices = (0:decimationFactor:numel(timeAxis))+1;
+    subSampledIndices = 1:decimationFactor:numel(timeAxis);
     subSampledTimeAxis = timeAxis(subSampledIndices);
     
     if (lowPassSignal)
