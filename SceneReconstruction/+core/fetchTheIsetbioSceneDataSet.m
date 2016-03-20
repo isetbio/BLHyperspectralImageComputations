@@ -1,4 +1,4 @@
-function sceneData = fetchTheIsetbioSceneDataSet(sceneSetName)
+function [sceneData, sceneNames] = fetchTheIsetbioSceneDataSet(sceneSetName)
 
     % Set up remote data toolbox client
     remoteDataToolboxClient = RdtClient(getpref('HyperSpectralImageIsetbioComputations','remoteDataToolboxConfig')); 
@@ -11,6 +11,7 @@ function sceneData = fetchTheIsetbioSceneDataSet(sceneSetName)
         % Retrieve scene
         imsource = sceneSet{sceneIndex};
         fprintf('Fetching data for ''%s'' / ''%s''. Please wait... ', imsource{1}, imsource{2});
+        sceneNames{sceneIndex} = sprintf('%s_%s', imsource{1}, imsource{2});
         remoteDataToolboxClient.crp(sprintf('/resources/scenes/hyperspectral/%s', imsource{1}));
         [d, artifactInfo] = remoteDataToolboxClient.readArtifact(imsource{2}, 'type', 'mat');
         if ismember('scene', fieldnames(d))
