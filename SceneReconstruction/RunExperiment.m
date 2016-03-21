@@ -66,19 +66,24 @@ function RunExperiment
     );
         
     % What to compute
-    instructionSet = {'compute outer segment responses', 'assembleTrainingDataSet'};
-   
-    for instrIndex = 1:numel(instructionSet)  
-       switch (instructionSet{instrIndex})
-            case 'compute outer segment responses'
-                core.computeOuterSegmentResponses(expParams);
-               
-            case 'assembleTrainingDataSet'
-                core.assembleTrainingSet(expParams);
-               
-           otherwise
-                error('Unknown instruction: ''%s''.\n', instructionSet{instrIndex});
-        end   
-    end % instrIndex
+    instructionSet = {'compute outer segment responses'};
+    instructionSet = {'assembleTrainingDataSet', 'manchester', 'AdaptEvery5Fixations'};
+    %instructionSet = {'computeDecodingFilter'}
+
+    switch instructionSet{1}
+        case 'compute outer segment responses'
+            core.computeOuterSegmentResponses(expParams);
+
+        case 'assembleTrainingDataSet'
+            trainingDataPercentange = 50;
+            decoder.assembleTrainingSet(instructionSet{2}, instructionSet{3}, trainingDataPercentange);
+
+        case 'computeDecodingFilter'
+            decoder.computeDecodingFilter(instructionSet{2}, instructionSet{3})
+            
+       otherwise
+            error('Unknown instruction: ''%s''.\n', instructionSet{1});
+    end   
+
 end
 

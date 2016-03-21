@@ -10,7 +10,7 @@ function setPrefsForHyperspectralImageIsetbioComputations
             % dropbox location for Manta (Nicolas' iMac)
             dropBoxLocation = '/Volumes/Manta TM HD/Dropbox (Aguirre-Brainard Lab)';
         case 'Ithaka'
-            % dropbox location for Manta (Nicolas' iMac)
+            % dropbox location for Manta (Nicolas' MacBook Pro)
             dropBoxLocation = '/Volumes/SDXC_128GB/CloudSyncAccounts/Dropbox';
         otherwise
             error('No dropbox location for computer named ''%s''.\n', sysInfo.localHostName)
@@ -32,7 +32,7 @@ function setPrefsForHyperspectralImageIsetbioComputations
         'opticalImagesCacheDir',    opticalImagesCacheDir, ...
         'sceneReconstructionProject', struct(...                 % prefs specific to the scene reconstruction project
                'rootPath', SceneReconstructionProjectRootPath(), ...
-               'scansDataDir', sprintf('%s/IBIO_analysis/BLHyperspectralImageComputations/sceneReconstruction/scansData', dropBoxLocation), ...
+               'computedDataDir', sprintf('%s/IBIO_analysis/BLHyperspectralImageComputations/sceneReconstruction', dropBoxLocation), ...
                'figureExportsSubDir', 'resources/figures', ...
                'colormapsSubDir', 'resources/colormaps' ...
            )...
@@ -44,9 +44,9 @@ function setPrefsForHyperspectralImageIsetbioComputations
     if (~exist(p.sceneReconstructionProject.figureExportsSubDir, 'dir'))
         mkdir(p.sceneReconstructionProject.figureExportsSubDir);
     end
-    if (~exist(p.sceneReconstructionProject.scansDataDir, 'dir'))
-        fprintf('Directory ''%s'' does not exist. Will create it now.\n', p.sceneReconstructionProject.scansDataDir);
-        mkdir(p.sceneReconstructionProject.scansDataDir);
+    if (~exist(p.sceneReconstructionProject.computedDataDir, 'dir'))
+        fprintf('Directory ''%s'' does not exist. Will create it now.\n', p.sceneReconstructionProject.computedDataDir);
+        mkdir(p.sceneReconstructionProject.computedDataDir);
     end
     
 end
