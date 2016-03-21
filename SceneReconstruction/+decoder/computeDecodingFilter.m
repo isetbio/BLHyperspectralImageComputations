@@ -1,7 +1,7 @@
 function computeDecodingFilter(sceneSetName, descriptionString)
 
     decodingDataDir = core.getDecodingDataDir(descriptionString);
-    fileName = fullfile(decodingDataDir, sprintf('%s_designMatrices.mat', sceneSetName));
+    fileName = fullfile(decodingDataDir, sprintf('%s_trainingDesignMatrices.mat', sceneSetName));
     
     fprintf('\nLoading design matrix and stimulus vector ... ');
     load(fileName, 'Xtrain', 'Ctrain', 'originalTrainingStimulusSize');
