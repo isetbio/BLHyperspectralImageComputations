@@ -104,10 +104,9 @@ function scanData = computeScanData(scene,  oi,  sensor, osOBJ, ...
         [photoCurrentSequence, ~, ~, ~] = core.subsampleTemporally(photoCurrentSequence,  scanTimeAxis, timeDimensionIndex, lowPassSignal, decodedSceneTemporalSampling);
         
         % transform LMS excitation sequence into Weber contrast
-        trailingPeriodForEstimatingBackgroundExcitations = [scanTimeAxis(end-trailingAdaptationPeriodTimeBinsNum)+10 scanTimeAxis(end)-10]
+        trailingPeriodForEstimatingBackgroundExcitations = [scanTimeAxis(end-trailingAdaptationPeriodTimeBinsNum)+10 scanTimeAxis(end)-10];
         timeBinsForEstimatingMeanLMScontrast = find((subSampledScanTimeAxis > trailingPeriodForEstimatingBackgroundExcitations(1)) & ...
                                                     (subSampledScanTimeAxis < trailingPeriodForEstimatingBackgroundExcitations(2)));
-        fprintf('mean cone excitation estimated between %2.1f and %2.1f milliseconds\n', subSampledScanTimeAxis(timeBinsForEstimatingMeanLMScontrast(1)), subSampledScanTimeAxis(timeBinsForEstimatingMeanLMScontrast(end)));
         
         for k = 1:3
             sceneBackgroundExcitations(k) = mean(mean(mean(squeeze(sceneLMSexcitationSequence(:,:,k,timeBinsForEstimatingMeanLMScontrast)))));
@@ -115,6 +114,11 @@ function scanData = computeScanData(scene,  oi,  sensor, osOBJ, ...
             oiBackgroundExcitations(k) = mean(mean(mean(squeeze(oiLMSexcitationSequence(:,:,k,timeBinsForEstimatingMeanLMScontrast)))));
             oiLMSexcitationSequence(:,:,k,:) = oiLMSexcitationSequence(:,:,k,:)/oiBackgroundExcitations(k) - 1;
         end
+        
+        fprintf('mean cone excitation estimated between %2.1f and %2.1f milliseconds\n', subSampledScanTimeAxis(timeBinsForEstimatingMeanLMScontrast(1)), subSampledScanTimeAxis(timeBinsForEstimatingMeanLMScontrast(end)));
+        fprintf('scene: %2.3f %2.3f %2.3f\n', sceneBackgroundExcitations(1), sceneBackgroundExcitations(2), sceneBackgroundExcitations(3));
+        fprintf('optim: %2.5f %2.5f %2.5f\n', oiBackgroundExcitations(1), oiBackgroundExcitations(2), oiBackgroundExcitations(3));
+        
         
         
         if (showSubSampling)

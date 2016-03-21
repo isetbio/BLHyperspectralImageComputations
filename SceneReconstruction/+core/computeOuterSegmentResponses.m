@@ -9,8 +9,13 @@ function computeOuterSegmentResponses(expParams)
     [sceneData, sceneNames] = core.fetchTheIsetbioSceneDataSet(expParams.sceneSetName);
     fprintf('Fetched %d scenes\n', numel(sceneData));
     
+    % Determine where to save the scan data
     p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
-    scansDataDir = p.scansDataDir;
+    scansDataDir = fullfile(p.scansDataDir, expRarams.descriptionString);
+    if (~exist(scansDataDir, 'dir'))
+        fprintf('Directory ''%s'' does not exist. Will create it now.\n', scansDataDir);
+        mkdir(scansDataDir);
+    end
     fprintf(2,'Scans will be saved in %s\n', scansDataDir);
     
     for sceneIndex = 1: numel(sceneData)

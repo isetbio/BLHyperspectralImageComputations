@@ -45,6 +45,7 @@ function setPrefsForHyperspectralImageIsetbioComputations
         mkdir(p.sceneReconstructionProject.figureExportsSubDir);
     end
     if (~exist(p.sceneReconstructionProject.scansDataDir, 'dir'))
+        fprintf('Directory ''%s'' does not exist. Will create it now.\n', p.sceneReconstructionProject.scansDataDir);
         mkdir(p.sceneReconstructionProject.scansDataDir);
     end
     
