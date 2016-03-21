@@ -120,6 +120,12 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     % Compute training design matrix and stimulus vector
     [Xtrain, Ctrain] = decoder.computeDesignMatrixAndStimulusVector(trainingResponses, trainingStimulus, expParams.decoderParams);
     
+    % Save design matrices and stimulus vectors
+    decodingDataDir = core.getDecodingDataDir(descriptionString);
+    fileName = fullfile(decodingDataDir, sprintf('%s_trainingDesignMatrices.mat', sceneSetName));
+    fprintf('Saving training design matrix and stim vector ''%s''.\n', fileName);
+    save(fileName, 'Xtrain', 'Ctrain', 'originalTrainingStimulusSize', 'expParams', '-v7.3');
+     
     % Reshape testing cone responses to decoder format
     testingResponses = reshape(testingPhotoCurrentSequence, ...
         [size(testingPhotoCurrentSequence,1)*size(testingPhotoCurrentSequence,2) size(testingPhotoCurrentSequence,3)]);
@@ -133,12 +139,9 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     
     % Save design matrices and stimulus vectors
     decodingDataDir = core.getDecodingDataDir(descriptionString);
-    fileName = fullfile(decodingDataDir, sprintf('%s_designMatrices.mat', sceneSetName));
-    fprintf('Saving design matrices to ''%s''.\n', fileName);
-    save(fileName, ...
-         'Xtrain', 'Ctrain', 'originalTrainingStimulusSize', ...
-         'Xtest', 'Ctest', 'originalTestingStimulusSize', ...
-         'expParams', '-v7.3');
+    fileName = fullfile(decodingDataDir, sprintf('%s_testingDesignMatrices.mat', sceneSetName));
+    fprintf('Saving test design matrix and stim vector to ''%s''.\n', fileName);
+    save(fileName, 'Xtest', 'Ctest', 'originalTestingStimulusSize', 'expParams', '-v7.3');
     
     
     return;
