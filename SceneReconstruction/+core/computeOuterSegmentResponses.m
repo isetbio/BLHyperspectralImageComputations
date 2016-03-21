@@ -11,7 +11,7 @@ function computeOuterSegmentResponses(expParams)
     
     % Determine where to save the scan data
     p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
-    scansDataDir = fullfile(p.scansDataDir, expRarams.descriptionString);
+    scansDataDir = fullfile(p.scansDataDir, expParams.descriptionString);
     if (~exist(scansDataDir, 'dir'))
         fprintf('Directory ''%s'' does not exist. Will create it now.\n', scansDataDir);
         mkdir(scansDataDir);
