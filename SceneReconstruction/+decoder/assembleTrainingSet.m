@@ -8,7 +8,7 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     
     trainingTimeAxis = [];
     
-    for sceneIndex = 1: 3 % numel(sceneSet) 
+    for sceneIndex = 1:numel(sceneSet) 
         
         imsource  = sceneSet{sceneIndex};
         sceneName = sprintf('%s_%s', imsource{1}, imsource{2});
