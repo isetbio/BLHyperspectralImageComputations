@@ -66,11 +66,11 @@ function RunExperiment
     );
         
     % What to compute
-  %  instructionSet = {'compute outer segment responses'};
+    instructionSet = {'compute outer segment responses'};
   %  instructionSet = {'assembleTrainingDataSet',  'manchester', 'AdaptEvery5Fixations'};
   %  instructionSet = {'computeDecodingFilter',    'manchester', 'AdaptEvery5Fixations'};
-    instructionSet = {'visualizeDecodingFilter',  'manchester', 'AdaptEvery5Fixations'};
-    instructionSet = {'visualizeInSamplePredictions',  'manchester', 'AdaptEvery5Fixations'};
+  %  instructionSet = {'visualizeDecodingFilter',  'manchester', 'AdaptEvery5Fixations'};
+  %  instructionSet = {'visualizeInSamplePredictions',  'manchester', 'AdaptEvery5Fixations'};
     
     switch instructionSet{1}
         case 'compute outer segment responses'
