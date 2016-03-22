@@ -67,8 +67,8 @@ function RunExperiment
         
     % What to compute
     instructionSet = {'compute outer segment responses'};
-    %instructionSet = {'assembleTrainingDataSet', 'manchester', 'AdaptEvery5Fixations'};
-    %instructionSet = {'computeDecodingFilter'}
+    instructionSet = {'assembleTrainingDataSet', 'manchester', 'AdaptEvery5Fixations'};
+    instructionSet = {'computeDecodingFilter',  'manchester', 'AdaptEvery5Fixations'}
 
     switch instructionSet{1}
         case 'compute outer segment responses'

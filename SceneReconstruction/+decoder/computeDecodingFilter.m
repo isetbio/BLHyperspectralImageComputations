@@ -11,7 +11,7 @@ function computeDecodingFilter(sceneSetName, descriptionString)
     pseudoInverseOfX = pinv(Xtrain);
     fprintf('Done\n');
     
-    fprintf('\nComputing optimal linear decoding filter: filter ... ');
+    fprintf('\nComputing optimal linear decoding filter: coefficients ... ');
     featuresNum = size(Xtrain,2);
     stimulusDimensions = size(cTrain,2);
     wVector = zeros(featuresNum, stimulusDimensions);
@@ -27,14 +27,18 @@ function computeDecodingFilter(sceneSetName, descriptionString)
     end
     fprintf('Done\n');
     
-    [testingSceneLMScontrastSequencePrediction,~] = ...
+    [trainingSceneLMScontrastSequencePrediction,~] = ...
         decoder.stimulusSequenceToDecoderFormat(CtrainPrediction, 'fromDecoderFormat', originalTrainingStimulusSize);
-
-    [testingSceneLMScontrastSequence,~] = ...
-        decoder.stimulusSequenceToDecoderFormat(Ctrain, 'fromDecoderFormat', originalTrainingStimulusSize);
 
     size(testingSceneLMScontrastSequencePrediction)
     size(testingSceneLMScontrastSequence)
+    
+    fprintf('\nSavind decoder filter and in-sample prediction ... ');
+    fileName = fullfile(decodingDataDir, sprintf('%s_decodingFilter.mat', sceneSetName));
+    save(fileName, 'wVector');
+    fileName = fullfile(decodingDataDir, sprintf('%s_inSamplePrediction.mat', sceneSetName));
+    save(fileName, 'cTrain', 'CtrainPrediction');
+    fprintf('Done\n');
     
     %     'Xtest', 'Ctest', 'originalTestingStimulusSize', ...
     %     'expParams');
