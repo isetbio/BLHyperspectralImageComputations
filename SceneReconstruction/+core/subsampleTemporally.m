@@ -1,9 +1,14 @@
-function [subSampledSignal, subSampledTimeAxis, kernel, filterTimeInTimeAxisUnits] = subsampleTemporally(signal,  timeAxis, timeDimensionIndex, lowPassSignal, newTau)
+function [subSampledSignal, subSampledTimeAxis, kernel, filterTimeInTimeAxisUnits] = subsampleTemporally(signal,  timeAxis, initialTimePeriodExcuded, timeDimensionIndex, lowPassSignal, newTau)
     
     originalTau = timeAxis(2)-timeAxis(1);
     decimationFactor = round(newTau/originalTau);
-    subSampledIndices = 1:decimationFactor:numel(timeAxis);
-    subSampledTimeAxis = timeAxis(subSampledIndices);
+    
+    % Exclude all indices whose time < initialTimePeriodExcuded
+    tIndices = find(timeAxis>=initialTimePeriodExcuded);
+    subSampledIndices = tIndices(1):decimationFactor:numel(timeAxis);
+    
+    % Restart the axis at t = 0
+    subSampledTimeAxis = timeAxis(subSampledIndices)-timeAxis(subSampledIndices(1));
     
     if (lowPassSignal)
         tauInSamples     = sqrt((decimationFactor^2-1)/12);

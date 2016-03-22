@@ -2,9 +2,6 @@ function scanData = computeScanData(scene,  oi,  sensor, osOBJ, ...
     sceneFixationTimes, adaptingFieldFixationTimes, ...
     fixationsPerScan, consecutiveSceneFixationsBetweenAdaptingFieldPresentation, ...
     decodedSceneSpatialSampleSizeInRetinalMicrons, decodedSceneExtraMicronsAroundSensorBorder, decodedSceneTemporalSampling)
-
-    % no figure generation
-    showSubSampling = false;
     
     % Compute the scene's retinal projection, x- & y- spatial supports in
     % the decoder's spatial resolution
@@ -79,34 +76,26 @@ function scanData = computeScanData(scene,  oi,  sensor, osOBJ, ...
         scanTimeAxis = (0:1:(numel(scanPathEyePositionIndices)-1))*sensorGet(sensor, 'time interval')*1000;
         
         % All done. Last step: subsample all the sequences temporally according to decodedSceneTemporalSampling
+        initialTimePeriodExcuded = 400;   % do not include the initial 400 milliseconds of the response - avoid photocurrent transients
         timeDimensionIndex = 1; lowPassSignal = true;
-        [sensorPositionSequence,  subSampledScanTimeAxis, ~, ~] = core.subsampleTemporally(sensorPositionSequence, scanTimeAxis, timeDimensionIndex, lowPassSignal, decodedSceneTemporalSampling);
-         
-        if (showSubSampling)
-            originalLMS = squeeze(sceneLMSexcitationSequence(1,1,1,:));
-        end
+        [sensorPositionSequence,  subSampledScanTimeAxis, ~, ~] = core.subsampleTemporally(sensorPositionSequence, scanTimeAxis, initialTimePeriodExcuded, timeDimensionIndex, lowPassSignal, decodedSceneTemporalSampling);
         
         timeDimensionIndex = ndims(sceneLMSexcitationSequence); lowPassSignal = true;
-        [sceneLMSexcitationSequence, ~, lowPassKernel, lowPassKernelTimeAxis] = core.subsampleTemporally(sceneLMSexcitationSequence, scanTimeAxis, timeDimensionIndex, lowPassSignal, decodedSceneTemporalSampling);
+        [sceneLMSexcitationSequence, ~, lowPassKernel, lowPassKernelTimeAxis] = core.subsampleTemporally(sceneLMSexcitationSequence, scanTimeAxis, initialTimePeriodExcuded, timeDimensionIndex, lowPassSignal, decodedSceneTemporalSampling);
         
         timeDimensionIndex = ndims(oiLMSexcitationSequence); lowPassSignal = true;
-        [oiLMSexcitationSequence, ~, ~, ~] = core.subsampleTemporally(oiLMSexcitationSequence,    scanTimeAxis, timeDimensionIndex, lowPassSignal, decodedSceneTemporalSampling);
-
+        [oiLMSexcitationSequence, ~, ~, ~] = core.subsampleTemporally(oiLMSexcitationSequence, scanTimeAxis, initialTimePeriodExcuded, timeDimensionIndex, lowPassSignal, decodedSceneTemporalSampling);
          
         timeDimensionIndex = ndims(isomerizationRateSequence); lowPassSignal = true;
-        [isomerizationRateSequence,  ~, ~, ~] = core.subsampleTemporally(isomerizationRateSequence,  scanTimeAxis, timeDimensionIndex, lowPassSignal, decodedSceneTemporalSampling);
-
-        if (showSubSampling)
-            originalPhotocurrent = squeeze(photoCurrentSequence(1,1,:));
-        end
+        [isomerizationRateSequence,  ~, ~, ~] = core.subsampleTemporally(isomerizationRateSequence,  scanTimeAxis, initialTimePeriodExcuded, timeDimensionIndex, lowPassSignal, decodedSceneTemporalSampling);
         
         timeDimensionIndex = ndims(photoCurrentSequence); lowPassSignal = true;
-        [photoCurrentSequence, ~, ~, ~] = core.subsampleTemporally(photoCurrentSequence,  scanTimeAxis, timeDimensionIndex, lowPassSignal, decodedSceneTemporalSampling);
+        [photoCurrentSequence, ~, ~, ~] = core.subsampleTemporally(photoCurrentSequence,  scanTimeAxis, initialTimePeriodExcuded, timeDimensionIndex, lowPassSignal, decodedSceneTemporalSampling);
         
         % transform LMS excitation sequence into Weber contrast
         trailingPeriodForEstimatingBackgroundExcitations = [scanTimeAxis(end-trailingAdaptationPeriodTimeBinsNum)+10 scanTimeAxis(end)-10];
-        timeBinsForEstimatingMeanLMScontrast = find((subSampledScanTimeAxis > trailingPeriodForEstimatingBackgroundExcitations(1)) & ...
-                                                    (subSampledScanTimeAxis < trailingPeriodForEstimatingBackgroundExcitations(2)));
+        timeBinsForEstimatingMeanLMScontrast = find((subSampledScanTimeAxis+initialTimePeriodExcuded > trailingPeriodForEstimatingBackgroundExcitations(1)) & ...
+                                                    (subSampledScanTimeAxis+initialTimePeriodExcuded < trailingPeriodForEstimatingBackgroundExcitations(2)));
         
         for k = 1:3
             sceneBackgroundExcitations(k) = mean(mean(mean(squeeze(sceneLMSexcitationSequence(:,:,k,timeBinsForEstimatingMeanLMScontrast)))));
@@ -115,40 +104,11 @@ function scanData = computeScanData(scene,  oi,  sensor, osOBJ, ...
             oiLMSexcitationSequence(:,:,k,:) = oiLMSexcitationSequence(:,:,k,:)/oiBackgroundExcitations(k) - 1;
         end
         
+        
         fprintf('mean cone excitation estimated between %2.1f and %2.1f milliseconds\n', subSampledScanTimeAxis(timeBinsForEstimatingMeanLMScontrast(1)), subSampledScanTimeAxis(timeBinsForEstimatingMeanLMScontrast(end)));
         fprintf('scene: %2.3f %2.3f %2.3f\n', sceneBackgroundExcitations(1), sceneBackgroundExcitations(2), sceneBackgroundExcitations(3));
         fprintf('optim: %2.5f %2.5f %2.5f\n', oiBackgroundExcitations(1), oiBackgroundExcitations(2), oiBackgroundExcitations(3));
         
-        
-        
-        if (showSubSampling)
-            figure(4);
-            clf;
-
-            subplot(2,1,1);
-            plot(scanTimeAxis, originalLMS, 'k.');
-            hold on;
-            for k = 1:numel(subSampledScanTimeAxis)
-                plot(lowPassKernelTimeAxis + subSampledScanTimeAxis(k), (1+lowPassKernel/max(lowPassKernel))*sceneLMSexcitationSequence(1,1,1,k), 'b-');
-            end
-
-            plot(subSampledScanTimeAxis, squeeze(sceneLMSexcitationSequence(1,1,1,:)), 'rs-');
-            hold off;
-            set(gca, 'XLim', [scanTimeAxis(1) scanTimeAxis(10000)]);
-
-            subplot(2,1,2);
-            plot(scanTimeAxis, originalPhotocurrent, 'k.');
-            hold on;
-            for k = 1:numel(subSampledScanTimeAxis)
-                plot(lowPassKernelTimeAxis + subSampledScanTimeAxis(k), (1+lowPassKernel/max(lowPassKernel))*photoCurrentSequence(1,1,k), 'b-');
-            end
-            plot(subSampledScanTimeAxis, squeeze(photoCurrentSequence(1,1,:)), 'rs-');
-            hold off;
-            set(gca, 'XLim', [scanTimeAxis(1) scanTimeAxis(10000)]);
-        end  % showSubsampling
-    
-    
-%         
         % Save scanData for this scan
         scanData{scanIndex} = struct(...
             'scanSensor',                   scanSensor, ...

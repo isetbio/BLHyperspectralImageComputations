@@ -53,6 +53,24 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
             end 
         end % scanIndex - training
         
+
+        debugForTransients = false;
+        if (debugForTransients)
+            figure(33); colormap(gray(1024));
+            CLims = [0 max(trainingSceneLMScontrastSequence(:))/2];
+            for k = 1:2:size(trainingSceneLMScontrastSequence,4)
+                for cone = 1:3
+                subplot(1,4,cone);
+                imagesc(squeeze(trainingSceneLMScontrastSequence(:,:,cone, k))); axis 'xy'; axis 'image';
+                set(gca, 'XTick', [], 'YTick', [], 'CLim', CLims);
+                end
+                subplot(1,4,4);
+                imagesc(squeeze(trainingPhotoCurrentSequence(:,:,k))); axis 'xy'; axis 'image';
+                set(gca, 'XTick', [], 'YTick', [], 'CLim', [-100 -10]);
+                drawnow
+            end
+        end
+        
         % concatenate testing datasets
         for scanIndex = trainingScans+1:scansNum 
             totalTestingScansNum = totalTestingScansNum + 1;
