@@ -120,12 +120,17 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     % Compute training design matrix and stimulus vector
     [Xtrain, Ctrain] = decoder.computeDesignMatrixAndStimulusVector(trainingResponses, trainingStimulus, expParams.decoderParams);
     
+    whos 'Xtrain'
+    whos 'Ctrain'
+    
     % Save design matrices and stimulus vectors
     decodingDataDir = core.getDecodingDataDir(descriptionString);
     fileName = fullfile(decodingDataDir, sprintf('%s_trainingDesignMatrices.mat', sceneSetName));
-    fprintf('Saving training design matrix and stim vector ''%s''.\n', fileName);
+    fprintf('\nSaving training design matrix and stim vector ''%s''... ', fileName);
     save(fileName, 'Xtrain', 'Ctrain', 'originalTrainingStimulusSize', 'expParams', '-v7.3');
-     
+    fprintf('Done.\n');
+    clear 'Xtrain'; clear 'Ctrain'
+    
     % Reshape testing cone responses to decoder format
     testingResponses = reshape(testingPhotoCurrentSequence, ...
         [size(testingPhotoCurrentSequence,1)*size(testingPhotoCurrentSequence,2) size(testingPhotoCurrentSequence,3)]);
@@ -136,24 +141,22 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     
     % Compute testing design matrix and stimulus vector
     [Xtest, Ctest] = decoder.computeDesignMatrixAndStimulusVector(testingResponses, testingStimulus, expParams.decoderParams);
+    whos 'Xtest'
+    whos 'Ctest'
     
     % Save design matrices and stimulus vectors
     decodingDataDir = core.getDecodingDataDir(descriptionString);
     fileName = fullfile(decodingDataDir, sprintf('%s_testingDesignMatrices.mat', sceneSetName));
-    fprintf('Saving test design matrix and stim vector to ''%s''.\n', fileName);
+    fprintf('\nSaving test design matrix and stim vector to ''%s''... ', fileName);
     save(fileName, 'Xtest', 'Ctest', 'originalTestingStimulusSize', 'expParams', '-v7.3');
-    
+    fprintf('Done.\n');
+    clear 'Xtest'; clear 'Ctest'
     
     return;
     
-
-    [testingSceneLMScontrastSequencePrediction,~] = ...
-        decoder.stimulusSequenceToDecoderFormat(CtrainPrediction, 'fromDecoderFormat', originalStimulusSize);
-
     % visualize the cone mosaic
     scanIndex = 1; figNo = 1;
     visualizer.renderConeMosaic(figNo, scanData{scanIndex}.scanSensor, expParams);
-  
         
 end
 

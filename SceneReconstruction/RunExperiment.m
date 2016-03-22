@@ -5,9 +5,9 @@ function RunExperiment
     decoderParams = struct(...
         'type', 'optimalLinearFilter', ...
         'thresholdConeSeparationForInclusionInDecoder', 0, ...      % 0 to include all cones
-        'spatialSamplingInRetinalMicrons', 3.0, ...                 % decode scene ((retinal projection)) at 5 microns resolution
+        'spatialSamplingInRetinalMicrons', 5.0, ...                 % decode scene ((retinal projection)) at 5 microns resolution
         'extraMicronsAroundSensorBorder', 15, ...                   % decode this many additional microns on each side of the sensor
-        'temporalSamplingInMilliseconds', 5, ...                   % decode every this many milliseconds
+        'temporalSamplingInMilliseconds', 5, ...                    % decode every this many milliseconds
         'latencyInMillseconds', -100, ...
         'memoryInMilliseconds', 500 ...
     );
@@ -67,7 +67,7 @@ function RunExperiment
         
     % What to compute
     instructionSet = {'compute outer segment responses'};
-    instructionSet = {'assembleTrainingDataSet', 'manchester', 'AdaptEvery5Fixations'};
+    %instructionSet = {'assembleTrainingDataSet', 'manchester', 'AdaptEvery5Fixations'};
     %instructionSet = {'computeDecodingFilter'}
 
     switch instructionSet{1}
