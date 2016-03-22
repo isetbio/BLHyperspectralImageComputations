@@ -66,10 +66,12 @@ function RunExperiment
     );
         
     % What to compute
-    instructionSet = {'compute outer segment responses'};
-    instructionSet = {'assembleTrainingDataSet', 'manchester', 'AdaptEvery5Fixations'};
-    instructionSet = {'computeDecodingFilter',  'manchester', 'AdaptEvery5Fixations'};
-
+  %  instructionSet = {'compute outer segment responses'};
+  %  instructionSet = {'assembleTrainingDataSet',  'manchester', 'AdaptEvery5Fixations'};
+  %  instructionSet = {'computeDecodingFilter',    'manchester', 'AdaptEvery5Fixations'};
+    instructionSet = {'visualizeDecodingFilter',  'manchester', 'AdaptEvery5Fixations'};
+    instructionSet = {'visualizeInSamplePredictions',  'manchester', 'AdaptEvery5Fixations'};
+    
     switch instructionSet{1}
         case 'compute outer segment responses'
             core.computeOuterSegmentResponses(expParams);
@@ -79,9 +81,15 @@ function RunExperiment
             decoder.assembleTrainingSet(instructionSet{2}, instructionSet{3}, trainingDataPercentange);
 
         case 'computeDecodingFilter'
-            decoder.computeDecodingFilter(instructionSet{2}, instructionSet{3})
+            decoder.computeDecodingFilter(instructionSet{2}, instructionSet{3});
             
-       otherwise
+        case 'visualizeDecodingFilter'
+            visualizer.renderDecoderFilterDynamicsFigures(instructionSet{2}, instructionSet{3});
+          
+        case 'visualizeInSamplePredictions'
+            visualizer.renderInSamplePredictionsFigures(instructionSet{2}, instructionSet{3});
+            
+        otherwise
             error('Unknown instruction: ''%s''.\n', instructionSet{1});
     end   
 
