@@ -120,6 +120,9 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     % Compute training design matrix and stimulus vector
     [Xtrain, Ctrain] = decoder.computeDesignMatrixAndStimulusVector(trainingResponses, trainingStimulus, expParams.decoderParams);
     
+    whos 'Xtrain'
+    whos 'Ctrain'
+    
     % Save design matrices and stimulus vectors
     decodingDataDir = core.getDecodingDataDir(descriptionString);
     fileName = fullfile(decodingDataDir, sprintf('%s_trainingDesignMatrices.mat', sceneSetName));
@@ -138,11 +141,13 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     
     % Compute testing design matrix and stimulus vector
     [Xtest, Ctest] = decoder.computeDesignMatrixAndStimulusVector(testingResponses, testingStimulus, expParams.decoderParams);
+    whos 'Xtest'
+    whos 'Ctest'
     
     % Save design matrices and stimulus vectors
     decodingDataDir = core.getDecodingDataDir(descriptionString);
     fileName = fullfile(decodingDataDir, sprintf('%s_testingDesignMatrices.mat', sceneSetName));
-    fprintf('\nSaving test design matrix and stim vector to ''%s''.... ', fileName);
+    fprintf('\nSaving test design matrix and stim vector to ''%s''... ', fileName);
     save(fileName, 'Xtest', 'Ctest', 'originalTestingStimulusSize', 'expParams', '-v7.3');
     fprintf('Done.\n');
     clear 'Xtest'; clear 'Ctest'

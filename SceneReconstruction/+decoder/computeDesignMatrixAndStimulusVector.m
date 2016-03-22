@@ -16,7 +16,7 @@ function [X, C] = computeDesignMatrixAndStimulusVector(signals, stimulus, decode
     rowsOfX   = totalBins + minTimeBin - memoryBins;
     stimulusDimensions = size(stimulus,2);
     X = zeros(rowsOfX, 1+(conesNum*memoryBins), 'single');
-    C = zeros(rowsOfX, stimulusDimensions);
+    C = zeros(rowsOfX, stimulusDimensions, 'single');
     
     fprintf('\nAssembling design matrix (%d x %d) and stimulus vector (%d x %d).\nThis will take a while. Please wait ...', size(X, 1), size(X, 2), size(C, 1), size(C, 2));
     
@@ -43,5 +43,5 @@ function [X, C] = computeDesignMatrixAndStimulusVector(signals, stimulus, decode
             fprintf('index %d > size(stimulus): %d\n', row-minTimeBin, size(stimulus,1));
         end 
     end % row
-    
+   
 end
