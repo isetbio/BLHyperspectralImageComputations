@@ -8,10 +8,12 @@ function computeDecodingFilter(sceneSetName, descriptionString)
     load(fileName, 'Xtrain', 'Ctrain', 'originalTrainingStimulusSize', 'expParams');
     fprintf('Done after %2.1f minutes.\n', toc/60);
     
+    tic
     fprintf('\n2. Computing optimal linear decoding filter: pinv(X) [%d x %d] ... ', size(Xtrain,1), size(Xtrain,2));
     pseudoInverseOfX = pinv(Xtrain);
-     fprintf('Done after %2.1f minutes.\n', toc/60);
+    fprintf('Done after %2.1f minutes.\n', toc/60);
     
+    tic
     featuresNum = size(Xtrain,2);
     stimulusDimensions = size(Ctrain,2);
     fprintf('\n3. Computing optimal linear decoding filter: coefficients [%d x %d] ... ', featuresNum, stimulusDimensions);
@@ -19,15 +21,17 @@ function computeDecodingFilter(sceneSetName, descriptionString)
     for stimDim = 1:stimulusDimensions
         wVector(:,stimDim) = pseudoInverseOfX * Ctrain(:,stimDim);
     end
-     fprintf('Done after %2.1f minutes.\n', toc/60);
+    fprintf('Done after %2.1f minutes.\n', toc/60);
     
+    tic
     fprintf('\n4. Computing in-sample predictions [%d x %d]...',  size(Xtrain,1), stimulusDimensions);
     CtrainPrediction = Ctrain*0;
     for stimDim = 1:stimulusDimensions
         CtrainPrediction(:, stimDim) = Xtrain * wVector(:,stimDim);
     end
-     fprintf('Done after %2.1f minutes.\n', toc/60);
+    fprintf('Done after %2.1f minutes.\n', toc/60);
     
+    tic
     fprintf('\n5. Saving decoder filter and in-sample prediction ... ');
     fileName = fullfile(decodingDataDir, sprintf('%s_decodingFilter.mat', sceneSetName));
     save(fileName, 'wVector');
