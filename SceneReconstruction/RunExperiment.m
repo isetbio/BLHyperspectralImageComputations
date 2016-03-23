@@ -6,10 +6,10 @@ function RunExperiment
         'type', 'optimalLinearFilter', ...
         'thresholdConeSeparationForInclusionInDecoder', 0, ...      % 0 to include all cones
         'spatialSamplingInRetinalMicrons', 5.0, ...                 % decode scene ((retinal projection)) at 5 microns resolution
-        'extraMicronsAroundSensorBorder', 15, ...                   % decode this many additional microns on each side of the sensor
-        'temporalSamplingInMilliseconds', 6, ...                    % decode every this many milliseconds
-        'latencyInMillseconds', -60, ...
-        'memoryInMilliseconds', 420 ...
+        'extraMicronsAroundSensorBorder', 5, ...                   % decode this many additional microns on each side of the sensor
+        'temporalSamplingInMilliseconds', 8, ...                    % decode every this many milliseconds
+        'latencyInMillseconds', -160, ...
+        'memoryInMilliseconds', 560 ...
     );
 
     sensorTimeStepInMilliseconds = 0.1;  % must be small enough to avoid numerical instability in the outer segment current computation
@@ -57,7 +57,8 @@ function RunExperiment
     );
     
     expParams = struct(...
-        'descriptionString', 'AdaptEvery5Fixations', ...            % a unique string identifying this experiment. This will be the scansSubDir name
+        'descriptionString', ...                                % a unique string identifying this experiment. This will be the scansSubDir name
+        sprintf('AdaptEvery%dFixations', viewModeParams.consecutiveSceneFixationsBetweenAdaptingFieldPresentation), ...            
         'sceneSetName', 'manchester', ...                           % the name of the scene set to be used
         'viewModeParams', viewModeParams, ...
         'sensorParams', sensorParams, ...
@@ -67,8 +68,8 @@ function RunExperiment
         
     % What to compute
     instructionSet = {'compute outer segment responses'};
-  %  instructionSet = {'assembleTrainingDataSet',  'manchester', 'AdaptEvery5Fixations'};
-  %  instructionSet = {'computeDecodingFilter',    'manchester', 'AdaptEvery5Fixations'};
+    instructionSet = {'assembleTrainingDataSet',  'manchester', 'AdaptEvery5Fixations'};
+    instructionSet = {'computeDecodingFilter',    'manchester', 'AdaptEvery5Fixations'};
   %  instructionSet = {'visualizeDecodingFilter',  'manchester', 'AdaptEvery5Fixations'};
   %  instructionSet = {'visualizeInSamplePredictions',  'manchester', 'AdaptEvery5Fixations'};
     
