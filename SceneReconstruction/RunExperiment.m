@@ -1,8 +1,47 @@
 function RunExperiment
 
     setPrefsForHyperspectralImageIsetbioComputations();
+        
+    % What to compute
+    instructionSet = {...
+       %'compute outer segment responses'
+       % 'assembleTrainingDataSet' ...
+       % 'computeDecodingFilter' ...
+        'visualizeDecodingFilter' ...
+        'visualizeInSamplePredictions' ...
+        };
+  
+    sceneSetName = 'manchester';
+    descriptionString = 'AdaptEvery5Fixations';
     
-    decoderParams = struct(...
+    for k = 1:numel(instructionSet)
+        switch instructionSet{k}
+            case 'compute outer segment responses'
+                expParams = experimentParams();
+                core.computeOuterSegmentResponses(expParams);
+
+            case 'assembleTrainingDataSet'
+                trainingDataPercentange = 50;
+                decoder.assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercentange);
+
+            case 'computeDecodingFilter'
+                decoder.computeDecodingFilter(sceneSetName, descriptionString);
+            
+            case 'visualizeDecodingFilter'
+                visualizer.renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString);
+          
+            case 'visualizeInSamplePredictions'
+                visualizer.renderInSamplePredictionsFigures(sceneSetName, descriptionString);
+            
+            otherwise
+                error('Unknown instruction: ''%s''.\n', instructionSet{1});
+        end  % switch 
+    end % for k
+end
+
+function expParams = experimentParams()
+
+        decoderParams = struct(...
         'type', 'optimalLinearFilter', ...
         'thresholdConeSeparationForInclusionInDecoder', 0, ...      % 0 to include all cones
         'spatialSamplingInRetinalMicrons', 5.0, ...                 % decode scene ((retinal projection)) at 5 microns resolution
@@ -56,43 +95,14 @@ function RunExperiment
         'forcedSceneMeanLuminance', 200 ...
     );
     
+    % assemble all  param structs into one superstruct
+    descriptionString = sprintf('AdaptEvery%dFixations', viewModeParams.consecutiveSceneFixationsBetweenAdaptingFieldPresentation);
     expParams = struct(...
-        'descriptionString', ...                                % a unique string identifying this experiment. This will be the scansSubDir name
-        sprintf('AdaptEvery%dFixations', viewModeParams.consecutiveSceneFixationsBetweenAdaptingFieldPresentation), ...            
-        'sceneSetName', 'manchester', ...                           % the name of the scene set to be used
-        'viewModeParams', viewModeParams, ...
-        'sensorParams', sensorParams, ...
-        'outerSegmentParams', outerSegmentParams, ...
-        'decoderParams', decoderParams ...
+        'descriptionString',    descriptionString, ...                        % a unique string identifying this experiment. This will be the scansSubDir name
+        'sceneSetName',         'manchester', ...                             % the name of the scene set to be used
+        'viewModeParams',       viewModeParams, ...
+        'sensorParams',         sensorParams, ...
+        'outerSegmentParams',   outerSegmentParams, ...
+        'decoderParams',        decoderParams ...
     );
-        
-    % What to compute
-    instructionSet = {'compute outer segment responses'};
-    instructionSet = {'assembleTrainingDataSet',  'manchester', 'AdaptEvery5Fixations'};
-    instructionSet = {'computeDecodingFilter',    'manchester', 'AdaptEvery5Fixations'};
-  %  instructionSet = {'visualizeDecodingFilter',  'manchester', 'AdaptEvery5Fixations'};
-  %  instructionSet = {'visualizeInSamplePredictions',  'manchester', 'AdaptEvery5Fixations'};
-    
-    switch instructionSet{1}
-        case 'compute outer segment responses'
-            core.computeOuterSegmentResponses(expParams);
-
-        case 'assembleTrainingDataSet'
-            trainingDataPercentange = 50;
-            decoder.assembleTrainingSet(instructionSet{2}, instructionSet{3}, trainingDataPercentange);
-
-        case 'computeDecodingFilter'
-            decoder.computeDecodingFilter(instructionSet{2}, instructionSet{3});
-            
-        case 'visualizeDecodingFilter'
-            visualizer.renderDecoderFilterDynamicsFigures(instructionSet{2}, instructionSet{3});
-          
-        case 'visualizeInSamplePredictions'
-            visualizer.renderInSamplePredictionsFigures(instructionSet{2}, instructionSet{3});
-            
-        otherwise
-            error('Unknown instruction: ''%s''.\n', instructionSet{1});
-    end   
-
 end
-
