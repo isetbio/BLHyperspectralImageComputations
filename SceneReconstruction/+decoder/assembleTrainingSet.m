@@ -27,14 +27,20 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
             if (totalTrainingScansNum == 1)
                 dt = scanData{scanIndex}.timeAxis(2)-scanData{scanIndex}.timeAxis(1);
                 trainingTimeAxis                        = single(scanData{scanIndex}.timeAxis);
+                trainingScanInsertionTimes              = trainingTimeAxis(1);
                 trainingSceneIndexSequence              = single(sceneIndex);
                 trainingSensorPositionSequence          = single(scanData{scanIndex}.sensorPositionSequence);
                 trainingSceneLMScontrastSequence        = single(scanData{scanIndex}.sceneLMScontrastSequence);
                 trainingOpticalImageLMScontrastSequence = single(scanData{scanIndex}.oiLMScontrastSequence);
                 trainingPhotoCurrentSequence            = single(scanData{scanIndex}.photoCurrentSequence);
+                trainingSceneLMSbackground              = single(scanData{scanIndex}.sceneBackgroundExcitations);
+                trainingOpticalImageLMSbackground       = single(scanData{scanIndex}.oiBackgroundExcitations);
             else
                 trainingTimeAxis = cat(2, ...
                     trainingTimeAxis, single(scanData{scanIndex}.timeAxis + trainingTimeAxis(end) + dt));
+                
+                insertionPoints = numel(scanData{scanIndex}.timeAxis);
+                trainingScanInsertionTimes = cat(2, trainingScanInsertionTimes, trainingTimeAxis(end-insertionPoints+1));
                 
                 trainingSceneIndexSequence = cat(2, ...
                     trainingSceneIndexSequence, single(sceneIndex));
@@ -50,6 +56,12 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
                 
                 trainingPhotoCurrentSequence = cat(3, ...
                     trainingPhotoCurrentSequence,  single(scanData{scanIndex}.photoCurrentSequence));
+                
+                trainingSceneLMSbackground = cat(2, ...
+                    trainingSceneLMSbackground, single(scanData{scanIndex}.sceneBackgroundExcitations));
+                    
+                trainingOpticalImageLMSbackground = cat(2, ...
+                    trainingOpticalImageLMSbackground, single(scanData{scanIndex}.oiBackgroundExcitations));
             end 
         end % scanIndex - training
         
@@ -77,15 +89,21 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
             if (totalTestingScansNum == 1)
                 dt = scanData{scanIndex}.timeAxis(2)-scanData{scanIndex}.timeAxis(1);
                 testingTimeAxis = single(scanData{scanIndex}.timeAxis);
+                testingScanInsertionTimes              = trainingTimeAxis(1);
                 testingSceneIndexSequence              = single(sceneIndex);
                 testingSensorPositionSequence          = single(scanData{scanIndex}.sensorPositionSequence);
                 testingSceneLMScontrastSequence        = single(scanData{scanIndex}.sceneLMScontrastSequence);
                 testingOpticalImageLMScontrastSequence = single(scanData{scanIndex}.oiLMScontrastSequence);
                 testingPhotoCurrentSequence            = single(scanData{scanIndex}.photoCurrentSequence);
+                testingSceneLMSbackground              = single(scanData{scanIndex}.sceneBackgroundExcitations);
+                testingOpticalImageLMSbackground       = single(scanData{scanIndex}.oiBackgroundExcitations);
             else
                 testingTimeAxis = cat(2, ...
                     testingTimeAxis, single(scanData{scanIndex}.timeAxis + testingTimeAxis(end) + dt));
                 
+                insertionPoints = numel(scanData{scanIndex}.timeAxis);
+                testingScanInsertionTimes = cat(2, testingScanInsertionTimes, testingTimeAxis(end-insertionPoints+1));
+               
                 testingSceneIndexSequence = cat(2, ...
                     testingSceneIndexSequence, single(sceneIndex));
                 
@@ -100,9 +118,29 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
                 
                 testingPhotoCurrentSequence = cat(3, ...
                     testingPhotoCurrentSequence,  single(scanData{scanIndex}.photoCurrentSequence));
+                
+                testingSceneLMSbackground = cat(2, ...
+                    testingSceneLMSbackground, single(scanData{scanIndex}.sceneBackgroundExcitations));
+                    
+                testingOpticalImageLMSbackground = cat(2, ...
+                    testingOpticalImageLMSbackground, single(scanData{scanIndex}.oiBackgroundExcitations));
+    
+                
             end
         end % scanIndex - testing
     end % sceneIndex
+    
+    disp('training')
+    size(trainingScanInsertionTimes)
+    size(trainingSceneLMSbackground)
+    size(trainingOpticalImageLMSbackground)
+    
+    
+    disp('testing')
+    size(testingScanInsertionTimes)
+    size(testingSceneLMSbackground)
+    size(testingOpticalImageLMSbackground)
+    
     
     fprintf('Training matrices\n');
     fprintf('Total training scans: %d\n', totalTrainingScansNum)
@@ -122,6 +160,9 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     fprintf('Size(optical image LMS): %d %d %d %d\n', size(testingOpticalImageLMScontrastSequence,1), size(testingOpticalImageLMScontrastSequence,2), size(testingOpticalImageLMScontrastSequence,3), size(testingOpticalImageLMScontrastSequence,4));
     fprintf('Size(photocurrents)    : %d %d %d\n', size(testingPhotoCurrentSequence,1), size(testingPhotoCurrentSequence,2), size(testingPhotoCurrentSequence,3));
     
+    if (1==2)
+       displaySequences(trainingTimeAxis, trainingPhotoCurrentSequence, trainingSceneLMScontrastSequence,trainingOpticalImageLMScontrastSequence); 
+    end
     
     % Decide which cones to keep
     [keptLconeIndices, keptMconeIndices, keptSconeIndices] = ...
@@ -141,11 +182,13 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     whos 'Xtrain'
     whos 'Ctrain'
     
+    
+    
     % Save design matrices and stimulus vectors
     decodingDataDir = core.getDecodingDataDir(descriptionString);
     fileName = fullfile(decodingDataDir, sprintf('%s_trainingDesignMatrices.mat', sceneSetName));
     fprintf('\nSaving training design matrix and stim vector ''%s''... ', fileName);
-    save(fileName, 'Xtrain', 'Ctrain', 'originalTrainingStimulusSize', 'expParams', '-v7.3');
+    save(fileName, 'Xtrain', 'Ctrain', 'trainingTimeAxis', 'trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'originalTrainingStimulusSize', 'expParams', '-v7.3');
     fprintf('Done.\n');
     clear 'Xtrain'; clear 'Ctrain'
     
@@ -166,7 +209,7 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     decodingDataDir = core.getDecodingDataDir(descriptionString);
     fileName = fullfile(decodingDataDir, sprintf('%s_testingDesignMatrices.mat', sceneSetName));
     fprintf('\nSaving test design matrix and stim vector to ''%s''... ', fileName);
-    save(fileName, 'Xtest', 'Ctest', 'originalTestingStimulusSize', 'expParams', '-v7.3');
+    save(fileName, 'Xtest', 'Ctest', 'testingTimeAxis', 'testingScanInsertionTimes', 'testingSceneLMSbackground', 'originalTestingStimulusSize', 'expParams', '-v7.3');
     fprintf('Done.\n');
     clear 'Xtest'; clear 'Ctest'
     
@@ -178,3 +221,74 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
         
 end
 
+
+
+function displaySequences(timeAxis, photoCurrentSequence, sceneLMScontrastSequence, opticalImageLMScontrastSequence)
+    figure(1); clf;
+    colormap(gray(1024));
+    
+    for k = 101:size(photoCurrentSequence,3)
+        subplot(2,4,1);
+        imagesc(squeeze(sceneLMScontrastSequence(:,:,1,k)));
+        title('L cone contrast');
+        set(gca, 'CLim', [-1 1]);
+        axis 'xy'; axis 'image'
+
+        subplot(2,4,2);
+        imagesc(squeeze(sceneLMScontrastSequence(:,:,2,k)));
+        title('M cone contrast');
+        set(gca, 'CLim', [-1 1]);
+        axis 'xy'; axis 'image'
+
+        subplot(2,4,3);
+        imagesc(squeeze(sceneLMScontrastSequence(:,:,3,k)));
+        title('S cone contrast');
+        set(gca, 'CLim', [-1 1]);
+        axis 'xy'; axis 'image'
+
+        subplot(2,4,5);
+        imagesc(squeeze(opticalImageLMScontrastSequence(:,:,1,k)));
+        title('L cone contrast (optical image)');
+        set(gca, 'CLim', 0.5*[-1 1]);
+        axis 'xy'; axis 'image'
+
+        subplot(2,4,6);
+        imagesc(squeeze(opticalImageLMScontrastSequence(:,:,2,k)));
+        title('M cone contrast (optical image)');
+        set(gca, 'CLim', 0.5*[-1 1]);
+        axis 'xy'; axis 'image'
+
+        subplot(2,4,7);
+        imagesc(squeeze(opticalImageLMScontrastSequence(:,:,3,k)));
+        title('scone contrast (optical image)');
+        set(gca, 'CLim', 0.5*[-1 1]);
+        axis 'xy'; axis 'image'
+
+        photoCurrentRange = [-80 -20];
+        subplot(2,4,4);
+        imagesc(squeeze(photoCurrentSequence(:,:,k)));
+        title(sprintf('photocurrent (time: %2.4f sec)', timeAxis(k)/1000));
+        set(gca, 'CLim', photoCurrentRange);
+        axis 'xy'; axis 'image'
+
+        subplot(2,4,8);
+        timeBins = k+(-100:100);
+        el = 0;
+        for ir = 10+(-1:1)
+            for ic = 10+(-1:1)
+                el = el + 1;
+                plot(timeAxis(timeBins), squeeze(photoCurrentSequence(ir,ic,timeBins)), 'k-');
+                if (el == 1)
+                    hold on
+                    plot(timeAxis(k)*[1 1], [-100 100], 'r-');
+                end
+            end
+        end
+        hold off;
+        title(sprintf('photocurrent traces (time: %2.4f-%2.4f sec)', trainingTimeAxis(timeBins(1))/1000,trainingTimeAxis(timeBins(end))/1000));
+        set(gca, 'YLim', photoCurrentRange, 'XLim', [trainingTimeAxis(timeBins(1)) trainingTimeAxis(timeBins(end))]);
+        axis 'square'
+
+        drawnow
+     end
+end

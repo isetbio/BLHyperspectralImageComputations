@@ -69,10 +69,15 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
     for ySpatialBin = ySpatialBinsNum:-1:1
         for xSpatialBin = 1:xSpatialBinsNum
             
-            spatioTemporalFilter = squeeze(stimDecoder(stimConeContrastIndex, ySpatialBin, xSpatialBin, :,:,:));
-            [~, idx] = max(abs(spatioTemporalFilter(:)));
-            [peakConeRow, peakConeCol,peakTimeBin] = ind2sub(size(spatioTemporalFilter), idx);
+            indicesForPeakResponseEstimation = find((timeAxis >-20) & (timeAxis < 60));
+            causalTimeAxis = timeAxis(indicesForPeakResponseEstimation(1):indicesForPeakResponseEstimation(end));
+            tmp = squeeze(stimDecoder(stimConeContrastIndex, ySpatialBin, xSpatialBin, :,:,indicesForPeakResponseEstimation));
+            [~, idx] = max(abs(tmp(:)));
+            [peakConeRow, peakConeCol, idx] = ind2sub(size(tmp), idx);
+            [~,peakTimeBin] = min(abs(timeAxis - causalTimeAxis(idx)));
             fprintf('filter at (%d,%d) peaks at %2.0f msec\n', xSpatialBin, ySpatialBin, timeAxis(peakTimeBin));
+            
+            spatioTemporalFilter = squeeze(stimDecoder(stimConeContrastIndex, ySpatialBin, xSpatialBin, :,:,:));
             
             kk = kk + 1;
             

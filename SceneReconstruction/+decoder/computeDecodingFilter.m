@@ -5,7 +5,7 @@ function computeDecodingFilter(sceneSetName, descriptionString)
     
     tic
     fprintf('\n1. Loading design matrix and stimulus vector ... ');
-    load(fileName, 'Xtrain', 'Ctrain', 'originalTrainingStimulusSize', 'expParams');
+    load(fileName, 'Xtrain', 'Ctrain', 'trainingTimeAxis', 'trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'originalTrainingStimulusSize', 'expParams');
     fprintf('Done after %2.1f minutes.\n', toc/60);
     
     tic
@@ -36,17 +36,8 @@ function computeDecodingFilter(sceneSetName, descriptionString)
     fileName = fullfile(decodingDataDir, sprintf('%s_decodingFilter.mat', sceneSetName));
     save(fileName, 'wVector');
     fileName = fullfile(decodingDataDir, sprintf('%s_inSamplePrediction.mat', sceneSetName));
-    save(fileName,  'CtrainPrediction', 'originalTrainingStimulusSize', 'expParams');
+    save(fileName,  'CtrainPrediction', 'trainingTimeAxis', 'trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'originalTrainingStimulusSize', 'expParams');
     fprintf('Done after %2.1f minutes.\n', toc/60);
-    
-    %  [trainingSceneLMScontrastSequencePrediction,~] = ...
-    %    decoder.stimulusSequenceToDecoderFormat(CtrainPrediction, 'fromDecoderFormat', originalTrainingStimulusSize);
-
-    %size(testingSceneLMScontrastSequencePrediction)
-    %size(testingSceneLMScontrastSequence)
-    
-    %     'Xtest', 'Ctest', 'originalTestingStimulusSize', ...
-    %     'expParams');
      
 end
 

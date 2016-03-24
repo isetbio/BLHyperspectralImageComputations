@@ -97,11 +97,11 @@ function scanData = computeScanData(scene,  oi,  sensor, osOBJ, ...
         timeBinsForEstimatingMeanLMScontrast = find((subSampledScanTimeAxis+initialTimePeriodExcuded > trailingPeriodForEstimatingBackgroundExcitations(1)) & ...
                                                     (subSampledScanTimeAxis+initialTimePeriodExcuded < trailingPeriodForEstimatingBackgroundExcitations(2)));
         
-        for k = 1:3
-            sceneBackgroundExcitations(k) = mean(mean(mean(squeeze(sceneLMSexcitationSequence(:,:,k,timeBinsForEstimatingMeanLMScontrast)))));
-            sceneLMSexcitationSequence(:,:,k,:) = sceneLMSexcitationSequence(:,:,k,:)/sceneBackgroundExcitations(k) - 1;
-            oiBackgroundExcitations(k) = mean(mean(mean(squeeze(oiLMSexcitationSequence(:,:,k,timeBinsForEstimatingMeanLMScontrast)))));
-            oiLMSexcitationSequence(:,:,k,:) = oiLMSexcitationSequence(:,:,k,:)/oiBackgroundExcitations(k) - 1;
+        for coneIndex = 1:3
+            sceneBackgroundExcitations(coneIndex,1) = mean(mean(mean(squeeze(sceneLMSexcitationSequence(:,:,coneIndex,timeBinsForEstimatingMeanLMScontrast)))));
+            sceneLMSexcitationSequence(:,:,coneIndex,:) = sceneLMSexcitationSequence(:,:,coneIndex,:)/sceneBackgroundExcitations(coneIndex) - 1;
+            oiBackgroundExcitations(coneIndex,1) = mean(mean(mean(squeeze(oiLMSexcitationSequence(:,:,coneIndex,timeBinsForEstimatingMeanLMScontrast)))));
+            oiLMSexcitationSequence(:,:,coneIndex,:) = oiLMSexcitationSequence(:,:,coneIndex,:)/oiBackgroundExcitations(coneIndex) - 1;
         end
         
         

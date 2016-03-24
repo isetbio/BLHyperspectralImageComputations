@@ -11,7 +11,7 @@ function setPrefsForHyperspectralImageIsetbioComputations
             dropBoxLocation = '/Volumes/Manta TM HD/Dropbox (Aguirre-Brainard Lab)';
         case 'Ithaka'
             % dropbox location for Manta (Nicolas' MacBook Pro)
-            dropBoxLocation = '/Volumes/SDXC_128GB/CloudSyncAccounts/Dropbox';
+            dropBoxLocation = '/Volumes/IthakasPassport/Dropbox/Dropbox (Aguirre-Brainard Lab)';
         otherwise
             error('No dropbox location for computer named ''%s''.\n', sysInfo.localHostName)
     end
