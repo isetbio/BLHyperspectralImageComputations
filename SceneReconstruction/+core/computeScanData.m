@@ -245,10 +245,8 @@ function [sensor, sensorPositionsInMicrons, sensorFOVxaxis, sensorFOVyaxis, sens
     sensorPositionsInMicrons(:,2) = y;
     
     % Force sensor positions to be within scene's retinal projection limits
-    %sensorSampleSeparationInMicrons = sensorGet(sensor,'pixel size','um');
     sensorPositionsInConeSeparations = bsxfun(@times, sensorPositionsInMicrons, 1./[-coneSeparationInMicrons(1) coneSeparationInMicrons(2)]);
     sensor = sensorSet(sensor, 'positions',   sensorPositionsInConeSeparations);
-   
     
     % compute sensor extent in pixels and microns
     sensorFOVHalfCols = round(sensorFOVHalfWidthInMicrons/decodedSceneSpatialSampleSizeInRetinalMicrons);

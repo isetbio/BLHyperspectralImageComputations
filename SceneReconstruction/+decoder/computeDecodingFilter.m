@@ -31,10 +31,32 @@ function computeDecodingFilter(sceneSetName, descriptionString)
     end
     fprintf('Done after %2.1f minutes.\n', toc/60);
     
+    % Generate the filter's spatiotemporal support and embed it in the decoding filter file
+    sceneIndex = 1;
+    scanFileName = core.getScanFileName(sceneSetName, descriptionString, sceneIndex);
+    load(scanFileName, 'scanData', 'expParams');
+    scanData = scanData{sceneIndex};
+    
+    coneSeparation = sensorGet(scanData.scanSensor,'pixel size','um');
+    sensorRowAxis   = (0:(sensorGet(scanData.scanSensor, 'row')-1))*coneSeparation;
+    sensorColAxis   = (0:(sensorGet(scanData.scanSensor, 'col')-1))*coneSeparation;
+    sensorRowAxis   = sensorRowAxis - (sensorRowAxis(end)-sensorRowAxis(1))/2;
+    sensorColAxis   = sensorColAxis - (sensorColAxis(end)-sensorColAxis(1))/2;
+        
+    spatioTemporalSupport = struct(...
+       'sensorRowAxis',  sensorRowAxis, ...
+       'sensorColAxis',  sensorColAxis, ...
+       'sensorFOVxaxis', scanData.sensorFOVxaxis, ...                  % spatial support of decoded scene
+       'sensorFOVyaxis', scanData.sensorFOVyaxis, ...
+       'timeAxis',       expParams.decoderParams.latencyInMillseconds + ...
+                           (0:1:round(expParams.decoderParams.memoryInMilliseconds/expParams.decoderParams.temporalSamplingInMilliseconds)-1) * ...
+                           expParams.decoderParams.temporalSamplingInMilliseconds);
+
+    
     tic
     fprintf('\n5. Saving decoder filter and in-sample prediction ... ');
     fileName = fullfile(decodingDataDir, sprintf('%s_decodingFilter.mat', sceneSetName));
-    save(fileName, 'wVector');
+    save(fileName, 'wVector', 'spatioTemporalSupport');
     fileName = fullfile(decodingDataDir, sprintf('%s_inSamplePrediction.mat', sceneSetName));
     save(fileName,  'Ctrain', 'CtrainPrediction', 'trainingTimeAxis', 'trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'originalTrainingStimulusSize', 'expParams');
     fprintf('Done after %2.1f minutes.\n', toc/60);

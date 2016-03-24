@@ -1,20 +1,14 @@
 function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercentange)
 
-    sceneSet = core.sceneSetWithName(sceneSetName);
-    scansDataDir = core.getScansDataDir(descriptionString);
-    
     totalTrainingScansNum = 0;
     totalTestingScansNum = 0;
-    
     trainingTimeAxis = [];
     
+    sceneSet = core.sceneSetWithName(sceneSetName);
+    
     for sceneIndex = 1:numel(sceneSet) 
-        
-        imsource  = sceneSet{sceneIndex};
-        sceneName = sprintf('%s_%s', imsource{1}, imsource{2});
-        fprintf('Loading scan data for ''%s''. Please wait ... ', sceneName);
-        fileName = fullfile(scansDataDir, sprintf('%s_scan_data.mat', sceneName));
-        load(fileName, 'scanData', 'scene', 'oi', 'expParams');
+        scanFileName = core.getScanFileName(sceneSetName, descriptionString, sceneIndex);
+        load(scanFileName, 'scanData', 'scene', 'oi', 'expParams');
         
         scansNum = numel(scanData);
         trainingScans = round(trainingDataPercentange/100.0*scansNum);
