@@ -1,7 +1,5 @@
 function [X, C] = computeDesignMatrixAndStimulusVector(signals, stimulus, decoderParams)
 
-    
-    
     latencyBins = decoderParams.latencyInMillseconds / decoderParams.temporalSamplingInMilliseconds;
     memoryBins  = decoderParams.memoryInMilliseconds / decoderParams.temporalSamplingInMilliseconds;
      

@@ -38,8 +38,8 @@ function computeDecodingFilter(sceneSetName, descriptionString)
     scanData = scanData{sceneIndex};
     
     coneSeparation = sensorGet(scanData.scanSensor,'pixel size','um');
-    sensorRowAxis   = (0:(sensorGet(scanData.scanSensor, 'row')-1))*coneSeparation;
-    sensorColAxis   = (0:(sensorGet(scanData.scanSensor, 'col')-1))*coneSeparation;
+    sensorRowAxis   = (0:(sensorGet(scanData.scanSensor, 'row')-1))*coneSeparation(1);
+    sensorColAxis   = (0:(sensorGet(scanData.scanSensor, 'col')-1))*coneSeparation(1);
     sensorRowAxis   = sensorRowAxis - (sensorRowAxis(end)-sensorRowAxis(1))/2;
     sensorColAxis   = sensorColAxis - (sensorColAxis(end)-sensorColAxis(1))/2;
         
