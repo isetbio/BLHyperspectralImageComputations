@@ -28,8 +28,8 @@ function computeOuterSegmentResponses(expParams)
         oi = oiCompute(oi, scene);
 
         % Resample the optical image with a resolution = 0.5 cone aperture. NOTE: this may be different for decoding
-        spatialSample = expParams.sensorParams.coneApertureInMicrons/2.0;
-        oi = oiSpatialResample(oi, spatialSample, 'um', 'linear', false);
+        %spatialSample = expParams.sensorParams.coneApertureInMicrons/2.0;
+        %oi = oiSpatialResample(oi, spatialSample, 'um', 'linear', false);
         
         % Create custom human sensor
         sensor = sensorCreate('human');
