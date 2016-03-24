@@ -1,4 +1,4 @@
-function showSceneAndAdaptingField(scene)
+function renderSceneAndAdaptingField(scene)
         
     sceneXYZ = core.imageFromSceneOrOpticalImage(scene, 'XYZ');
     sceneLuminanceMap = 683*squeeze(sceneXYZ(:,:,2));
@@ -6,7 +6,6 @@ function showSceneAndAdaptingField(scene)
     maxLuminance = max(sceneLuminanceMap(:));
     meanLuminance = mean(sceneLuminanceMap(:));
  
-    
     sceneSRGB = core.imageFromSceneOrOpticalImage(scene, 'sRGB');
     
     % everything above maxSRGB will be clipped

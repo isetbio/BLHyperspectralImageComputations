@@ -1,4 +1,4 @@
-function showOpticalImagesOfSceneAndAdaptingField(oi, sensor, fixationTimes, adaptingFieldFixationTimes)
+function renderOpticalImagesOfSceneAndAdaptingField(oi, sensor, fixationTimes, adaptingFieldFixationTimes)
 
     CMF = core.loadXYZCMFs();
     S = WlsToS(oiGet(oi, 'wave'));
