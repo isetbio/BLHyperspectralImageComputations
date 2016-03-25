@@ -57,13 +57,14 @@ function [sensor, fixationTimes, adaptingFieldFixationTimes] = customizeSensor(o
         yNodes = 0;
         fx = 1.0;
     else
-        xNodesNeg = -(round(0.32 * oiWidthInMicrons/sensorWidthInMicrons * sensorParams.eyeMovementScanningParams.fixationOverlapFactor));
-        xNodesPos =  (round(0.32*(1.0-2*borderFraction) * oiWidthInMicrons/sensorWidthInMicrons * sensorParams.eyeMovementScanningParams.fixationOverlapFactor));
-        yNodes = (round(0.32 * oiHeightInMicrons/sensorHeightInMicrons * sensorParams.eyeMovementScanningParams.fixationOverlapFactor));
+        xNodesNeg = -(round(0.35 * oiWidthInMicrons/sensorWidthInMicrons * sensorParams.eyeMovementScanningParams.fixationOverlapFactor));
+        xNodesPos =  (round(0.35*(1.0-2*borderFraction) * oiWidthInMicrons/sensorWidthInMicrons * sensorParams.eyeMovementScanningParams.fixationOverlapFactor));
+        yNodes = (round(0.35 * oiHeightInMicrons/sensorHeightInMicrons * sensorParams.eyeMovementScanningParams.fixationOverlapFactor));
         if (yNodes == 0)
             error(sprintf('\nZero saccadic eye nodes were generated. Consider increasing the fixationOverlapFactor (currently set to: %2.4f)\n', sensorParams.eyeMovementScanningParams.fixationOverlapFactor));
         end
-        fx = max(sensorParams.spatialGrid) * sensorParams.coneApertureInMicrons / sensorParams.eyeMovementScanningParams.fixationOverlapFactor;  
+        fx(1) = sensorWidthInMicrons / sensorParams.eyeMovementScanningParams.fixationOverlapFactor;  
+        fx(2) = sensorHeightInMicrons / sensorParams.eyeMovementScanningParams.fixationOverlapFactor; 
     end
     
     fprintf('Saccadic grid: %d x %d\n', (xNodesPos-xNodesNeg+1), 2*yNodes+1);
@@ -185,7 +186,7 @@ function saccadicTargetPos = generateAdaptingFieldSaccadicTargets(yNodes, fx, co
     end
 
     % these are in units of cone separations
-    saccadicTargetPos(:,2) = round(gridYY(indices)*fx/coneApertureInMicrons);
+    saccadicTargetPos(:,2) = round(gridYY(indices)*fx(2)/coneApertureInMicrons);
     saccadicTargetPos(:,1) = (opticalImageWidthInMicrons)*(0.40-borderFraction/2)/coneApertureInMicrons;
     
     if (any(abs(saccadicTargetPos(:,1)*coneApertureInMicrons) > opticalImageWidthInMicrons/2))
@@ -210,10 +211,10 @@ function saccadicTargetPos = generateSaccadicTargets(xNodesNeg, xNodesPos, yNode
     else
         error('Unkonwn position scan mode: ''%s''', saccadicScanMode);
     end
-
+    
     % these are in units of cone separations
-    saccadicTargetPos(:,1) = round(gridXX(indices)*fx/coneApertureInMicrons);
-    saccadicTargetPos(:,2) = round(gridYY(indices)*fx/coneApertureInMicrons);
+    saccadicTargetPos(:,1) = round(gridXX(indices)*fx(1)/coneApertureInMicrons);
+    saccadicTargetPos(:,2) = round(gridYY(indices)*fx(2)/coneApertureInMicrons);
     
     if (any(abs(saccadicTargetPos(:,1)*coneApertureInMicrons) > opticalImageWidthInMicrons/2))
        [max(abs(squeeze(saccadicTargetPos(:,1))*coneApertureInMicrons)) opticalImageWidthInMicrons/2]
