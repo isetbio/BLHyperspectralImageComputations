@@ -227,6 +227,11 @@ function [sensor, sensorPositionsInMicrons, sensorFOVxaxis, sensorFOVyaxis, sens
     sensorFOVHalfHeightInMicrons = round(sensorHeightInMicrons/2 + extraMicronsAroundSensorBorder);
     sensorFOVHalfWidthInMicrons  = round(sensorWidthInMicrons/2  + extraMicronsAroundSensorBorder);
     
+    % Make the sensorFOV square, even if sensor is not.
+    maxFOVHalfSizeInMicrons = max([sensorFOVHalfWidthInMicrons sensorFOVHalfHeightInMicrons]);
+    sensorFOVHalfHeightInMicrons = maxFOVHalfSizeInMicrons;
+    sensorFOVHalfWidthInMicrons = maxFOVHalfSizeInMicrons;
+    
     % force the sensor position to be within the limits of the retinal projection of the scene
 	% first the x-coords
     x = sensorPositionsInMicrons(:,1);
@@ -251,11 +256,6 @@ function [sensor, sensorPositionsInMicrons, sensorFOVxaxis, sensorFOVyaxis, sens
     % compute sensor extent in pixels and microns
     sensorFOVHalfCols = round(sensorFOVHalfWidthInMicrons/decodedSceneSpatialSampleSizeInRetinalMicrons);
     sensorFOVHalfRows = round(sensorFOVHalfHeightInMicrons/decodedSceneSpatialSampleSizeInRetinalMicrons);
-    
-    % Make it square
-    sensorFOVHalfRowsCols = max([sensorFOVHalfCols sensorFOVHalfRows]);
-    sensorFOVHalfCols = sensorFOVHalfRowsCols;
-    sensorFOVHalfRows = sensorFOVHalfRowsCols;
     sensorFOVRowRange = (-sensorFOVHalfRows : 1 : sensorFOVHalfRows);
     sensorFOVColRange = (-sensorFOVHalfCols : 1 : sensorFOVHalfCols);
     sensorFOVxaxis = decodedSceneSpatialSampleSizeInRetinalMicrons * sensorFOVColRange;
