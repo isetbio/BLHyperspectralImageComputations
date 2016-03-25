@@ -227,10 +227,11 @@ function [sensor, sensorPositionsInMicrons, sensorFOVxaxis, sensorFOVyaxis, sens
     sensorFOVHalfHeightInMicrons = round(sensorHeightInMicrons/2 + extraMicronsAroundSensorBorder);
     sensorFOVHalfWidthInMicrons  = round(sensorWidthInMicrons/2  + extraMicronsAroundSensorBorder);
     
-    % Make the sensorFOV square, even if sensor is not.
-    maxFOVHalfSizeInMicrons = max([sensorFOVHalfWidthInMicrons sensorFOVHalfHeightInMicrons]);
-    sensorFOVHalfHeightInMicrons = maxFOVHalfSizeInMicrons;
-    sensorFOVHalfWidthInMicrons = maxFOVHalfSizeInMicrons;
+    % Make the sensorFOV square, even if sensor is not. - Not good
+    % reconstructions
+    %maxFOVHalfSizeInMicrons = max([sensorFOVHalfWidthInMicrons sensorFOVHalfHeightInMicrons]);
+    %sensorFOVHalfHeightInMicrons = maxFOVHalfSizeInMicrons;
+    %sensorFOVHalfWidthInMicrons = maxFOVHalfSizeInMicrons;
     
     % force the sensor position to be within the limits of the retinal projection of the scene
 	% first the x-coords
