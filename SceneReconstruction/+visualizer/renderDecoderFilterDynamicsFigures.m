@@ -1,7 +1,5 @@
 function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
 
-    % Allocate memory for unpacked stimDecoder
-    stimDecoder = zeros(3, numel(sensorFOVyaxis), numel(sensorFOVxaxis), sensorRows, sensorCols, timeBinsNum);
     
     fprintf('\nLoading decoder filter ...');
     decodingDataDir = core.getDecodingDataDir(descriptionString);
@@ -20,6 +18,10 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
     % Normalize wVector for plotting in [-1 1]
     wVector = wVector / max(abs(wVector(:)));
     weightRange = max(abs(wVector(:)))*[-1.0 1.0];
+    
+    % Allocate memory for unpacked stimDecoder
+    stimDecoder = zeros(3, ySpatialBinsNum, xSpatialBinsNum, sensorRows, sensorCols, timeBinsNum);
+    
     
     % Unpack the wVector into the stimDecoder
     dcTerm = 1;
