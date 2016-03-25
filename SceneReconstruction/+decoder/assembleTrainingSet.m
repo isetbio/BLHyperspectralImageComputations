@@ -23,6 +23,10 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
                 trainingTimeAxis                        = single(scanData{scanIndex}.timeAxis);
                 trainingScanInsertionTimes              = trainingTimeAxis(1);
                 trainingSceneIndexSequence              = single(sceneIndex);
+                sensorFOVxaxis                          = scanData{scanIndex}.sensorFOVxaxis;
+                sensorFOVyaxis                          = scanData{scanIndex}.sensorFOVyaxis;
+                sensorRetinalXaxis                      = scanData{scanIndex}.sensorRetinalXaxis;
+                sensorRetinalYaxis                      = scanData{scanIndex}.sensorRetinalYaxis;
                 trainingSensorPositionSequence          = single(scanData{scanIndex}.sensorPositionSequence);
                 trainingSceneLMScontrastSequence        = single(scanData{scanIndex}.sceneLMScontrastSequence);
                 trainingOpticalImageLMScontrastSequence = single(scanData{scanIndex}.oiLMScontrastSequence);
@@ -60,23 +64,6 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
         end % scanIndex - training
         
 
-        debugForTransients = false;
-        if (debugForTransients)
-            figure(33); colormap(gray(1024));
-            CLims = [0 max(trainingSceneLMScontrastSequence(:))/2];
-            for k = 1:2:size(trainingSceneLMScontrastSequence,4)
-                for cone = 1:3
-                subplot(1,4,cone);
-                imagesc(squeeze(trainingSceneLMScontrastSequence(:,:,cone, k))); axis 'xy'; axis 'image';
-                set(gca, 'XTick', [], 'YTick', [], 'CLim', CLims);
-                end
-                subplot(1,4,4);
-                imagesc(squeeze(trainingPhotoCurrentSequence(:,:,k))); axis 'xy'; axis 'image';
-                set(gca, 'XTick', [], 'YTick', [], 'CLim', [-100 -10]);
-                drawnow
-            end
-        end
-        
         % concatenate testing datasets
         for scanIndex = trainingScans+1:scansNum 
             totalTestingScansNum = totalTestingScansNum + 1;
@@ -124,13 +111,40 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
         end % scanIndex - testing
     end % sceneIndex
     
-    disp('training')
+    
+    debugForTransients = false;
+        if (debugForTransients)
+            figure(33); colormap(gray(1024));
+            CLims = [-1 1];
+            for k = 1:2:size(trainingSceneLMScontrastSequence,4)
+                for cone = 1:3
+                subplot(1,4,cone);
+                imagesc(sensorFOVxaxis, sensorFOVyaxis, squeeze(trainingSceneLMScontrastSequence(:,:,cone, k))); axis 'xy'; axis 'image';
+                axis 'xy'; axis 'image';
+                set(gca, 'XLim', [sensorFOVxaxis(1) sensorFOVxaxis(end)]);
+                set(gca, 'YLim', [sensorFOVyaxis(1) sensorFOVyaxis(end)]);
+                set(gca, 'CLim', CLims);
+                end
+                subplot(1,4,4);
+                imagesc(sensorRetinalXaxis, sensorRetinalYaxis, squeeze(trainingPhotoCurrentSequence(:,:,k))); 
+                axis 'xy'; axis 'image';
+                set(gca, 'XLim', [sensorFOVxaxis(1) sensorFOVxaxis(end)]);
+                set(gca, 'YLim', [sensorFOVyaxis(1) sensorFOVyaxis(end)]);
+                set(gca,  'CLim', [-80 -20]);
+                drawnow;
+                pause(0.2);
+                
+            end
+        end
+        
+        
+    disp('Sizes of training sequence')
     size(trainingScanInsertionTimes)
     size(trainingSceneLMSbackground)
     size(trainingOpticalImageLMSbackground)
     
     
-    disp('testing')
+    disp('Sizes of testing sequences')
     size(testingScanInsertionTimes)
     size(testingSceneLMSbackground)
     size(testingOpticalImageLMSbackground)
@@ -155,7 +169,7 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     fprintf('Size(photocurrents)    : %d %d %d\n', size(testingPhotoCurrentSequence,1), size(testingPhotoCurrentSequence,2), size(testingPhotoCurrentSequence,3));
     
     if (1==2)
-       displaySequences(trainingTimeAxis, trainingPhotoCurrentSequence, trainingSceneLMScontrastSequence,trainingOpticalImageLMScontrastSequence); 
+       visualizer.renderSceneAndOpticalLMScontrastAndPhotocurrentSequences(sensorFOVxaxis, sensorFOVyaxis, sensorRetinalXaxis, sensorRetinalYaxis, trainingTimeAxis, trainingPhotoCurrentSequence, trainingSceneLMScontrastSequence,trainingOpticalImageLMScontrastSequence); 
     end
     
     % Decide which cones to keep
@@ -213,76 +227,4 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     scanIndex = 1; figNo = 1;
     visualizer.renderConeMosaic(figNo, scanData{scanIndex}.scanSensor, expParams);
         
-end
-
-
-
-function displaySequences(timeAxis, photoCurrentSequence, sceneLMScontrastSequence, opticalImageLMScontrastSequence)
-    figure(1); clf;
-    colormap(gray(1024));
-    
-    for k = 101:size(photoCurrentSequence,3)
-        subplot(2,4,1);
-        imagesc(squeeze(sceneLMScontrastSequence(:,:,1,k)));
-        title('L cone contrast');
-        set(gca, 'CLim', [-1 1]);
-        axis 'xy'; axis 'image'
-
-        subplot(2,4,2);
-        imagesc(squeeze(sceneLMScontrastSequence(:,:,2,k)));
-        title('M cone contrast');
-        set(gca, 'CLim', [-1 1]);
-        axis 'xy'; axis 'image'
-
-        subplot(2,4,3);
-        imagesc(squeeze(sceneLMScontrastSequence(:,:,3,k)));
-        title('S cone contrast');
-        set(gca, 'CLim', [-1 1]);
-        axis 'xy'; axis 'image'
-
-        subplot(2,4,5);
-        imagesc(squeeze(opticalImageLMScontrastSequence(:,:,1,k)));
-        title('L cone contrast (optical image)');
-        set(gca, 'CLim', 0.5*[-1 1]);
-        axis 'xy'; axis 'image'
-
-        subplot(2,4,6);
-        imagesc(squeeze(opticalImageLMScontrastSequence(:,:,2,k)));
-        title('M cone contrast (optical image)');
-        set(gca, 'CLim', 0.5*[-1 1]);
-        axis 'xy'; axis 'image'
-
-        subplot(2,4,7);
-        imagesc(squeeze(opticalImageLMScontrastSequence(:,:,3,k)));
-        title('scone contrast (optical image)');
-        set(gca, 'CLim', 0.5*[-1 1]);
-        axis 'xy'; axis 'image'
-
-        photoCurrentRange = [-80 -20];
-        subplot(2,4,4);
-        imagesc(squeeze(photoCurrentSequence(:,:,k)));
-        title(sprintf('photocurrent (time: %2.4f sec)', timeAxis(k)/1000));
-        set(gca, 'CLim', photoCurrentRange);
-        axis 'xy'; axis 'image'
-
-        subplot(2,4,8);
-        timeBins = k+(-100:100);
-        el = 0;
-        for ir = 10+(-1:1)
-            for ic = 10+(-1:1)
-                el = el + 1;
-                plot(timeAxis(timeBins), squeeze(photoCurrentSequence(ir,ic,timeBins)), 'k-');
-                if (el == 1)
-                    hold on
-                    plot(timeAxis(k)*[1 1], [-100 100], 'r-');
-                end
-            end
-        end
-        hold off;
-        title(sprintf('photocurrent traces (time: %2.4f-%2.4f sec)', trainingTimeAxis(timeBins(1))/1000,trainingTimeAxis(timeBins(end))/1000));
-        set(gca, 'YLim', photoCurrentRange, 'XLim', [trainingTimeAxis(timeBins(1)) trainingTimeAxis(timeBins(end))]);
-        axis 'square'
-
-        drawnow
-     end
 end

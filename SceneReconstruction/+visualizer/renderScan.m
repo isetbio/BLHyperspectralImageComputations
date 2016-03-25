@@ -11,9 +11,9 @@ function renderScan(sceneSetName, descriptionString, sceneIndex)
     
         
     for scanIndex = 1:numel(scanData)
-        sensorRows                  = sensorGet(scanData{scanIndex}.scanSensor, 'row');
-        sensorCols                  = sensorGet(scanData{scanIndex}.scanSensor, 'col');
         timeAxis                    = scanData{scanIndex}.timeAxis;
+        sensorRetinalXaxis          = scanData{scanIndex}.sensorRetinalXaxis;
+        sensorRetinalYaxis          = scanData{scanIndex}.sensorRetinalYaxis;
         sensorFOVxaxis              = scanData{scanIndex}.sensorFOVxaxis;
         sensorFOVyaxis              = scanData{scanIndex}.sensorFOVyaxis;
         sceneRetinalProjectionXData = scanData{scanIndex}.sceneRetinalProjectionXData;
@@ -25,13 +25,7 @@ function renderScan(sceneSetName, descriptionString, sceneIndex)
     
         isomerizationRange = [0 0.8*max(scanData{scanIndex}.isomerizationRateSequence(:))];
         conesNum = size(scanData{scanIndex}.isomerizationRateSequence,1)*size(scanData{scanIndex}.isomerizationRateSequence,2);
-        coneSeparation = sensorGet(scanData{scanIndex}.scanSensor,'pixel size','um');
     
-        isomerizationFrameXaxis = 0:(sensorCols-1)*coneSeparation;
-        isomerizationFrameYaxis = 0:(sensorRows-1)*coneSeparation;
-        isomerizationFrameXaxis = isomerizationFrameXaxis - (isomerizationFrameXaxis(end)-isomerizationFrameXaxis(1))/2;
-        isomerizationFrameYaxis = isomerizationFrameYaxis - (isomerizationFrameYaxis(end)-isomerizationFrameYaxis(1))/2;
-
         timeBinsDisplayed = 100;
         coneContrastRange = [-1 5];
     
@@ -95,7 +89,7 @@ function renderScan(sceneSetName, descriptionString, sceneIndex)
                 title('Lcone contrast image (optical image)');
 
                 subplot(4,3,3)
-                p3 = imagesc(isomerizationFrameXaxis, isomerizationFrameYaxis, isomerizationFrame);
+                p3 = imagesc(sensorRetinalXaxis, sensorRetinalYaxis, isomerizationFrame);
                 hold on;
                 plot([0 0 ], [-100 100], 'r-');
                 plot([-100 100], [0 0 ], 'r-');

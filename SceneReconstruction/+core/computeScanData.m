@@ -20,6 +20,12 @@ function scanData = computeScanData(scene,  oi,  sensor, osOBJ, ...
     sensor = coneAbsorptions(sensor, oi);
     isomerizationRate = sensorGet(sensor, 'photon rate');
     
+    coneSeparation = sensorGet(sensor,'pixel size','um');
+    sensorRetinalXaxis = (0:1:(sensorGet(sensor, 'col')-1))*coneSeparation(1);
+    sensorRetinalYaxis = (0:1:(sensorGet(sensor, 'rows')-1))*coneSeparation(1);
+    sensorRetinalXaxis = sensorRetinalXaxis - (sensorRetinalXaxis(end)-sensorRetinalXaxis(1))/2;
+    sensorRetinalYaxis = sensorRetinalYaxis - (sensorRetinalYaxis(end)-sensorRetinalYaxis(1))/2;
+    
     % Resample the optical image in the decoder's spatial resolution
     [oiResampledToDecoderResolution, opticalImageXData, opticalImageYData] = ...
         computeResampledOpticalScene(oi, decodedSceneSpatialSampleSizeInRetinalMicrons);
@@ -76,7 +82,7 @@ function scanData = computeScanData(scene,  oi,  sensor, osOBJ, ...
         scanTimeAxis = (0:1:(numel(scanPathEyePositionIndices)-1))*sensorGet(sensor, 'time interval')*1000;
         
         % All done. Last step: subsample all the sequences temporally according to decodedSceneTemporalSampling
-        initialTimePeriodExcuded = 400;   % do not include the initial 400 milliseconds of the response - avoid photocurrent transients
+        initialTimePeriodExcuded = 600;   % do not include the initial 600 milliseconds of the response - avoid photocurrent transients
         timeDimensionIndex = 1; lowPassSignal = true;
         [sensorPositionSequence,  subSampledScanTimeAxis, ~, ~] = core.subsampleTemporally(sensorPositionSequence, scanTimeAxis, initialTimePeriodExcuded, timeDimensionIndex, lowPassSignal, decodedSceneTemporalSampling);
         
@@ -119,6 +125,8 @@ function scanData = computeScanData(scene,  oi,  sensor, osOBJ, ...
             'oiBackgroundExcitations',      oiBackgroundExcitations, ...
             'isomerizationRateSequence',    isomerizationRateSequence, ...
             'photoCurrentSequence',         photoCurrentSequence, ...
+            'sensorRetinalXaxis',           sensorRetinalXaxis, ...
+            'sensorRetinalYaxis',           sensorRetinalYaxis, ...
             'sensorFOVxaxis',               sensorFOVxaxis, ...
             'sensorFOVyaxis',               sensorFOVyaxis, ...
             'sceneRetinalProjectionXData',  sceneRetinalProjectionXData, ... 
@@ -164,19 +172,21 @@ function [scanPathEyePositionIndices, adaptingFieldFixationIndex, trailingAdapta
         
     adaptingFieldFixationsNum = numel(adaptingFieldFixationTimes.onsetBins);
 
-    % Two adaptation saccades before we start this scan
-    for k = 1:2
+    % add as many adaptation saccades as necessary to fill a 600 ms period - avoid transients in photocurrent
+    while (size(scanPathEyePositionIndices,2) < 6000) 
         % add eye position indices
         adaptingFieldFixationIndex = mod(adaptingFieldFixationIndex, adaptingFieldFixationsNum) + 1;
 
         timeIndices = single(adaptingFieldFixationTimes.onsetBins(adaptingFieldFixationIndex):adaptingFieldFixationTimes.offsetBins(adaptingFieldFixationIndex));
+        
         if (isempty(scanPathEyePositionIndices))
             scanPathEyePositionIndices = timeIndices;
         else
             scanPathEyePositionIndices = cat(2, scanPathEyePositionIndices, timeIndices);
         end
     end
-        
+    fprintf('Pre-sequence adaptation time indices: %d\n', size(scanPathEyePositionIndices,2));
+    
     for sceneSaccadeIndex = startingSaccade:endingSaccade   
         % Add scene saccade
         timeIndices = single(sceneFixationTimes.onsetBins(sceneSaccadeIndex):sceneFixationTimes.offsetBins(sceneSaccadeIndex));
@@ -188,6 +198,7 @@ function [scanPathEyePositionIndices, adaptingFieldFixationIndex, trailingAdapta
 
         % Add adaptation saccade (if needed based on viewing mode)
         if (mod(sceneSaccadeIndex-startingSaccade+1, consecutiveSceneFixationsBetweenAdaptingFieldPresentation) == 0)
+            fprintf('adding adaptation saccade after %d saccade\n', sceneSaccadeIndex);
             adaptingFieldFixationIndex = mod(adaptingFieldFixationIndex, adaptingFieldFixationsNum) + 1;
             timeIndices = single(adaptingFieldFixationTimes.onsetBins(adaptingFieldFixationIndex):adaptingFieldFixationTimes.offsetBins(adaptingFieldFixationIndex));
             if (isempty(scanPathEyePositionIndices))
@@ -198,7 +209,7 @@ function [scanPathEyePositionIndices, adaptingFieldFixationIndex, trailingAdapta
         end
     end
         
-    % Another two adaptation saccades at the end
+    % Add two adaptation saccades at the end
     firstTimeBinOfTrailingAdaptationPeriod = size(scanPathEyePositionIndices,2)+1;
     for k = 1:2
         % add eye position indices
@@ -255,8 +266,8 @@ function [sensor, sensorPositionsInMicrons, sensorFOVxaxis, sensorFOVyaxis, sens
     sensor = sensorSet(sensor, 'positions',   sensorPositionsInConeSeparations);
     
     % compute sensor extent in pixels and microns
-    sensorFOVHalfCols = round(sensorFOVHalfWidthInMicrons/decodedSceneSpatialSampleSizeInRetinalMicrons);
-    sensorFOVHalfRows = round(sensorFOVHalfHeightInMicrons/decodedSceneSpatialSampleSizeInRetinalMicrons);
+    sensorFOVHalfCols = floor(sensorFOVHalfWidthInMicrons/decodedSceneSpatialSampleSizeInRetinalMicrons);
+    sensorFOVHalfRows = floor(sensorFOVHalfHeightInMicrons/decodedSceneSpatialSampleSizeInRetinalMicrons);
     sensorFOVRowRange = (-sensorFOVHalfRows : 1 : sensorFOVHalfRows);
     sensorFOVColRange = (-sensorFOVHalfCols : 1 : sensorFOVHalfCols);
     sensorFOVxaxis = decodedSceneSpatialSampleSizeInRetinalMicrons * sensorFOVColRange;
