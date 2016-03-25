@@ -3,50 +3,59 @@ function renderInSamplePredictionsFigures(sceneSetName, descriptionString)
     fprintf('\nLoading stimulus prediction data ...');
     decodingDataDir = core.getDecodingDataDir(descriptionString);
     fileName = fullfile(decodingDataDir, sprintf('%s_inSamplePrediction.mat', sceneSetName));
-    load(fileName,  'CtrainPrediction', 'trainingTimeAxis', 'trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'originalTrainingStimulusSize', 'expParams');
+    load(fileName,  'Ctrain', 'CtrainPrediction', 'trainingTimeAxis', 'trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'originalTrainingStimulusSize', 'expParams');
     fprintf('Done.\n');
+    
     
     % The stimulus used to form the Ctrain/CtrainPrediction has less bins
     % that the full stimulus sequence, so use only those bins
     originalTrainingStimulusSize(4) = size(CtrainPrediction,1);
     
+    
     [trainingSceneLMScontrastSequencePrediction,~] = ...
         decoder.stimulusSequenceToDecoderFormat(CtrainPrediction, 'fromDecoderFormat', originalTrainingStimulusSize);
-    
-    
-    fprintf('\n Loading actual stimulus data ... ');
-    decodingDataDir = core.getDecodingDataDir(descriptionString);
-    fileName = fullfile(decodingDataDir, sprintf('%s_trainingDesignMatrices.mat', sceneSetName));
-    load(fileName, 'Ctrain', 'originalTrainingStimulusSize', 'expParams');
     
     originalTrainingStimulusSize(4) = size(Ctrain,1);
     [trainingSceneLMScontrastSequence,~] = ...
         decoder.stimulusSequenceToDecoderFormat(Ctrain, 'fromDecoderFormat', originalTrainingStimulusSize);
     
-    trainingSceneSRGBSequencePrediction = 0*trainingSceneLMScontrastSequencePrediction;
-    trainingSceneSRGBSequence = 0* trainingSceneLMScontrastSequence;
+    
+    trainingSceneRGBSequencePrediction = 0*trainingSceneLMScontrastSequencePrediction;
+    trainingSceneRGBSequence = 0* trainingSceneLMScontrastSequence;
     
     backgroundExcitation = mean(trainingSceneLMSbackground, 2)
     
+    displayName = 'LCD-Apple'; %'OLED-Samsung'; % 'OLED-Samsung', 'OLED-Sony';
+    gain = 25;
+    [coneFundamentals, displaySPDs, wave] = core.LMSRGBconversionData(displayName, gain);
     
     for kBin = 1:size(trainingSceneLMScontrastSequencePrediction,4)
         LMScontrastFrame  = trainingSceneLMScontrastSequencePrediction(:,:,:,kBin);
         LMSexcitationFrame = core.excitationFromContrast(LMScontrastFrame, backgroundExcitation);
+        [trainingSceneRGBSequencePrediction(:,:,:, kBin), predictionOutsideGamut] = ...
+            core.LMStoRGBforSpecificDisplay(...
+                LMSexcitationFrame, ...
+                displaySPDs, coneFundamentals);
         
-        SRGBframe = core.XYZtoSRGB(core.StockmanSharpe2DegToXYZ(LMSexcitationFrame), []);
-        trainingSceneSRGBSequencePrediction(:,:,:, kBin) = SRGBframe;
-
+%         if (any(predictionOutsideGamut(:)>0))
+%             predictionOutsideGamut
+%         end
         
         LMScontrastFrame  = trainingSceneLMScontrastSequence(:,:,:,kBin);
         LMSexcitationFrame = core.excitationFromContrast(LMScontrastFrame, backgroundExcitation);
-        SRGBframe = core.XYZtoSRGB(core.StockmanSharpe2DegToXYZ(LMSexcitationFrame), []);
-        trainingSceneSRGBSequence(:,:,:, kBin) = SRGBframe;
+        [trainingSceneRGBSequence(:,:,:, kBin), inputOutsideGamut] = ...
+            core.LMStoRGBforSpecificDisplay(...
+                LMSexcitationFrame, ...
+                displaySPDs, coneFundamentals);
+            
+       if (any(inputOutsideGamut(:)>0))
+            inputOutsideGamut
+       end
+       
     end
     
-   
-   
     
-    maxSRGB = 5; % max([max(trainingSceneSRGBSequence(:)) max(trainingSceneSRGBSequencePrediction(:))])
+    maxSRGB = 1;
     
     h = figure(100); clf; colormap(gray(1024))
     for tBin = 1:1:size(trainingSceneLMScontrastSequence,4)
@@ -72,23 +81,39 @@ function renderInSamplePredictionsFigures(sceneSetName, descriptionString)
             set(gca, 'CLim', [-3 3]);
             
             subplot(4,3,10)
-            SRGBframe = squeeze(trainingSceneSRGBSequence(:,:,:, tBin));
-            SRGBframe = SRGBframe/ maxSRGB;
-            SRGBframe(SRGBframe>1) = 1;
-            SRGBframe(SRGBframe<0) = 0;
-            imagesc(SRGBframe);
-             axis 'xy'; axis 'image'
+            RGBframe = squeeze(trainingSceneRGBSequence(:,:,:, tBin));
+            aboveIndices = find(RGBframe>1);
+            RGBframe(aboveIndices) = 1;
+            belowIndices = find(RGBframe<0);
+            RGBframe(belowIndices) = 0;
+            above = numel(aboveIndices);
+            below =  numel(belowIndices);
+            if (above > 0 || below > 0)
+                [above below]
+            end
+            RGBframe = RGBframe.^(1.0/1.8);
+            
+            imagesc(RGBframe);
+            axis 'xy'; axis 'image'
             set(gca, 'CLim', [0 1]);
             set(gca, 'XTick', [], 'YTick', []);
             title('inpout image');
             
             subplot(4,3, 11)
-            SRGBframe = squeeze(trainingSceneSRGBSequencePrediction(:,:,:, tBin));
+            RGBframe = squeeze(trainingSceneRGBSequencePrediction(:,:,:, tBin));
             
-            SRGBframe = SRGBframe/ maxSRGB;
-            SRGBframe(SRGBframe>1) = 1;
-            SRGBframe(SRGBframe<0) = 0;
-            imagesc(SRGBframe);
+            aboveIndices = find(RGBframe>1);
+            RGBframe(aboveIndices) = 1;
+            belowIndices = find(RGBframe<0);
+            RGBframe(belowIndices) = 0;
+            above = numel(aboveIndices);
+            below =  numel(belowIndices);
+            if (above > 0 || below > 0)
+                [above below]
+            end
+            RGBframe = RGBframe.^(1.0/1.8);
+            
+            imagesc(RGBframe);
             axis 'xy'; axis 'image'
             set(gca, 'CLim', [0 1]);
             set(gca, 'XTick', [], 'YTick', []);
