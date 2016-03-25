@@ -6,10 +6,12 @@ function RunExperiment
     instructionSet = {...
        'compute outer segment responses' ...  % produces the contents of the scansData directory
        'assembleTrainingDataSet' ...       % produces the training/testing design matrices in the decodingData directory
-        'computeDecodingFilter' ...       % inverts the training desing matrix to comptue the decoding filter (stored in the decodingData directory)
+       'computeDecodingFilter' ...       % inverts the training desing matrix to comptue the decoding filter (stored in the decodingData directory)
+       'computeOutOfSamplePrediction' ...
        % 'visualizeScan' ...
        % 'visualizeDecodingFilter' ...
-       % 'visualizeInSamplePredictions' ...
+       % 'visualizeInSamplePrediction' ...
+       % 'visualizeOutOfSamplePrediction' ...
         };
   
     sceneSetName = 'manchester';
@@ -31,13 +33,19 @@ function RunExperiment
 
             case 'computeDecodingFilter'
                 decoder.computeDecodingFilter(sceneSetName, descriptionString);
-            
+                
+            case 'computeOutOfSamplePrediction'
+                decode.computeOutOfSamplePrediction(sceneSetName, descriptionString);
+                
             case 'visualizeDecodingFilter'
                 visualizer.renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString);
           
-            case 'visualizeInSamplePredictions'
+            case 'visualizeInSamplePrediction'
                 visualizer.renderInSamplePredictionsFigures(sceneSetName, descriptionString);
             
+            case 'visualizeOutOfSamplePrediction'
+                visualizer.renderOutOfSamplePredictionsFigures(sceneSetName, descriptionString);
+                
             otherwise
                 error('Unknown instruction: ''%s''.\n', instructionSet{1});
         end  % switch 

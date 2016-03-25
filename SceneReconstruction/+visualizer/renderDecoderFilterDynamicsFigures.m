@@ -96,7 +96,6 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
             set(gca, 'XTick', [], 'YTick', [], 'XLim', [timeAxis(1) timeAxis(end)], 'YLim', weightRange);
         end
         
-        drawnow; figure(hFig1); drawnow;
         end
     end
 
