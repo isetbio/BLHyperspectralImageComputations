@@ -16,7 +16,7 @@ function RunExperiment
         };
   
     sceneSetName = 'manchester';
-    descriptionString = 'AdaptEvery20Fixations';
+    descriptionString = 'AdaptEvery1Fixations';
     
     for k = 1:numel(instructionSet)
         switch instructionSet{k}
