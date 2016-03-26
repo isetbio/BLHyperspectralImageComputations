@@ -52,6 +52,9 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
                 trainingOpticalImageLMScontrastSequence = cat(4, ...
                     trainingOpticalImageLMScontrastSequence, single(scanData{scanIndex}.oiLMScontrastSequence));
                 
+                size(scanData{scanIndex}.photoCurrentSequence)
+                size(scanData{scanIndex}.sceneLMScontrastSequence)
+                
                 trainingPhotoCurrentSequence = cat(3, ...
                     trainingPhotoCurrentSequence,  single(scanData{scanIndex}.photoCurrentSequence));
                 
@@ -132,7 +135,7 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
                 set(gca, 'YLim', [sensorFOVyaxis(1) sensorFOVyaxis(end)]);
                 set(gca,  'CLim', [-80 -20]);
                 drawnow;
-                pause(0.2);
+                pause(0.1);
                 
             end
         end

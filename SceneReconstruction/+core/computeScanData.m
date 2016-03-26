@@ -115,7 +115,7 @@ function scanData = computeScanData(scene,  oi,  sensor, osOBJ, ...
         
         
         fprintf('Completed in %2.2f seconds\n', toc);
-        fprintf('scan time axis spans: %2.1f - %2.1f milliseconds', subSampledScanTimeAxis(1),subSampledScanTimeAxis(end));
+        fprintf('scan time axis spans: %2.1f - %2.1f milliseconds\n', subSampledScanTimeAxis(1),subSampledScanTimeAxis(end));
         fprintf('mean cone excitations estimated between %2.1f and %2.1f milliseconds\n', subSampledScanTimeAxis(timeBinsForEstimatingMeanLMScontrast(1)), subSampledScanTimeAxis(timeBinsForEstimatingMeanLMScontrast(end)));
         fprintf('values for scene image  : %2.5f %2.5f %2.5f\n', sceneBackgroundExcitations(1), sceneBackgroundExcitations(2), sceneBackgroundExcitations(3));
         fprintf('values for optical image: %2.5f %2.5f %2.5f\n', oiBackgroundExcitations(1), oiBackgroundExcitations(2), oiBackgroundExcitations(3));
