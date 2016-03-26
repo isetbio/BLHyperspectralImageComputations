@@ -22,7 +22,7 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
                 dt = scanData{scanIndex}.timeAxis(2)-scanData{scanIndex}.timeAxis(1);
                 trainingTimeAxis                        = single(scanData{scanIndex}.timeAxis);
                 trainingScanInsertionTimes              = trainingTimeAxis(1);
-                trainingSceneIndexSequence              = single(sceneIndex);
+                trainingSceneIndexSequence              = repmat(single(sceneIndex), [1 numel(scanData{scanIndex}.timeAxis)]);
                 sensorFOVxaxis                          = scanData{scanIndex}.sensorFOVxaxis;
                 sensorFOVyaxis                          = scanData{scanIndex}.sensorFOVyaxis;
                 sensorRetinalXaxis                      = scanData{scanIndex}.sensorRetinalXaxis;
@@ -41,7 +41,7 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
                 trainingScanInsertionTimes = cat(2, trainingScanInsertionTimes, trainingTimeAxis(end-insertionPoints+1));
                 
                 trainingSceneIndexSequence = cat(2, ...
-                    trainingSceneIndexSequence, single(sceneIndex));
+                    trainingSceneIndexSequence, repmat(single(sceneIndex), [1 numel(scanData{scanIndex}.timeAxis)]));
                 
                 trainingSensorPositionSequence = cat(1, ...
                     trainingSensorPositionSequence, single(scanData{scanIndex}.sensorPositionSequence));
@@ -71,7 +71,7 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
                 dt = scanData{scanIndex}.timeAxis(2)-scanData{scanIndex}.timeAxis(1);
                 testingTimeAxis = single(scanData{scanIndex}.timeAxis);
                 testingScanInsertionTimes              = trainingTimeAxis(1);
-                testingSceneIndexSequence              = single(sceneIndex);
+                testingSceneIndexSequence              = repmat(single(sceneIndex), [1 numel(scanData{scanIndex}.timeAxis)]);
                 testingSensorPositionSequence          = single(scanData{scanIndex}.sensorPositionSequence);
                 testingSceneLMScontrastSequence        = single(scanData{scanIndex}.sceneLMScontrastSequence);
                 testingOpticalImageLMScontrastSequence = single(scanData{scanIndex}.oiLMScontrastSequence);
@@ -86,7 +86,7 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
                 testingScanInsertionTimes = cat(2, testingScanInsertionTimes, testingTimeAxis(end-insertionPoints+1));
                
                 testingSceneIndexSequence = cat(2, ...
-                    testingSceneIndexSequence, single(sceneIndex));
+                    testingSceneIndexSequence, repmat(single(sceneIndex), [1 numel(scanData{scanIndex}.timeAxis)]));
                 
                 testingSensorPositionSequence = cat(1, ...
                     testingSensorPositionSequence, single(scanData{scanIndex}.sensorPositionSequence));
@@ -184,8 +184,11 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     [trainingStimulus, originalTrainingStimulusSize] = ...
         decoder.stimulusSequenceToDecoderFormat(trainingSceneLMScontrastSequence, 'toDecoderFormat', []);
     
+    [trainingStimulusOI, ~] = ...
+        decoder.stimulusSequenceToDecoderFormat(trainingOpticalImageLMScontrastSequence, 'toDecoderFormat', []);
+    
     % Compute training design matrix and stimulus vector
-    [Xtrain, Ctrain] = decoder.computeDesignMatrixAndStimulusVector(trainingResponses, trainingStimulus, expParams.decoderParams);
+    [Xtrain, Ctrain, oiCtrain] = decoder.computeDesignMatrixAndStimulusVector(trainingResponses, trainingStimulus, trainingStimulusOI, expParams.decoderParams);
     
     whos 'Xtrain'
     whos 'Ctrain'
@@ -196,9 +199,9 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     decodingDataDir = core.getDecodingDataDir(descriptionString);
     fileName = fullfile(decodingDataDir, sprintf('%s_trainingDesignMatrices.mat', sceneSetName));
     fprintf('\nSaving training design matrix and stim vector ''%s''... ', fileName);
-    save(fileName, 'Xtrain', 'Ctrain', 'trainingTimeAxis', 'trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'originalTrainingStimulusSize', 'expParams', '-v7.3');
+    save(fileName, 'Xtrain', 'Ctrain', 'oiCtrain', 'trainingTimeAxis', 'trainingSceneIndexSequence', 'trainingSensorPositionSequence', 'trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'trainingOpticalImageLMSbackground', 'originalTrainingStimulusSize', 'expParams', '-v7.3');
     fprintf('Done.\n');
-    clear 'Xtrain'; clear 'Ctrain'
+    clear 'Xtrain'; clear 'Ctrain'; clear 'oiCtrain'
     
     % Reshape testing cone responses to decoder format
     testingResponses = reshape(testingPhotoCurrentSequence, ...
@@ -208,8 +211,11 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     [testingStimulus, originalTestingStimulusSize] = ...
         decoder.stimulusSequenceToDecoderFormat(testingSceneLMScontrastSequence, 'toDecoderFormat', []);
     
+    [testingStimulusOI, ~] = ...
+        decoder.stimulusSequenceToDecoderFormat(testingOpticalImageLMScontrastSequence, 'toDecoderFormat', []);
+    
     % Compute testing design matrix and stimulus vector
-    [Xtest, Ctest] = decoder.computeDesignMatrixAndStimulusVector(testingResponses, testingStimulus, expParams.decoderParams);
+    [Xtest, Ctest, oiCtest] = decoder.computeDesignMatrixAndStimulusVector(testingResponses, testingStimulus, testingStimulusOI, expParams.decoderParams);
     whos 'Xtest'
     whos 'Ctest'
     
@@ -217,9 +223,9 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     decodingDataDir = core.getDecodingDataDir(descriptionString);
     fileName = fullfile(decodingDataDir, sprintf('%s_testingDesignMatrices.mat', sceneSetName));
     fprintf('\nSaving test design matrix and stim vector to ''%s''... ', fileName);
-    save(fileName, 'Xtest', 'Ctest', 'testingTimeAxis', 'testingScanInsertionTimes', 'testingSceneLMSbackground', 'originalTestingStimulusSize', 'expParams', '-v7.3');
+    save(fileName, 'Xtest', 'Ctest', 'oiCtest', 'testingTimeAxis', 'testingSceneIndexSequence', 'testingSensorPositionSequence', 'testingScanInsertionTimes',  'testingSceneLMSbackground', 'testingOpticalImageLMSbackground', 'originalTestingStimulusSize', 'expParams', '-v7.3');
     fprintf('Done.\n');
-    clear 'Xtest'; clear 'Ctest'
+    clear 'Xtest'; clear 'Ctest'; clear 'oiCtest';
     
     return;
     

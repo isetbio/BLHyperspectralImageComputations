@@ -63,7 +63,7 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
            
     for stimConeContrastIndex = 1:3
         hFig1 = figure(1+(stimConeContrastIndex-1)*10); clf; colormap(niceCmap(end:-1:1,:)); set(hFig1, 'position', [10 10 950 930]);
-        hFig2 = figure(2+(stimConeContrastIndex-1)*10); clf; colormap(niceCmap(end:-1:1,:)); set(hFig2, 'position', [10 10 950 930]);
+        hFig2 = figure(2+(stimConeContrastIndex-1)*10); clf; colormap(niceCmap(end:-1:1,:)); set(hFig2, 'position', [700 10 950 930]);
 
         for ySpatialBin = 1:ySpatialBinsNum
         for xSpatialBin = 1:xSpatialBinsNum
@@ -77,13 +77,14 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
             [~, idx] = max(abs(tmp(:)));
             [peakConeRow, peakConeCol, idx] = ind2sub(size(tmp), idx);
             [~,peakTimeBin] = min(abs(timeAxis - causalTimeAxis(idx)));
-            fprintf('filter at (%d,%d) peaks at %2.0f msec\n', xSpatialBin, ySpatialBin, timeAxis(peakTimeBin));
+           % fprintf('filter at (%d,%d) peaks at %2.0f msec\n', xSpatialBin, ySpatialBin, timeAxis(peakTimeBin));
 
             figure(hFig1)
             subplot('position',subplotPosVectors(ySpatialBinsNum-ySpatialBin+1,xSpatialBin).v);
             imagesc(squeeze(spatioTemporalFilter(:,:, peakTimeBin)));
             set(gca, 'XTick', [], 'YTick', [], 'CLim', weightRange);
             axis 'image'; axis 'xy'; 
+            drawnow
             
             figure(hFig2)
             subplot('position',subplotPosVectors(ySpatialBinsNum-ySpatialBin+1, xSpatialBin).v);
@@ -94,6 +95,7 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
             hold off
             axis 'square';
             set(gca, 'XTick', [], 'YTick', [], 'XLim', [timeAxis(1) timeAxis(end)], 'YLim', weightRange);
+            drawnow
         end
         
         end

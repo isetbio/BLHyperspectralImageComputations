@@ -1,15 +1,13 @@
-function renderScenePrediction(Ct, CtPrediction, originalStimulusSize, LMSbackground, expParams)
+function renderScenePrediction(C, Creconstruction, originalStimulusSize, LMSbackground, expParams)
 
-    % The stimulus used to form the CtPrediction has less bins
-    % that the full stimulus sequence, so use only those bins
-    originalStimulusSize(4) = size(CtPrediction,1);
+    reconstructionDecoderFormat = decoder.decoderFormatFromDesignMatrixFormat(Creconstruction, expParams.decoderParams);
+    inputDecoderFormat = decoder.decoderFormatFromDesignMatrixFormat(C, expParams.decoderParams);
     
     [LMScontrastSequencePrediction,~] = ...
-        decoder.stimulusSequenceToDecoderFormat(CtPrediction, 'fromDecoderFormat', originalStimulusSize);
-  
-    originalStimulusSize(4) = size(Ct,1);
+        decoder.stimulusSequenceToDecoderFormat(reconstructionDecoderFormat, 'fromDecoderFormat', originalStimulusSize);
+   
     [LMScontrastSequence,~] = ...
-        decoder.stimulusSequenceToDecoderFormat(Ct, 'fromDecoderFormat', originalStimulusSize);
+        decoder.stimulusSequenceToDecoderFormat(inputDecoderFormat, 'fromDecoderFormat', originalStimulusSize);
     
     RGBSequencePrediction = 0*LMScontrastSequencePrediction;
     RGBSequence = 0*LMScontrastSequence;

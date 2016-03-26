@@ -1,4 +1,4 @@
-function [X, C] = computeDesignMatrixAndStimulusVector(signals, stimulus, decoderParams)
+function [X, C, Coi] = computeDesignMatrixAndStimulusVector(signals, stimulus, stimulusOI, decoderParams)
 
     latencyBins = decoderParams.latencyInMillseconds / decoderParams.temporalSamplingInMilliseconds;
     memoryBins  = decoderParams.memoryInMilliseconds / decoderParams.temporalSamplingInMilliseconds;
@@ -15,6 +15,7 @@ function [X, C] = computeDesignMatrixAndStimulusVector(signals, stimulus, decode
     stimulusDimensions = size(stimulus,2);
     X = zeros(rowsOfX, 1+(conesNum*memoryBins), 'single');
     C = zeros(rowsOfX, stimulusDimensions, 'single');
+    Coi = zeros(rowsOfX, stimulusDimensions, 'single');
     
     fprintf('\nAssembling design matrix (%d x %d) and stimulus vector (%d x %d).\nThis will take a while. Please wait ...', size(X, 1), size(X, 2), size(C, 1), size(C, 2));
     
@@ -37,6 +38,7 @@ function [X, C] = computeDesignMatrixAndStimulusVector(signals, stimulus, decode
         % Update C
         if (row-minTimeBin <= size(stimulus,1))
             C(row, :) = stimulus(row-minTimeBin,:);
+            Coi(row, :) = stimulusOI(row-minTimeBin,:);
         else
             fprintf('index %d > size(stimulus): %d\n', row-minTimeBin, size(stimulus,1));
         end 

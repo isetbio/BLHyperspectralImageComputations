@@ -4,7 +4,7 @@ function computeOutOfSamplePrediction(sceneSetName, descriptionString)
     decodingDataDir = core.getDecodingDataDir(descriptionString);
     fileName = fullfile(decodingDataDir, sprintf('%s_testingDesignMatrices.mat', sceneSetName));
     fprintf('\n1. Loading test design matrix and stim vector from ''%s''... ', fileName);
-    load(fileName, 'Xtest', 'Ctest', 'testingTimeAxis', 'testingScanInsertionTimes', 'testingSceneLMSbackground', 'originalTestingStimulusSize', 'expParams');
+    load(fileName, 'Xtest', 'Ctest', 'testingTimeAxis', 'testingSceneIndexSequence', 'testingSensorPositionSequence', 'testingScanInsertionTimes', 'testingSceneLMSbackground', 'originalTestingStimulusSize', 'expParams');
     fprintf('Done.\n');
    
     fprintf('\n2. Loading decoder filter and in-sample prediction ... ');
@@ -22,7 +22,7 @@ function computeOutOfSamplePrediction(sceneSetName, descriptionString)
     
     fprintf('\n4. Saving out-if-sample prediction ... ');
     fileName = fullfile(decodingDataDir, sprintf('%s_outOfSamplePrediction.mat', sceneSetName));
-    save(fileName,  'Ctest', 'CtestPrediction', 'testingTimeAxis', 'testingScanInsertionTimes', 'testingSceneLMSbackground', 'originalTestingStimulusSize', 'expParams', '-v7.3');
+    save(fileName,  'Ctest', 'CtestPrediction', 'testingTimeAxis', 'testingSceneIndexSequence', 'testingSensorPositionSequence', 'testingScanInsertionTimes', 'testingSceneLMSbackground', 'originalTestingStimulusSize', 'expParams', '-v7.3');
     fprintf('Done after %2.1f minutes.\n', toc/60);
     
 end

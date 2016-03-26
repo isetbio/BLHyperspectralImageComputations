@@ -11,12 +11,12 @@ function renderInSamplePredictionsFigures(sceneSetName, descriptionString)
         figNo, Ctrain, CtrainPrediction,  originalTrainingStimulusSize ...
     );
     
-    if (1==2)
+    
     visualizer.renderScenePrediction(...
         Ctrain, CtrainPrediction,  originalTrainingStimulusSize, ...
         trainingSceneLMSbackground, expParams ...
     );
-    end
+    
     
 end
 
