@@ -7,7 +7,7 @@ function renderScan(sceneSetName, descriptionString, sceneIndex)
     
     displayName = 'LCD-Apple'; %'OLED-Samsung'; % 'OLED-Samsung', 'OLED-Sony';
     gain = 25;
-    [coneFundamentals, displaySPDs, wave] = core.LMSRGBconversionData(displayName, gain);
+    [coneFundamentals, displaySPDs, RGBtoXYZ, wave] = core.LMSRGBconversionData(displayName, gain);
     
         
     for scanIndex = 1:numel(scanData)

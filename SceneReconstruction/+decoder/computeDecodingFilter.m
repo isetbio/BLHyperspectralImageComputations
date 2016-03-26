@@ -5,7 +5,7 @@ function computeDecodingFilter(sceneSetName, descriptionString)
     
     tic
     fprintf('\n1. Loading design matrix and stimulus vector ... ');
-    load(fileName, 'Xtrain', 'Ctrain', 'oiCtrain', 'trainingTimeAxis', 'trainingSceneIndexSequence', 'trainingSensorPositionSequence','trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'originalTrainingStimulusSize', 'expParams');
+    load(fileName, 'Xtrain', 'Ctrain', 'oiCtrain', 'trainingTimeAxis', 'trainingSceneIndexSequence', 'trainingSensorPositionSequence','trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'trainingOpticalImageLMSbackground', 'originalTrainingStimulusSize', 'expParams');
     fprintf('Done after %2.1f minutes.\n', toc/60);
     
     tic
@@ -36,16 +36,10 @@ function computeDecodingFilter(sceneSetName, descriptionString)
     scanFileName = core.getScanFileName(sceneSetName, descriptionString, sceneIndex);
     load(scanFileName, 'scanData', 'expParams');
     scanData = scanData{sceneIndex};
-    
-    coneSeparation = sensorGet(scanData.scanSensor,'pixel size','um');
-    sensorRowAxis   = (0:(sensorGet(scanData.scanSensor, 'row')-1))*coneSeparation(1);
-    sensorColAxis   = (0:(sensorGet(scanData.scanSensor, 'col')-1))*coneSeparation(1);
-    sensorRowAxis   = sensorRowAxis - (sensorRowAxis(end)-sensorRowAxis(1))/2;
-    sensorColAxis   = sensorColAxis - (sensorColAxis(end)-sensorColAxis(1))/2;
         
     spatioTemporalSupport = struct(...
-       'sensorRowAxis',  sensorRowAxis, ...
-       'sensorColAxis',  sensorColAxis, ...
+       'sensorColAxis',  scanData.sensorRetinalXaxis, ...
+       'sensorRowAxis',  scanData.sensorRetinalYaxis, ...
        'sensorFOVxaxis', scanData.sensorFOVxaxis, ...                  % spatial support of decoded scene
        'sensorFOVyaxis', scanData.sensorFOVyaxis, ...
        'timeAxis',       expParams.decoderParams.latencyInMillseconds + ...
@@ -58,7 +52,7 @@ function computeDecodingFilter(sceneSetName, descriptionString)
     fileName = fullfile(decodingDataDir, sprintf('%s_decodingFilter.mat', sceneSetName));
     save(fileName, 'wVector', 'spatioTemporalSupport');
     fileName = fullfile(decodingDataDir, sprintf('%s_inSamplePrediction.mat', sceneSetName));
-    save(fileName,  'Ctrain', 'oiCtrain', 'CtrainPrediction', 'trainingTimeAxis', 'trainingSceneIndexSequence', 'trainingSensorPositionSequence', 'trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'originalTrainingStimulusSize', 'expParams');
+    save(fileName,  'Ctrain', 'oiCtrain', 'CtrainPrediction', 'trainingTimeAxis', 'trainingSceneIndexSequence', 'trainingSensorPositionSequence', 'trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'trainingOpticalImageLMSbackground', 'originalTrainingStimulusSize', 'expParams');
     fprintf('Done after %2.1f minutes.\n', toc/60);
      
 end

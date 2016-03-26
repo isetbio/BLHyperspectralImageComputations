@@ -18,7 +18,7 @@ function renderScenePrediction(C, Creconstruction, originalStimulusSize, LMSback
     
     displayName = 'LCD-Apple'; %'OLED-Samsung'; % 'OLED-Samsung', 'OLED-Sony';
     gain = 15;
-    [coneFundamentals, displaySPDs, wave] = core.LMSRGBconversionData(displayName, gain);
+    [coneFundamentals, displaySPDs, RGBtoXYZ, wave] = core.LMSRGBconversionData(displayName, gain);
  
     for kBin = 1:size(LMScontrastSequencePrediction,4)
         LMScontrastFrame  = LMScontrastSequencePrediction(:,:,:,kBin);
