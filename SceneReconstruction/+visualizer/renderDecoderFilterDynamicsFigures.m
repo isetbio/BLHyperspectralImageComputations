@@ -77,7 +77,8 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
             [~, idx] = max(abs(tmp(:)));
             [peakConeRow, peakConeCol, idx] = ind2sub(size(tmp), idx);
             [~,peakTimeBin] = min(abs(timeAxis - causalTimeAxis(idx)));
-           % fprintf('filter at (%d,%d) peaks at %2.0f msec\n', xSpatialBin, ySpatialBin, timeAxis(peakTimeBin));
+            [~,peakTimeBin] = min(abs(timeAxis - 20));
+            fprintf('filter at (%d,%d) peaks at %2.0f msec\n', xSpatialBin, ySpatialBin, timeAxis(peakTimeBin));
 
             figure(hFig1)
             subplot('position',subplotPosVectors(ySpatialBinsNum-ySpatialBin+1,xSpatialBin).v);

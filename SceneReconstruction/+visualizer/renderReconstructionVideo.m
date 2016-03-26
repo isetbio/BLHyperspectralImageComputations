@@ -7,24 +7,33 @@ function renderReconstructionVideo(sceneSetName, descriptionString)
     
     decodingDataDir = core.getDecodingDataDir(descriptionString);
     fileName = fullfile(decodingDataDir, sprintf('%s_inSamplePrediction.mat', sceneSetName));
-    load(fileName,  'Ctrain', 'CtrainPrediction', 'trainingTimeAxis', 'trainingSceneIndexSequence', 'trainingSensorPositionSequence', 'trainingScanInsertionTimes',  'trainingSceneLMSbackground', 'originalTrainingStimulusSize', 'expParams');
+    load(fileName,  'oiCtrain', 'Ctrain', 'CtrainPrediction', 'trainingTimeAxis', 'trainingSceneIndexSequence', 'trainingSensorPositionSequence', 'trainingScanInsertionTimes',  'trainingSceneLMSbackground', 'originalTrainingStimulusSize', 'expParams');
     
     
-    makeVideo(sceneSetName, descriptionString, coneFundamentals, displaySPDs, Ctrain, CtrainPrediction, ...
+    makeVideo(sceneSetName, descriptionString, coneFundamentals, displaySPDs, Ctrain, CtrainPrediction, oiCtrain, ...
                 trainingTimeAxis, trainingSceneIndexSequence, trainingSensorPositionSequence, trainingScanInsertionTimes, ...
                 trainingSceneLMSbackground, originalTrainingStimulusSize, expParams);
 end
 
-function makeVideo(sceneSetName, descriptionString, coneFundamentals, displaySPDs, Cinput, Creconstruction, timeAxis, sceneIndexSequence, sensorPositionSequence, scanInsertionTimes,  sceneLMSbackground, originalStimulusSize, expParams)
-    
-    reconstructionDecoderFormat = decoder.decoderFormatFromDesignMatrixFormat(Creconstruction, expParams.decoderParams);
-    inputDecoderFormat = decoder.decoderFormatFromDesignMatrixFormat(Cinput, expParams.decoderParams);
-    
+function makeVideo(sceneSetName, descriptionString, coneFundamentals, displaySPDs, Cinput, Creconstruction, oiCinput, timeAxis, sceneIndexSequence, sensorPositionSequence, scanInsertionTimes,  sceneLMSbackground, originalStimulusSize, expParams)
+ 
     [LMScontrastReconstruction,~] = ...
-        decoder.stimulusSequenceToDecoderFormat(reconstructionDecoderFormat, 'fromDecoderFormat', originalStimulusSize);
+        decoder.stimulusSequenceToDecoderFormat(...
+            decoder.decoderFormatFromDesignMatrixFormat(Creconstruction, expParams.decoderParams), ...
+            'fromDecoderFormat', originalStimulusSize...
+        );
   
     [LMScontrastInput,~] = ...
-        decoder.stimulusSequenceToDecoderFormat(inputDecoderFormat, 'fromDecoderFormat', originalStimulusSize);
+        decoder.stimulusSequenceToDecoderFormat(...
+            decoder.decoderFormatFromDesignMatrixFormat(Cinput, expParams.decoderParams), ...
+            'fromDecoderFormat', originalStimulusSize...
+        );
+    
+    [oiLMScontrastInput,~] = ...
+        decoder.stimulusSequenceToDecoderFormat(...
+            decoder.decoderFormatFromDesignMatrixFormat(oiCinput, expParams.decoderParams), ...
+            'fromDecoderFormat', originalStimulusSize...
+        );
     
     RGBSequencePrediction = 0*LMScontrastReconstruction;
     RGBSequence = 0*LMScontrastInput;
@@ -34,15 +43,20 @@ function makeVideo(sceneSetName, descriptionString, coneFundamentals, displaySPD
     
     sceneSet = core.sceneSetWithName(sceneSetName);
     slideSize = [2560 1440]/2;
+    figureWidth2HeightRatio = slideSize(1)/slideSize(2);
     hFig = figure(1); clf;
     set(hFig, 'Position', [10 10 slideSize(1) slideSize(2)], 'Color', [1 1 1]);
+    colormap(gray(1024));
     
-    scenePlotAxes = axes('parent', hFig, 'unit', 'normalized', 'position', [0.01 0.5 0.4 0.48]);
+    scenePlotAxes = [];
+    sensorFOVsceneLcontrastAxes = [];
+    opticalImageFOVsceneLcontrastAxes = [];
+    
     scenePlot = [];
     sensorOutlinePlot = [];
-    
-    sensorFOVsceneLcontrastAxes = axes('parent', hFig, 'unit', 'normalized', 'position', [0.01 0.42 0.1 0.1]);
     sensorFOVsceneLcontrastPlot = [];
+    opticalImageFOVsceneLcontrastPlot = [];
+    
     
     % Only keep the data for which we have reconstructed the signal
     timeAxis = timeAxis(1:size(Creconstruction,1));
@@ -53,7 +67,7 @@ function makeVideo(sceneSetName, descriptionString, coneFundamentals, displaySPD
     size(timeAxis)
     size(sceneIndexSequence)
     size(sensorPositionSequence)
-    pause;
+
     
     lastSceneIndex = 0;
     for tBin = 1:numel(timeAxis)
@@ -66,22 +80,51 @@ function makeVideo(sceneSetName, descriptionString, coneFundamentals, displaySPD
             lastSceneIndex = sceneIndex;
             scanFileName = core.getScanFileName(sceneSetName, descriptionString, sceneIndex);
             load(scanFileName, 'scanData', 'scene', 'oi');
-            sensorOutlineX = [scanData{1}.sensorRetinalXaxis(1) scanData{1}.sensorRetinalXaxis(end) scanData{1}.sensorRetinalXaxis(end) scanData{1}.sensorRetinalXaxis(1)   scanData{1}.sensorRetinalXaxis(1)];
-            sensorOutlineY = [scanData{1}.sensorRetinalYaxis(1) scanData{1}.sensorRetinalYaxis(1)   scanData{1}.sensorRetinalYaxis(end) scanData{1}.sensorRetinalYaxis(end) scanData{1}.sensorRetinalYaxis(1)];
+            sensorRetinalXaxis = scanData{1}.sensorRetinalXaxis;
+            sensorRetinalYaxis = scanData{1}.sensorRetinalYaxis;
+            sensorOutlineX = [sensorRetinalXaxis(1) sensorRetinalXaxis(end) sensorRetinalXaxis(end) sensorRetinalXaxis(1)   sensorRetinalXaxis(1)];
+            sensorOutlineY = [sensorRetinalYaxis(1) sensorRetinalYaxis(1)   sensorRetinalYaxis(end) sensorRetinalYaxis(end) sensorRetinalYaxis(1)];
             sceneRetinalProjectionXData = scanData{1}.sceneRetinalProjectionXData;
             sceneRetinalProjectionYData = scanData{1}.sceneRetinalProjectionYData;
+            sceneWidth2HeightRatio = max(sceneRetinalProjectionXData)/max(sceneRetinalProjectionYData);
             sensorFOVRowRange = scanData{1}.sensorFOVRowRange;
             sensorFOVColRange = scanData{1}.sensorFOVColRange;
             sensorFOVxaxis = scanData{1}.sensorFOVxaxis;
             sensorFOVyaxis = scanData{1}.sensorFOVyaxis;
+            
+            if (max(sensorRetinalXaxis) > max(sensorFOVxaxis))
+                sensorWidthAxis  = sensorRetinalXaxis;
+            else
+                sensorWidthAxis  = sensorFOVxaxis;
+            end
+            if (max(sensorRetinalYaxis) > max(sensorFOVyaxis))
+                sensorHeightAxis  = sensorRetinalYaxis;
+            else
+                sensorHeightAxis  = sensorFOVyaxis;
+            end
+            sensorSizeRatio = max(sensorWidthAxis)/max(sensorHeightAxis);
+            
             [sceneLMS, ~] = core.imageFromSceneOrOpticalImage(scene, 'LMS');
             [sceneRGBforSuperDisplay, outsideGamut] = core.LMStoRGBforSpecificDisplay(sceneLMS, displaySPDs, coneFundamentals);
             outsideGamut
+            
+            LMScontrastInputFrame = squeeze(LMScontrastInput(:,:,:,tBin));
+            [RGBcontrastInputforSuperDisplay, outsideGamut] = core.LMStoRGBforSpecificDisplay(LMScontrastInputFrame, displaySPDs, coneFundamentals);
+            outsideGamut
+            
+            scenePlotAxes                     = axes('parent', hFig, 'unit', 'normalized', 'position', [0.01       0.40 0.320  0.320*sceneWidth2HeightRatio*figureWidth2HeightRatio]);
+            sensorFOVsceneRGBAxes             = axes('parent', hFig, 'unit', 'normalized', 'position', [0.01       0.12 0.14  0.125*sensorSizeRatio*figureWidth2HeightRatio]);
+            sensorFOVopticalImageRGBAxes      = axes('parent', hFig, 'unit', 'normalized', 'position', [0.01      -0.07 0.14  0.125*sensorSizeRatio*figureWidth2HeightRatio]);
+            
+            sensorFOVsceneLcontrastAxes       = axes('parent', hFig, 'unit', 'normalized', 'position', [0.01+0.15  0.12 0.14  0.125*sensorSizeRatio*figureWidth2HeightRatio]);
+            opticalImageFOVsceneLcontrastAxes = axes('parent', hFig, 'unit', 'normalized', 'position', [0.01+0.15 -0.07 0.14  0.125*sensorSizeRatio*figureWidth2HeightRatio]);
+           
             
             % The full scene in RGB format
             if (isempty(scenePlot))
                 % Initialize the scene plot
                 scenePlot = imagesc(sceneRetinalProjectionXData, sceneRetinalProjectionYData, sceneRGBforSuperDisplay, 'parent', scenePlotAxes);
+                set(scenePlotAxes, 'XTick', [], 'YTick', []);
                 
                 % Initialize the sensor position plot
                 hold(scenePlotAxes , 'on');
@@ -90,8 +133,34 @@ function makeVideo(sceneSetName, descriptionString, coneFundamentals, displaySPD
                 axis(scenePlotAxes, 'image');
                 set(scenePlotAxes, 'XLim', [sceneRetinalProjectionXData(1) sceneRetinalProjectionXData(end)], 'YLim', [sceneRetinalProjectionYData(1) sceneRetinalProjectionYData(end)]);
             
+                % Initialize the
+                sensorFOVsceneRGBPlot = imagesc(sensorFOVxaxis, sensorFOVyaxis, RGBcontrastInputforSuperDisplay, 'parent', sensorFOVsceneRGBAxes);
+                axis(sensorFOVsceneRGBAxes, 'image');
+                set(sensorFOVsceneRGBAxes, 'XLim', [sensorWidthAxis(1) sensorWidthAxis(end)],  'YLim', [sensorHeightAxis(1) sensorHeightAxis(end)]);
+                set(sensorFOVsceneRGBAxes, 'CLim', [0 1]);
+                set(sensorFOVsceneRGBAxes, 'XTick', [], 'YTick', []);
+                
+                
+                sensorFOVopticalRGBPlot = imagesc(sensorFOVxaxis, sensorFOVyaxis, RGBcontrastInputforSuperDisplay, 'parent', sensorFOVopticalImageRGBAxes);
+                axis(sensorFOVopticalImageRGBAxes, 'image');
+                set(sensorFOVopticalImageRGBAxes, 'XLim', [sensorWidthAxis(1) sensorWidthAxis(end)],  'YLim', [sensorHeightAxis(1) sensorHeightAxis(end)]);
+                set(sensorFOVopticalImageRGBAxes, 'CLim', [0 1]);
+                set(sensorFOVopticalImageRGBAxes, 'XTick', [], 'YTick', []);
+                
                 % Initialize the scene L-contrast frame  plot
-                sensorFOVsceneLcontrastPlot = imagesc(sensorFOVxaxis, sensorFOVyaxis, squeeze(LMScontrastInput(:,:,1,tBin)), 'parent', sensorFOVsceneLcontrastAxes);
+                sensorFOVsceneLcontrastPlot = imagesc(sensorFOVxaxis, sensorFOVyaxis, squeeze(LMScontrastInputFrame(:,:,1)), 'parent', sensorFOVsceneLcontrastAxes);
+                axis(sensorFOVsceneLcontrastAxes, 'image');
+                set(sensorFOVsceneLcontrastAxes, 'XLim', [sensorWidthAxis(1) sensorWidthAxis(end)],  'YLim', [sensorHeightAxis(1) sensorHeightAxis(end)]);
+                set(sensorFOVsceneLcontrastAxes, 'CLim', [-1 3]);
+                set(sensorFOVsceneLcontrastAxes, 'XTick', [], 'YTick', []);
+            
+            
+                % Initialize the optical image L-contrast frame  plot
+                opticalImageFOVsceneLcontrastPlot = imagesc(sensorFOVxaxis, sensorFOVyaxis, squeeze(oiLMScontrastInput(:,:,1,tBin)), 'parent', opticalImageFOVsceneLcontrastAxes);
+                axis(opticalImageFOVsceneLcontrastAxes, 'image');
+                set(opticalImageFOVsceneLcontrastAxes, 'XLim', [sensorWidthAxis(1) sensorWidthAxis(end)],  'YLim', [sensorHeightAxis(1) sensorHeightAxis(end)]);
+                set(opticalImageFOVsceneLcontrastAxes, 'CLim', [-1 3]);
+                set(opticalImageFOVsceneLcontrastAxes, 'XTick', [], 'YTick', []);
             else
                 % Update the scene plot
                 set(scenePlot, 'XData',  sceneRetinalProjectionXData, 'YData',  sceneRetinalProjectionYData, 'CData', sceneRGBforSuperDisplay);
@@ -102,10 +171,16 @@ function makeVideo(sceneSetName, descriptionString, coneFundamentals, displaySPD
         % Update the sensor position plot
         set(sensorOutlinePlot, 'XData', sensorOutlineX + sensorPositionSequence(tBin,1), 'YData', sensorOutlineY + sensorPositionSequence(tBin,2));
         
+        
+        % Update the scene RGB frame plot
+        set(sensorFOVsceneRGBPlot, 'CData', RGBcontrastInputforSuperDisplay);
+        
         % Update the scene L-contrast frame  plot
-        set(sensorFOVsceneLcontrastPlot, 'CData', squeeze(LMScontrastInput(:,:,1,tBin)));
+        set(sensorFOVsceneLcontrastPlot, 'CData', squeeze(LMScontrastInputFrame(:,:,1)));
 
-                
+        % Update the optical image L-contrast frame  plot
+        set(opticalImageFOVsceneLcontrastPlot, 'CData', squeeze(oiLMScontrastInput(:,:,1,tBin)));
+        
         drawnow
             
     end % tBin

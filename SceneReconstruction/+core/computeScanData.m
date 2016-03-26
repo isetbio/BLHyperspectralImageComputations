@@ -13,6 +13,14 @@ function scanData = computeScanData(scene,  oi,  sensor, osOBJ, ...
     [sensor, sensorPositionsInMicrons, sensorFOVxaxis, sensorFOVyaxis, sensorFOVColRange, sensorFOVRowRange] = ...
         retrieveSensorPositionsAndSizeInMicrons(sensor, sceneRetinalProjectionXData, sceneRetinalProjectionYData, decodedSceneSpatialSampleSizeInRetinalMicrons, decodedSceneExtraMicronsAroundSensorBorder);
     
+    % Compute sensor support
+    coneSeparation = sensorGet(sensor,'pixel size','um');
+    sensorRetinalXaxis = (0:1:(sensorGet(sensor, 'col')-1))*coneSeparation(1);
+    sensorRetinalYaxis = (0:1:(sensorGet(sensor, 'rows')-1))*coneSeparation(1);
+    sensorRetinalXaxis = sensorRetinalXaxis - (sensorRetinalXaxis(end)-sensorRetinalXaxis(1))/2;
+    sensorRetinalYaxis = sensorRetinalYaxis - (sensorRetinalYaxis(end)-sensorRetinalYaxis(1))/2;
+    
+    
     % Compute isomerizations for the total sensor time (this includes the adapting field fixations)
     % Note: For this computation, we use oi,  which is computed with a
     % spatial resolution of 1.0 microns, NOT oiResampledToDecoderResolution, 
@@ -20,11 +28,6 @@ function scanData = computeScanData(scene,  oi,  sensor, osOBJ, ...
     sensor = coneAbsorptions(sensor, oi);
     isomerizationRate = sensorGet(sensor, 'photon rate');
     
-    coneSeparation = sensorGet(sensor,'pixel size','um');
-    sensorRetinalXaxis = (0:1:(sensorGet(sensor, 'col')-1))*coneSeparation(1);
-    sensorRetinalYaxis = (0:1:(sensorGet(sensor, 'rows')-1))*coneSeparation(1);
-    sensorRetinalXaxis = sensorRetinalXaxis - (sensorRetinalXaxis(end)-sensorRetinalXaxis(1))/2;
-    sensorRetinalYaxis = sensorRetinalYaxis - (sensorRetinalYaxis(end)-sensorRetinalYaxis(1))/2;
     
     % Resample the optical image in the decoder's spatial resolution
     [oiResampledToDecoderResolution, opticalImageXData, opticalImageYData] = ...
@@ -99,7 +102,7 @@ function scanData = computeScanData(scene,  oi,  sensor, osOBJ, ...
         [photoCurrentSequence, ~, ~, ~] = core.subsampleTemporally(photoCurrentSequence,  scanTimeAxis, initialTimePeriodExcuded, timeDimensionIndex, lowPassSignal, decodedSceneTemporalSampling);
         
         % transform LMS excitation sequence into Weber contrast
-        trailingPeriodForEstimatingBackgroundExcitations = [scanTimeAxis(end-trailingAdaptationPeriodTimeBinsNum)+10 scanTimeAxis(end)-10];
+        trailingPeriodForEstimatingBackgroundExcitations = [scanTimeAxis(end-trailingAdaptationPeriodTimeBinsNum)+100 scanTimeAxis(end)-100];
         timeBinsForEstimatingMeanLMScontrast = find((subSampledScanTimeAxis+initialTimePeriodExcuded > trailingPeriodForEstimatingBackgroundExcitations(1)) & ...
                                                     (subSampledScanTimeAxis+initialTimePeriodExcuded < trailingPeriodForEstimatingBackgroundExcitations(2)));
         
@@ -111,9 +114,11 @@ function scanData = computeScanData(scene,  oi,  sensor, osOBJ, ...
         end
         
         
-        fprintf('mean cone excitation estimated between %2.1f and %2.1f milliseconds\n', subSampledScanTimeAxis(timeBinsForEstimatingMeanLMScontrast(1)), subSampledScanTimeAxis(timeBinsForEstimatingMeanLMScontrast(end)));
-        fprintf('scene: %2.3f %2.3f %2.3f\n', sceneBackgroundExcitations(1), sceneBackgroundExcitations(2), sceneBackgroundExcitations(3));
-        fprintf('optim: %2.5f %2.5f %2.5f\n', oiBackgroundExcitations(1), oiBackgroundExcitations(2), oiBackgroundExcitations(3));
+        fprintf('Completed in %2.2f seconds\n', toc);
+        fprintf('scan time axis spans: %2.1f - %2.1f milliseconds', subSampledScanTimeAxis(1),subSampledScanTimeAxis(end));
+        fprintf('mean cone excitations estimated between %2.1f and %2.1f milliseconds\n', subSampledScanTimeAxis(timeBinsForEstimatingMeanLMScontrast(1)), subSampledScanTimeAxis(timeBinsForEstimatingMeanLMScontrast(end)));
+        fprintf('values for scene image  : %2.5f %2.5f %2.5f\n', sceneBackgroundExcitations(1), sceneBackgroundExcitations(2), sceneBackgroundExcitations(3));
+        fprintf('values for optical image: %2.5f %2.5f %2.5f\n', oiBackgroundExcitations(1), oiBackgroundExcitations(2), oiBackgroundExcitations(3));
         
         % Save scanData for this scan
         scanData{scanIndex} = struct(...
@@ -137,7 +142,7 @@ function scanData = computeScanData(scene,  oi,  sensor, osOBJ, ...
             'opticalImageYData',            opticalImageYData, ...
             'timeAxis',                     subSampledScanTimeAxis...
         );
-    fprintf('Completed in %2.2f seconds\n', toc);
+        
     end % scanIndex
 end
 
@@ -187,7 +192,6 @@ function [scanPathEyePositionIndices, adaptingFieldFixationIndex, trailingAdapta
             scanPathEyePositionIndices = cat(2, scanPathEyePositionIndices, timeIndices);
         end
     end
-    fprintf('Pre-sequence adaptation time indices: %d\n', size(scanPathEyePositionIndices,2));
     
     for sceneSaccadeIndex = startingSaccade:endingSaccade   
         % Add scene saccade

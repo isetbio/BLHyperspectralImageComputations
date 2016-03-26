@@ -8,7 +8,7 @@ function CdecoderFormat = decoderFormatFromDesignMatrixFormat(C, decoderParams)
         else
             minTimeBin = latencyBins;
     end
-    minTimeBin 
+    
     rowsOfX = size(C,1);
     stimulusDimensions = size(C,2);
     totalBins = rowsOfX - minTimeBin + memoryBins;

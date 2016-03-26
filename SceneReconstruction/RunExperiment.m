@@ -4,10 +4,10 @@ function RunExperiment
         
     % What to compute
     instructionSet = {...
-       'compute outer segment responses' ...  % produces the contents of the scansData directory
-       'assembleTrainingDataSet' ...       % produces the training/testing design matrices in the decodingData directory
-       'computeDecodingFilter' ...       % inverts the training desing matrix to comptue the decoding filter (stored in the decodingData directory)
-       'computeOutOfSamplePrediction' ...
+        'compute outer segment responses' ...  % produces the contents of the scansData directory
+        'assembleTrainingDataSet' ...       % produces the training/testing design matrices in the decodingData directory
+        'computeDecodingFilter' ...       % inverts the training desing matrix to comptue the decoding filter (stored in the decodingData directory)
+        'computeOutOfSamplePrediction' ...
        % 'visualizeScan' ...
        % 'visualizeDecodingFilter' ...
        % 'visualizeInSamplePrediction' ...
@@ -15,10 +15,18 @@ function RunExperiment
        %'makeReconstructionVideo' ...
         };
   
+    % these following be used if 'compute outer segment responses' is not in the instructionSet.
     sceneSetName = 'manchester';
-    descriptionString = 'AdaptEvery21Fixations/@osLinear';
+    descriptionString = 'AdaptEvery22Fixations/@osBiophys';
     
     for k = 1:numel(instructionSet)
+        
+        if (exist('expParams', 'var'))
+            sceneSetName = expParams.sceneSetName;
+            descriptionString = sprintf('AdaptEvery%dFixations/%s', expParams.viewModeParams.consecutiveSceneFixationsBetweenAdaptingFieldPresentation,expParams.outerSegmentParams.type);
+            fprintf('Will analyze data from %s and %s\n', sceneSetName, descriptionString);
+        end
+        
         switch instructionSet{k}
             case 'compute outer segment responses'
                 expParams = experimentParams();
@@ -85,13 +93,13 @@ function expParams = experimentParams()
             'stDevFixationDurationInMilliseconds', 20, ...
             'meanFixationDurationInMillisecondsForAdaptingField', 400, ...
             'stDevFixationDurationInMillisecondsForAdaptingField', 20, ...
-            'fixationOverlapFactor', 1.0, ...     
+            'fixationOverlapFactor', 4.0, ...     
             'saccadicScanMode',  'randomized'... %                        % 'randomized' or 'sequential', to visit eye position grid sequentially
         ) ...
     );
     
     outerSegmentParams = struct(...
-        'type', '@osLinear', ...                       % choose between '@osBiophys' and '@osLinear'
+        'type', '@osBiophys', ...                       % choose between '@osBiophys' and '@osLinear'
         'addNoise', true ...
     );
     
@@ -107,13 +115,13 @@ function expParams = experimentParams()
     
     viewModeParams = struct(...
         'fixationsPerScan', 20, ...                                             % each scan file will contains this many fixations
-        'consecutiveSceneFixationsBetweenAdaptingFieldPresentation', 21, ...     % use 1 to insert adapting field data after each scene fixation 
+        'consecutiveSceneFixationsBetweenAdaptingFieldPresentation', 22, ...     % use 1 to insert adapting field data after each scene fixation 
         'adaptingFieldParams', adaptingFieldParams, ...
         'forcedSceneMeanLuminance', 200 ...
     );
     
     % assemble all  param structs into one superstruct
-    descriptionString = sprintf('AdaptEvery%dFixations', viewModeParams.consecutiveSceneFixationsBetweenAdaptingFieldPresentation);
+    descriptionString = sprintf('AdaptEvery%dFixations/%s', viewModeParams.consecutiveSceneFixationsBetweenAdaptingFieldPresentation, outerSegmentParams.type);
     expParams = struct(...
         'descriptionString',    descriptionString, ...                        % a unique string identifying this experiment. This will be the scansSubDir name
         'sceneSetName',         'manchester', ...                             % the name of the scene set to be used
