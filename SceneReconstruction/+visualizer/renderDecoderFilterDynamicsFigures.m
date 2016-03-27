@@ -25,11 +25,11 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
     
     % Unpack the wVector into the stimDecoder
     dcTerm = 1;
+    
     for stimConeContrastIndex = 1:3
         for ySpatialBin = 1:ySpatialBinsNum
         for xSpatialBin = 1:xSpatialBinsNum
-            spatialStimDim = sub2ind([ySpatialBinsNum xSpatialBinsNum], ySpatialBin, xSpatialBin);
-            stimulusDimension = (stimConeContrastIndex-1)*spatialDimsNum + spatialStimDim;
+            stimulusDimension = sub2ind([ySpatialBinsNum xSpatialBinsNum 3], ySpatialBin, xSpatialBin, stimConeContrastIndex);
             for coneRow = 1:sensorRows
             for coneCol = 1:sensorCols
                 coneIndex = sub2ind([sensorRows sensorCols], coneRow, coneCol);
@@ -70,14 +70,13 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
             
             spatioTemporalFilter = squeeze(stimDecoder(stimConeContrastIndex, ySpatialBin, xSpatialBin, :,:,:));
             
-            indicesForPeakResponseEstimation = find((timeAxis >-20) & (timeAxis < 60));
-            causalTimeAxis = timeAxis(indicesForPeakResponseEstimation(1):indicesForPeakResponseEstimation(end));
+            indicesForPeakResponseEstimation = find(timeAxis < 300);
+            restrictedTimeAxis = timeAxis(indicesForPeakResponseEstimation(1):indicesForPeakResponseEstimation(end));
             
             tmp = squeeze(spatioTemporalFilter(:,:,indicesForPeakResponseEstimation));
             [~, idx] = max(abs(tmp(:)));
             [peakConeRow, peakConeCol, idx] = ind2sub(size(tmp), idx);
-            [~,peakTimeBin] = min(abs(timeAxis - causalTimeAxis(idx)));
-            [~,peakTimeBin] = min(abs(timeAxis - 20));
+            [~,peakTimeBin] = min(abs(timeAxis - restrictedTimeAxis(idx)));
             fprintf('filter at (%d,%d) peaks at %2.0f msec\n', xSpatialBin, ySpatialBin, timeAxis(peakTimeBin));
 
             figure(hFig1)

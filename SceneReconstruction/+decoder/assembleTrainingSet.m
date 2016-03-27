@@ -52,9 +52,6 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
                 trainingOpticalImageLMScontrastSequence = cat(4, ...
                     trainingOpticalImageLMScontrastSequence, single(scanData{scanIndex}.oiLMScontrastSequence));
                 
-                size(scanData{scanIndex}.photoCurrentSequence)
-                size(scanData{scanIndex}.sceneLMScontrastSequence)
-                
                 trainingPhotoCurrentSequence = cat(3, ...
                     trainingPhotoCurrentSequence,  single(scanData{scanIndex}.photoCurrentSequence));
                 
@@ -109,7 +106,6 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
                 testingOpticalImageLMSbackground = cat(2, ...
                     testingOpticalImageLMSbackground, single(scanData{scanIndex}.oiBackgroundExcitations));
     
-                
             end
         end % scanIndex - testing
     end % sceneIndex
