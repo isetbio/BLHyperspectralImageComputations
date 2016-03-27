@@ -17,7 +17,7 @@ function RunExperiment
   
     % these following be used if 'compute outer segment responses' is not in the instructionSet.
     sceneSetName = 'manchester';
-    descriptionString = 'AdaptEvery22Fixations/@osLinear';
+    descriptionString = 'AdaptEvery23Fixations/@osLinear';
     
     for k = 1:numel(instructionSet)
         
@@ -115,7 +115,7 @@ function expParams = experimentParams()
     
     viewModeParams = struct(...
         'fixationsPerScan', 20, ...                                             % each scan file will contains this many fixations
-        'consecutiveSceneFixationsBetweenAdaptingFieldPresentation', 22, ...     % use 1 to insert adapting field data after each scene fixation 
+        'consecutiveSceneFixationsBetweenAdaptingFieldPresentation', 23, ...     % use 1 to insert adapting field data after each scene fixation 
         'adaptingFieldParams', adaptingFieldParams, ...
         'forcedSceneMeanLuminance', 300 ...
     );
