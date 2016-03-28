@@ -15,7 +15,13 @@ function renderReconstructionVideo(sceneSetName, descriptionString)
             'trainingTimeAxis', 'trainingSceneIndexSequence', 'trainingSensorPositionSequence', ...
             'trainingScanInsertionTimes',  'trainingSceneLMSbackground', 'trainingOpticalImageLMSbackground', ...
             'originalTrainingStimulusSize', 'expParams');
-        makeVideo(sceneSetName, descriptionString, coneFundamentals, displaySPDs, RGBtoXYZ, Ctrain, CtrainPrediction, oiCtrain, ...
+        if (expParams.outerSegmentParams.addNoise)
+            outerSegmentNoiseString = 'Noise';
+        else
+            outerSegmentNoiseString = 'NoNoise';
+        end
+        videoName = sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dInSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance);
+        makeVideo(videoName, sceneSetName, descriptionString, coneFundamentals, displaySPDs, RGBtoXYZ, Ctrain, CtrainPrediction, oiCtrain, ...
                 trainingTimeAxis, trainingSceneIndexSequence, trainingSensorPositionSequence, trainingScanInsertionTimes, ...
                 trainingSceneLMSbackground, trainingOpticalImageLMSbackground, originalTrainingStimulusSize, expParams);
     else
@@ -24,17 +30,22 @@ function renderReconstructionVideo(sceneSetName, descriptionString)
             'testingTimeAxis', 'testingSceneIndexSequence', 'testingSensorPositionSequence', ...
             'testingScanInsertionTimes',  'testingSceneLMSbackground', 'testingOpticalImageLMSbackground', ...
             'originalTestingStimulusSize', 'expParams');
-        makeVideo(sceneSetName, descriptionString, coneFundamentals, displaySPDs, RGBtoXYZ, Ctest, CtestPrediction, oiCtest, ...
+        if (expParams.outerSegmentParams.addNoise)
+            outerSegmentNoiseString = 'Noise';
+        else
+            outerSegmentNoiseString = 'NoNoise';
+        end
+        videoName = sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dOutOfSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance);
+        makeVideo(videoName, sceneSetName, descriptionString, coneFundamentals, displaySPDs, RGBtoXYZ, Ctest, CtestPrediction, oiCtest, ...
                 testingTimeAxis, testingSceneIndexSequence, testingSensorPositionSequence, testingScanInsertionTimes, ...
                 testingSceneLMSbackground, testingOpticalImageLMSbackground, originalTestingStimulusSize, expParams);
-    end
-    
+    end 
 end
 
 
 
 
-function makeVideo(sceneSetName, descriptionString, coneFundamentals, displaySPDs, RGBtoXYZ, Cinput, Creconstruction, oiCinput, ...
+function makeVideo(videoName, sceneSetName, descriptionString, coneFundamentals, displaySPDs, RGBtoXYZ, Cinput, Creconstruction, oiCinput, ...
     timeAxis, sceneIndexSequence, sensorPositionSequence, scanInsertionTimes,  sceneLMSbackground, opticalImageLMSbackground, originalStimulusSize, expParams)
  
     
@@ -67,7 +78,7 @@ function makeVideo(sceneSetName, descriptionString, coneFundamentals, displaySPD
     
     slideSize = [2560 1440]/2;
     hFig = figure(1); clf;
-    set(hFig, 'Position', [10 10 slideSize(1) slideSize(2)], 'Color', [1 1 1]);
+    set(hFig, 'Position', [10 10 slideSize(1) slideSize(2)], 'Color', [1 1 1], 'Name', videoName);
     
     p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
     load(fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'), 'spectralLUT');
@@ -87,7 +98,7 @@ function makeVideo(sceneSetName, descriptionString, coneFundamentals, displaySPD
         if (any(outsideGamut(:)) == 1)
             outsideGamut
         end
-        % Compute luminance map for scene (as rendered in the super display)
+        % Compute RGB map for scene (as rendered in the super display)
         sensorFOVsceneLumMap = core.displayRGBtoLuminanceforSpecificDisplay(sensorFOVsceneRGBimage, RGBtoXYZ);
         % Clip RGBimage to [0..1], then gamma for display
         sensorFOVsceneRGBimage = linearRGBtoDisplay(sensorFOVsceneRGBimage, gamma);
@@ -138,10 +149,9 @@ function makeVideo(sceneSetName, descriptionString, coneFundamentals, displaySPD
             [min(sceneLumMapForSuperDisplay(:)) max(sceneLumMapForSuperDisplay(:))]
             % Clip RGBimage to [0..1], then gamma for display
             sceneRGBforSuperDisplay = linearRGBtoDisplay(sceneRGBforSuperDisplay, gamma);
-        
-            
+           
             % Generate new axes
-            [sceneAxes, oiAxes, sceneLumMapAxes, oiLumMapAxes, ...
+            [sceneAxes, oiAxes, sceneLumMapAxes, oiLumMapAxes, reconstructedSceneRGBaxes, ...
                 sensorFOVsceneRGBaxes, sensorFOVsceneLumMapAxes, sensorFOVsceneLcontAxes, sensorFOVsceneMcontAxes, sensorFOVsceneScontAxes, ...
                 sensorFOVoiRGBaxes, sensorFOVoiLumMapAxes, sensorFOVoiLcontAxes, sensorFOVoiMcontAxes, sensorFOVoiScontAxes, ...
                 sensorFOVreconstructionRGBaxes, sensorFOVreconstructionLumMapAxes, sensorFOVreconstructionLcontAxes, sensorFOVreconstructionMcontAxes, sensorFOVreconstructionScontAxes ...
@@ -176,7 +186,23 @@ function makeVideo(sceneSetName, descriptionString, coneFundamentals, displaySPD
             hCbar.Label.String = 'luminance (cd/m2)';
             hCbar.FontSize = 12;
     
-                       
+            % Initialize the reconstructedSceneRGBPlot
+            sensorSampleSeparation = sensorFOVxaxis(2)-sensorFOVxaxis(1);
+            reconstructedSceneRetinalProjectionXData = linspace(...
+                sceneRetinalProjectionXData(1), sceneRetinalProjectionXData(end), ...
+                round((sceneRetinalProjectionXData(end)-sceneRetinalProjectionXData(1))/sensorSampleSeparation));
+            reconstructedSceneRetinalProjectionYData = linspace(...
+                sceneRetinalProjectionYData(1), sceneRetinalProjectionYData(end), ...
+                round((sceneRetinalProjectionYData(end)-sceneRetinalProjectionYData(1))/sensorSampleSeparation));
+            reconstructedSceneRGBPlot = initializeSensorViewPlot(...
+                reconstructedSceneRGBaxes, zeros(numel(reconstructedSceneRetinalProjectionYData), numel(reconstructedSceneRetinalProjectionXData), 3), [0 1], ...
+                reconstructedSceneRetinalProjectionXData, reconstructedSceneRetinalProjectionYData, reconstructedSceneRetinalProjectionXData, reconstructedSceneRetinalProjectionYData);
+            
+            % Generate empty image to hold the patches of the reconstructed image
+            reconstructedSceneRGBforSuperDisplay = zeros(numel(reconstructedSceneRetinalProjectionYData), numel(reconstructedSceneRetinalProjectionXData),3);
+            visited = zeros(numel(reconstructedSceneRetinalProjectionYData), numel(reconstructedSceneRetinalProjectionXData));
+         
+            
             % Initialize the sensorFOVsceneRGBplot
             sensorFOVsceneRGBPlot = initializeSensorViewPlot(...
                 sensorFOVsceneRGBaxes, sensorFOVsceneRGBimage, [0 1], ...
@@ -208,6 +234,34 @@ function makeVideo(sceneSetName, descriptionString, coneFundamentals, displaySPD
                 sensorFOVxaxis, sensorFOVyaxis, sensorWidthAxis, sensorHeightAxis);
             
         end  % new scene
+        
+        % Update the reconstucted image with this patch
+        halfRowsCovered = round((sensorPositionSequence(tBin,2) - max(sensorOutlineY) -min(sceneRetinalProjectionYData))/sensorSampleSeparation);
+        halfColsCovered = round((sensorPositionSequence(tBin,1) - max(sensorOutlineX) -min(sceneRetinalProjectionXData))/sensorSampleSeparation);
+        rowsCovered = halfRowsCovered+(0:size(sensorFOVreconstructionRGBimage,1)-1);
+        colsCovered = halfColsCovered+(0:size(sensorFOVreconstructionRGBimage,2)-1);
+        
+        [rowsCovered(1) rowsCovered(end)]
+        [colsCovered(1) colsCovered(end)]
+        [reconstructedSceneRetinalProjectionYData(rowsCovered(1))  reconstructedSceneRetinalProjectionYData(rowsCovered(end)) sensorPositionSequence(tBin,2)]
+        [reconstructedSceneRetinalProjectionXData(colsCovered(1))  reconstructedSceneRetinalProjectionXData(colsCovered(end)) sensorPositionSequence(tBin,1)]
+
+        visited(rowsCovered, colsCovered) = visited(rowsCovered, colsCovered) + 1;
+
+        reconstructedSceneRGBforSuperDisplay(rowsCovered, colsCovered,:) = ...
+            reconstructedSceneRGBforSuperDisplay(rowsCovered, colsCovered,:) + sensorFOVreconstructionRGBimage;
+        idx = find(visited(:) > 0);
+        [visitedRows, visitedCols] = ind2sub(size(visited), idx);
+        tmp_reconstructedSceneRGBforSuperDisplay = 0*reconstructedSceneRGBforSuperDisplay;
+        for rgbChannel = 1:3
+            tmp_reconstructedSceneRGBforSuperDisplay(visitedRows, visitedCols,rgbChannel) = ...
+            reconstructedSceneRGBforSuperDisplay(visitedRows, visitedCols,rgbChannel) ./ visited(visitedRows, visitedCols);
+        end
+        % Clip RGBimage to [0..1], then gamma for display
+        tmp_reconstructedSceneRGBforSuperDisplay = linearRGBtoDisplay(tmp_reconstructedSceneRGBforSuperDisplay, gamma);
+        % Update the reconstructedSceneRGBPlot
+        set(reconstructedSceneRGBPlot, 'CData',  tmp_reconstructedSceneRGBforSuperDisplay);
+        
         
         % Update the sensor position plot (on the scene image) for current time bin
         set(sensorOutlinePlot, 'XData', sensorOutlineX + sensorPositionSequence(tBin,1), 'YData', sensorOutlineY + sensorPositionSequence(tBin,2));
@@ -253,7 +307,7 @@ function RGBimage = linearRGBtoDisplay(RGBimage, gamma)
     RGBimage = RGBimage.^gamma;
 end
 
-function [sceneAxes, oiAxes, sceneLumMapAxes, oiLumMapAxes, ...
+function [sceneAxes, oiAxes, sceneLumMapAxes, oiLumMapAxes, reconstructedSceneRGBaxes, ...
            sensorFOVsceneRGBaxes, sensorFOVsceneLumMapAxes, sensorFOVsceneLcontAxes, sensorFOVsceneMcontAxes, sensorFOVsceneScontAxes, ...
            sensorFOVoiRGBaxes,    sensorFOVoiLumMapAxes, sensorFOVoiLcontAxes, sensorFOVoiMcontAxes, sensorFOVoiScontAxes, ...
            sensorFOVreconstructionRGBaxes, sensorFOVreconstructionLumMapAxes, sensorFOVreconstructionLcontAxes, sensorFOVreconstructionMcontAxes, sensorFOVreconstructionScontAxes ...
@@ -264,6 +318,7 @@ function [sceneAxes, oiAxes, sceneLumMapAxes, oiLumMapAxes, ...
     sceneAxes       = axes('parent', hFig, 'unit', 'normalized', 'position', [0.01 0.40 0.320  0.320*sceneWidth2HeightRatio*figureWidth2HeightRatio]);
     sceneLumMapAxes = axes('parent', hFig, 'unit', 'normalized', 'position', [0.34 0.40 0.358  0.320*sceneWidth2HeightRatio*figureWidth2HeightRatio]);
     
+    reconstructedSceneRGBaxes = axes('parent', hFig, 'unit', 'normalized', 'position', [0.66 0.40 0.320  0.320*sceneWidth2HeightRatio*figureWidth2HeightRatio]);
     oiAxes = []
     oiLumMapAxes = [];
     

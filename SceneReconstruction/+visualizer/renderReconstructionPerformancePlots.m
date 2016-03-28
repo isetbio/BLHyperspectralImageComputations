@@ -28,7 +28,7 @@ function renderReconstructionPerformancePlots(figNo, Ct, CtPrediction, originalS
     end
     
     if (size(LMScontrastSequence,2) > 12)
-        colsToPlot = round(size(LMScontrastSequence,2)/2) + (-2:2);
+        colsToPlot = round(size(LMScontrastSequence,2)/2) + (-3:3);
         fprintf('Stimulus x-positions are more than 12 will only show central %d\n', colsToPlot);
     end
     
