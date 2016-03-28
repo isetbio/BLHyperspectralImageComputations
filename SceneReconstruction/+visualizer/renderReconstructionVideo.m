@@ -326,11 +326,55 @@ function RGBimage = linearRGBtoDisplay(RGBimage, gamma)
     RGBimage = RGBimage.^gamma;
 end
 
+
 function [sceneAxes, oiAxes, sceneLumMapAxes, oiLumMapAxes, reconstructedSceneRGBaxes, ...
            sensorFOVsceneRGBaxes, sensorFOVsceneLumMapAxes, sensorFOVsceneLcontAxes, sensorFOVsceneMcontAxes, sensorFOVsceneScontAxes, ...
            sensorFOVoiRGBaxes,    sensorFOVoiLumMapAxes, sensorFOVoiLcontAxes, sensorFOVoiMcontAxes, sensorFOVoiScontAxes, ...
            sensorFOVreconstructionRGBaxes, sensorFOVreconstructionLumMapAxes, sensorFOVreconstructionLcontAxes, sensorFOVreconstructionMcontAxes, sensorFOVreconstructionScontAxes ...
         ] = makeAxes(hFig, figureWidth2HeightRatio, sceneWidth2HeightRatio, sensorWidth2HeightRatio)
+   
+    sensorViewNormWidth = 0.14*0.75;
+    sensorViewNormHeight = 0.125*0.75;
+    
+    oiAxes = []
+    oiLumMapAxes = [];
+    sensorFOVsceneLcontAxes = [];
+    sensorFOVoiLcontAxes = [];
+    sensorFOVreconstructionLcontAxes = [];
+    
+    sensorFOVsceneMcontAxes = [];
+    sensorFOVoiMcontAxes = [];
+    sensorFOVreconstructionMcontAxes = [];
+    
+    sensorFOVsceneScontAxes = [];
+    sensorFOVoiScontAxes = [];
+    sensorFOVreconstructionScontAxes = [];
+    
+    
+    sceneAxes                 = axes('parent', hFig, 'unit', 'normalized', 'position', [0.01 0.40 0.320  0.330*sceneWidth2HeightRatio*figureWidth2HeightRatio]);
+    reconstructedSceneRGBaxes = axes('parent', hFig, 'unit', 'normalized', 'position', [0.01 -0.15 0.320  0.330*sceneWidth2HeightRatio*figureWidth2HeightRatio]);
+   
+    sceneLumMapAxes = axes('parent', hFig, 'unit', 'normalized', 'position', [0.37 0.40 0.358  0.330*sceneWidth2HeightRatio*figureWidth2HeightRatio]);
+   
+    sensorFOVsceneRGBaxes  = axes('parent', hFig, 'unit', 'normalized', 'position', [0.76   0.70 sensorViewNormWidth  sensorViewNormHeight*sensorWidth2HeightRatio*figureWidth2HeightRatio]);
+    sensorFOVoiRGBaxes = axes('parent', hFig, 'unit', 'normalized', 'position', [0.76   0.60 sensorViewNormWidth  sensorViewNormHeight*sensorWidth2HeightRatio*figureWidth2HeightRatio]);
+
+    
+    sensorFOVreconstructionRGBaxes      = axes('parent', hFig, 'unit', 'normalized', 'position', [0.90  0.70 sensorViewNormWidth  sensorViewNormHeight*sensorWidth2HeightRatio*figureWidth2HeightRatio]);
+    
+    sensorFOVsceneLumMapAxes            = axes('parent', hFig, 'unit', 'normalized', 'position', [0.21   0.30 sensorViewNormWidth  sensorViewNormHeight*sensorWidth2HeightRatio*figureWidth2HeightRatio]);
+    sensorFOVoiLumMapAxes               = axes('parent', hFig, 'unit', 'normalized', 'position', [0.21   0.12 sensorViewNormWidth  sensorViewNormHeight*sensorWidth2HeightRatio*figureWidth2HeightRatio]);
+    sensorFOVreconstructionLumMapAxes   = axes('parent', hFig, 'unit', 'normalized', 'position', [0.21  -0.06 sensorViewNormWidth  sensorViewNormHeight*sensorWidth2HeightRatio*figureWidth2HeightRatio]);
+   
+    
+    
+end
+
+function [sceneAxes, oiAxes, sceneLumMapAxes, oiLumMapAxes, reconstructedSceneRGBaxes, ...
+           sensorFOVsceneRGBaxes, sensorFOVsceneLumMapAxes, sensorFOVsceneLcontAxes, sensorFOVsceneMcontAxes, sensorFOVsceneScontAxes, ...
+           sensorFOVoiRGBaxes,    sensorFOVoiLumMapAxes, sensorFOVoiLcontAxes, sensorFOVoiMcontAxes, sensorFOVoiScontAxes, ...
+           sensorFOVreconstructionRGBaxes, sensorFOVreconstructionLumMapAxes, sensorFOVreconstructionLcontAxes, sensorFOVreconstructionMcontAxes, sensorFOVreconstructionScontAxes ...
+        ] = makeAxes2(hFig, figureWidth2HeightRatio, sceneWidth2HeightRatio, sensorWidth2HeightRatio)
    
     sensorViewNormWidth = 0.14;
     sensorViewNormHeight = 0.125;
@@ -338,8 +382,7 @@ function [sceneAxes, oiAxes, sceneLumMapAxes, oiLumMapAxes, reconstructedSceneRG
     sceneLumMapAxes = axes('parent', hFig, 'unit', 'normalized', 'position', [0.34 0.40 0.358  0.320*sceneWidth2HeightRatio*figureWidth2HeightRatio]);
     
     reconstructedSceneRGBaxes = axes('parent', hFig, 'unit', 'normalized', 'position', [0.66 0.40 0.320  0.320*sceneWidth2HeightRatio*figureWidth2HeightRatio]);
-    oiAxes = []
-    oiLumMapAxes = [];
+    
     
     sensorFOVsceneRGBaxes               = axes('parent', hFig, 'unit', 'normalized', 'position', [0.01   0.30 sensorViewNormWidth  sensorViewNormHeight*sensorWidth2HeightRatio*figureWidth2HeightRatio]);
     sensorFOVoiRGBaxes                  = axes('parent', hFig, 'unit', 'normalized', 'position', [0.01   0.12 sensorViewNormWidth  sensorViewNormHeight*sensorWidth2HeightRatio*figureWidth2HeightRatio]);
@@ -349,6 +392,8 @@ function [sceneAxes, oiAxes, sceneLumMapAxes, oiLumMapAxes, reconstructedSceneRG
     sensorFOVoiLumMapAxes               = axes('parent', hFig, 'unit', 'normalized', 'position', [0.21   0.12 sensorViewNormWidth  sensorViewNormHeight*sensorWidth2HeightRatio*figureWidth2HeightRatio]);
     sensorFOVreconstructionLumMapAxes   = axes('parent', hFig, 'unit', 'normalized', 'position', [0.21  -0.06 sensorViewNormWidth  sensorViewNormHeight*sensorWidth2HeightRatio*figureWidth2HeightRatio]);
     
+    oiAxes = []
+    oiLumMapAxes = [];
     sensorFOVsceneLcontAxes = [];
     sensorFOVoiLcontAxes = [];
     sensorFOVreconstructionLcontAxes = [];
