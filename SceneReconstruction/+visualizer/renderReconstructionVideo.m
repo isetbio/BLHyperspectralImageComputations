@@ -20,7 +20,7 @@ function renderReconstructionVideo(sceneSetName, descriptionString)
         else
             outerSegmentNoiseString = 'NoNoise';
         end
-        videoName = sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dInSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance);
+        videoName = fullfile(core.getDecodingDataDir(descriptionString), sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dInSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
         makeVideo(videoName, sceneSetName, descriptionString, coneFundamentals, displaySPDs, RGBtoXYZ, Ctrain, CtrainPrediction, oiCtrain, ...
                 trainingTimeAxis, trainingSceneIndexSequence, trainingSensorPositionSequence, trainingScanInsertionTimes, ...
                 trainingSceneLMSbackground, trainingOpticalImageLMSbackground, originalTrainingStimulusSize, expParams);
@@ -35,7 +35,7 @@ function renderReconstructionVideo(sceneSetName, descriptionString)
         else
             outerSegmentNoiseString = 'NoNoise';
         end
-        videoName = sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dOutOfSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance);
+        videoName = fullfile(core.getDecodingDataDir(descriptionString), sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dOutOfSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
         makeVideo(videoName, sceneSetName, descriptionString, coneFundamentals, displaySPDs, RGBtoXYZ, Ctest, CtestPrediction, oiCtest, ...
                 testingTimeAxis, testingSceneIndexSequence, testingSensorPositionSequence, testingScanInsertionTimes, ...
                 testingSceneLMSbackground, testingOpticalImageLMSbackground, originalTestingStimulusSize, expParams);
@@ -45,7 +45,7 @@ end
 
 
 
-function makeVideo(videoName, sceneSetName, descriptionString, coneFundamentals, displaySPDs, RGBtoXYZ, Cinput, Creconstruction, oiCinput, ...
+function makeVideo(videoFileName, sceneSetName, descriptionString, coneFundamentals, displaySPDs, RGBtoXYZ, Cinput, Creconstruction, oiCinput, ...
     timeAxis, sceneIndexSequence, sensorPositionSequence, scanInsertionTimes,  sceneLMSbackground, opticalImageLMSbackground, originalStimulusSize, expParams)
  
     
@@ -78,7 +78,15 @@ function makeVideo(videoName, sceneSetName, descriptionString, coneFundamentals,
     
     slideSize = [2560 1440]/2;
     hFig = figure(1); clf;
-    set(hFig, 'Position', [10 10 slideSize(1) slideSize(2)], 'Color', [1 1 1], 'Name', videoName);
+    set(hFig, 'Position', [10 10 slideSize(1) slideSize(2)], 'Color', [1 1 1], 'Name', videoFileName);
+    
+    
+    videoFilename = sprintf('%s.m4v', videoFileName);
+    fprintf('Will export video to %s.m4v\n', videoFileName);
+    writerObj = VideoWriter(videoFilename, 'MPEG-4'); % H264 format
+    writerObj.FrameRate = 15; 
+    writerObj.Quality = 100;
+    writerObj.open();
     
     p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
     load(fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'), 'spectralLUT');
@@ -86,12 +94,15 @@ function makeVideo(videoName, sceneSetName, descriptionString, coneFundamentals,
     
     luminanceRange = [0 1500];
     oiRGBgain = 50;
-    
     gamma = 1.0/1.6;
-    lastSceneIndex = 0;
     
+    
+    
+    lastSceneIndex = 0;
     for tBin = 1:numel(timeAxis)
         
+    try
+            
         % Compute RGB version of the sensor's view of the scene
         LMSexcitationFrame = core.excitationFromContrast(squeeze(LMScontrastInput(:,:,:,tBin)), sceneBackgroundExcitation);
         [sensorFOVsceneRGBimage, outsideGamut] = core.LMStoRGBforSpecificDisplay(LMSexcitationFrame, displaySPDs, coneFundamentals);
@@ -288,7 +299,15 @@ function makeVideo(videoName, sceneSetName, descriptionString, coneFundamentals,
         set(sensorFOVreconstructionLumMapPlot, 'CData', sensorFOVreconstructionLumMap)
             
         drawnow;
+        writerObj.writeVideo(getframe(hFig));
+        
+    catch err
+        fprintf('Saving video up to this point to %s\n', videoFilename);
+        writerObj.close();
+        rethrow(err);
+    end
     end % tBin
+   
     
 end
 
