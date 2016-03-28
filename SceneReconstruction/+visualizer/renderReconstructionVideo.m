@@ -600,9 +600,9 @@ function [sceneAxes, oiAxes, sceneLumMapAxes, oiLumMapAxes, reconstructedSceneRG
     % The contrast traces axes
     tracesAxesNormWidth = 0.074;
     tracesAxesNormHeight = 0.150;
-    LcontrastTracesAxes = axes('parent', hFig, 'unit', 'normalized', 'position', [0.728         0.380 tracesAxesNormWidth tracesAxesNormHeight*figureWidth2HeightRatio]);
-    McontrastTracesAxes = axes('parent', hFig, 'unit', 'normalized', 'position', [0.728+0.091   0.380 tracesAxesNormWidth tracesAxesNormHeight*figureWidth2HeightRatio]);
-    ScontrastTracesAxes = axes('parent', hFig, 'unit', 'normalized', 'position', [0.728+0.091*2 0.380 tracesAxesNormWidth tracesAxesNormHeight*figureWidth2HeightRatio]);
+    LcontrastTracesAxes = axes('parent', hFig, 'unit', 'normalized', 'position', [0.728         0.383 tracesAxesNormWidth tracesAxesNormHeight*figureWidth2HeightRatio]);
+    McontrastTracesAxes = axes('parent', hFig, 'unit', 'normalized', 'position', [0.728+0.091   0.383 tracesAxesNormWidth tracesAxesNormHeight*figureWidth2HeightRatio]);
+    ScontrastTracesAxes = axes('parent', hFig, 'unit', 'normalized', 'position', [0.728+0.091*2 0.383 tracesAxesNormWidth tracesAxesNormHeight*figureWidth2HeightRatio]);
     
     
 end
