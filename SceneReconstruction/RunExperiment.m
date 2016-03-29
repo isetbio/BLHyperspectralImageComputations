@@ -4,20 +4,21 @@ function RunExperiment
         
     % What to compute
     instructionSet = {...
-        'compute outer segment responses' ...  % produces the contents of the scansData directory
-        'assembleTrainingDataSet' ...       % produces the training/testing design matrices in the decodingData directory
-        'computeDecodingFilter' ...       % inverts the training desing matrix to comptue the decoding filter (stored in the decodingData directory)
-        'computeOutOfSamplePrediction' ...
+       % 'compute outer segment responses' ...  % produces the contents of the scansData directory
+       % 'assembleTrainingDataSet' ...       % produces the training/testing design matrices in the decodingData directory
+       % 'computeDecodingFilter' ...       % inverts the training desing matrix to comptue the decoding filter (stored in the decodingData directory)
+       % 'computeOutOfSamplePrediction' ...
        % 'visualizeScan' ...
-       %'visualizeDecodingFilter' ...
+       'visualizeDecodingFilter' ...
        % 'visualizeInSamplePrediction' ...
        % 'visualizeOutOfSamplePrediction' ...
-       %'makeReconstructionVideo' ...
+       % 'makeReconstructionVideo' ...
+       % 'visualizeConeMosaic' ...
         };
   
     % these following be used if 'compute outer segment responses' is not in the instructionSet.
     sceneSetName = 'manchester';
-    descriptionString = 'AdaptEvery23Fixations/@osLinear';
+    descriptionString = 'AdaptEvery41Fixations/@osBiophys';
     
     for k = 1:numel(instructionSet)
         
@@ -58,6 +59,9 @@ function RunExperiment
             case 'makeReconstructionVideo'
                 visualizer.renderReconstructionVideo(sceneSetName, descriptionString);
                 
+            case 'visualizeConeMosaic'
+                visualizer.renderConeMosaic(sceneSetName, descriptionString);
+        
             otherwise
                 error('Unknown instruction: ''%s''.\n', instructionSet{1});
         end  % switch 
@@ -66,17 +70,17 @@ end
 
 function expParams = experimentParams()
 
-        decoderParams = struct(...
+   decoderParams = struct(...
         'type', 'optimalLinearFilter', ...
         'thresholdConeSeparationForInclusionInDecoder', 0, ...      % 0 to include all cones
         'spatialSamplingInRetinalMicrons', 3.0, ...                 % decode scene ((retinal projection)) at 5 microns resolution
-        'extraMicronsAroundSensorBorder', 0, ...                   % decode this many additional (or less, if negative) microns on each side of the sensor
+        'extraMicronsAroundSensorBorder', 0, ...                    % decode this many additional (or less, if negative) microns on each side of the sensor
         'temporalSamplingInMilliseconds', 10, ...                   % decode every this many milliseconds
         'latencyInMillseconds', -150, ...
         'memoryInMilliseconds', 600 ...
     );
 
-    sensorTimeStepInMilliseconds = 0.1;  % must be small enough to avoid numerical instability in the outer segment current computation
+    sensorTimeStepInMilliseconds = 0.1;                             % must be small enough to avoid numerical instability in the outer segment current computation
     integrationTimeInMilliseconds = 50;
     
     % sensor params for scene viewing

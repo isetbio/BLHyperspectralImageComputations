@@ -7,11 +7,18 @@ function renderOutOfSamplePredictionsFigures(sceneSetName, descriptionString)
     fprintf('Done.\n');
     
     figNo = 2;
+    if (expParams.outerSegmentParams.addNoise)
+        outerSegmentNoiseString = 'Noise';
+    else
+        outerSegmentNoiseString = 'NoNoise';
+    end
+    imageFileName = fullfile(core.getDecodingDataDir(descriptionString), sprintf('OutOfSamplePerformance%s%sOverlap%2.1fMeanLum%d', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
+       
     visualizer.renderReconstructionPerformancePlots(...
-        figNo, Ctest, CtestPrediction,  originalTestingStimulusSize, expParams ...
+        figNo, imageFileName, Ctest, CtestPrediction,  originalTestingStimulusSize, expParams ...
     );
     
-    if (1==1)
+    if (1==2)
     visualizer.renderScenePrediction(...
         Ctest, CtestPrediction,  originalTestingStimulusSize, ...
         testingSceneLMSbackground, expParams ...

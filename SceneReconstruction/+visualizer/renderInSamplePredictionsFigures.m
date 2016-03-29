@@ -7,15 +7,23 @@ function renderInSamplePredictionsFigures(sceneSetName, descriptionString)
     fprintf('Done.\n');
     
     figNo = 1;
+    if (expParams.outerSegmentParams.addNoise)
+        outerSegmentNoiseString = 'Noise';
+    else
+        outerSegmentNoiseString = 'NoNoise';
+    end
+    imageFileName = fullfile(core.getDecodingDataDir(descriptionString), sprintf('InSamplePerformance%s%sOverlap%2.1fMeanLum%d', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
+    
     visualizer.renderReconstructionPerformancePlots(...
-        figNo, Ctrain, CtrainPrediction,  originalTrainingStimulusSize, expParams ...
+        figNo, imageFileName, Ctrain, CtrainPrediction,  originalTrainingStimulusSize, expParams ...
     );
     
-    
+    if (1==2)
     visualizer.renderScenePrediction(...
         Ctrain, CtrainPrediction,  originalTrainingStimulusSize, ...
         trainingSceneLMSbackground, expParams ...
     );
+    end
     
     
 end

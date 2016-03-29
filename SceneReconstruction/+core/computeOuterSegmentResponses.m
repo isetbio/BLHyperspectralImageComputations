@@ -74,11 +74,6 @@ function computeOuterSegmentResponses(expParams)
         save(scanFileName, 'scanData', 'scene', 'oi', 'expParams', '-v7.3');
         fprintf('Done saving \n');
         
-        showResults = false;
-        if (showResults)
-            scanIndex = 1;
-            visualizer.renderScan(expParams.sceneSetName, expParams.descriptionString, sceneIndex);
-        end % showResults
     end % sceneIndex
 end
 

@@ -147,8 +147,13 @@ function makeVideo(hFig, writerObj, sceneSetName, descriptionString, coneFundame
     
     
     p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
-    load(fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'), 'spectralLUT');
-    colormap(spectralLUT);
+    
+    %load(fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'), 'spectralLUT');
+   % colormap(spectralLUT);
+    
+    niceCmap = cbrewer('div', 'RdGy', 1024);
+    colormap(niceCmap(end:-1:1,:));
+    
     
     tracesTimeRangeInMilliseconds = [-1000 0];
     luminanceRange = [0 1500];
@@ -372,74 +377,86 @@ function makeVideo(hFig, writerObj, sceneSetName, descriptionString, coneFundame
         % Update the reconstucted image with this patch
         halfRowsCovered = round((sensorPositionSequence(tBin,2) - max(sensorOutlineY) -min(sceneRetinalProjectionYData))/sensorSampleSeparation);
         halfColsCovered = round((sensorPositionSequence(tBin,1) - max(sensorOutlineX) -min(sceneRetinalProjectionXData))/sensorSampleSeparation);
-        rowsCovered = halfRowsCovered+(0:size(sensorFOVreconstructionRGBimage,1)-1);
-        colsCovered = halfColsCovered+(0:size(sensorFOVreconstructionRGBimage,2)-1);
+        rowsCovered = halfRowsCovered+(1:size(sensorFOVreconstructionRGBimage,1));
+        colsCovered = halfColsCovered+(1:size(sensorFOVreconstructionRGBimage,2));
         
-        % Update visited counter
-        visited(rowsCovered, colsCovered) = visited(rowsCovered, colsCovered) + 1;
-        tmpVisited = visited; idx = find(tmpVisited>1);tmpVisited(idx) = tmpVisited(idx)-1;
         
-        % Update accumulated image
-        reconstructedSceneRGBforSuperDisplay(rowsCovered, colsCovered,:) = ...
-            reconstructedSceneRGBforSuperDisplay(rowsCovered, colsCovered,:) + sensorFOVreconstructionRGBimage;
+        if ( (min(rowsCovered) >=1) && ...
+             (min(colsCovered) >=1) && ...
+             (max(rowsCovered) <= size(visited,1)) && ...
+             (max(colsCovered) <= size(visited,2)) )
+            
+            rowsCovered = rowsCovered(rowsCovered>0);
+            colsCovered = colsCovered(colsCovered>0);
+            rowsCovered = rowsCovered(rowsCovered<=size(visited,1));
+            colsCovered = colsCovered(colsCovered<=size(visited,2));
 
-        % Divide accumulated image by visited counter
-        tmp_reconstructedSceneRGBforSuperDisplay = 0*reconstructedSceneRGBforSuperDisplay;
-        for rgbChannel = 1:3
-            tmp_reconstructedSceneRGBforSuperDisplay(:,:,rgbChannel) = ...
-            squeeze(reconstructedSceneRGBforSuperDisplay(:,:,rgbChannel)) ./ tmpVisited;
+            % Update visited counter
+            visited(rowsCovered, colsCovered) = visited(rowsCovered, colsCovered) + 1;
+            tmpVisited = visited; idx = find(tmpVisited>1);tmpVisited(idx) = tmpVisited(idx)-1;
+
+            % Update accumulated image
+            reconstructedSceneRGBforSuperDisplay(rowsCovered, colsCovered,:) = ...
+                reconstructedSceneRGBforSuperDisplay(rowsCovered, colsCovered,:) + sensorFOVreconstructionRGBimage;
+
+            % Divide accumulated image by visited counter
+            tmp_reconstructedSceneRGBforSuperDisplay = 0*reconstructedSceneRGBforSuperDisplay;
+            for rgbChannel = 1:3
+                tmp_reconstructedSceneRGBforSuperDisplay(:,:,rgbChannel) = ...
+                squeeze(reconstructedSceneRGBforSuperDisplay(:,:,rgbChannel)) ./ tmpVisited;
+            end
+        
+            % Clip RGBimage to [0..1], then gamma for display
+            tmp_reconstructedSceneRGBforSuperDisplay = linearRGBtoDisplay(tmp_reconstructedSceneRGBforSuperDisplay, gamma);
+            % Update the reconstructedSceneRGBPlot
+            set(reconstructedSceneRGBPlot, 'CData',  tmp_reconstructedSceneRGBforSuperDisplay);
+        
+            % Update the sensor position plot (on the scene image) for current time bin
+            set(sensorOutlinePlot, 'XData', sensorOutlineX + sensorPositionSequence(tBin,1), 'YData', sensorOutlineY + sensorPositionSequence(tBin,2));
+
+             % Update the sensor position plot (on the optical image) for current time bin
+            set(sensorOutlinePlotOnOI, 'XData', sensorOutlineX + sensorPositionSequence(tBin,1), 'YData', sensorOutlineY + sensorPositionSequence(tBin,2));
+
+            % Update the sensor position plot (on the scene luminance map) for current time bin
+            set(sensorOutlinePlotOnLumMap, 'XData', sensorOutlineX + sensorPositionSequence(tBin,1), 'YData', sensorOutlineY + sensorPositionSequence(tBin,2));
+
+            % Update the sensor position plot (on the reconstructed scene) for current time bin
+            set(sensorOutlinePlotOnReconstructedScene, 'XData', sensorOutlineX + sensorPositionSequence(tBin,1), 'YData', sensorOutlineY + sensorPositionSequence(tBin,2));
+
+            % Update the sensorFOV scene RGB plot
+            set(sensorFOVsceneRGBPlot, 'CData', sensorFOVsceneRGBimage);
+
+            % Update the sensorFOV oi RGBplot
+            set(sensorFOVoiRGBPlot, 'CData', sensorFOVoiRGBimage);
+
+            % Update the sensorFOV reconstruction RGB plot
+            set(sensorFOVreconstructionSceneRGBPlot, 'CData', sensorFOVreconstructionRGBimage);
+
+            % Update the sensorFOVsceneLumMapPlot
+            set(sensorFOVsceneLumMapPlot, 'CData', sensorFOVsceneLumMap);
+
+            % Update the sensorFOVoiLumMapPlot
+            set(sensorFOVoiLumMapPlot, 'CData', oiRGBgain*sensorFOVoiLumMap);
+
+            % Update the sensorFOVreconstructionLumMapPlot
+            set(sensorFOVreconstructionLumMapPlot, 'CData', sensorFOVreconstructionLumMap)
+            
+            % Update the contrast scatter plots
+            for coneContrastIndex = 1:3
+                set(sensorFOVContrastScatterPlot(coneContrastIndex), ...
+                        'XData', reshape(LMScontrastFrame(:,:,coneContrastIndex), [1 size(LMScontrastFrame,1)*size(LMScontrastFrame,2)]), ...
+                        'YData', reshape(reconsctructedLMScontrastFrame(:,:,coneContrastIndex), [1 size(LMScontrastFrame,1)*size(LMScontrastFrame,2)]));
+            end
+
+            % Update the contrast traces plots
+            binsToDisplay = tBin + tracesTimeBins;
+            updateTracesPlot(LconeContrastTracesPlot, MconeContrastTracesPlot, SconeContrastTracesPlot, ...
+                binsToDisplay, squeeze(LMScontrastInput(stimRowIndex,stimColIndex,:,:)), squeeze(LMScontrastReconstruction(stimRowIndex,stimColIndex,:,:)));
+
+            drawnow;
+            writerObj.writeVideo(getframe(hFig));
+        
         end
-        
-        % Clip RGBimage to [0..1], then gamma for display
-        tmp_reconstructedSceneRGBforSuperDisplay = linearRGBtoDisplay(tmp_reconstructedSceneRGBforSuperDisplay, gamma);
-        % Update the reconstructedSceneRGBPlot
-        set(reconstructedSceneRGBPlot, 'CData',  tmp_reconstructedSceneRGBforSuperDisplay);
-        
-        
-        % Update the sensor position plot (on the scene image) for current time bin
-        set(sensorOutlinePlot, 'XData', sensorOutlineX + sensorPositionSequence(tBin,1), 'YData', sensorOutlineY + sensorPositionSequence(tBin,2));
-        
-         % Update the sensor position plot (on the optical image) for current time bin
-        set(sensorOutlinePlotOnOI, 'XData', sensorOutlineX + sensorPositionSequence(tBin,1), 'YData', sensorOutlineY + sensorPositionSequence(tBin,2));
-        
-        % Update the sensor position plot (on the scene luminance map) for current time bin
-        set(sensorOutlinePlotOnLumMap, 'XData', sensorOutlineX + sensorPositionSequence(tBin,1), 'YData', sensorOutlineY + sensorPositionSequence(tBin,2));
-        
-        % Update the sensor position plot (on the reconstructed scene) for current time bin
-        set(sensorOutlinePlotOnReconstructedScene, 'XData', sensorOutlineX + sensorPositionSequence(tBin,1), 'YData', sensorOutlineY + sensorPositionSequence(tBin,2));
-        
-        % Update the sensorFOV scene RGB plot
-        set(sensorFOVsceneRGBPlot, 'CData', sensorFOVsceneRGBimage);
-        
-        % Update the sensorFOV oi RGBplot
-        set(sensorFOVoiRGBPlot, 'CData', sensorFOVoiRGBimage);
-            
-        % Update the sensorFOV reconstruction RGB plot
-        set(sensorFOVreconstructionSceneRGBPlot, 'CData', sensorFOVreconstructionRGBimage);
-            
-        % Update the sensorFOVsceneLumMapPlot
-        set(sensorFOVsceneLumMapPlot, 'CData', sensorFOVsceneLumMap);
-            
-        % Update the sensorFOVoiLumMapPlot
-        set(sensorFOVoiLumMapPlot, 'CData', oiRGBgain*sensorFOVoiLumMap);
-            
-        % Update the sensorFOVreconstructionLumMapPlot
-        set(sensorFOVreconstructionLumMapPlot, 'CData', sensorFOVreconstructionLumMap)
-            
-        % Update the contrast scatter plots
-        for coneContrastIndex = 1:3
-            set(sensorFOVContrastScatterPlot(coneContrastIndex), ...
-                    'XData', reshape(LMScontrastFrame(:,:,coneContrastIndex), [1 size(LMScontrastFrame,1)*size(LMScontrastFrame,2)]), ...
-                    'YData', reshape(reconsctructedLMScontrastFrame(:,:,coneContrastIndex), [1 size(LMScontrastFrame,1)*size(LMScontrastFrame,2)]));
-        end
-        
-        % Update the contrast traces plots
-        binsToDisplay = tBin + tracesTimeBins;
-        updateTracesPlot(LconeContrastTracesPlot, MconeContrastTracesPlot, SconeContrastTracesPlot, ...
-            binsToDisplay, squeeze(LMScontrastInput(stimRowIndex,stimColIndex,:,:)), squeeze(LMScontrastReconstruction(stimRowIndex,stimColIndex,:,:)));
-        
-        drawnow;
-        writerObj.writeVideo(getframe(hFig));
         
     catch err
         fprintf('Saving video up to this point');
