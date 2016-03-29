@@ -239,6 +239,8 @@ function makeVideo(hFig, writerObj, sceneSetName, descriptionString, coneFundame
             % Clip RGBimage to [0..1], then gamma for display
             oiRGBforSuperDisplay = linearRGBtoDisplay(oiRGBgain*oiRGBforSuperDisplay, gamma);
             
+            % Clear figure
+            clf(hFig);
             
             % Generate new axes
             [sceneAxes, oiAxes, sceneLumMapAxes, oiLumMapAxes, reconstructedSceneRGBaxes, ...
