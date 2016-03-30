@@ -9,6 +9,7 @@ function RunExperiment
        % 'computeDecodingFilter' ...       % inverts the training desing matrix to comptue the decoding filter (stored in the decodingData directory)
        % 'computeOutOfSamplePrediction' ...
        % 'visualizeScan' ...
+       % 'checkDesignMatrixRank'
        'visualizeDecodingFilter' ...
        % 'visualizeInSamplePrediction' ...
        % 'visualizeOutOfSamplePrediction' ...
@@ -43,6 +44,9 @@ function RunExperiment
 
             case 'computeDecodingFilter'
                 decoder.computeDecodingFilter(sceneSetName, descriptionString);
+                
+            case 'checkDesignMatrixRank'
+                decoder.checkDesignMatrixRank(sceneSetName, descriptionString);
                 
             case 'computeOutOfSamplePrediction'
                 decoder.computeOutOfSamplePrediction(sceneSetName, descriptionString);
