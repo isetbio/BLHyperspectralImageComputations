@@ -20,6 +20,7 @@ function checkDesignMatrixRank(sceneSetName, descriptionString)
     figure(1);
     clf;
     plot(1:numel(singularValues), singularValues, 'k.');
+    set(gca, 'YScale', 'log');
     xlabel('singular value index')
     ylabel('singular value');
     
