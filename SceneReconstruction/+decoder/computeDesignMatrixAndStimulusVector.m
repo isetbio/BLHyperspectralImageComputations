@@ -1,26 +1,29 @@
 function [X, C, Coi] = computeDesignMatrixAndStimulusVector(signals, stimulus, stimulusOI, decoderParams)
 
+    conesNum  = size(signals,1);
+    totalBins = size(signals,2);
+    stimulusDimensions = size(stimulus,2);
+    
     latencyBins = decoderParams.latencyInMillseconds / decoderParams.temporalSamplingInMilliseconds;
     memoryBins  = decoderParams.memoryInMilliseconds / decoderParams.temporalSamplingInMilliseconds;
      
-    if (latencyBins >= 0)
+    if (latencyBins >= 0) 
         minTimeBin = 0;
     else
         minTimeBin = latencyBins;
     end
-  
-    conesNum  = size(signals,1);
-    totalBins = size(signals,2);
-    rowsOfX   = totalBins + minTimeBin - memoryBins;
-    stimulusDimensions = size(stimulus,2);
-    X = zeros(rowsOfX, 1+(conesNum*memoryBins), 'single');
-    C = zeros(rowsOfX, stimulusDimensions, 'single');
-    Coi = zeros(rowsOfX, stimulusDimensions, 'single');
+    % Do not include the last (memoryBins-minTimeBin) bins because we do
+    % not have points for all the filter lags
+    validTimeBins = totalBins - (memoryBins-minTimeBin);
+    
+    X = zeros(validTimeBins, 1+(conesNum*memoryBins), 'single');
+    C = zeros(validTimeBins, stimulusDimensions, 'single');
+    Coi = zeros(validTimeBins, stimulusDimensions, 'single');
     
     fprintf('\nAssembling design matrix (%d x %d) and stimulus vector (%d x %d).\nThis will take a while. Please wait ...', size(X, 1), size(X, 2), size(C, 1), size(C, 2));
     
     X(:,1) = 1;
-    for row = 1:rowsOfX
+    for row = 1:validTimeBins
         timeBins = latencyBins + row + (0:(memoryBins-1)) - minTimeBin;
         
         % Update X

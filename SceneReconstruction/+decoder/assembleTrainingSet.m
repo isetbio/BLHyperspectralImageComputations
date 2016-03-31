@@ -175,24 +175,33 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     [keptLconeIndices, keptMconeIndices, keptSconeIndices] = ...
         decoder.cherryPickConesToIncludeInDecoding(scanData{scanIndex}.scanSensor, expParams.decoderParams.thresholdConeSeparationForInclusionInDecoder);
     
+    fprintf('Size of training photocurrent sequence')
+    size(trainingPhotoCurrentSequence)
     % Reshape training cone responses to decoder format
-    trainingResponses = reshape(trainingPhotoCurrentSequence, ...
-        [size(trainingPhotoCurrentSequence,1)*size(trainingPhotoCurrentSequence,2) size(trainingPhotoCurrentSequence,3)]);
+    [trainingResponses, originalTrainingPhotoCurrentSequence] = ...
+        decoder.reformatResponseSequence('ToDesignMatrixFormat', trainingPhotoCurrentSequence);
+     
+    fprintf('Size of trainingResponses\n');
+    size(trainingResponses)
+    
+    fprintf('Size of trainingSceneLMScontrastSequence');
+    size(trainingSceneLMScontrastSequence)
     
     % Reshape training stimulus to decoder format
     [trainingStimulus, originalTrainingStimulusSize] = ...
-        decoder.stimulusSequenceToDecoderFormat(trainingSceneLMScontrastSequence, 'toDecoderFormat', []);
+        decoder.reformatStimulusSequence('ToDesignMatrixFormat', trainingSceneLMScontrastSequence);
     
+    fprintf('Size of trainingStimulus');
+    size(trainingStimulus)
+
     [trainingStimulusOI, ~] = ...
-        decoder.stimulusSequenceToDecoderFormat(trainingOpticalImageLMScontrastSequence, 'toDecoderFormat', []);
+        decoder.reformatStimulusSequence('ToDesignMatrixFormat', trainingOpticalImageLMScontrastSequence);
     
     % Compute training design matrix and stimulus vector
     [Xtrain, Ctrain, oiCtrain] = decoder.computeDesignMatrixAndStimulusVector(trainingResponses, trainingStimulus, trainingStimulusOI, expParams.decoderParams);
     
     whos 'Xtrain'
     whos 'Ctrain'
-    
-    
     
     % Save design matrices and stimulus vectors
     decodingDataDir = core.getDecodingDataDir(descriptionString);
@@ -225,11 +234,4 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     save(fileName, 'Xtest', 'Ctest', 'oiCtest', 'testingTimeAxis', 'testingSceneIndexSequence', 'testingSensorPositionSequence', 'testingScanInsertionTimes',  'testingSceneLMSbackground', 'testingOpticalImageLMSbackground', 'originalTestingStimulusSize', 'expParams', '-v7.3');
     fprintf('Done.\n');
     clear 'Xtest'; clear 'Ctest'; clear 'oiCtest';
-    
-    return;
-    
-    % visualize the cone mosaic
-    scanIndex = 1; figNo = 1;
-    visualizer.renderConeMosaic(figNo, scanData{scanIndex}.scanSensor, expParams);
-        
 end
