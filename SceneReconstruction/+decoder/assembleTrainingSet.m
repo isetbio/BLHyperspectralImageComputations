@@ -217,10 +217,10 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     
     % Reshape testing stimulus to decoder format
     [testingStimulus, originalTestingStimulusSize] = ...
-        decoder.stimulusSequenceToDecoderFormat(testingSceneLMScontrastSequence, 'toDecoderFormat', []);
+        decoder.reformatStimulusSequence('ToDesignMatrixFormat', testingSceneLMScontrastSequence);
     
     [testingStimulusOI, ~] = ...
-        decoder.stimulusSequenceToDecoderFormat(testingOpticalImageLMScontrastSequence, 'toDecoderFormat', []);
+        decoder.reformatStimulusSequence('ToDesignMatrixFormat', testingOpticalImageLMScontrastSequence);
     
     % Compute testing design matrix and stimulus vector
     [Xtest, Ctest, oiCtest] = decoder.computeDesignMatrixAndStimulusVector(testingResponses, testingStimulus, testingStimulusOI, expParams.decoderParams);
