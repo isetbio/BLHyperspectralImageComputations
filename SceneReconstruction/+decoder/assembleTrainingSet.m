@@ -160,7 +160,7 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     
     % Decide which cones to keep
     [keptLconeIndices, keptMconeIndices, keptSconeIndices] = ...
-        decoder.cherryPickConesToIncludeInDecoding(scanData{scanIndex}.scanSensor, expParams.decoderParams.thresholdConeSeparationForInclusionInDecoder);
+        core.cherryPickConesToIncludeInDecoding(scanData{scanIndex}.scanSensor, expParams.decoderParams.thresholdConeSeparationForInclusionInDecoder);
     
     fprintf('Size of training photocurrent sequence')
     size(trainingPhotoCurrentSequence)

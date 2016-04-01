@@ -16,10 +16,16 @@ function computeDecodingFilter(sceneSetName, descriptionString)
     tic
     % Compute and save the SVD decomposition of X so we can check (later) how the
     % filter dynamics depend on the # of SVD components
-    fprintf('\n3. Computing SVD(X) [%d x %d]...',  size(Xtrain,1), size(Xtrain,2));
+    fprintf('\n3a. Computing SVD(X) [%d x %d]...',  size(Xtrain,1), size(Xtrain,2));
     [Utrain, Strain, Vtrain] = svd(Xtrain);
     fprintf('Done after %2.1f minutes.\n', toc/60);
     
+    tic
+    % Compute the rank of X 
+    fprintf('\n3b. Computing rank(X) [%d x %d]...',  size(Xtrain,1), size(Xtrain,2));
+    XtrainRank = rank(Xtrain);
+    fprintf('Done after %2.1f minutes.\n', toc/60);
+    fprintf('<strong>Rank(X) = %d</strong>\n', XtrainRank);
     tic
     featuresNum = size(Xtrain,2);
     stimulusDimensions = size(Ctrain,2);
@@ -55,7 +61,7 @@ function computeDecodingFilter(sceneSetName, descriptionString)
     tic
     fprintf('\n6. Saving decoder filter and in-sample prediction ... ');
     fileName = fullfile(decodingDataDir, sprintf('%s_decodingFilter.mat', sceneSetName));
-    save(fileName, 'wVector', 'spatioTemporalSupport', 'Utrain', 'Strain', 'Vtrain');
+    save(fileName, 'wVector', 'spatioTemporalSupport', 'Utrain', 'Strain', 'Vtrain', 'XtrainRank');
     fileName = fullfile(decodingDataDir, sprintf('%s_inSamplePrediction.mat', sceneSetName));
     save(fileName,  'Ctrain', 'oiCtrain', 'CtrainPrediction', 'trainingTimeAxis', 'trainingSceneIndexSequence', 'trainingSensorPositionSequence', 'trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'trainingOpticalImageLMSbackground', 'originalTrainingStimulusSize', 'expParams');
     fprintf('Done after %2.1f minutes.\n', toc/60);

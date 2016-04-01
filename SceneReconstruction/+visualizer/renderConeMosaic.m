@@ -11,7 +11,7 @@ function renderConeMosaic(sceneSetName, descriptionString)
 
     % Compute indices of L,M, and S-cone indices to include (based on thesholdConeSeparation)
     [keptLconeIndices, keptMconeIndices, keptSconeIndices] = ...
-        decoder.cherryPickConesToIncludeInDecoding(scanSensor, expParams.decoderParams.thresholdConeSeparationForInclusionInDecoder);
+        core.cherryPickConesToIncludeInDecoding(scanSensor, expParams.decoderParams.thresholdConeSeparationForInclusionInDecoder);
     
     xy = sensorGet(scanSensor, 'xy');
     coneTypes = sensorGet(scanSensor, 'cone type');
