@@ -136,19 +136,6 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
             end
         end
         
-        
-    disp('Sizes of training sequence')
-    size(trainingScanInsertionTimes)
-    size(trainingSceneLMSbackground)
-    size(trainingOpticalImageLMSbackground)
-    
-    
-    disp('Sizes of testing sequences')
-    size(testingScanInsertionTimes)
-    size(testingSceneLMSbackground)
-    size(testingOpticalImageLMSbackground)
-    
-    
     fprintf('Training matrices\n');
     fprintf('Total training scans: %d\n', totalTrainingScansNum)
     fprintf('Size(timeAxis)         : %d %d\n', size(trainingTimeAxis,1), size(trainingTimeAxis,2));
