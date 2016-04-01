@@ -162,8 +162,6 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     [keptLconeIndices, keptMconeIndices, keptSconeIndices] = ...
         core.cherryPickConesToIncludeInDecoding(scanData{scanIndex}.scanSensor, expParams.decoderParams.thresholdConeSeparationForInclusionInDecoder);
     
-    fprintf('Size of training photocurrent sequence')
-    size(trainingPhotoCurrentSequence)
     % Reshape training cone responses to decoder format
     [trainingResponses, originalTrainingPhotoCurrentSequence] = ...
         decoder.reformatResponseSequence('ToDesignMatrixFormat', trainingPhotoCurrentSequence);
