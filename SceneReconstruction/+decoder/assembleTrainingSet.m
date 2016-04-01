@@ -180,19 +180,10 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     % Reshape training cone responses to decoder format
     [trainingResponses, originalTrainingPhotoCurrentSequence] = ...
         decoder.reformatResponseSequence('ToDesignMatrixFormat', trainingPhotoCurrentSequence);
-     
-    fprintf('Size of trainingResponses\n');
-    size(trainingResponses)
-    
-    fprintf('Size of trainingSceneLMScontrastSequence');
-    size(trainingSceneLMScontrastSequence)
     
     % Reshape training stimulus to decoder format
     [trainingStimulus, originalTrainingStimulusSize] = ...
         decoder.reformatStimulusSequence('ToDesignMatrixFormat', trainingSceneLMScontrastSequence);
-    
-    fprintf('Size of trainingStimulus');
-    size(trainingStimulus)
 
     [trainingStimulusOI, ~] = ...
         decoder.reformatStimulusSequence('ToDesignMatrixFormat', trainingOpticalImageLMScontrastSequence);
@@ -217,10 +208,10 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     
     % Reshape testing stimulus to decoder format
     [testingStimulus, originalTestingStimulusSize] = ...
-        decoder.stimulusSequenceToDecoderFormat(testingSceneLMScontrastSequence, 'toDecoderFormat', []);
+        decoder.reformatStimulusSequence('ToDesignMatrixFormat', testingSceneLMScontrastSequence);
     
     [testingStimulusOI, ~] = ...
-        decoder.stimulusSequenceToDecoderFormat(testingOpticalImageLMScontrastSequence, 'toDecoderFormat', []);
+        decoder.reformatStimulusSequence('ToDesignMatrixFormat', testingOpticalImageLMScontrastSequence);
     
     % Compute testing design matrix and stimulus vector
     [Xtest, Ctest, oiCtest] = decoder.computeDesignMatrixAndStimulusVector(testingResponses, testingStimulus, testingStimulusOI, expParams.decoderParams);

@@ -226,14 +226,14 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
                     RGBcolor = [0.5 0.2 1];
                 end
                 
-                plot(spatioTemporalSupport.timeAxis-150,  temporalFilter*0, 'k-', 'LineWidth', 1.0);
+                plot(spatioTemporalSupport.timeAxis,  temporalFilter*0, 'k-', 'LineWidth', 1.0);
                 hold on;
                 plot([0 0],  [-1 1], 'k-', 'LineWidth', 1.0);
-                plot(spatioTemporalSupport.timeAxis-150,  temporalFilter, '-', 'LineWidth', 2.0, 'Color', RGBcolor);
+                plot(spatioTemporalSupport.timeAxis,  temporalFilter, '-', 'LineWidth', 2.0, 'Color', RGBcolor);
                 hold off;
                 box off;
                 axis 'off'
-                set(gca, 'XLim', [spatioTemporalSupport.timeAxis(1) spatioTemporalSupport.timeAxis(end)]-150);
+                set(gca, 'XLim', [spatioTemporalSupport.timeAxis(1) spatioTemporalSupport.timeAxis(end)]);
                 set(gca, 'YLim', [-0.2 0.7], 'XTickLabel', {}, 'YTickLabel', {});
             end
         end

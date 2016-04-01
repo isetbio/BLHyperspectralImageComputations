@@ -6,7 +6,7 @@ function [stimulus, varargout] = reformatStimulusSequence(direction, stimulus, v
         originalSize = size(stimulus);
         stimulus = reshape(permute(stimulus, [4 1 2 3]), [originalSize(4) prod(originalSize(1:3))]);
         varargout{1} = originalSize;
-    elseif (strcmp(direction, 'fromDesignMatrixFormat'))
+    elseif (strcmp(direction, 'FromDesignMatrixFormat'))
         originalSize = varargin{1};
         stimulus = ipermute(reshape(stimulus, [originalSize(4) originalSize(1) originalSize(2) originalSize(3)]), [4 1 2 3]);
         varargout = {};

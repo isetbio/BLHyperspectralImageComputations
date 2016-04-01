@@ -6,7 +6,7 @@ function [response, varargout] = reformatResponseSequence(direction, response, v
         originalSize = size(response);
         response = reshape(response, [prod(originalSize(1:2)) originalSize(3)]);
         varargout{1} = originalSize;
-    elseif (strcmp(direction, 'fromDesignMatrixFormat'))
+    elseif (strcmp(direction, 'FromDesignMatrixFormat'))
         originalSize = varargin{1};
         response = reshape(response, originalSize);
     else
