@@ -4,21 +4,21 @@ function RunExperiment
         
     % What to compute
     instructionSet = {...
-        'compute outer segment responses' ...  % produces the contents of the scansData directory
-        'assembleTrainingDataSet' ...       % produces the training/testing design matrices in the decodingData directory
-        'computeDecodingFilter' ...       % inverts the training desing matrix to comptue the decoding filter (stored in the decodingData directory)
-        'computeOutOfSamplePrediction' ...
+       % 'compute outer segment responses' ...  % produces the contents of the scansData directory
+       % 'assembleTrainingDataSet' ...       % produces the training/testing design matrices in the decodingData directory
+       % 'computeDecodingFilter' ...       % inverts the training desing matrix to comptue the decoding filter (stored in the decodingData directory)
+       % 'computeOutOfSamplePrediction' ...
        % 'visualizeScan' ...
        % 'visualizeDecodingFilter' ...
        % 'visualizeInSamplePrediction' ...
-       % 'visualizeOutOfSamplePrediction' ...
+        'visualizeOutOfSamplePrediction' ...
        % 'makeReconstructionVideo' ...
        % 'visualizeConeMosaic' ...
         };
   
     % these following be used if 'compute outer segment responses' is not in the instructionSet.
     sceneSetName = 'manchester';
-    descriptionString = 'AdaptEvery500Fixations/@osBiophys';
+    descriptionString = 'AdaptEvery40Fixations/@osBiophys';
     
     for k = 1:numel(instructionSet)
         
@@ -39,7 +39,7 @@ function RunExperiment
                 
             case 'assembleTrainingDataSet'
                 trainingDataPercentange = 50;
-                decoder.assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercentange);
+                core.assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercentange);
 
             case 'computeDecodingFilter'
                 decoder.computeDecodingFilter(sceneSetName, descriptionString);

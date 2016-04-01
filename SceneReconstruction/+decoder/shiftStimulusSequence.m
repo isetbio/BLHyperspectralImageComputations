@@ -1,5 +1,7 @@
-function shiftedSequence = shiftSequence(sequence, decoderParams)
+function shiftedSequence = shiftStimulusSequence(sequence, decoderParams)
 
+    % Shifts and zeropads a stimulus sequence that is in DesignMatrix format so that 
+    % it is time-aligned with the stimulus sequence in the original format
     latencyBins = decoderParams.latencyInMillseconds / decoderParams.temporalSamplingInMilliseconds;
     memoryBins  = decoderParams.memoryInMilliseconds / decoderParams.temporalSamplingInMilliseconds;
     
@@ -17,5 +19,6 @@ function shiftedSequence = shiftSequence(sequence, decoderParams)
     for row = 1:validTimeBins
          shiftedSequence(row - minTimeBin,:) = sequence(row, :);
     end
+    
 end
 
