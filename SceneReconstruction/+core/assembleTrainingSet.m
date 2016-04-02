@@ -109,32 +109,6 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
             end
         end % scanIndex - testing
     end % sceneIndex
-    
-    
-    debugForTransients = false;
-        if (debugForTransients)
-            figure(33); colormap(gray(1024));
-            CLims = [-1 1];
-            for k = 1:2:size(trainingSceneLMScontrastSequence,4)
-                for cone = 1:3
-                subplot(1,4,cone);
-                imagesc(sensorFOVxaxis, sensorFOVyaxis, squeeze(trainingSceneLMScontrastSequence(:,:,cone, k))); axis 'xy'; axis 'image';
-                axis 'xy'; axis 'image';
-                set(gca, 'XLim', [sensorFOVxaxis(1) sensorFOVxaxis(end)]);
-                set(gca, 'YLim', [sensorFOVyaxis(1) sensorFOVyaxis(end)]);
-                set(gca, 'CLim', CLims);
-                end
-                subplot(1,4,4);
-                imagesc(sensorRetinalXaxis, sensorRetinalYaxis, squeeze(trainingPhotoCurrentSequence(:,:,k))); 
-                axis 'xy'; axis 'image';
-                set(gca, 'XLim', [sensorFOVxaxis(1) sensorFOVxaxis(end)]);
-                set(gca, 'YLim', [sensorFOVyaxis(1) sensorFOVyaxis(end)]);
-                set(gca,  'CLim', [-80 -20]);
-                drawnow;
-                pause(0.1);
-                
-            end
-        end
         
     fprintf('Training matrices\n');
     fprintf('Total training scans: %d\n', totalTrainingScansNum)
@@ -178,12 +152,26 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     
     whos 'Xtrain'
     whos 'Ctrain'
-    
+                
+    % Save cone types and spatiotemporal support 
+    coneTypes = sensorGet(scanSensor, 'coneType');
+    spatioTemporalSupport = struct(...
+       'sensorRetinalXaxis',  sensorRetinalXaxis, ...
+       'sensorRetinalYaxis',  sensorRetinalYaxis, ...
+       'sensorFOVxaxis', sensorFOVxaxis, ...                  % spatial support of decoded scene
+       'sensorFOVyaxis', sensorFOVyaxis, ...
+       'timeAxis',       expParams.decoderParams.latencyInMillseconds + (0:1:round(expParams.decoderParams.memoryInMilliseconds/expParams.decoderParams.temporalSamplingInMilliseconds)-1) * ...
+                           expParams.decoderParams.temporalSamplingInMilliseconds);
+                       
     % Save design matrices and stimulus vectors
     decodingDataDir = core.getDecodingDataDir(descriptionString);
     fileName = fullfile(decodingDataDir, sprintf('%s_trainingDesignMatrices.mat', sceneSetName));
     fprintf('\nSaving training design matrix and stim vector ''%s''... ', fileName);
-    save(fileName, 'Xtrain', 'Ctrain', 'oiCtrain', 'trainingTimeAxis', 'trainingSceneIndexSequence', 'trainingSensorPositionSequence', 'trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'trainingOpticalImageLMSbackground', 'originalTrainingStimulusSize', 'expParams', '-v7.3');
+    save(fileName, 'Xtrain', 'Ctrain', 'oiCtrain', 'trainingTimeAxis', ...
+        'trainingSceneIndexSequence', 'trainingSensorPositionSequence', ...
+        'trainingScanInsertionTimes', 'trainingSceneLMSbackground', ...
+        'trainingOpticalImageLMSbackground', 'originalTrainingStimulusSize', ...
+        'expParams', 'coneTypes', 'spatioTemporalSupport', '-v7.3');
     fprintf('Done.\n');
     clear 'Xtrain'; clear 'Ctrain'; clear 'oiCtrain'
     
@@ -207,7 +195,11 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     decodingDataDir = core.getDecodingDataDir(descriptionString);
     fileName = fullfile(decodingDataDir, sprintf('%s_testingDesignMatrices.mat', sceneSetName));
     fprintf('\nSaving test design matrix and stim vector to ''%s''... ', fileName);
-    save(fileName, 'Xtest', 'Ctest', 'oiCtest', 'testingTimeAxis', 'testingSceneIndexSequence', 'testingSensorPositionSequence', 'testingScanInsertionTimes',  'testingSceneLMSbackground', 'testingOpticalImageLMSbackground', 'originalTestingStimulusSize', 'expParams', '-v7.3');
+    save(fileName, 'Xtest', 'Ctest', 'oiCtest', 'testingTimeAxis', ...
+        'testingSceneIndexSequence', 'testingSensorPositionSequence', ...
+        'testingScanInsertionTimes',  'testingSceneLMSbackground', ...
+        'testingOpticalImageLMSbackground', 'originalTestingStimulusSize', ...
+        'expParams', 'coneTypes', 'spatioTemporalSupport', '-v7.3');
     fprintf('Done.\n');
     clear 'Xtest'; clear 'Ctest'; clear 'oiCtest';
 end

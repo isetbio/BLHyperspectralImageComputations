@@ -20,7 +20,6 @@ function scanData = computeScanData(scene,  oi,  sensor, osOBJ, ...
     sensorRetinalXaxis = sensorRetinalXaxis - (sensorRetinalXaxis(end)-sensorRetinalXaxis(1))/2;
     sensorRetinalYaxis = sensorRetinalYaxis - (sensorRetinalYaxis(end)-sensorRetinalYaxis(1))/2;
     
-    
     % Compute isomerizations for the total sensor time (this includes the adapting field fixations)
     % Note: For this computation, we use oi,  which is computed with a
     % spatial resolution of 1.0 microns, NOT oiResampledToDecoderResolution, 

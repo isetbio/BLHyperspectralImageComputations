@@ -1,30 +1,21 @@
 function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
-
-    
+ 
     fprintf('\nLoading decoder filter ...');
     decodingDataDir = core.getDecodingDataDir(descriptionString);
     fileName = fullfile(decodingDataDir, sprintf('%s_decodingFilter.mat', sceneSetName));
-    load(fileName, 'wVector', 'spatioTemporalSupport');
+    load(fileName, 'wVector', 'spatioTemporalSupport', 'coneTypes');
   
-    sceneIndex = 1;
-    scanFileName = core.getScanFileName(sceneSetName, descriptionString, sceneIndex);
-    load(scanFileName, 'scanData', 'expParams');
-    scanData = scanData{1};
-    scanSensor = scanData.scanSensor;
-    scanData
-
-    
+            
     fprintf('Done.\n');
     
-    coneTypes = sensorGet(scanSensor, 'coneType');
     lConeIndices = find(coneTypes == 2);
     mConeIndices = find(coneTypes == 3);
     sConeIndices = find(coneTypes == 4);
     coneMosaicRows = sensorGet(scanSensor, 'row');
     coneMosaicCols = sensorGet(scanSensor, 'col');
     
-    sensorRows      = numel(spatioTemporalSupport.sensorRowAxis);
-    sensorCols      = numel(spatioTemporalSupport.sensorColAxis);
+    sensorRows      = numel(spatioTemporalSupport.sensorRetinalYaxis);
+    sensorCols      = numel(spatioTemporalSupport.sensorRetinalXaxis);
     xSpatialBinsNum = numel(spatioTemporalSupport.sensorFOVxaxis);                   % spatial support of decoded scene
     ySpatialBinsNum = numel(spatioTemporalSupport.sensorFOVyaxis);
     spatialDimsNum  = xSpatialBinsNum * ySpatialBinsNum;
@@ -37,7 +28,6 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
     
     % Allocate memory for unpacked stimDecoder
     stimDecoder = zeros(3, ySpatialBinsNum, xSpatialBinsNum, sensorRows, sensorCols, timeBinsNum);
-    
     
     % Unpack the wVector into the stimDecoder
     dcTerm = 1;
@@ -302,7 +292,7 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
                 for coneColPos = 1:size(allConesKernel,2)
             
                     coneIndex = sub2ind([coneMosaicRows coneMosaicCols], coneRowPos, coneColPos);
-                    xyWdata = [scanData.sensorRetinalXaxis(coneColPos) scanData.sensorRetinalYaxis(coneRowPos) allConesKernel(coneRowPos, coneColPos)];
+                    xyWdata = [spatioTemporalSupport.sensorRetinalXaxis(coneColPos) spatioTemporalSupport.sensorRetinalYaxis(coneRowPos) allConesKernel(coneRowPos, coneColPos)];
                     
                     if ismember(coneIndex, lConeIndices)
                         lConePts(size(lConePts,1)+1,:) = xyWdata;
@@ -317,9 +307,9 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
                 end
             end
                 
-            dx = scanData.sensorRetinalXaxis(2)-scanData.sensorRetinalXaxis(1);
-            x = scanData.sensorRetinalXaxis(1)-dx:1:scanData.sensorRetinalXaxis(end)+dx;
-            y = scanData.sensorRetinalYaxis(1)-dx:1:scanData.sensorRetinalYaxis(end)+dx;
+            dx = spatioTemporalSupport.sensorRetinalXaxis(2)-spatioTemporalSupport.sensorRetinalXaxis(1);
+            x = spatioTemporalSupport.sensorRetinalXaxis(1)-dx:1:spatioTemporalSupport.sensorRetinalXaxis(end)+dx;
+            y = spatioTemporalSupport.sensorRetinalYaxis(1)-dx:1:spatioTemporalSupport.sensorRetinalYaxis(end)+dx;
             [xx, yy] = meshgrid(x,y); 
             lConeSpatialWeightingKernel = griddata(lConePts(:,1), lConePts(:,2), lConePts(:,3), xx, yy, 'cubic');
             mConeSpatialWeightingKernel = griddata(mConePts(:,1), mConePts(:,2), mConePts(:,3), xx, yy, 'cubic');
