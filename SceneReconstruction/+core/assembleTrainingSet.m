@@ -23,6 +23,7 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
                 trainingTimeAxis                        = single(scanData{scanIndex}.timeAxis);
                 trainingScanInsertionTimes              = trainingTimeAxis(1);
                 trainingSceneIndexSequence              = repmat(single(sceneIndex), [1 numel(scanData{scanIndex}.timeAxis)]);
+                coneTypes                               = sensorGet(scanData{scanIndex}.scanSensor, 'coneType');
                 sensorFOVxaxis                          = scanData{scanIndex}.sensorFOVxaxis;
                 sensorFOVyaxis                          = scanData{scanIndex}.sensorFOVyaxis;
                 sensorRetinalXaxis                      = scanData{scanIndex}.sensorRetinalXaxis;
@@ -153,8 +154,7 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     whos 'Xtrain'
     whos 'Ctrain'
                 
-    % Save cone types and spatiotemporal support 
-    coneTypes = sensorGet(scanSensor, 'coneType');
+    % Save cone types and spatiotemporal support
     spatioTemporalSupport = struct(...
        'sensorRetinalXaxis',  sensorRetinalXaxis, ...
        'sensorRetinalYaxis',  sensorRetinalYaxis, ...
