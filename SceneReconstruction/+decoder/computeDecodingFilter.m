@@ -47,9 +47,13 @@ function computeDecodingFilter(sceneSetName, descriptionString)
     tic
     fprintf('\n6. Saving decoder filter and in-sample prediction ... ');
     fileName = fullfile(decodingDataDir, sprintf('%s_decodingFilter.mat', sceneSetName));
-    save(fileName, 'wVector', 'spatioTemporalSupport', 'coneTypes', 'Utrain', 'Strain', 'Vtrain', 'XtrainRank');
+    save(fileName, 'wVector', 'spatioTemporalSupport', 'coneTypes', 'Utrain', 'Strain', 'Vtrain', 'XtrainRank', '-v7.3');
     fileName = fullfile(decodingDataDir, sprintf('%s_inSamplePrediction.mat', sceneSetName));
-    save(fileName,  'Ctrain', 'oiCtrain', 'CtrainPrediction', 'trainingTimeAxis', 'trainingSceneIndexSequence', 'trainingSensorPositionSequence', 'trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'trainingOpticalImageLMSbackground', 'originalTrainingStimulusSize', 'expParams');
+    save(fileName,  'Ctrain', 'oiCtrain', 'CtrainPrediction', ...
+        'trainingTimeAxis', 'trainingSceneIndexSequence', 'trainingSensorPositionSequence', ...
+        'trainingScanInsertionTimes', 'trainingSceneLMSbackground', ...
+        'trainingOpticalImageLMSbackground', 'originalTrainingStimulusSize', ...
+        'expParams',  '-v7.3');
     fprintf('Done after %2.1f minutes.\n', toc/60);
 end
 
