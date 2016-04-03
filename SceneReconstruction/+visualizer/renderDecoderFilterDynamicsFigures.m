@@ -43,156 +43,148 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
     % generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, expParams, descriptionString);
     
     % Generate temporal pooling filters figure (at one stimulus location and at a local mosaic neighborhood)
-    stimulusLocation.x = round(xSpatialBinsNum/2);
-    stimulusLocation.y = round(ySpatialBinsNum/2);
+    stimulusLocation.x = round(xSpatialBinsNum/4);
+    stimulusLocation.y = round(ySpatialBinsNum/3);
     coneNeighborhood.center.x = round(sensorCols/2)-2;
     coneNeighborhood.center.y = round(sensorRows/2)+2;
     coneNeighborhood.extent.x = -3:3;
     coneNeighborhood.extent.y = -2:2;
     generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, coneNeighborhood, expParams, descriptionString);
     
-    return;
-   
-          
+    generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation,expParams, descriptionString);
+    
+end
 
+function generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, expParams, descriptionString)
+    % Load grayRed colormap
+    p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
+    load(fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'), 'grayRedLUT');
+    whos('-file', fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'));
     
+    dX = spatioTemporalSupport.sensorRetinalXaxis(2)-spatioTemporalSupport.sensorRetinalXaxis(1);
+    dY = spatioTemporalSupport.sensorRetinalYaxis(2)-spatioTemporalSupport.sensorRetinalYaxis(1);
+    x = spatioTemporalSupport.sensorRetinalXaxis(1)-dX:1:spatioTemporalSupport.sensorRetinalXaxis(end)+dX;
+    y = spatioTemporalSupport.sensorRetinalYaxis(1)-dY:1:spatioTemporalSupport.sensorRetinalYaxis(end)+dY;
+    [xx, yy] = meshgrid(x,y); 
+            
+    lConeIndices = find(coneTypes == 2);
+    mConeIndices = find(coneTypes == 3);
+    sConeIndices = find(coneTypes == 4);
     
-    % Now render temporal filter dynamics for one spatial location
-    ySpatialLoc = round(ySpatialBinsNum/2);
-    xSpatialLoc = round(xSpatialBinsNum/2);
-    
-    
-    % Finally render the spatial pooling profiles across sub-mosaics
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
-               'rowsNum', 2, ...
+               'rowsNum', 3, ...
                'colsNum', 3, ...
-               'heightMargin',   0.014, ...
-               'widthMargin',    0.014, ...
-               'leftMargin',     0.01, ...
+               'heightMargin',   0.005, ...
+               'widthMargin',    0.005, ...
+               'leftMargin',     0.03, ...
                'rightMargin',    0.00, ...
-               'bottomMargin',   0.01, ...
+               'bottomMargin',   0.015, ...
                'topMargin',      0.00);
            
-           
-           
-           imageFileName4 = fullfile(core.getDecodingDataDir(descriptionString), sprintf('DecoderConeSubMosaicSpatialPooling%s%sOverlap%2.1fMeanLum%d', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
-   
-        hFig4 = figure(10); 
-        clf; 
-        set(hFig4, 'position', [10 10 1400 840], 'Color', [1 1 1]);
-        colormap(niceCmap(end:-1:1,:)); 
-        
-    decoderWeightRange = [-1 1]/3;
-    for stimulusTestYpos = ySpatialLoc+(-5:5)
-    for stimulusTestXpos = xSpatialLoc+(-5:5)
-        
-        
-        
-        for stimConeContrastIndex = 1:3
-            spatioTemporalFilter = squeeze(stimDecoder(stimConeContrastIndex, stimulusTestYpos, stimulusTestXpos, :,:,:));
-        
-            %if (stimConeContrastIndex == 1)
-                % determine the visualized cone neighborhood based on the
-                % L-cone decoder filter
-                indicesForPeakResponseEstimation = find(timeAxis < 300);
-                restrictedTimeAxis = timeAxis(indicesForPeakResponseEstimation(1):indicesForPeakResponseEstimation(end));
-
-                tmp = squeeze(spatioTemporalFilter(:,:,indicesForPeakResponseEstimation));
-                [~, idx] = max(abs(tmp(:)));
-                [peakConeRow, peakConeCol, peakTimeBinIndex] = ind2sub(size(tmp), idx);
-                [~,peakTimeBin] = min(abs(timeAxis - restrictedTimeAxis(peakTimeBinIndex)));
-
-               % fprintf('filter at (%d,%d) peaks at %2.0f msec\n', xSpatialBin, ySpatialBin, timeAxis(peakTimeBin));
-            %end
-        
-            allConesKernel = squeeze(spatioTemporalFilter(:,:,peakTimeBinIndex));
-            lConePts = [];
-            mConePts = [];
-            sConePts = [];
-            allConePts = [];
-            
-            for coneRowPos = 1:size(allConesKernel,1)
-                for coneColPos = 1:size(allConesKernel,2)
-            
-                    coneIndex = sub2ind([sensorRows sensorCols], coneRowPos, coneColPos);
-                    xyWdata = [spatioTemporalSupport.sensorRetinalXaxis(coneColPos) spatioTemporalSupport.sensorRetinalYaxis(coneRowPos) allConesKernel(coneRowPos, coneColPos)];
-                    
-                    if ismember(coneIndex, lConeIndices)
-                        lConePts(size(lConePts,1)+1,:) = xyWdata;
-                        allConePts(size(allConePts,1)+1,:) = xyWdata;
-                    elseif ismember(coneIndex, mConeIndices)
-                        mConePts(size(mConePts,1)+1,:) = xyWdata;
-                        allConePts(size(allConePts,1)+1,:) = xyWdata;
-                    elseif ismember(coneIndex, sConeIndices)
-                        sConePts(size(sConePts,1)+1,:) = xyWdata;
-                        allConePts(size(allConePts,1)+1,:) = xyWdata;
-                    end
-                end
-            end
-                
-            dx = spatioTemporalSupport.sensorRetinalXaxis(2)-spatioTemporalSupport.sensorRetinalXaxis(1);
-            x = spatioTemporalSupport.sensorRetinalXaxis(1)-dx:1:spatioTemporalSupport.sensorRetinalXaxis(end)+dx;
-            y = spatioTemporalSupport.sensorRetinalYaxis(1)-dx:1:spatioTemporalSupport.sensorRetinalYaxis(end)+dx;
-            [xx, yy] = meshgrid(x,y); 
-            lConeSpatialWeightingKernel = griddata(lConePts(:,1), lConePts(:,2), lConePts(:,3), xx, yy, 'cubic');
-            mConeSpatialWeightingKernel = griddata(mConePts(:,1), mConePts(:,2), mConePts(:,3), xx, yy, 'cubic');
-            sConeSpatialWeightingKernel = griddata(sConePts(:,1), sConePts(:,2), sConePts(:,3), xx, yy, 'cubic');
-            lmConePts = [lConePts; mConePts];
-            lmConeSpatialWeightingKernel = griddata(lmConePts(:,1), lmConePts(:,2), lmConePts(:,3), xx, yy, 'cubic');
-            
-            max(max(abs(sConePts(:,3))))
-            
-            subplot('position',subplotPosVectors(1,stimConeContrastIndex ).v);
-            contourLineColor = [0.4 0.4 0.4];
-            if (stimConeContrastIndex == 1)
-                %maxForThisCone = max(abs(lConeSpatialWeightingKernel(:)));
-                maxForThisCone = decoderWeightRange(2);
-                minForThisCone = decoderWeightRange(1);
-                dStep = maxForThisCone/16;
-                [C,h] = contourf(xx,yy, lConeSpatialWeightingKernel, (minForThisCone:dStep:-dStep));
-                h.LineWidth = 1;
-                h.LineStyle = '--';
-                h.LineColor = contourLineColor ;
-                [C,h] = contourf(xx,yy, lConeSpatialWeightingKernel, (dStep:dStep:maxForThisCone));
-                h.LineWidth = 1;
-                h.LineStyle = '-';
-               h.LineColor = contourLineColor ;
-            elseif (stimConeContrastIndex == 2)
-                %maxForThisCone = max(abs(mConeSpatialWeightingKernel(:)));
-                maxForThisCone = decoderWeightRange(2);
-                minForThisCone = decoderWeightRange(1);
-                dStep = maxForThisCone/16;
-                [C,h] = contourf(xx,yy, mConeSpatialWeightingKernel, (minForThisCone:dStep:-dStep));
-                h.LineWidth = 1;
-                h.LineStyle = '--';
-               h.LineColor = contourLineColor ;
-                [C,h] = contourf(xx,yy, mConeSpatialWeightingKernel, (dStep:dStep:maxForThisCone));
-                h.LineWidth = 1;
-                h.LineStyle = '-';
-               h.LineColor = contourLineColor ;
-            elseif (stimConeContrastIndex == 3)
-                %maxForThisCone = max(abs(sConeSpatialWeightingKernel(:)));
-                maxForThisCone = decoderWeightRange(2);
-                minForThisCone = decoderWeightRange(1);
-                dStep = maxForThisCone/16;
-                [C,h] = contourf(xx,yy, sConeSpatialWeightingKernel, (minForThisCone :dStep:-dStep));
-                h.LineWidth = 1;
-                h.LineStyle = '--';
-               h.LineColor = contourLineColor ;
-                [C,h] = contourf(xx,yy, sConeSpatialWeightingKernel, (dStep:dStep:maxForThisCone));
-                h.LineWidth = 1;
-                h.LineStyle = '-';
-               h.LineColor = contourLineColor ;
-            end
-            
-            set(gca, 'CLim', decoderWeightRange);
-        end % stimConeContrast
-        
-        drawnow;
-        
-    end % stimulusTestYpos
-    end % stimulusTestXpos
+    prefix = 'SubMosaicSampling';
+    imageFileName = composeImageFilename(expParams, descriptionString, prefix, ''); 
+    hFig = figure(10); 
+    clf; set(hFig, 'position', [700 10 1024 800], 'Color', [1 1 1], 'Name', imageFileName);
+    colormap(grayRedLUT);        
     
+    
+    coneString = {'LconeContrast', 'MconeContrast', 'SconeContrast'};
+    for stimConeContrastIndex = 1:numel(coneString)
+        
+        % determine coords of peak response
+        spatioTemporalFilter = squeeze(stimDecoder(stimConeContrastIndex, stimulusLocation.y, stimulusLocation.x, :,:,:));
+        indicesForPeakResponseEstimation = find(abs(spatioTemporalSupport.timeAxis) < 100);
+        tmp = squeeze(spatioTemporalFilter(:,:,indicesForPeakResponseEstimation));
+        [~, idx] = max(abs(tmp(:)));
+        [peakConeRow, peakConeCol, idx] = ind2sub(size(tmp), idx);
+        peakTimeBin = indicesForPeakResponseEstimation(idx);
+        
+        allConesSpatialPooling = squeeze(spatioTemporalFilter(:,:,peakTimeBin));
+        % Plot the spatial pooling filter (across all cone types) at the top
+        subplot('position',subplotPosVectors(1, stimConeContrastIndex).v);
+        imagesc(spatioTemporalSupport.sensorRetinalXaxis, spatioTemporalSupport.sensorRetinalYaxis, allConesSpatialPooling);
+%         hold on;
+%         plot(outlineX, outlineY, 'k-', 'LineWidth', 2.0);
+%         hold off;
+        axis 'image'; axis 'xy'; 
+        set(gca, 'XTick', (-150:15:150), 'YTick', (-150:15:150), 'XTickLabel', {}, 'YTickLabel', {}, ...
+                 'XLim', [spatioTemporalSupport.sensorRetinalXaxis(1)-dX/2 spatioTemporalSupport.sensorRetinalXaxis(end)+dX/2], ...
+                 'YLim', [spatioTemporalSupport.sensorRetinalYaxis(1)-dY/2 spatioTemporalSupport.sensorRetinalYaxis(end)+dY/2], 'CLim', weightsRange);
+      
+        lConeWeights = [];
+        mConeWeights = [];
+        sConeWeights = [];
+    
+        for iRow = 1:size(spatioTemporalFilter,1)
+          for iCol = 1:size(spatioTemporalFilter,2) 
+                xyWeight = [spatioTemporalSupport.sensorRetinalXaxis(iCol) spatioTemporalSupport.sensorRetinalYaxis(iRow) allConesSpatialPooling(iRow, iCol)];
+                coneIndex = sub2ind([size(spatioTemporalFilter,1) :size(spatioTemporalFilter,2)], iRow, iCol);
+                if ismember(coneIndex, lConeIndices)
+                    RGBcolor = [1 0.2 0.5];
+                    lConeWeights(size(lConeWeights,1)+1,:) = xyWeight;
+                elseif ismember(coneIndex, mConeIndices)
+                    RGBcolor = [0.2 0.8 0.2];
+                    mConeWeights(size(mConeWeights,1)+1,:) = xyWeight;
+                elseif ismember(coneIndex, sConeIndices)
+                    RGBcolor = [0.5 0.2 1];
+                    sConeWeights(size(sConeWeights,1)+1,:) = xyWeight;
+                end       
+          end
+        end
+        
+        lConeSpatialWeightingKernel = griddata(lConeWeights(:,1), lConeWeights(:,2), lConeWeights(:,3), xx, yy, 'cubic');
+        mConeSpatialWeightingKernel = griddata(mConeWeights(:,1), mConeWeights(:,2), mConeWeights(:,3), xx, yy, 'cubic');
+        sConeSpatialWeightingKernel = griddata(sConeWeights(:,1), sConeWeights(:,2), sConeWeights(:,3), xx, yy, 'cubic');
+        lmConeWeights = [lConeWeights; mConeWeights];
+        lmConeSpatialWeightingKernel = griddata(lmConeWeights(:,1), lmConeWeights(:,2), lmConeWeights(:,3), xx, yy, 'cubic');
+            
+        if (stimConeContrastIndex == 1)
+            subplot('position',subplotPosVectors(2,stimConeContrastIndex).v);
+            generateContourPlot(lConeSpatialWeightingKernel, weightsRange);
+          
+            subplot('position',subplotPosVectors(3,stimConeContrastIndex).v);
+            generateContourPlot(mConeSpatialWeightingKernel, weightsRange);
+            
+        elseif (stimConeContrastIndex == 2)
+            subplot('position',subplotPosVectors(2,stimConeContrastIndex).v);
+            generateContourPlot(mConeSpatialWeightingKernel, weightsRange);
+
+            subplot('position',subplotPosVectors(3,stimConeContrastIndex).v);
+            generateContourPlot(lConeSpatialWeightingKernel, weightsRange);
+
+        elseif (stimConeContrastIndex == 3)
+            subplot('position',subplotPosVectors(2,stimConeContrastIndex).v);
+            generateContourPlot(sConeSpatialWeightingKernel, weightsRange);
+
+            subplot('position',subplotPosVectors(3,stimConeContrastIndex).v);
+            generateContourPlot(lmConeSpatialWeightingKernel, weightsRange);
+        end    
+    end % stimConeContrastIndex
+    drawnow;
+    
+    NicePlot.exportFigToPNG(sprintf('%s.png', imageFileName), hFig, 300);
+     
+    
+    function generateContourPlot(spatialWeightingKernel, weightsRange)
+        contourLineColor = [0.4 0.4 0.4];
+        cStep = max(weightsRange)/12;
+        % negative contours
+        [C,H] = contourf(xx,yy, spatialWeightingKernel, (weightsRange(1):cStep:-cStep));
+        H.LineWidth = 1;
+        H.LineStyle = '--';
+        H.LineColor = contourLineColor;
+        % positive contours
+        [C,H] = contourf(xx,yy, spatialWeightingKernel, (cStep:cStep:weightsRange(2)));
+        H.LineWidth = 1;
+        H.LineStyle = '-';
+        H.LineColor = contourLineColor;
+        axis 'image'; axis 'xy'; 
+        set(gca, 'XTick', (-150:15:150), 'YTick', (-150:15:150), 'XTickLabel', {}, 'YTickLabel', {}, ...
+                 'XLim', [spatioTemporalSupport.sensorRetinalXaxis(1)-dX/2 spatioTemporalSupport.sensorRetinalXaxis(end)+dX/2], ...
+                 'YLim', [spatioTemporalSupport.sensorRetinalYaxis(1)-dY/2 spatioTemporalSupport.sensorRetinalYaxis(end)+dY/2], 'CLim', weightsRange);
+        set(gca, 'CLim', weightsRange);
+    end
+
 end
 
 
