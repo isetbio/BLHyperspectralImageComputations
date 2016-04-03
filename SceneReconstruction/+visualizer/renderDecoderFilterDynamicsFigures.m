@@ -3,35 +3,25 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
     fprintf('\nLoading decoder filter ...');
     decodingDataDir = core.getDecodingDataDir(descriptionString);
     fileName = fullfile(decodingDataDir, sprintf('%s_decodingFilter.mat', sceneSetName));
-    load(fileName, 'wVector', 'spatioTemporalSupport', 'coneTypes');
-  
-            
+    load(fileName, 'wVector', 'spatioTemporalSupport', 'coneTypes', 'expParams');
     fprintf('Done.\n');
+
     
-    lConeIndices = find(coneTypes == 2);
-    mConeIndices = find(coneTypes == 3);
-    sConeIndices = find(coneTypes == 4);
-    coneMosaicRows = sensorGet(scanSensor, 'row');
-    coneMosaicCols = sensorGet(scanSensor, 'col');
+    % Normalize wVector for plotting in [-1 1]
+    wVector = wVector / max(abs(wVector(:)));
+    weightsRange = 0.6*[-1 1];
     
+    % Allocate memory for unpacked stimDecoder
     sensorRows      = numel(spatioTemporalSupport.sensorRetinalYaxis);
     sensorCols      = numel(spatioTemporalSupport.sensorRetinalXaxis);
     xSpatialBinsNum = numel(spatioTemporalSupport.sensorFOVxaxis);                   % spatial support of decoded scene
     ySpatialBinsNum = numel(spatioTemporalSupport.sensorFOVyaxis);
-    spatialDimsNum  = xSpatialBinsNum * ySpatialBinsNum;
     timeAxis        = spatioTemporalSupport.timeAxis;
     timeBinsNum     = numel(timeAxis);
-
-    % Normalize wVector for plotting in [-1 1]
-    wVector = wVector / max(abs(wVector(:)));
-    weightRange = max(abs(wVector(:)))*[-1.0 1.0];
-    
-    % Allocate memory for unpacked stimDecoder
     stimDecoder = zeros(3, ySpatialBinsNum, xSpatialBinsNum, sensorRows, sensorCols, timeBinsNum);
     
     % Unpack the wVector into the stimDecoder
     dcTerm = 1;
-    
     for stimConeContrastIndex = 1:3
         for ySpatialBin = 1:ySpatialBinsNum
         for xSpatialBin = 1:xSpatialBinsNum
@@ -49,12 +39,20 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
     end % coneContrastIndex
     
     
+    % Generate spatial pooling filters (at select stimulus locations)
+    % generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, expParams, descriptionString);
     
-    %niceCmap = cbrewer('div', 'Spectral', 1024);
-    %niceCmap = cbrewer('seq', 'PuBu', 1024);
     
-    niceCmap = cbrewer('div', 'RdGy', 1024);
+    stimulusLocation.x = round(xSpatialBinsNum/2);
+    stimulusLocation.y = round(SpatialBinsNum/2);
+    coneNeighborhood.center.x = 4; %round(sensorCols/2);
+    coneNeighborhood.center.y = 4; %round(sensorRows/2);
+    coneNeighborhood.extent.x = -3:3;
+    coneNeighborhood.extent.y = -2:2;
+    generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, coneNeighborhood, expParams, descriptionString)
+    return;
     
+   
     if (ySpatialBinsNum > 12)
         rowsToPlot = 3:6:ySpatialBinsNum
         fprintf('Stimulus y-positions are more than 12 will only show every 6th row\n');
@@ -150,6 +148,9 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
     
 
     
+    lConeIndices = find(coneTypes == 2);
+    mConeIndices = find(coneTypes == 3);
+    sConeIndices = find(coneTypes == 4);
     
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
                'rowsNum', 7, ...
@@ -161,17 +162,15 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
                'bottomMargin',   0.01, ...
                'topMargin',      0.00);
            
+           
     for stimConeContrastIndex = 1:3
-        
         imageFileName3 = fullfile(core.getDecodingDataDir(descriptionString), sprintf('DecoderTemporalFiltersInNeighborhood%s%sOverlap%2.1fMeanLum%d', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
    
         hFig3 = figure(10+(stimConeContrastIndex-1)*10); 
-        clf; 
-        set(hFig3, 'position', [10 10 1400 840], 'Color', [1 1 1]);
+        clf;  set(hFig3, 'position', [10 10 1400 840], 'Color', [1 1 1]);
         colormap(niceCmap(end:-1:1,:)); 
         
         spatioTemporalFilter = squeeze(stimDecoder(stimConeContrastIndex, ySpatialLoc, xSpatialLoc, :,:,:));
-        
         
         if (stimConeContrastIndex == 1)
             % determine the visualized cone neighborhood based on the
@@ -207,7 +206,7 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
                 coneRowPos = nearbyConesYLocs(iRow);
                 subplot('position',subplotPosVectors((numel(nearbyConesYLocs)-iRow+1),iCol+1).v);
                 temporalFilter = squeeze(spatioTemporalFilter(coneRowPos, coneColPos,:));
-                coneIndex = sub2ind([coneMosaicRows coneMosaicCols], coneRowPos, coneColPos);
+                coneIndex = sub2ind([sensorRows sensorCols], coneRowPos, coneColPos);
                 if ismember(coneIndex, lConeIndices)
                     RGBcolor = [1 0.2 0.5];
                 elseif ismember(coneIndex, mConeIndices)
@@ -228,7 +227,7 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
             end
         end
         
-        NicePlot.exportFigToPNG(sprintf('%s%s.png', imageFileName3, coneString{stimConeContrastIndex}), hFig3, 300);
+        NicePlot.exportFigToPNG(sprintf('%s.png', imageFileName), hFig, 300);
     end
     
     end
@@ -291,7 +290,7 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
             for coneRowPos = 1:size(allConesKernel,1)
                 for coneColPos = 1:size(allConesKernel,2)
             
-                    coneIndex = sub2ind([coneMosaicRows coneMosaicCols], coneRowPos, coneColPos);
+                    coneIndex = sub2ind([sensorRows sensorCols], coneRowPos, coneColPos);
                     xyWdata = [spatioTemporalSupport.sensorRetinalXaxis(coneColPos) spatioTemporalSupport.sensorRetinalYaxis(coneRowPos) allConesKernel(coneRowPos, coneColPos)];
                     
                     if ismember(coneIndex, lConeIndices)
@@ -373,3 +372,172 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
 end
 
 
+function generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, coneNeighborhood, expParams, descriptionString)
+    
+    % Load grayRed colormap
+    p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
+    load(fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'), 'grayRedLUT');
+    whos('-file', fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'));
+    
+    nearbyConeColumns = coneNeighborhood.center.x + coneNeighborhood.extent.x;
+    nearbyConeRows    = coneNeighborhood.center.y + coneNeighborhood.extent.y;
+    nearbyConeColumns = nearbyConeColumns(nearbyConeColumns >= 1);
+    nearbyConeRows    = nearbyConeColumns(nearbyConeRows >= 1);
+    nearbyConeColumns = nearbyConeColumns(nearbyConeColumns <= size(stimDecoder, 5));
+    nearbyConeRows    = nearbyConeRows(nearbyConeRows <= size(stimDecoder, 4));
+    
+    nearbyConeRows
+    nearbyConeColumns
+    lConeIndices = find(coneTypes == 2);
+    mConeIndices = find(coneTypes == 3);
+    sConeIndices = find(coneTypes == 4);
+    
+    subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+               'rowsNum', numel(nearbyConeRows)+1, ...
+               'colsNum', numel(nearbyConeColumns), ...
+               'heightMargin',   0.005, ...
+               'widthMargin',    0.005, ...
+               'leftMargin',     0.03, ...
+               'rightMargin',    0.00, ...
+               'bottomMargin',   0.015, ...
+               'topMargin',      0.00);
+    
+    coneString = {'LconeContrast', 'MconeContrast', 'SconeContrast'};
+    for stimConeContrastIndex = 1:numel(coneString)
+        prefix = 'TemporalPooling';
+        imageFileName = composeImageFilename(expParams, descriptionString, prefix, coneString{stimConeContrastIndex}); 
+        hFig = figure(1000+(stimConeContrastIndex-1)*10); 
+        clf; set(hFig, 'position', [700 10 1024 800], 'Color', [1 1 1], 'Name', imageFileName);
+        colormap(grayRedLUT); 
+        
+        % determine coords of peak response
+        spatioTemporalFilter = squeeze(stimDecoder(stimConeContrastIndex, stimulusLocation.y, stimulusLocation.x, :,:,:));
+        indicesForPeakResponseEstimation = find(abs(spatioTemporalSupport.timeAxis) < 100);
+        tmp = squeeze(spatioTemporalFilter(:,:,indicesForPeakResponseEstimation));
+        [~, idx] = max(abs(tmp(:)));
+        [peakConeRow, peakConeCol, idx] = ind2sub(size(tmp), idx);
+        peakTimeBin = indicesForPeakResponseEstimation(idx);
+        
+        % Plot the spatial pooling filter at the top
+        subplot('position',subplotPosVectors(1, 1+round((numel(nearbyConeColumns)-1)/2)).v);
+        imagesc(spatioTemporalSupport.sensorRetinalXaxis, spatioTemporalSupport.sensorRetinalYaxis, squeeze(spatioTemporalFilter(:,:,peakTimeBin)));
+        hold on;
+        outlineY = spatioTemporalSupport.sensorRetinalXaxis([min(nearbyConeRows) min(nearbyConeRows) max(nearbyConeRows) max(nearbyConeRows) min(nearbyConeRows)]);
+        outlineX = spatioTemporalSupport.sensorRetinalXaxis([min(nearbyConeColumns) max(nearbyConeColumns) max(nearbyConeColumns) min(nearbyConeColumns) min(nearbyConeColumns)]);
+        plot(outlineX, outlineY, 'k-', 'LineWidth', 2.0);
+        hold off;
+        axis 'image'; axis 'xy'; 
+        set(gca, 'XTick', (-150:15:150), 'YTick', (-150:15:150), ... %'XTickLabel', {}, 'YTickLabel', {}, ...
+                 'XLim', [spatioTemporalSupport.sensorRetinalXaxis(1) spatioTemporalSupport.sensorRetinalXaxis(end)], ...
+                 'YLim', [spatioTemporalSupport.sensorRetinalYaxis(1) spatioTemporalSupport.sensorRetinalYaxis(end)], 'CLim', weightsRange);
+      
+             
+        % Now plot the temporal pooling functions
+        spatioTemporalFilter = squeeze(stimDecoder(stimConeContrastIndex, stimulusLocation.y, stimulusLocation.x, nearbyConeRows, nearbyConeColumns,:));
+        for iRow = 1:numel(nearbyConeRows)
+          for iCol = 1:numel(nearbyConeColumns)
+                
+                coneColPos = nearbyConeColumns(iCol);
+                coneRowPos = nearbyConeRows(iRow);
+                coneIndex = sub2ind([size(stimDecoder,4) size(stimDecoder,5)], coneRowPos, coneColPos);
+                if ismember(coneIndex, lConeIndices)
+                    RGBcolor = [1 0.2 0.5];
+                elseif ismember(coneIndex, mConeIndices)
+                    RGBcolor = [0.2 0.8 0.2];
+                elseif ismember(coneIndex, sConeIndices)
+                    RGBcolor = [0.5 0.2 1];
+                end
+                
+                subplot('position',subplotPosVectors(numel(nearbyConeRows)+2-iRow,iCol).v);
+                plot(spatioTemporalSupport.timeAxis, squeeze(spatioTemporalFilter(iRow, iCol,:)), '-', 'Color', RGBcolor, 'LineWidth', 2.0);
+                hold on;
+                plot([0 0],  [-1 1], 'k-', 'LineWidth', 1.0);
+                plot([spatioTemporalSupport.timeAxis(1) spatioTemporalSupport.timeAxis(end)],  [0 0], 'k-');
+                hold off;
+                box off;
+                axis 'off'
+                set(gca, 'XLim', [spatioTemporalSupport.timeAxis(1) spatioTemporalSupport.timeAxis(end)], 'YLim', weightsRange);
+          end
+        end
+        NicePlot.exportFigToPNG(sprintf('%s.png', imageFileName), hFig, 300);
+    end % stimConeContrastIndex
+end
+
+
+function generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, expParams, descriptionString)
+    % Load grayRed colormap
+    p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
+    load(fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'), 'grayRedLUT');
+    whos('-file', fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'));
+    
+    xSpatialBinsNum = numel(spatioTemporalSupport.sensorFOVxaxis);                   % spatial support of decoded scene
+    ySpatialBinsNum = numel(spatioTemporalSupport.sensorFOVyaxis);
+ 
+    if (ySpatialBinsNum > 12)
+        rowsToPlot = 3:6:ySpatialBinsNum;
+        fprintf('Stimulus y-positions are more than 12 will only show every 6th row\n');
+    end
+    
+    if (xSpatialBinsNum > 12)
+        colsToPlot = 3:6:xSpatialBinsNum;
+        fprintf('Stimulus y-positions are more than 12 will only show every 6th col\n');
+    end
+    
+    subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+               'rowsNum', numel(rowsToPlot), ...
+               'colsNum', numel(colsToPlot), ...
+               'heightMargin',   0.005, ...
+               'widthMargin',    0.005, ...
+               'leftMargin',     0.03, ...
+               'rightMargin',    0.00, ...
+               'bottomMargin',   0.015, ...
+               'topMargin',      0.00);
+           
+    coneString = {'LconeContrast', 'MconeContrast', 'SconeContrast'};
+    for stimConeContrastIndex = 1:numel(coneString)
+        prefix = 'SpatialPooling';
+        imageFileName = composeImageFilename(expParams, descriptionString, prefix, coneString{stimConeContrastIndex}); 
+        hFig = figure(100+(stimConeContrastIndex-1)*10); 
+        clf; set(hFig, 'position', [700 10 1024 468], 'Color', [1 1 1], 'Name', imageFileName);
+        colormap(grayRedLUT); 
+        
+        for iRow = 1:numel(rowsToPlot)
+        for iCol = 1:numel(colsToPlot)
+            ySpatialBin = rowsToPlot(iRow);
+            xSpatialBin = colsToPlot(iCol);
+            spatioTemporalFilter = squeeze(stimDecoder(stimConeContrastIndex, ySpatialBin, xSpatialBin, :,:,:));
+            
+            % determine coords of peak response
+            indicesForPeakResponseEstimation = find(abs(spatioTemporalSupport.timeAxis) < 100);
+            tmp = squeeze(spatioTemporalFilter(:,:,indicesForPeakResponseEstimation));
+            [~, idx] = max(abs(tmp(:)));
+            [peakConeRow, peakConeCol, idx] = ind2sub(size(tmp), idx);
+            peakTimeBin = indicesForPeakResponseEstimation(idx);
+            fprintf('filter at (%d,%d) peaks at %2.0f msec\n', xSpatialBin, ySpatialBin, spatioTemporalSupport.timeAxis(peakTimeBin));
+
+            subplot('position',subplotPosVectors(numel(rowsToPlot)-iRow+1,iCol).v);
+
+            imagesc(spatioTemporalSupport.sensorRetinalXaxis, spatioTemporalSupport.sensorRetinalYaxis, squeeze(spatioTemporalFilter(:,:, peakTimeBin)));
+            set(gca, 'XTick', (-150:15:150), 'YTick', (-150:15:150), ...
+                     'XLim', [spatioTemporalSupport.sensorRetinalXaxis(1) spatioTemporalSupport.sensorRetinalXaxis(end)], ...
+                     'YLim', [spatioTemporalSupport.sensorRetinalYaxis(1) spatioTemporalSupport.sensorRetinalYaxis(end)], 'CLim', weightsRange);
+            axis 'image'; axis 'xy'; 
+            if (iRow > 1 || iCol > 1)
+                set(gca, 'XTickLabel', {}, 'YTickLabel', {});
+            end
+        end
+        end
+        % Export figure
+        NicePlot.exportFigToPNG(sprintf('%s.png', imageFileName), hFig, 300);
+    end
+end
+
+
+function imageFileName = composeImageFilename(expParams, descriptionString, prefix, postfix)
+    if (expParams.outerSegmentParams.addNoise)
+        outerSegmentNoiseString = 'Noise';
+    else
+        outerSegmentNoiseString = 'NoNoise';
+    end 
+    imageFileName = fullfile(core.getDecodingDataDir(descriptionString), sprintf('%s%s%sOverlap%2.1fMeanLum%d%s', prefix, expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance, postfix));    
+end
