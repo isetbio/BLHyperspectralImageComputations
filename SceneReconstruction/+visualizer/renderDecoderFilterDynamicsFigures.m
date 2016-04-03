@@ -122,7 +122,7 @@ function generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTempo
             for iCol = 1:size(spatioTemporalFilter,2) 
                 coneLocation = [spatioTemporalSupport.sensorRetinalXaxis(iCol) spatioTemporalSupport.sensorRetinalYaxis(iRow)];
                 xyWeight = [coneLocation(1) coneLocation(2) allConesSpatialPooling(iRow, iCol)];
-                coneIndex = sub2ind([size(spatioTemporalFilter,1) :size(spatioTemporalFilter,2)], iRow, iCol);
+                coneIndex = sub2ind([size(spatioTemporalFilter,1) size(spatioTemporalFilter,2)], iRow, iCol);
                 
                 if ismember(coneIndex, lConeIndices)
                     lConeCoords(size(lConeCoords,1)+1,:) = coneLocation;
