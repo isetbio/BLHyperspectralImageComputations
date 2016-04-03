@@ -43,10 +43,10 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
     % generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, expParams, descriptionString);
     
     % Generate temporal pooling filters figure (at one stimulus location and at a local mosaic neighborhood)
-    stimulusLocation.x = round(xSpatialBinsNum/4);
-    stimulusLocation.y = round(ySpatialBinsNum/3);
-    coneNeighborhood.center.x = round(sensorCols/2)-2;
-    coneNeighborhood.center.y = round(sensorRows/2)+2;
+    stimulusLocation.x = round(xSpatialBinsNum/4)
+    stimulusLocation.y = round(ySpatialBinsNum/3)
+    coneNeighborhood.center.x = stimulusLocation.x-2;
+    coneNeighborhood.center.y = stimulusLocation.y+2;
     coneNeighborhood.extent.x = -3:3;
     coneNeighborhood.extent.y = -2:2;
     generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, coneNeighborhood, expParams, descriptionString);
@@ -114,24 +114,33 @@ function generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTempo
         lConeWeights = [];
         mConeWeights = [];
         sConeWeights = [];
-    
+        lConeCoords = [];
+        mConeCoords = [];
+        sConeCoords = [];
+        
         for iRow = 1:size(spatioTemporalFilter,1)
-          for iCol = 1:size(spatioTemporalFilter,2) 
-                xyWeight = [spatioTemporalSupport.sensorRetinalXaxis(iCol) spatioTemporalSupport.sensorRetinalYaxis(iRow) allConesSpatialPooling(iRow, iCol)];
+            for iCol = 1:size(spatioTemporalFilter,2) 
+                coneLocation = [spatioTemporalSupport.sensorRetinalXaxis(iCol) spatioTemporalSupport.sensorRetinalYaxis(iRow)];
+                xyWeight = [coneLocation(1) coneLocation(2) allConesSpatialPooling(iRow, iCol)];
                 coneIndex = sub2ind([size(spatioTemporalFilter,1) :size(spatioTemporalFilter,2)], iRow, iCol);
+                
                 if ismember(coneIndex, lConeIndices)
-                    RGBcolor = [1 0.2 0.5];
+                    lConeCoords(size(lConeCoords,1)+1,:) = coneLocation;
                     lConeWeights(size(lConeWeights,1)+1,:) = xyWeight;
                 elseif ismember(coneIndex, mConeIndices)
-                    RGBcolor = [0.2 0.8 0.2];
+                    mConeCoords(size(mConeCoords,1)+1,:) = coneLocation;
                     mConeWeights(size(mConeWeights,1)+1,:) = xyWeight;
                 elseif ismember(coneIndex, sConeIndices)
-                    RGBcolor = [0.5 0.2 1];
+                    sConeCoords(size(sConeCoords,1)+1,:) = coneLocation;
                     sConeWeights(size(sConeWeights,1)+1,:) = xyWeight;
                 end       
-          end
+            end
         end
         
+        size(lConeCoords)
+        size(mConeCoords)
+        size(sConeCoords)
+        pause
         lConeSpatialWeightingKernel = griddata(lConeWeights(:,1), lConeWeights(:,2), lConeWeights(:,3), xx, yy, 'cubic');
         mConeSpatialWeightingKernel = griddata(mConeWeights(:,1), mConeWeights(:,2), mConeWeights(:,3), xx, yy, 'cubic');
         sConeSpatialWeightingKernel = griddata(sConeWeights(:,1), sConeWeights(:,2), sConeWeights(:,3), xx, yy, 'cubic');
@@ -140,44 +149,67 @@ function generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTempo
             
         if (stimConeContrastIndex == 1)
             subplot('position',subplotPosVectors(2,stimConeContrastIndex).v);
-            generateContourPlot(lConeSpatialWeightingKernel, weightsRange);
+            generateContourPlot(lConeSpatialWeightingKernel, weightsRange, lConeCoords, [1 0.2 0.5], [],[]); 
           
             subplot('position',subplotPosVectors(3,stimConeContrastIndex).v);
-            generateContourPlot(mConeSpatialWeightingKernel, weightsRange);
+            generateContourPlot(mConeSpatialWeightingKernel, weightsRange, mConeCoords, [0.2 0.8 0.2], [],[]);
             
         elseif (stimConeContrastIndex == 2)
             subplot('position',subplotPosVectors(2,stimConeContrastIndex).v);
-            generateContourPlot(mConeSpatialWeightingKernel, weightsRange);
+            generateContourPlot(mConeSpatialWeightingKernel, weightsRange, mConeCoords, [0.2 0.8 0.2], [], []);
 
             subplot('position',subplotPosVectors(3,stimConeContrastIndex).v);
-            generateContourPlot(lConeSpatialWeightingKernel, weightsRange);
+            generateContourPlot(lConeSpatialWeightingKernel, weightsRange, lConeCoords, [1 0.2 0.5], [],[]);
 
         elseif (stimConeContrastIndex == 3)
             subplot('position',subplotPosVectors(2,stimConeContrastIndex).v);
-            generateContourPlot(sConeSpatialWeightingKernel, weightsRange);
+            generateContourPlot(sConeSpatialWeightingKernel, weightsRange, sConeCoords, [0.5 0.2 1], [],[]);
 
             subplot('position',subplotPosVectors(3,stimConeContrastIndex).v);
-            generateContourPlot(lmConeSpatialWeightingKernel, weightsRange);
+            generateContourPlot(lmConeSpatialWeightingKernel, weightsRange, lConeCoords, [1 0.2 0.5], mConeCoords, [0.2 0.8 0.2]);
         end    
     end % stimConeContrastIndex
     drawnow;
-    
     NicePlot.exportFigToPNG(sprintf('%s.png', imageFileName), hFig, 300);
      
-    
-    function generateContourPlot(spatialWeightingKernel, weightsRange)
+    % Helper drawing function
+    function generateContourPlot(spatialWeightingKernel, weightsRange, coneCoordsSubmosaic1, RGBColor1, coneCoordsSubmosaic2,  RGBColor2)
+        
         contourLineColor = [0.4 0.4 0.4];
         cStep = max(weightsRange)/12;
         % negative contours
+        hold on
         [C,H] = contourf(xx,yy, spatialWeightingKernel, (weightsRange(1):cStep:-cStep));
         H.LineWidth = 1;
         H.LineStyle = '--';
         H.LineColor = contourLineColor;
+        
         % positive contours
         [C,H] = contourf(xx,yy, spatialWeightingKernel, (cStep:cStep:weightsRange(2)));
         H.LineWidth = 1;
         H.LineStyle = '-';
         H.LineColor = contourLineColor;
+        
+        coneCoordsSubmosaic1
+        pause
+        
+        % Plot the cones
+        plot(coneCoordsSubmosaic1', 'ko', 'MarkerFaceColor', RGBColor1, 'MarkerEdgeColor', [0.5 0.5 0.5], 'MarkerSize', 10);
+        
+%         for k = 1:size(coneCoordsSubmosaic1,1)
+%             plot(squeeze(coneCoordsSubmosaic1(k,:)), 'ko', 'MarkerFaceColor', RGBColor1, 'MarkerEdgeColor', [0.5 0.5 0.5], 'MarkerSize', 10);
+%         end
+           
+        if (~isempty(coneCoordsSubmosaic2))
+            plot(coneCoordsSubmosaic2', 'ko', 'MarkerFaceColor', RGBColor2, 'MarkerEdgeColor', [0.5 0.5 0.5], 'MarkerSize', 10);
+        
+%             for k = 1:size(coneCoordsSubmosaic2,1)
+%                 plot(squeeze(coneCoordsSubmosaic2(k,:)), 'ko', 'MarkerFaceColor', RGBColor2, 'MarkerEdgeColor', [0.5 0.5 0.5], 'MarkerSize', 10);
+%             end
+        end
+        
+        hold off;
+        box on;
         axis 'image'; axis 'xy'; 
         set(gca, 'XTick', (-150:15:150), 'YTick', (-150:15:150), 'XTickLabel', {}, 'YTickLabel', {}, ...
                  'XLim', [spatioTemporalSupport.sensorRetinalXaxis(1)-dX/2 spatioTemporalSupport.sensorRetinalXaxis(end)+dX/2], ...
@@ -219,7 +251,7 @@ function generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioT
                  spatioTemporalSupport.sensorRetinalYaxis(max(nearbyConeRows))+dY/2 ...
                  spatioTemporalSupport.sensorRetinalYaxis(max(nearbyConeRows))+dY/2 ...
                  spatioTemporalSupport.sensorRetinalYaxis(min(nearbyConeRows))-dY/2];
-                 
+   
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
                'rowsNum', numel(nearbyConeRows)+1, ...
                'colsNum', numel(nearbyConeColumns), ...
