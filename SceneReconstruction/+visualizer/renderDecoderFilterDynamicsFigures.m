@@ -44,7 +44,7 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
     
     
     stimulusLocation.x = round(xSpatialBinsNum/2);
-    stimulusLocation.y = round(SpatialBinsNum/2);
+    stimulusLocation.y = round(ySpatialBinsNum/2);
     coneNeighborhood.center.x = 4; %round(sensorCols/2);
     coneNeighborhood.center.y = 4; %round(sensorRows/2);
     coneNeighborhood.extent.x = -3:3;
@@ -422,8 +422,9 @@ function generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioT
         subplot('position',subplotPosVectors(1, 1+round((numel(nearbyConeColumns)-1)/2)).v);
         imagesc(spatioTemporalSupport.sensorRetinalXaxis, spatioTemporalSupport.sensorRetinalYaxis, squeeze(spatioTemporalFilter(:,:,peakTimeBin)));
         hold on;
-        outlineY = spatioTemporalSupport.sensorRetinalXaxis([min(nearbyConeRows) min(nearbyConeRows) max(nearbyConeRows) max(nearbyConeRows) min(nearbyConeRows)]);
         outlineX = spatioTemporalSupport.sensorRetinalXaxis([min(nearbyConeColumns) max(nearbyConeColumns) max(nearbyConeColumns) min(nearbyConeColumns) min(nearbyConeColumns)]);
+        outlineY = spatioTemporalSupport.sensorRetinalYaxis([min(nearbyConeRows) min(nearbyConeRows) max(nearbyConeRows) max(nearbyConeRows) min(nearbyConeRows)]);
+   
         plot(outlineX, outlineY, 'k-', 'LineWidth', 2.0);
         hold off;
         axis 'image'; axis 'xy'; 
