@@ -108,7 +108,7 @@ function expParams = experimentParams()
     );
     
     outerSegmentParams = struct(...
-        'type', '@osBiophys', ...                       % choose between '@osBiophys' and '@osLinear'
+        'type', '@osLinear', ...                       % choose between '@osBiophys' and '@osLinear'
         'addNoise', true ...
     );
     
