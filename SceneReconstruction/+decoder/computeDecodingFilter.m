@@ -13,12 +13,15 @@ function computeDecodingFilter(sceneSetName, resultsDir)
     pseudoInverseOfX = pinv(Xtrain);
     fprintf('Done after %2.1f minutes.\n', toc/60);
     
-    tic
-    % Compute and save the SVD decomposition of X so we can check (later) how the
-    % filter dynamics depend on the # of SVD components
-    fprintf('\n3a. Computing SVD(X) [%d x %d]...',  size(Xtrain,1), size(Xtrain,2));
-    [Utrain, Strain, Vtrain] = svd(Xtrain, 'econ');
-    fprintf('Done after %2.1f minutes.\n', toc/60);
+    computeSVD = false;
+    if (computeSVD)
+        tic
+        % Compute and save the SVD decomposition of X so we can check (later) how the
+        % filter dynamics depend on the # of SVD components
+        fprintf('\n3a. Computing SVD(X) [%d x %d]...',  size(Xtrain,1), size(Xtrain,2));
+        [Utrain, Strain, Vtrain] = svd(Xtrain, 'econ');
+        fprintf('Done after %2.1f minutes.\n', toc/60);
+    end
     
     tic
     % Compute the rank of X 
@@ -47,8 +50,14 @@ function computeDecodingFilter(sceneSetName, resultsDir)
     tic
     fprintf('\n6. Saving decoder filter and in-sample prediction ... ');
     fileName = fullfile(decodingDataDir, sprintf('%s_decodingFilter.mat', sceneSetName));
-    save(fileName, 'wVector', 'spatioTemporalSupport', 'coneTypes', ...
-        'Utrain', 'Strain', 'Vtrain', 'XtrainRank', 'expParams', '-v7.3');
+    if (computeSVD)
+        save(fileName, 'wVector', 'spatioTemporalSupport', 'coneTypes', ...
+            'Utrain', 'Strain', 'Vtrain', 'XtrainRank', 'expParams', '-v7.3');
+    else
+        save(fileName, 'wVector', 'spatioTemporalSupport', 'coneTypes', ...
+            'XtrainRank', 'expParams', '-v7.3');
+    end
+    
     fileName = fullfile(decodingDataDir, sprintf('%s_inSamplePrediction.mat', sceneSetName));
     save(fileName,  'Ctrain', 'oiCtrain', 'CtrainPrediction', ...
         'trainingTimeAxis', 'trainingSceneIndexSequence', 'trainingSensorPositionSequence', ...
