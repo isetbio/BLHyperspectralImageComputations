@@ -8,7 +8,6 @@ function renderOpticalImagesOfSceneAndAdaptingField(oi, sensor, fixationTimes, a
     tmpXYZ = MultispectralToSensorImage(irradiance, S, CMF.T, CMF.S); 
     [retinalImageSRGB, clippedPixelsNum, illuminanceRange1] = core.XYZtoSRGB(tmpXYZ, []);
    
-  
     % everything above maxSRGB will be clipped
     maxSRGB = 0.06; % max(retinalImageSRGB(:))
     retinalImageSRGB = retinalImageSRGB / maxSRGB;
