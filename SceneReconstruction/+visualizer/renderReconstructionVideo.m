@@ -1,10 +1,9 @@
 function renderReconstructionVideo(sceneSetName, resultsDir)
 
-    % Make hypothetical super display that can display the natural scenes
+    % Retrieve resources needed to convert LMS RGB for a hypothetical super display that can display the natural scenes
     displayName = 'LCD-Apple'; %'OLED-Samsung'; % 'OLED-Samsung', 'OLED-Sony';
     gain = 8;
     [coneFundamentals, displaySPDs, RGBtoXYZ, wave] = core.LMSRGBconversionData(displayName, gain);
-    
     
     decodingDataDir = core.getDecodingDataDir(resultsDir);
     whichOne = input('In-sample (1) out-of-sample(2) , or both (3) data : ');

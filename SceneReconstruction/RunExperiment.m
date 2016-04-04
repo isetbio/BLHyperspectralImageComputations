@@ -2,25 +2,31 @@ function RunExperiment
 
     setPrefsForHyperspectralImageIsetbioComputations();
         
-    % What to compute
+    % Computation steps. Uncomment the ones you want to execute
     instructionSet = {...
        %'lookAtScenes' ...
-       % 'compute outer segment responses' ...  % produces the contents of the scansData directory
-       % 'assembleTrainingDataSet' ...          % produces the training/testing design matrices in the decodingData directory
-        'computeDecodingFilter' ...            % inverts the training desing matrix to comptue the decoding filter (stored in the decodingData directory)
-        'computeOutOfSamplePrediction' ...
-       % 'visualizeScan' ...
-       % 'visualizeDecodingFilter' ...
-       % 'visualizeSVDbasedDecodingFilter' ...
-       % 'visualizeInSamplePrediction' ...
-       % 'visualizeOutOfSamplePrediction' ...
-       % 'makeReconstructionVideo' ...
-       % 'visualizeConeMosaic' ...
+       % 'compute outer segment responses' ...      % compute OS responses. Data saved in the scansData directory
+        'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
+        'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
+        'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
+       % 'visualizeScan' ...                        % visualize the responses
+       % 'visualizeDecodingFilter' ...              % visualize the decoder filter's spatiotemporal dynamics
+       % 'visualizeInSamplePrediction' ...          % visualize the decoder's in-sample deperformance
+       % 'visualizeOutOfSamplePrediction' ...       % visualize the decoder's out-of-sample deperformance
+       % 'makeReconstructionVideo' ...              % generate video of the reconstruction
+       % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
         };
   
-    % these following be used if 'compute outer segment responses' is not in the instructionSet.
-    sceneSetName = 'harvard_manchester';
-    resultsDir = 'AdaptEvery500Fixations/@osLinear';
+    sceneSetName = 'manchester';
+    resultsDir = 'AdaptEvery40Fixations/@osLinear';
+    trainingDataPercentange = 75;
+    testingDataPercentage = 25;
+                
+%     sceneSetName = 'harvard_manchester';
+%     resultsDir = 'AdaptEvery500Fixations/@osLinear';
+%     trainingDataPercentange = 15;
+%     testingDataPercentage = 15;
+    
     
     for k = 1:numel(instructionSet)
         
@@ -43,8 +49,6 @@ function RunExperiment
                 visualizer.renderScan(sceneSetName, resultsDir, sceneIndex);
                 
             case 'assembleTrainingDataSet'
-                trainingDataPercentange = 15;
-                testingDataPercentage = 15;
                 core.assembleTrainingSet(sceneSetName, resultsDir, trainingDataPercentange, testingDataPercentage);
 
             case 'computeDecodingFilter'
@@ -79,11 +83,11 @@ function expParams = experimentParams()
    decoderParams = struct(...
         'type', 'optimalLinearFilter', ...
         'thresholdConeSeparationForInclusionInDecoder', 0, ...      % 0 to include all cones
-        'spatialSamplingInRetinalMicrons', 3.0, ...                 % decode scene ((retinal projection)) at 5 microns resolution
+        'spatialSamplingInRetinalMicrons', 3.0, ...                 % reconstructed scene resolution in retinal microns
         'extraMicronsAroundSensorBorder', 0, ...                    % decode this many additional (or less, if negative) microns on each side of the sensor
-        'temporalSamplingInMilliseconds', 10, ...                   % decode every this many milliseconds
-        'latencyInMillseconds', -150, ...
-        'memoryInMilliseconds', 600 ...
+        'temporalSamplingInMilliseconds', 10, ...                   % temporal resolution of reconstruction
+        'latencyInMillseconds', -150, ...                           % latency of the decoder filter (negative for non-causal time delays)
+        'memoryInMilliseconds', 600 ...                             % memory of the decoder filter
     );
 
     sensorTimeStepInMilliseconds = 0.1;                             % must be small enough to avoid numerical instability in the outer segment current computation
@@ -93,10 +97,10 @@ function expParams = experimentParams()
     sensorParams = struct(...
         'coneApertureInMicrons', 3.0, ...        
         'LMSdensities', [0.6 0.3 0.1], ...        
-        'spatialGrid', [18 26], ...                      % [rows, cols]
+        'spatialGrid', [18 26], ...                                                 % [rows, cols]
         'samplingIntervalInMilliseconds', sensorTimeStepInMilliseconds, ...  
         'integrationTimeInMilliseconds', integrationTimeInMilliseconds, ...
-        'randomSeed',  1552784, ...                                                % fixed value to ensure repeatable results
+        'randomSeed',  1552784, ...                                                 % fixed value to ensure repeatable results
         'eyeMovementScanningParams', struct(...
             'samplingIntervalInMilliseconds', sensorTimeStepInMilliseconds, ...
             'meanFixationDurationInMilliseconds', 200, ...
@@ -124,7 +128,7 @@ function expParams = experimentParams()
     );
     
     viewModeParams = struct(...
-        'fixationsPerScan', 20, ...                                             % each scan file will contains this many fixations
+        'fixationsPerScan', 20, ...                                               % each scan file will contains this many fixations
         'consecutiveSceneFixationsBetweenAdaptingFieldPresentation', 500, ...     % use 1 to insert adapting field data after each scene fixation 
         'adaptingFieldParams', adaptingFieldParams, ...
         'forcedSceneMeanLuminance', 300 ...
@@ -133,8 +137,8 @@ function expParams = experimentParams()
     % assemble all  param structs into one superstruct
     resultsDir = sprintf('AdaptEvery%dFixations/%s', viewModeParams.consecutiveSceneFixationsBetweenAdaptingFieldPresentation, outerSegmentParams.type);
     expParams = struct(...
-        'resultsDir',    resultsDir, ...                                      % Where computed data will be saved
-        'sceneSetName',         'harvard_manchester', ...                     % 'manchester', ...                             % the name of the scene set to be used
+        'resultsDir',           resultsDir, ...                               % Where computed data will be saved
+        'sceneSetName',         'harvard_manchester', ...                     % the name of the scene set to be used
         'viewModeParams',       viewModeParams, ...
         'sensorParams',         sensorParams, ...
         'outerSegmentParams',   outerSegmentParams, ...

@@ -12,7 +12,10 @@ function assembleTrainingSet(sceneSetName, resultsDir, trainingDataPercentange, 
         
         scansNum = numel(scanData);
         trainingScans = round(trainingDataPercentange/100.0*scansNum);
-        testingScans = round(testingDataPercentage/100.0*scansNum);
+        testingScans  = round(testingDataPercentage/100.0*scansNum);
+        if (trainingScans+testingScans > numel(scanData))
+            testingScans = numel(scanData)-trainingScans;
+        end
         
         fprintf('Scene contains %d scans. Will use %d of these for training and %d for testing. \n', scansNum, trainingScans, testingScans);
        
