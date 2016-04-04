@@ -17,7 +17,7 @@ function computeDecodingFilter(sceneSetName, descriptionString)
     % Compute and save the SVD decomposition of X so we can check (later) how the
     % filter dynamics depend on the # of SVD components
     fprintf('\n3a. Computing SVD(X) [%d x %d]...',  size(Xtrain,1), size(Xtrain,2));
-    [Utrain, Strain, Vtrain] = svd(Xtrain);
+    [Utrain, Strain, Vtrain] = svd(Xtrain, 'econ');
     fprintf('Done after %2.1f minutes.\n', toc/60);
     
     tic
