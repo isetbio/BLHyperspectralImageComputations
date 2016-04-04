@@ -6,11 +6,11 @@ function RunExperiment
     instructionSet = {...
        %'lookAtScenes' ...
        % 'compute outer segment responses' ...      % compute OS responses. Data saved in the scansData directory
-        'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
-        'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
-        'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
-       % 'visualizeScan' ...                        % visualize the responses
-       % 'visualizeDecodingFilter' ...              % visualize the decoder filter's spatiotemporal dynamics
+       % 'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
+       % 'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
+       % 'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
+       % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
+        'visualizeDecodingFilter' ...              % visualize the decoder filter's spatiotemporal dynamics
        % 'visualizeInSamplePrediction' ...          % visualize the decoder's in-sample deperformance
        % 'visualizeOutOfSamplePrediction' ...       % visualize the decoder's out-of-sample deperformance
        % 'makeReconstructionVideo' ...              % generate video of the reconstruction

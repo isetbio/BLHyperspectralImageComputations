@@ -37,9 +37,8 @@ function [subSampledSignal, subSampledTimeAxis, kernel, filterTimeInTimeAxisUnit
     inverseReshapingParams = size(tmpSignal);
     inverseReshapingParams(end) = numel(subSampledIndices);
     
-    % Reshape into a 2D array, in which all non-temporal dimensions are
-    % all assembled in the first dimension, and the temporal dimension
-    % is the 2nd dimension
+    % Reshape into a 2D array, in which non-temporal dimensions are all assembled 
+    % in the first dimension, and the temporal dimension is the 2nd dimension
     tmpSignalDims2D = [prod(size(tmpSignal))/size(tmpSignal,ndims(tmpSignal)) size(tmpSignal,ndims(tmpSignal)) ];
     tmpSignal = reshape(tmpSignal, tmpSignalDims2D);
 
