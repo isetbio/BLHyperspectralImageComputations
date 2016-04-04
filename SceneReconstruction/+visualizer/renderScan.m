@@ -1,6 +1,6 @@
-function renderScan(sceneSetName, descriptionString, sceneIndex)
+function renderScan(sceneSetName, resultsDir, sceneIndex)
 
-    scanFileName = core.getScanFileName(sceneSetName, descriptionString, sceneIndex);
+    scanFileName = core.getScanFileName(sceneSetName, resultsDir, sceneIndex);
     fprintf('\nLoading scan data ''%s''. Please wait ...', scanFileName); 
     load(scanFileName, '-mat', 'scanData', 'scene', 'oi', 'expParams');
     fprintf('Done. \n');

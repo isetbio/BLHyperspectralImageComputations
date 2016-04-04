@@ -1,7 +1,7 @@
-function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
+function renderDecoderFilterDynamicsFigures(sceneSetName, resultsDir)
  
     fprintf('\nLoading decoder filter ...');
-    decodingDataDir = core.getDecodingDataDir(descriptionString);
+    decodingDataDir = core.getDecodingDataDir(resultsDir);
     fileName = fullfile(decodingDataDir, sprintf('%s_decodingFilter.mat', sceneSetName));
     load(fileName, 'wVector', 'spatioTemporalSupport', 'coneTypes', 'expParams');
     fprintf('Done.\n');
@@ -40,7 +40,7 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
     
     
     % Generate spatial pooling filters figure (at select stimulus locations)
-    % generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, expParams, descriptionString);
+    % generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, expParams, resultsDir);
     
     % Generate temporal pooling filters figure (at one stimulus location and at a local mosaic neighborhood)
     stimulusLocation.x = round(xSpatialBinsNum/4)
@@ -49,13 +49,13 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString)
     coneNeighborhood.center.y = stimulusLocation.y+2;
     coneNeighborhood.extent.x = -3:3;
     coneNeighborhood.extent.y = -2:2;
-    generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, coneNeighborhood, expParams, descriptionString);
+    generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, coneNeighborhood, expParams, resultsDir);
     
-    generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation,expParams, descriptionString);
+    generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation,expParams, resultsDir);
     
 end
 
-function generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, expParams, descriptionString)
+function generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, expParams, resultsDir)
     % Load grayRed colormap
     p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
     load(fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'), 'grayRedLUT');
@@ -82,7 +82,7 @@ function generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTempo
                'topMargin',      0.00);
            
     prefix = 'SubMosaicSampling';
-    imageFileName = composeImageFilename(expParams, descriptionString, prefix, ''); 
+    imageFileName = composeImageFilename(expParams, resultsDir, prefix, ''); 
     hFig = figure(10); 
     clf; set(hFig, 'position', [700 10 1024 800], 'Color', [1 1 1], 'Name', imageFileName);
     colormap(grayRedLUT);        
@@ -220,12 +220,11 @@ function generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTempo
 end
 
 
-function generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, coneNeighborhood, expParams, descriptionString)
+function generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, coneNeighborhood, expParams, resultsDir)
     
     % Load grayRed colormap
     p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
     load(fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'), 'grayRedLUT');
-    whos('-file', fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'));
     
     dX = spatioTemporalSupport.sensorRetinalXaxis(2)-spatioTemporalSupport.sensorRetinalXaxis(1);
     dY = spatioTemporalSupport.sensorRetinalYaxis(2)-spatioTemporalSupport.sensorRetinalYaxis(1);
@@ -265,7 +264,7 @@ function generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioT
     coneString = {'LconeContrast', 'MconeContrast', 'SconeContrast'};
     for stimConeContrastIndex = 1:numel(coneString)
         prefix = 'TemporalPooling';
-        imageFileName = composeImageFilename(expParams, descriptionString, prefix, coneString{stimConeContrastIndex}); 
+        imageFileName = composeImageFilename(expParams, resultsDir, prefix, coneString{stimConeContrastIndex}); 
         hFig = figure(1000+(stimConeContrastIndex-1)*10); 
         clf; set(hFig, 'position', [700 10 1024 800], 'Color', [1 1 1], 'Name', imageFileName);
         colormap(grayRedLUT); 
@@ -322,7 +321,7 @@ function generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioT
 end
 
 
-function generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, expParams, descriptionString)
+function generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, expParams, resultsDir)
     % Load grayRed colormap
     p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
     load(fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'), 'grayRedLUT');
@@ -356,7 +355,7 @@ function generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTe
     coneString = {'LconeContrast', 'MconeContrast', 'SconeContrast'};
     for stimConeContrastIndex = 1:numel(coneString)
         prefix = 'SpatialPooling';
-        imageFileName = composeImageFilename(expParams, descriptionString, prefix, coneString{stimConeContrastIndex}); 
+        imageFileName = composeImageFilename(expParams, resultsDir, prefix, coneString{stimConeContrastIndex}); 
         hFig = figure(100+(stimConeContrastIndex-1)*10); 
         clf; set(hFig, 'position', [700 10 1024 468], 'Color', [1 1 1], 'Name', imageFileName);
         colormap(grayRedLUT); 
@@ -393,11 +392,11 @@ function generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTe
 end
 
 
-function imageFileName = composeImageFilename(expParams, descriptionString, prefix, postfix)
+function imageFileName = composeImageFilename(expParams, resultsDir, prefix, postfix)
     if (expParams.outerSegmentParams.addNoise)
         outerSegmentNoiseString = 'Noise';
     else
         outerSegmentNoiseString = 'NoNoise';
     end 
-    imageFileName = fullfile(core.getDecodingDataDir(descriptionString), sprintf('%s%s%sOverlap%2.1fMeanLum%d%s', prefix, expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance, postfix));    
+    imageFileName = fullfile(core.getDecodingDataDir(resultsDir), sprintf('%s%s%sOverlap%2.1fMeanLum%d%s', prefix, expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance, postfix));    
 end

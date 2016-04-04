@@ -1,4 +1,4 @@
-function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercentange)
+function assembleTrainingSet(sceneSetName, resultsDir, trainingDataPercentange, testingDataPercentage)
 
     totalTrainingScansNum = 0;
     totalTestingScansNum = 0;
@@ -7,12 +7,14 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     sceneSet = core.sceneSetWithName(sceneSetName);
     
     for sceneIndex = 1:numel(sceneSet) 
-        scanFileName = core.getScanFileName(sceneSetName, descriptionString, sceneIndex);
+        scanFileName = core.getScanFileName(sceneSetName, resultsDir, sceneIndex);
         load(scanFileName, 'scanData', 'scene', 'oi', 'expParams');
         
         scansNum = numel(scanData);
         trainingScans = round(trainingDataPercentange/100.0*scansNum);
-        fprintf('Scene contains %d scans. Will use %d of these for training. \n', scansNum, trainingScans);
+        testingScans = round(testingDataPercentage/100.0*scansNum);
+        
+        fprintf('Scene contains %d scans. Will use %d of these for training and %d for testing. \n', scansNum, trainingScans, testingScans);
        
         % concatenate training datasets
         for scanIndex = 1:trainingScans
@@ -66,7 +68,10 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
         
 
         % concatenate testing datasets
-        for scanIndex = trainingScans+1:scansNum 
+        for scanIndex = trainingScans+(1:testingScans) 
+            if (scanIndex > numel(scanData))
+                continue
+            end
             totalTestingScansNum = totalTestingScansNum + 1;
             if (totalTestingScansNum == 1)
                 dt = scanData{scanIndex}.timeAxis(2)-scanData{scanIndex}.timeAxis(1);
@@ -164,7 +169,7 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
                            expParams.decoderParams.temporalSamplingInMilliseconds);
                        
     % Save design matrices and stimulus vectors
-    decodingDataDir = core.getDecodingDataDir(descriptionString);
+    decodingDataDir = core.getDecodingDataDir(resultsDir);
     fileName = fullfile(decodingDataDir, sprintf('%s_trainingDesignMatrices.mat', sceneSetName));
     fprintf('\nSaving training design matrix and stim vector ''%s''... ', fileName);
     save(fileName, 'Xtrain', 'Ctrain', 'oiCtrain', 'trainingTimeAxis', ...
@@ -192,7 +197,7 @@ function assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercen
     whos 'Ctest'
     
     % Save design matrices and stimulus vectors
-    decodingDataDir = core.getDecodingDataDir(descriptionString);
+    decodingDataDir = core.getDecodingDataDir(resultsDir);
     fileName = fullfile(decodingDataDir, sprintf('%s_testingDesignMatrices.mat', sceneSetName));
     fprintf('\nSaving test design matrix and stim vector to ''%s''... ', fileName);
     save(fileName, 'Xtest', 'Ctest', 'oiCtest', 'testingTimeAxis', ...

@@ -1,19 +1,19 @@
-function renderPredictionsFigures(sceneSetName, descriptionString, InSampleOrOutOfSample)
+function renderPredictionsFigures(sceneSetName, resultsDir, InSampleOrOutOfSample)
 
     fprintf('\nLoading stimulus prediction data ...');
 
-    decodingDataDir = core.getDecodingDataDir(descriptionString);
+    decodingDataDir = core.getDecodingDataDir(resultsDir);
     if (strcmp(InSampleOrOutOfSample, 'InSample'))
         fileName = fullfile(decodingDataDir, sprintf('%s_inSamplePrediction.mat', sceneSetName));
         load(fileName,  'Ctrain', 'CtrainPrediction', 'trainingTimeAxis', 'trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'originalTrainingStimulusSize', 'expParams');
         fprintf('Done.\n');
-        imageFileName = generateImageFileName(InSampleOrOutOfSample, descriptionString, expParams);
+        imageFileName = generateImageFileName(InSampleOrOutOfSample, resultsDir, expParams);
         renderReconstructionPerformancePlots(imageFileName, Ctrain, CtrainPrediction,  originalTrainingStimulusSize, expParams );
     elseif (strcmp(InSampleOrOutOfSample, 'OutOfSample'))
         fileName = fullfile(decodingDataDir, sprintf('%s_outOfSamplePrediction.mat', sceneSetName));
         load(fileName,  'Ctest', 'CtestPrediction', 'testingTimeAxis', 'testingScanInsertionTimes', 'testingSceneLMSbackground', 'originalTestingStimulusSize', 'expParams');
         fprintf('Done.\n');
-        imageFileName = generateImageFileName(InSampleOrOutOfSample, descriptionString, expParams);
+        imageFileName = generateImageFileName(InSampleOrOutOfSample, resultsDir, expParams);
         renderReconstructionPerformancePlots(imageFileName, Ctest, CtestPrediction,  originalTestingStimulusSize, expParams);
     else
         error('Unknown mode: ''%s''.', InSampleOrOutOfSample);
@@ -98,12 +98,12 @@ function renderReconstructionPerformancePlots(imageFileName, C, Creconstruction,
     end
 end
 
-function imageFileName = generateImageFileName(InSampleOrOutOfSample, descriptionString, expParams)
+function imageFileName = generateImageFileName(InSampleOrOutOfSample, resultsDir, expParams)
         if (expParams.outerSegmentParams.addNoise)
             outerSegmentNoiseString = 'Noise';
         else
             outerSegmentNoiseString = 'NoNoise';
         end
-        imageFileName = fullfile(core.getDecodingDataDir(descriptionString), sprintf('%sPerformance%s%sOverlap%2.1fMeanLum%d', InSampleOrOutOfSample, expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
+        imageFileName = fullfile(core.getDecodingDataDir(resultsDir), sprintf('%sPerformance%s%sOverlap%2.1fMeanLum%d', InSampleOrOutOfSample, expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
       
 end

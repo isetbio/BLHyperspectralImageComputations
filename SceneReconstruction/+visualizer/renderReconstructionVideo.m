@@ -1,4 +1,4 @@
-function renderReconstructionVideo(sceneSetName, descriptionString)
+function renderReconstructionVideo(sceneSetName, resultsDir)
 
     % Make hypothetical super display that can display the natural scenes
     displayName = 'LCD-Apple'; %'OLED-Samsung'; % 'OLED-Samsung', 'OLED-Sony';
@@ -6,7 +6,7 @@ function renderReconstructionVideo(sceneSetName, descriptionString)
     [coneFundamentals, displaySPDs, RGBtoXYZ, wave] = core.LMSRGBconversionData(displayName, gain);
     
     
-    decodingDataDir = core.getDecodingDataDir(descriptionString);
+    decodingDataDir = core.getDecodingDataDir(resultsDir);
     whichOne = input('In-sample (1) out-of-sample(2) , or both (3) data : ');
     
     slideSize = [2560 1440]/2;
@@ -26,7 +26,7 @@ function renderReconstructionVideo(sceneSetName, descriptionString)
             outerSegmentNoiseString = 'NoNoise';
         end
         
-        videoFileName = fullfile(core.getDecodingDataDir(descriptionString), sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dInSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
+        videoFileName = fullfile(core.getDecodingDataDir(resultsDir), sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dInSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
         set(hFig, 'Name', videoFileName);
         videoFilename = sprintf('%s.m4v', videoFileName);
         fprintf('Will export video to %s.m4v\n', videoFileName);
@@ -36,7 +36,7 @@ function renderReconstructionVideo(sceneSetName, descriptionString)
         writerObj.open();
     
         
-        makeVideo(hFig, writerObj, sceneSetName, descriptionString, coneFundamentals, displaySPDs, RGBtoXYZ, Ctrain, CtrainPrediction, oiCtrain, ...
+        makeVideo(hFig, writerObj, sceneSetName, resultsDir, coneFundamentals, displaySPDs, RGBtoXYZ, Ctrain, CtrainPrediction, oiCtrain, ...
                 trainingTimeAxis, trainingSceneIndexSequence, trainingSensorPositionSequence, trainingScanInsertionTimes, ...
                 trainingSceneLMSbackground, trainingOpticalImageLMSbackground, originalTrainingStimulusSize, expParams);
             
@@ -54,7 +54,7 @@ function renderReconstructionVideo(sceneSetName, descriptionString)
         else
             outerSegmentNoiseString = 'NoNoise';
         end
-        videoFileName = fullfile(core.getDecodingDataDir(descriptionString), sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dOutOfSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
+        videoFileName = fullfile(core.getDecodingDataDir(resultsDir), sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dOutOfSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
         set(hFig, 'Name', videoFileName);
         videoFilename = sprintf('%s.m4v', videoFileName);
         fprintf('Will export video to %s.m4v\n', videoFileName);
@@ -63,7 +63,7 @@ function renderReconstructionVideo(sceneSetName, descriptionString)
         writerObj.Quality = 100;
         writerObj.open();
         
-        makeVideo(hFig, writerObj, sceneSetName, descriptionString, coneFundamentals, displaySPDs, RGBtoXYZ, Ctest, CtestPrediction, oiCtest, ...
+        makeVideo(hFig, writerObj, sceneSetName, resultsDir, coneFundamentals, displaySPDs, RGBtoXYZ, Ctest, CtestPrediction, oiCtest, ...
                 testingTimeAxis, testingSceneIndexSequence, testingSensorPositionSequence, testingScanInsertionTimes, ...
                 testingSceneLMSbackground, testingOpticalImageLMSbackground, originalTestingStimulusSize, expParams);
             
@@ -82,7 +82,7 @@ function renderReconstructionVideo(sceneSetName, descriptionString)
         else
             outerSegmentNoiseString = 'NoNoise';
         end
-        videoFileName = fullfile(core.getDecodingDataDir(descriptionString), sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dInAndOutOfSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
+        videoFileName = fullfile(core.getDecodingDataDir(resultsDir), sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dInAndOutOfSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
         set(hFig, 'Name', videoFileName);
         videoFilename = sprintf('%s.m4v', videoFileName);
         fprintf('Will export video to %s.m4v\n', videoFileName);
@@ -93,7 +93,7 @@ function renderReconstructionVideo(sceneSetName, descriptionString)
         writerObj.open();
         
         % Make the video with the test data set
-        makeVideo(hFig, writerObj, sceneSetName, descriptionString, coneFundamentals, displaySPDs, RGBtoXYZ, Ctest, CtestPrediction, oiCtest, ...
+        makeVideo(hFig, writerObj, sceneSetName, resultsDir, coneFundamentals, displaySPDs, RGBtoXYZ, Ctest, CtestPrediction, oiCtest, ...
                 testingTimeAxis, testingSceneIndexSequence, testingSensorPositionSequence, testingScanInsertionTimes, ...
                 testingSceneLMSbackground, testingOpticalImageLMSbackground, originalTestingStimulusSize, expParams);
             
@@ -105,7 +105,7 @@ function renderReconstructionVideo(sceneSetName, descriptionString)
             'originalTrainingStimulusSize', 'expParams');
         
         
-        makeVideo(hFig, writerObj, sceneSetName, descriptionString, coneFundamentals, displaySPDs, RGBtoXYZ, Ctrain, CtrainPrediction, oiCtrain, ...
+        makeVideo(hFig, writerObj, sceneSetName, resultsDir, coneFundamentals, displaySPDs, RGBtoXYZ, Ctrain, CtrainPrediction, oiCtrain, ...
                 trainingTimeAxis, trainingSceneIndexSequence, trainingSensorPositionSequence, trainingScanInsertionTimes, ...
                 trainingSceneLMSbackground, trainingOpticalImageLMSbackground, originalTrainingStimulusSize, expParams);
             
@@ -116,7 +116,7 @@ end
 
 
 
-function makeVideo(hFig, writerObj, sceneSetName, descriptionString, coneFundamentals, displaySPDs, RGBtoXYZ, Cinput, Creconstruction, oiCinput, ...
+function makeVideo(hFig, writerObj, sceneSetName, resultsDir, coneFundamentals, displaySPDs, RGBtoXYZ, Cinput, Creconstruction, oiCinput, ...
     timeAxis, sceneIndexSequence, sensorPositionSequence, scanInsertionTimes,  sceneLMSbackground, opticalImageLMSbackground, originalStimulusSize, expParams)
  
     LMScontrastReconstruction = ...
@@ -145,14 +145,9 @@ function makeVideo(hFig, writerObj, sceneSetName, descriptionString, coneFundame
     sceneIndexSequence = sceneIndexSequence(1:numel(timeAxis));
 
     
-    
     p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
-    
-    %load(fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'), 'spectralLUT');
-   % colormap(spectralLUT);
-    
-    niceCmap = cbrewer('div', 'RdGy', 1024);
-    colormap(niceCmap(end:-1:1,:));
+    load(fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'), 'grayRedLUT');
+    colormap(grayRedLUT); 
     
     
     tracesTimeRangeInMilliseconds = [-1000 0];
@@ -224,7 +219,7 @@ function makeVideo(hFig, writerObj, sceneSetName, descriptionString, coneFundame
                 oi, oiXData, oiYData, oiWidth2HeightRatio, ...
                 sensorOutlineX, sensorOutlineY, sensorFOVxaxis, sensorFOVyaxis, sensorRetinalXaxis, sensorRetinalYaxis, sensorWidthAxis, sensorHeightAxis, sensorWidth2HeightRatio, ...
                 timeAxis ] = ...
-                getSceneData(sceneSetName, descriptionString, sceneIndex);
+                getSceneData(sceneSetName, resultsDir, sceneIndex);
             
             % Make RGB, LMS, and Lum maps versions of scene
             [sceneLMS, ~] = core.imageFromSceneOrOpticalImage(scene, 'LMS');
@@ -254,7 +249,6 @@ function makeVideo(hFig, writerObj, sceneSetName, descriptionString, coneFundame
                 sensorFOVreconstructionSceneRGBaxes, sensorFOVreconstructionLumMapAxes, sensorFOVreconstructionLcontAxes, sensorFOVreconstructionMcontAxes, sensorFOVreconstructionScontAxes, ...
                 sensorFOVContrastScatterAxes, LcontrastTracesAxes, McontrastTracesAxes, ScontrastTracesAxes] = makeAxes(hFig, figureWidth2HeightRatio , sceneWidth2HeightRatio, sensorWidth2HeightRatio);
     
-            
             % Make new scene plot
             sceneRGBPlot = initializeSensorViewPlot(...
                 sceneAxes, sceneRGBforSuperDisplay, [0 1], ...
@@ -281,7 +275,6 @@ function makeVideo(hFig, writerObj, sceneSetName, descriptionString, coneFundame
             set(oiAxes, 'XLim', [sceneRetinalProjectionXData(1) sceneRetinalProjectionXData(end)], ...
                            'YLim', [sceneRetinalProjectionYData(1) sceneRetinalProjectionYData(end)]);
                        
-            
             % Make new scene luminance map 
             sceneLuminancePlot = initializeSensorViewPlot(...
                 sceneLumMapAxes, sceneLumMapForSuperDisplay, luminanceRange, ...
@@ -301,7 +294,6 @@ function makeVideo(hFig, writerObj, sceneSetName, descriptionString, coneFundame
             %hCbar.Label.String = 'luminance (cd/m2)';
             hCbar.FontSize = 12;
     
-            
             % Initialize the reconstructedSceneRGBPlot
             sensorSampleSeparation = sensorFOVxaxis(2)-sensorFOVxaxis(1);
             reconstructedSceneRetinalProjectionXData = linspace(...
@@ -455,7 +447,6 @@ function makeVideo(hFig, writerObj, sceneSetName, descriptionString, coneFundame
 
             drawnow;
             writerObj.writeVideo(getframe(hFig));
-        
         end
         
     catch err
@@ -597,7 +588,6 @@ function [sceneAxes, oiAxes, sceneLumMapAxes, oiLumMapAxes, reconstructedSceneRG
     sceneLumMapAxes           = axes('parent', hFig, 'unit', 'normalized', 'position', [0.005 -0.165  fullImageNormSize  fullImageNormSize*sceneWidth2HeightRatio*figureWidth2HeightRatio]); 
     oiAxes                    = axes('parent', hFig, 'unit', 'normalized', 'position', [0.360 -0.165  fullImageNormSize  fullImageNormSize*sceneWidth2HeightRatio*figureWidth2HeightRatio]);
     
-    
     sensorFOVoriginalAxesXcoord = 0.715;
     sensorViewNormWidth  = 0.12*0.75;
     
@@ -622,16 +612,14 @@ function [sceneAxes, oiAxes, sceneLumMapAxes, oiLumMapAxes, reconstructedSceneRG
     LcontrastTracesAxes = axes('parent', hFig, 'unit', 'normalized', 'position', [0.728         0.383 tracesAxesNormWidth tracesAxesNormHeight*figureWidth2HeightRatio]);
     McontrastTracesAxes = axes('parent', hFig, 'unit', 'normalized', 'position', [0.728+0.091   0.383 tracesAxesNormWidth tracesAxesNormHeight*figureWidth2HeightRatio]);
     ScontrastTracesAxes = axes('parent', hFig, 'unit', 'normalized', 'position', [0.728+0.091*2 0.383 tracesAxesNormWidth tracesAxesNormHeight*figureWidth2HeightRatio]);
-    
-    
 end
 
 
     
 function [scene, sceneRetinalProjectionXData, sceneRetinalProjectionYData, sceneWidth2HeightRatio, ...
          oi, oiXData, oiYData, oiWidth2HeightRatio, ...
-         sensorOutlineX, sensorOutlineY, sensorFOVxaxis, sensorFOVyaxis, sensorRetinalXaxis, sensorRetinalYaxis, sensorWidthAxis, sensorHeightAxis, sensorWidth2HeightRatio, timeAxis] = getSceneData(sceneSetName, descriptionString, sceneIndex)
-    scanFileName = core.getScanFileName(sceneSetName, descriptionString, sceneIndex);
+         sensorOutlineX, sensorOutlineY, sensorFOVxaxis, sensorFOVyaxis, sensorRetinalXaxis, sensorRetinalYaxis, sensorWidthAxis, sensorHeightAxis, sensorWidth2HeightRatio, timeAxis] = getSceneData(sceneSetName, resultsDir, sceneIndex)
+    scanFileName = core.getScanFileName(sceneSetName, resultsDir, sceneIndex);
     load(scanFileName, 'scanData', 'scene', 'oi');
     
     sceneRetinalProjectionXData = scanData{1}.sceneRetinalProjectionXData;

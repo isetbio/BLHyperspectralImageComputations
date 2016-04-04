@@ -5,8 +5,8 @@ function RunExperiment
     % What to compute
     instructionSet = {...
        %'lookAtScenes' ...
-        'compute outer segment responses' ...  % produces the contents of the scansData directory
-        'assembleTrainingDataSet' ...          % produces the training/testing design matrices in the decodingData directory
+       % 'compute outer segment responses' ...  % produces the contents of the scansData directory
+       % 'assembleTrainingDataSet' ...          % produces the training/testing design matrices in the decodingData directory
         'computeDecodingFilter' ...            % inverts the training desing matrix to comptue the decoding filter (stored in the decodingData directory)
         'computeOutOfSamplePrediction' ...
        % 'visualizeScan' ...
@@ -20,14 +20,14 @@ function RunExperiment
   
     % these following be used if 'compute outer segment responses' is not in the instructionSet.
     sceneSetName = 'harvard_manchester';
-    descriptionString = 'AdaptEvery40Fixations/@osLinear';
+    resultsDir = 'AdaptEvery500Fixations/@osLinear';
     
     for k = 1:numel(instructionSet)
         
         if (exist('expParams', 'var'))
             sceneSetName = expParams.sceneSetName;
-            descriptionString = sprintf('AdaptEvery%dFixations/%s', expParams.viewModeParams.consecutiveSceneFixationsBetweenAdaptingFieldPresentation,expParams.outerSegmentParams.type);
-            fprintf('Will analyze data from %s and %s\n', sceneSetName, descriptionString);
+            resultsDir = sprintf('AdaptEvery%dFixations/%s', expParams.viewModeParams.consecutiveSceneFixationsBetweenAdaptingFieldPresentation,expParams.outerSegmentParams.type);
+            fprintf('Will analyze data from %s and %s\n', sceneSetName, resultsDir);
         end
         
         switch instructionSet{k}
@@ -40,32 +40,33 @@ function RunExperiment
 
             case 'visualizeScan'
                 sceneIndex = input('Select the scene index to visualize: ');
-                visualizer.renderScan(sceneSetName, descriptionString, sceneIndex);
+                visualizer.renderScan(sceneSetName, resultsDir, sceneIndex);
                 
             case 'assembleTrainingDataSet'
-                trainingDataPercentange = 50;
-                core.assembleTrainingSet(sceneSetName, descriptionString, trainingDataPercentange);
+                trainingDataPercentange = 15;
+                testingDataPercentage = 15;
+                core.assembleTrainingSet(sceneSetName, resultsDir, trainingDataPercentange, testingDataPercentage);
 
             case 'computeDecodingFilter'
-                decoder.computeDecodingFilter(sceneSetName, descriptionString);
+                decoder.computeDecodingFilter(sceneSetName, resultsDir);
                 
             case 'computeOutOfSamplePrediction'
-                decoder.computeOutOfSamplePrediction(sceneSetName, descriptionString);
+                decoder.computeOutOfSamplePrediction(sceneSetName, resultsDir);
                 
             case 'visualizeDecodingFilter'
-                visualizer.renderDecoderFilterDynamicsFigures(sceneSetName, descriptionString);
+                visualizer.renderDecoderFilterDynamicsFigures(sceneSetName, resultsDir);
           
             case 'visualizeInSamplePrediction'
-                visualizer.renderPredictionsFigures(sceneSetName, descriptionString, 'InSample');
+                visualizer.renderPredictionsFigures(sceneSetName, resultsDir, 'InSample');
             
             case 'visualizeOutOfSamplePrediction'
-                visualizer.renderPredictionsFigures(sceneSetName, descriptionString, 'OutOfSample');
+                visualizer.renderPredictionsFigures(sceneSetName, resultsDir, 'OutOfSample');
                 
             case 'makeReconstructionVideo'
-                visualizer.renderReconstructionVideo(sceneSetName, descriptionString);
+                visualizer.renderReconstructionVideo(sceneSetName, resultsDir);
                 
             case 'visualizeConeMosaic'
-                visualizer.renderConeMosaic(sceneSetName, descriptionString);
+                visualizer.renderConeMosaic(sceneSetName, resultsDir);
         
             otherwise
                 error('Unknown instruction: ''%s''.\n', instructionSet{1});
@@ -92,7 +93,7 @@ function expParams = experimentParams()
     sensorParams = struct(...
         'coneApertureInMicrons', 3.0, ...        
         'LMSdensities', [0.6 0.3 0.1], ...        
-        'spatialGrid', [10 10], ...                      % [rows, cols]
+        'spatialGrid', [18 26], ...                      % [rows, cols]
         'samplingIntervalInMilliseconds', sensorTimeStepInMilliseconds, ...  
         'integrationTimeInMilliseconds', integrationTimeInMilliseconds, ...
         'randomSeed',  1552784, ...                                                % fixed value to ensure repeatable results
@@ -130,9 +131,9 @@ function expParams = experimentParams()
     );
     
     % assemble all  param structs into one superstruct
-    descriptionString = sprintf('AdaptEvery%dFixations/%s', viewModeParams.consecutiveSceneFixationsBetweenAdaptingFieldPresentation, outerSegmentParams.type);
+    resultsDir = sprintf('AdaptEvery%dFixations/%s', viewModeParams.consecutiveSceneFixationsBetweenAdaptingFieldPresentation, outerSegmentParams.type);
     expParams = struct(...
-        'descriptionString',    descriptionString, ...                        % a unique string identifying this experiment. This will be the scansSubDir name
+        'resultsDir',    resultsDir, ...                                      % Where computed data will be saved
         'sceneSetName',         'harvard_manchester', ...                     % 'manchester', ...                             % the name of the scene set to be used
         'viewModeParams',       viewModeParams, ...
         'sensorParams',         sensorParams, ...

@@ -1,6 +1,6 @@
-function computeDecodingFilter(sceneSetName, descriptionString)
+function computeDecodingFilter(sceneSetName, resultsDir)
 
-    decodingDataDir = core.getDecodingDataDir(descriptionString);
+    decodingDataDir = core.getDecodingDataDir(resultsDir);
     fileName = fullfile(decodingDataDir, sprintf('%s_trainingDesignMatrices.mat', sceneSetName));
     
     tic

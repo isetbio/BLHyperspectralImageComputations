@@ -1,7 +1,7 @@
-function computeOutOfSamplePrediction(sceneSetName, descriptionString)
+function computeOutOfSamplePrediction(sceneSetName, resultsDir)
 
     % Load test design matrices and stimulus vectors
-    decodingDataDir = core.getDecodingDataDir(descriptionString);
+    decodingDataDir = core.getDecodingDataDir(resultsDir);
     fileName = fullfile(decodingDataDir, sprintf('%s_testingDesignMatrices.mat', sceneSetName));
     fprintf('\n1. Loading test design matrix and stim vector from ''%s''... ', fileName);
     load(fileName, 'Xtest', 'Ctest', 'oiCtest', 'testingTimeAxis', 'testingSceneIndexSequence', 'testingSensorPositionSequence', 'testingScanInsertionTimes', 'testingSceneLMSbackground', 'testingOpticalImageLMSbackground', 'originalTestingStimulusSize', 'expParams');
