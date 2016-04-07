@@ -117,7 +117,7 @@ function [sensor, fixationTimes, adaptingFieldFixationTimes] = customizeSensor(o
     adaptingFieldFixationTimes.offsetBins = zeros(1, adaptingFieldFixationsNum);
     
     % add saccadic targets to sensor
-    eyeMovementPositions = sensorGet(sensor,'positions');
+    eyeMovementPositions = sensorGet(sensor,'positions') * sensorParams.eyeMovementScanningParams.microFixationGain;
     lastPos = 0;
     for fixationIndex = 1:fixationsNum 
         saccadicPos = squeeze(saccadicTargetPos(fixationIndex,:));
