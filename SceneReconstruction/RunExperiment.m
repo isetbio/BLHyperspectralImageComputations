@@ -5,10 +5,10 @@ function RunExperiment
     % Computation steps. Uncomment the ones you want to execute
     instructionSet = {...
        %'lookAtScenes' ...
-        'compute outer segment responses' ...      % compute OS responses. Data saved in the scansData directory
-        'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
+       % 'compute outer segment responses' ...      % compute OS responses. Data saved in the scansData directory
+       % 'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
         'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
-        'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
+       % 'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
        % 'visualizeDecodingFilter' ...              % visualize the decoder filter's spatiotemporal dynamics
        % 'visualizeInSamplePrediction' ...          % visualize the decoder's in-sample deperformance
@@ -22,6 +22,11 @@ function RunExperiment
     trainingDataPercentange = 75;
     testingDataPercentage = 25;
                 
+%    sceneSetName = 'manchester';
+%    resultsDir = 'NoMicroMovements50msPresentationTime/@osLinear';
+%    trainingDataPercentange = 75;
+%    testingDataPercentage = 25;
+    
 %     sceneSetName = 'harvard_manchester';
 %     resultsDir = 'AdaptEvery500Fixations/@osLinear';
 %     trainingDataPercentange = 15;
@@ -32,7 +37,7 @@ function RunExperiment
         
         if (exist('expParams', 'var'))
             sceneSetName = expParams.sceneSetName;
-            resultsDir = sprintf('AdaptEvery%dFixations/%s', expParams.viewModeParams.consecutiveSceneFixationsBetweenAdaptingFieldPresentation,expParams.outerSegmentParams.type);
+            resultsDir = expParams.resultsDir;
             fprintf('Will analyze data from %s and %s\n', sceneSetName, resultsDir);
         end
         
