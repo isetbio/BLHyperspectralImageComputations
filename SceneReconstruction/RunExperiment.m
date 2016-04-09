@@ -8,7 +8,7 @@ function RunExperiment
        % 'compute outer segment responses' ...      % compute OS responses. Data saved in the scansData directory
         'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
         'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
-        'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
+       % 'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
        % 'visualizeDecodingFilter' ...              % visualize the decoder filter's spatiotemporal dynamics
        % 'visualizeInSamplePrediction' ...          % visualize the decoder's in-sample deperformance
@@ -28,7 +28,10 @@ function RunExperiment
     sceneSetName = 'manchester_harvard_1';          % 9849 x 28081, rank: 339
     resultsDir = 'manchester_harvard_0/@osLinear';
     
-    for imIndex = 2:27
+    sceneSetName = 'manchester_harvard_2';          % 9849 x 28081, rank: 107
+    resultsDir = 'manchester_harvard_0/@osLinear';
+    
+    for imIndex = 3:27
         
         try
             sceneSetName = sprintf('manchester_harvard_%d', imIndex);          % 
