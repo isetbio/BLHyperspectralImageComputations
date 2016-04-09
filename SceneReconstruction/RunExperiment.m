@@ -22,65 +22,76 @@ function RunExperiment
 %    trainingDataPercentange = 75;
 %    testingDataPercentage = 25;
     
-    sceneSetName = 'manchester_harvard_0';          % 
+    sceneSetName = 'manchester_harvard_0';          % 4018 x 28081, rank: 258
     resultsDir = 'manchester_harvard_0/@osLinear';
-    trainingDataPercentange = 15;
-    testingDataPercentage = 15;
     
-%     sceneSetName = 'manchester_harvard_1';          % resulted rank: 337
-%     resultsDir = 'manchester_harvard_1/@osLinear';
-%     trainingDataPercentange = 15;
-%     testingDataPercentage = 15;
+    sceneSetName = 'manchester_harvard_1';          % 9849 x 28081, rank: 339
+    resultsDir = 'manchester_harvard_0/@osLinear';
     
-    
-    for k = 1:numel(instructionSet)
+    for imIndex = 2:27
         
-        if (exist('expParams', 'var'))
-            sceneSetName = expParams.sceneSetName;
-            resultsDir = expParams.resultsDir;
-            fprintf('Will analyze data from %s and %s\n', sceneSetName, resultsDir);
+        try
+            sceneSetName = sprintf('manchester_harvard_%d', imIndex);          % 
+            resultsDir = sprintf('manchester_harvard_%d/@osLinear', imIndex);
+
+            trainingDataPercentange = 15;
+            testingDataPercentage = 15;
+    
+            for k = 1:numel(instructionSet)
+
+                if (exist('expParams', 'var'))
+                    sceneSetName = expParams.sceneSetName;
+                    resultsDir = expParams.resultsDir;
+                    fprintf('Will analyze data from %s and %s\n', sceneSetName, resultsDir);
+                end
+
+                switch instructionSet{k}
+                    case 'lookAtScenes' 
+                        core.lookAtScenes(sceneSetName);
+
+                    case 'compute outer segment responses'
+                        expParams = experimentParams();
+                        core.computeOuterSegmentResponses(expParams);
+
+                    case 'visualizeScan'
+                        sceneIndex = input('Select the scene index to visualize: ');
+                        visualizer.renderScan(sceneSetName, resultsDir, sceneIndex);
+
+                    case 'assembleTrainingDataSet'
+                        core.assembleTrainingSet(sceneSetName, resultsDir, trainingDataPercentange, testingDataPercentage);
+
+                    case 'computeDecodingFilter'
+                        decoder.computeDecodingFilter(sceneSetName, resultsDir);
+
+                    case 'computeOutOfSamplePrediction'
+                        decoder.computeOutOfSamplePrediction(sceneSetName, resultsDir);
+
+                    case 'visualizeDecodingFilter'
+                        visualizer.renderDecoderFilterDynamicsFigures(sceneSetName, resultsDir);
+
+                    case 'visualizeInSamplePrediction'
+                        visualizer.renderPredictionsFigures(sceneSetName, resultsDir, 'InSample');
+
+                    case 'visualizeOutOfSamplePrediction'
+                        visualizer.renderPredictionsFigures(sceneSetName, resultsDir, 'OutOfSample');
+
+                    case 'makeReconstructionVideo'
+                        visualizer.renderReconstructionVideo(sceneSetName, resultsDir);
+
+                    case 'visualizeConeMosaic'
+                        visualizer.renderConeMosaic(sceneSetName, resultsDir);
+
+                    otherwise
+                        error('Unknown instruction: ''%s''.\n', instructionSet{1});
+                end  % switch 
+            end % for k
+    
+        catch err
+            fprintf('Eror with %d\n', imIndex);
         end
-        
-        switch instructionSet{k}
-            case 'lookAtScenes' 
-                core.lookAtScenes(sceneSetName);
-                
-            case 'compute outer segment responses'
-                expParams = experimentParams();
-                core.computeOuterSegmentResponses(expParams);
-
-            case 'visualizeScan'
-                sceneIndex = input('Select the scene index to visualize: ');
-                visualizer.renderScan(sceneSetName, resultsDir, sceneIndex);
-                
-            case 'assembleTrainingDataSet'
-                core.assembleTrainingSet(sceneSetName, resultsDir, trainingDataPercentange, testingDataPercentage);
-
-            case 'computeDecodingFilter'
-                decoder.computeDecodingFilter(sceneSetName, resultsDir);
-                
-            case 'computeOutOfSamplePrediction'
-                decoder.computeOutOfSamplePrediction(sceneSetName, resultsDir);
-                
-            case 'visualizeDecodingFilter'
-                visualizer.renderDecoderFilterDynamicsFigures(sceneSetName, resultsDir);
-          
-            case 'visualizeInSamplePrediction'
-                visualizer.renderPredictionsFigures(sceneSetName, resultsDir, 'InSample');
-            
-            case 'visualizeOutOfSamplePrediction'
-                visualizer.renderPredictionsFigures(sceneSetName, resultsDir, 'OutOfSample');
-                
-            case 'makeReconstructionVideo'
-                visualizer.renderReconstructionVideo(sceneSetName, resultsDir);
-                
-            case 'visualizeConeMosaic'
-                visualizer.renderConeMosaic(sceneSetName, resultsDir);
-        
-            otherwise
-                error('Unknown instruction: ''%s''.\n', instructionSet{1});
-        end  % switch 
-    end % for k
+    
+    end % imIndex
+    
 end
 
 function expParams = experimentParams()

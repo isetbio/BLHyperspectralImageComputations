@@ -54,7 +54,7 @@ function sceneSet = sceneSetWithName(sceneSetName)
         
         otherwise
             if (strfind(sceneSetName, 'manchester_harvard_'))
-                harvardImageIndex = str2num(sceneSetName(numel('manchester_harvard_')+1:numel(sceneSetName)))
+                harvardImageIndex = str2num(sceneSetName(numel('manchester_harvard_')+1:numel(sceneSetName)));
                 harvardSceneNames = {...
                     'img1', 'img6', ...
                     'imga1', 'imga8', ...
@@ -82,7 +82,7 @@ function sceneSet = sceneSetWithName(sceneSetName)
                     {'manchester_database', 'scene8'} ... 
                     {'manchester_database', 'scene4'} ...
                 };
-                sceneSet = cat(2, sceneSet1, sceneSet2)
+                sceneSet = cat(2, sceneSet1, sceneSet2);
             
             else
                 error('Unknown scene set name: ''%s''.\n', sceneSetName);
