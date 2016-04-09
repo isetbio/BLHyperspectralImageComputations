@@ -31,7 +31,10 @@ function RunExperiment
     sceneSetName = 'manchester_harvard_2';          % 9849 x 28081, rank: 107
     resultsDir = 'manchester_harvard_0/@osLinear';
     
-    for imIndex = 3:27
+    sceneSetName = 'manchester_harvard_3';          % 9849 x 28081, rank: 116
+    resultsDir = 'manchester_harvard_0/@osLinear';
+    
+    for imIndex = 4:4 % 27
         
         try
             sceneSetName = sprintf('manchester_harvard_%d', imIndex);          % 
