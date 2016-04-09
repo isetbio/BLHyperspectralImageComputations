@@ -69,11 +69,10 @@ function sceneSet = sceneSetWithName(sceneSetName)
                 for k = 1:numel(sceneSet1)
                     sceneSet1{k} = {'harvard_database', sceneSet1{k}};    
                 end
-                harvardSceneNames{1}
-                harvardSceneNames{harvardImageIndex}
-              
+                if (harvardImageIndex > 0)
+                    sceneSet1{numel(sceneSet1)+1} = {'harvard_database', harvardSceneNames{harvardImageIndex}}; 
+                end
                 
-                sceneSet1{numel(sceneSet1)+1} = {'harvard_database', harvardSceneNames{harvardImageIndex}};    
                 sceneSet2 = {...
                     {'manchester_database', 'scene1'} ...
                     {'manchester_database', 'scene2'} ...

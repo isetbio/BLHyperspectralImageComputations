@@ -22,10 +22,15 @@ function RunExperiment
 %    trainingDataPercentange = 75;
 %    testingDataPercentage = 25;
     
-    sceneSetName = 'manchester_harvard_1';
-    resultsDir = 'manchester_harvard_1/@osLinear';
+    sceneSetName = 'manchester_harvard_0';          % 
+    resultsDir = 'manchester_harvard_0/@osLinear';
     trainingDataPercentange = 15;
     testingDataPercentage = 15;
+    
+%     sceneSetName = 'manchester_harvard_1';          % resulted rank: 337
+%     resultsDir = 'manchester_harvard_1/@osLinear';
+%     trainingDataPercentange = 15;
+%     testingDataPercentage = 15;
     
     
     for k = 1:numel(instructionSet)
