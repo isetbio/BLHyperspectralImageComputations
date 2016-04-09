@@ -23,14 +23,61 @@ function RunExperiment
 %    testingDataPercentage = 25;
     
 
-sceneSetName = 'harvard_manchester'
-resultsDir = sprintf('%s/@osLinear', sceneSetName);
-trainingDataPercentange = 50;
-testingDataPercentage = 50;
+    sceneSetName = 'harvard_manchester'
+    resultsDir = sprintf('%s/@osLinear', sceneSetName);
+    trainingDataPercentange = 50;
+    testingDataPercentage = 50;
             
-sceneSetName = sprintf('manchester_harvard_%d', imIndex);          % 
-            resultsDir = sprintf('manchester_harvard_%d/@osLinear', imIndex);
-            
+    for k = 1:numel(instructionSet)
+
+        if (exist('expParams', 'var'))
+            sceneSetName = expParams.sceneSetName;
+            resultsDir = expParams.resultsDir;
+            fprintf('Will analyze data from %s and %s\n', sceneSetName, resultsDir);
+        end
+
+        switch instructionSet{k}
+            case 'lookAtScenes' 
+                core.lookAtScenes(sceneSetName);
+
+            case 'compute outer segment responses'
+                expParams = experimentParams();
+                core.computeOuterSegmentResponses(expParams);
+
+            case 'visualizeScan'
+                sceneIndex = input('Select the scene index to visualize: ');
+                visualizer.renderScan(sceneSetName, resultsDir, sceneIndex);
+
+            case 'assembleTrainingDataSet'
+                core.assembleTrainingSet(sceneSetName, resultsDir, trainingDataPercentange, testingDataPercentage);
+
+            case 'computeDecodingFilter'
+                onlyComputeDesignMatrixRank = true;
+                decoder.computeDecodingFilter(sceneSetName, resultsDir, onlyComputeDesignMatrixRank);
+
+            case 'computeOutOfSamplePrediction'
+                decoder.computeOutOfSamplePrediction(sceneSetName, resultsDir);
+
+            case 'visualizeDecodingFilter'
+                visualizer.renderDecoderFilterDynamicsFigures(sceneSetName, resultsDir);
+
+            case 'visualizeInSamplePrediction'
+                visualizer.renderPredictionsFigures(sceneSetName, resultsDir, 'InSample');
+
+            case 'visualizeOutOfSamplePrediction'
+                visualizer.renderPredictionsFigures(sceneSetName, resultsDir, 'OutOfSample');
+
+            case 'makeReconstructionVideo'
+                visualizer.renderReconstructionVideo(sceneSetName, resultsDir);
+
+            case 'visualizeConeMosaic'
+                visualizer.renderConeMosaic(sceneSetName, resultsDir);
+
+            otherwise
+                error('Unknown instruction: ''%s''.\n', instructionSet{1});
+        end  % switch 
+    end % for k
+    return;        
             
     sceneSetName = 'manchester_harvard_0';          % 4018 x 28081, rank: 258
     resultsDir = 'manchester_harvard_0/@osLinear';
@@ -144,7 +191,7 @@ function expParams = experimentParams()
             'meanFixationDurationInMillisecondsForAdaptingField', 200, ...
             'stDevFixationDurationInMillisecondsForAdaptingField', 20, ...
             'microFixationGain', 1, ...
-            'fixationOverlapFactor', sqrt(0.1), ...     
+            'fixationOverlapFactor', sqrt(0.05), ...     
             'saccadicScanMode',  'randomized'... %                        % 'randomized' or 'sequential', to visit eye position grid sequentially
         ) ...
     );
