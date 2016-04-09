@@ -5,7 +5,7 @@ function RunExperiment
     % Computation steps. Uncomment the ones you want to execute
     instructionSet = {...
        %'lookAtScenes' ...
-        'compute outer segment responses' ...      % compute OS responses. Data saved in the scansData directory
+       % 'compute outer segment responses' ...      % compute OS responses. Data saved in the scansData directory
         'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
         'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
         'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
@@ -28,7 +28,7 @@ function RunExperiment
     testingDataPercentage = 25;
     
      sceneSetName = 'harvard_manchester';
-     resultsDir = 'Fixation200msMicrofixationGain1/@osLinear';
+     resultsDir = 'manchester_harvard_1/@osLinear';
      trainingDataPercentange = 15;
      testingDataPercentage = 15;
     
