@@ -127,7 +127,7 @@ function RunExperiment
                         core.assembleTrainingSet(sceneSetName, resultsDir, trainingDataPercentange, testingDataPercentage);
 
                     case 'computeDecodingFilter'
-                        onlyComputeDesignMatrixRank = true;
+                        onlyComputeDesignMatrixRank = false;
                         decoder.computeDecodingFilter(sceneSetName, resultsDir, onlyComputeDesignMatrixRank);
 
                     case 'computeOutOfSamplePrediction'
