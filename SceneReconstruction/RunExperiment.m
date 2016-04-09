@@ -5,10 +5,10 @@ function RunExperiment
     % Computation steps. Uncomment the ones you want to execute
     instructionSet = {...
        %'lookAtScenes' ...
-       % 'compute outer segment responses' ...      % compute OS responses. Data saved in the scansData directory
+        'compute outer segment responses' ...      % compute OS responses. Data saved in the scansData directory
         'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
         'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
-       % 'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
+        'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
        % 'visualizeDecodingFilter' ...              % visualize the decoder filter's spatiotemporal dynamics
        % 'visualizeInSamplePrediction' ...          % visualize the decoder's in-sample deperformance
@@ -22,6 +22,16 @@ function RunExperiment
 %    trainingDataPercentange = 75;
 %    testingDataPercentage = 25;
     
+
+sceneSetName = 'harvard_manchester'
+resultsDir = sprintf('%s/@osLinear', sceneSetName);
+trainingDataPercentange = 50;
+testingDataPercentage = 50;
+            
+sceneSetName = sprintf('manchester_harvard_%d', imIndex);          % 
+            resultsDir = sprintf('manchester_harvard_%d/@osLinear', imIndex);
+            
+            
     sceneSetName = 'manchester_harvard_0';          % 4018 x 28081, rank: 258
     resultsDir = 'manchester_harvard_0/@osLinear';
     
@@ -34,7 +44,10 @@ function RunExperiment
     sceneSetName = 'manchester_harvard_3';          % 9849 x 28081, rank: 116
     resultsDir = 'manchester_harvard_0/@osLinear';
     
-    for imIndex = 4:4 % 27
+    sceneSetName = 'manchester_harvard_4';          % 9849 x 28081, rank: ???
+    resultsDir = 'manchester_harvard_0/@osLinear';
+    
+    for imIndex = 5:5 % 27
         
         try
             sceneSetName = sprintf('manchester_harvard_%d', imIndex);          % 
@@ -131,7 +144,7 @@ function expParams = experimentParams()
             'meanFixationDurationInMillisecondsForAdaptingField', 200, ...
             'stDevFixationDurationInMillisecondsForAdaptingField', 20, ...
             'microFixationGain', 1, ...
-            'fixationOverlapFactor', 0.5, ...     
+            'fixationOverlapFactor', sqrt(0.1), ...     
             'saccadicScanMode',  'randomized'... %                        % 'randomized' or 'sequential', to visit eye position grid sequentially
         ) ...
     );
