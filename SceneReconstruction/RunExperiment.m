@@ -21,16 +21,11 @@ function RunExperiment
 %    resultsDir = 'AdaptEvery40Fixations/@osLinear';
 %    trainingDataPercentange = 75;
 %    testingDataPercentage = 25;
-                
-    sceneSetName = 'manchester';
-    resultsDir = 'NoMicroMovements50msPresentationTime/@osLinear';
-    trainingDataPercentange = 75;
-    testingDataPercentage = 25;
     
-     sceneSetName = 'harvard_manchester';
-     resultsDir = 'manchester_harvard_1/@osLinear';
-     trainingDataPercentange = 15;
-     testingDataPercentage = 15;
+    sceneSetName = 'manchester_harvard_1';
+    resultsDir = 'manchester_harvard_1/@osLinear';
+    trainingDataPercentange = 15;
+    testingDataPercentage = 15;
     
     
     for k = 1:numel(instructionSet)
