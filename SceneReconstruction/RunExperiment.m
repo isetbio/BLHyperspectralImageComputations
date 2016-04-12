@@ -19,7 +19,7 @@ function RunExperiment
      };
   
 
-    sceneSetName = 'harvard_manchestermanchester';
+    sceneSetName = 'harvard_manchester';
     resultsDir = sprintf('%s/@osLinear', 'Overlap0.40_Fixation200ms_MicrofixationGain0_DesignMatrixPreProcessing2');
     trainingDataPercentange = 50;
     testingDataPercentage = 50;
