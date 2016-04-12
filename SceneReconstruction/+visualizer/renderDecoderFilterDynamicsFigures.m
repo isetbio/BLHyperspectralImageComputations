@@ -6,9 +6,9 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, resultsDir)
     load(fileName, 'wVector', 'spatioTemporalSupport', 'coneTypes', 'expParams');
     fprintf('Done.\n');
 
-    
+    dcTerm = 1;
     % Normalize wVector for plotting in [-1 1]
-    wVector = wVector / max(abs(wVector(:)));
+    wVector = wVector / max(max(abs(wVector(dcTerm+1:size(wVector,1),:))));
     weightsRange = 0.5*[-1 1];
     
     % Allocate memory for unpacked stimDecoder

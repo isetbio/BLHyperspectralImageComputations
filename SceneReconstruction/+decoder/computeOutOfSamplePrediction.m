@@ -7,7 +7,7 @@ function computeOutOfSamplePrediction(sceneSetName, resultsDir)
     load(fileName, 'Xtest', 'Ctest', 'oiCtest', 'testingTimeAxis', 'testingSceneIndexSequence', 'testingSensorPositionSequence', 'testingScanInsertionTimes', 'testingSceneLMSbackground', 'testingOpticalImageLMSbackground', 'originalTestingStimulusSize', 'expParams');
     fprintf('Done.\n');
    
-    fprintf('\n2. Loading decoder filter and in-sample prediction ... ');
+    fprintf('\n2. Loading decoder filter  ... ');
     fileName = fullfile(decodingDataDir, sprintf('%s_decodingFilter.mat', sceneSetName));
     load(fileName, 'wVector', 'spatioTemporalSupport');
     
