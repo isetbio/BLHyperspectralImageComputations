@@ -11,7 +11,7 @@ function RunExperiment
         'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
         %
-        'visualizeDecodingFilter' ...              % visualize the decoder filter's spatiotemporal dynamics
+       % 'visualizeDecodingFilter' ...              % visualize the decoder filter's spatiotemporal dynamics
        % 'visualizeInSamplePrediction' ...          % visualize the decoder's in-sample deperformance
        % 'visualizeOutOfSamplePrediction' ...       % visualize the decoder's out-of-sample deperformance
        % 'makeReconstructionVideo' ...              % generate video of the reconstruction
@@ -24,8 +24,13 @@ function RunExperiment
 %    testingDataPercentage = 25;
     
 
+    %Design matrix, X is [128456 x 28081]
+    %Rank(X) = 42
+    %sceneSetName = 'harvard_manchester'
+    %resultsDir = sprintf('%s/@osLinear', 'Fixation200msMicrofixationGain1');
+    
     sceneSetName = 'harvard_manchester'
-    resultsDir = sprintf('%s/@osLinear', 'Fixation200msMicrofixationGain1');
+    resultsDir = sprintf('%s/@osLinear', 'Fixation200msMicrofixationGain0');
     trainingDataPercentange = 50;
     testingDataPercentage = 50;
             
@@ -191,8 +196,8 @@ function expParams = experimentParams()
             'stDevFixationDurationInMilliseconds', 20, ...
             'meanFixationDurationInMillisecondsForAdaptingField', 200, ...
             'stDevFixationDurationInMillisecondsForAdaptingField', 20, ...
-            'microFixationGain', 1, ...
-            'fixationOverlapFactor', 0.4^2, ...     
+            'microFixationGain', 0, ...
+            'fixationOverlapFactor', 0.4       ^2, ...     
             'saccadicScanMode',  'randomized'... %                        % 'randomized' or 'sequential', to visit eye position grid sequentially
         ) ...
     );
@@ -213,17 +218,17 @@ function expParams = experimentParams()
     );
     
     viewModeParams = struct(...
-        'fixationsPerScan', 20, ...                                               % each scan file will contains this many fixations
+        'fixationsPerScan', 15, ...                                               % each scan file will contains this many fixations
         'consecutiveSceneFixationsBetweenAdaptingFieldPresentation', 50, ...     % use 1 to insert adapting field data after each scene fixation 
         'adaptingFieldParams', adaptingFieldParams, ...
         'forcedSceneMeanLuminance', 300 ...
     );
     
     % assemble all  param structs into one superstruct
-    resultsDir = sprintf('Fixation200msMicrofixationGain1/%s', outerSegmentParams.type);
+    resultsDir = sprintf('Overlap0.4Fixation%dmsMicrofixationGain%d/%s', sensorParams.eyeMovementScanningParams.meanFixationDurationInMilliseconds, sensorParams.eyeMovementScanningParams.microFixationGain, outerSegmentParams.type);
     expParams = struct(...
         'resultsDir',           resultsDir, ...                               % Where computed data will be saved
-        'sceneSetName',         'harvard_manchester', ...                     % the name of the scene set to be used
+        'sceneSetName',         'manchester', ... %'harvard_manchester', ...                     % the name of the scene set to be used
         'viewModeParams',       viewModeParams, ...
         'sensorParams',         sensorParams, ...
         'outerSegmentParams',   outerSegmentParams, ...
