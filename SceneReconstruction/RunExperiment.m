@@ -18,8 +18,7 @@ function RunExperiment
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
      };
   
-
-    sceneSetName = 'harvard_manchester';
+    sceneSetName = 'manchester';
     resultsDir = sprintf('%s/@osLinear', 'Overlap0.40_Fixation200ms_MicrofixationGain0_DesignMatrixPreProcessing2');
     trainingDataPercentange = 50;
     testingDataPercentage = 50;
@@ -76,8 +75,8 @@ function RunExperiment
                 error('Unknown instruction: ''%s''.\n', instructionSet{k});
         end  % switch 
     end % for k
-  
 end
+
 
 function expParams = experimentParams(sceneSetName)
 
@@ -110,9 +109,9 @@ function expParams = experimentParams(sceneSetName)
             'stDevFixationDurationInMilliseconds', 20, ...
             'meanFixationDurationInMillisecondsForAdaptingField', 200, ...
             'stDevFixationDurationInMillisecondsForAdaptingField', 20, ...
-            'microFixationGain', 0, ...
+            'microFixationGain', 1, ...
             'fixationOverlapFactor', overlap^2, ...     
-            'saccadicScanMode',  'randomized'... %                        % 'randomized' or 'sequential', to visit eye position grid sequentially
+            'saccadicScanMode',  'randomized'...                                    % 'randomized' or 'sequential', to visit eye position grid sequentially
         ) ...
     );
     
