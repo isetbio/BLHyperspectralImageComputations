@@ -22,9 +22,9 @@ function RunExperiment
     };
   
  
-    instructionSet = computationIinstructionSet;
+    instructionSet =  visualizationIinstructionSet; % visualizationIinstructionSet;  computationIinstructionSet;
     sceneSetName = 'manchester';
-    resultsDir = sprintf('%s/@osLinear', 'Overlap0.40_Fixation200ms_MicrofixationGain1_DesignMatrixPreProcessing0');
+    resultsDir = sprintf('%s/@osLinear', 'Overlap0.40_Fixation200ms_MicrofixationGain1_DesignMatrixPreProcessing3');
     trainingDataPercentange = 50;
     testingDataPercentage = 50;
             
@@ -93,7 +93,7 @@ function expParams = experimentParams(sceneSetName)
         'temporalSamplingInMilliseconds', 10, ...                   % temporal resolution of reconstruction
         'latencyInMillseconds', -150, ...                           % latency of the decoder filter (negative for non-causal time delays)
         'memoryInMilliseconds', 500, ...                            % memory of the decoder filter
-        'designMatrixPreProcessing', 0 ...                          % 0: nothing, 1:centering, 2:centering+norm, 3:centering+norm+whitening
+        'designMatrixPreProcessing', 3 ...                          % 0: nothing, 1:centering, 2:centering+norm, 3:centering+norm+whitening
     );
 
     sensorTimeStepInMilliseconds = 0.1;                             % must be small enough to avoid numerical instability in the outer segment current computation
