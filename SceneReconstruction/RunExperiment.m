@@ -3,23 +3,28 @@ function RunExperiment
     setPrefsForHyperspectralImageIsetbioComputations();
         
     % Computation steps. Uncomment the ones you want to execute
-    instructionSet = {...
+    computationIinstructionSet = {...
        %'lookAtScenes' ...
-        'compute outer segment responses' ...      % compute OS responses. Data saved in the scansData directory
-        'assembleTrainingDataSet' ...              % generates the training/testing design matrices. Data are saved in the decodingData directory
-        'preprocessDesignMatrices' ...
-        'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
-        'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
+       'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
+       'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
+       'preprocessDesignMatrices' ...
+       'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
+       'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
+    };
+    
+    visualizationIinstructionSet = {...
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
-       % 'visualizeDecodingFilter' ...              % visualize the decoder filter's spatiotemporal dynamics
-       % 'visualizeInSamplePrediction' ...          % visualize the decoder's in-sample deperformance
-       % 'visualizeOutOfSamplePrediction' ...       % visualize the decoder's out-of-sample deperformance
+       'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
+       'visualizeInSamplePrediction' ...            % visualize the decoder's in-sample deperformance
+       'visualizeOutOfSamplePrediction' ...         % visualize the decoder's out-of-sample deperformance
        % 'makeReconstructionVideo' ...              % generate video of the reconstruction
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
-     };
+    };
   
+ 
+    instructionSet = computationIinstructionSet;
     sceneSetName = 'manchester';
-    resultsDir = sprintf('%s/@osLinear', 'Overlap0.40_Fixation200ms_MicrofixationGain0_DesignMatrixPreProcessing2');
+    resultsDir = sprintf('%s/@osLinear', 'Overlap0.40_Fixation200ms_MicrofixationGain1_DesignMatrixPreProcessing0');
     trainingDataPercentange = 50;
     testingDataPercentage = 50;
             
@@ -88,7 +93,7 @@ function expParams = experimentParams(sceneSetName)
         'temporalSamplingInMilliseconds', 10, ...                   % temporal resolution of reconstruction
         'latencyInMillseconds', -150, ...                           % latency of the decoder filter (negative for non-causal time delays)
         'memoryInMilliseconds', 500, ...                            % memory of the decoder filter
-        'designMatrixPreProcessing', 2 ...                          % 0: nothing, 1:centering, 2:centering+norm, 3:centering+norm+whitening
+        'designMatrixPreProcessing', 0 ...                          % 0: nothing, 1:centering, 2:centering+norm, 3:centering+norm+whitening
     );
 
     sensorTimeStepInMilliseconds = 0.1;                             % must be small enough to avoid numerical instability in the outer segment current computation
