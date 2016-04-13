@@ -210,4 +210,9 @@ function assembleTrainingSet(sceneSetName, resultsDir, trainingDataPercentange, 
         'expParams', 'coneTypes', 'spatioTemporalSupport', '-v7.3');
     fprintf('Done.\n');
     clear 'Xtest'; clear 'Ctest'; clear 'oiCtest';
+    
+    % Pre-processe design matrices
+    if (expParams.decoderParams.designMatrixPreProcessing > 0)
+        decoder.preProcessDesignMatrices(sceneSetName, resultsDir);
+    end
 end

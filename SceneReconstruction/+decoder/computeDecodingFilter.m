@@ -1,4 +1,4 @@
-function computeDecodingFilter(sceneSetName, resultsDir, onlyComputeDesignMatrixRank)
+function computeDecodingFilter(sceneSetName, resultsDir)
 
     decodingDataDir = core.getDecodingDataDir(resultsDir);
     fileName = fullfile(decodingDataDir, sprintf('%s_trainingDesignMatrices.mat', sceneSetName));
@@ -16,10 +16,6 @@ function computeDecodingFilter(sceneSetName, resultsDir, onlyComputeDesignMatrix
     XtrainRank = rank(Xtrain);
     fprintf('Done after %2.1f minutes.\n', toc/60);
     fprintf('<strong>Rank(X) = %d</strong>\n', XtrainRank);
-    
-    if (onlyComputeDesignMatrixRank)
-        return;
-    end
     
     tic
     fprintf('\n2b. Computing optimal linear decoding filter: pinv(X) [%d x %d] ... ', timeSamples, filterDimensions);

@@ -4,6 +4,18 @@ function [X, C, Coi] = computeDesignMatrixAndStimulusVector(signals, stimulus, s
     totalBins = size(signals,2);
     stimulusDimensions = size(stimulus,2);
     
+    if (decoderParams.responsePreProcessing > 0)
+        fprintf('\nCentering signals (zero mean)...');
+        signals = bsxfun(@minus, signals, mean(signals,2));
+        if (decoderParams.responsePreProcessing > 1)
+            fprintf('\nNormalizing signals (unity std.dev.)...');
+            signals = bsxfun(@times, signals, 1.0./(sqrt(mean(signals.^2,2))));
+            if (decoderParams.responsePreProcessing > 2)
+                fprintf('\nWhitening NOT YET implemented for raw signals\n');
+            end
+        end
+    end
+    
     latencyBins = decoderParams.latencyInMillseconds / decoderParams.temporalSamplingInMilliseconds;
     memoryBins  = decoderParams.memoryInMilliseconds / decoderParams.temporalSamplingInMilliseconds;
      

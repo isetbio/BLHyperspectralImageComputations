@@ -7,7 +7,6 @@ function RunExperiment
        %'lookAtScenes' ...
        'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
        'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
-       'preprocessDesignMatrices' ...
        'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
        'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
     };
@@ -22,9 +21,11 @@ function RunExperiment
     };
   
  
-    instructionSet =  visualizationIinstructionSet; % visualizationIinstructionSet;  computationIinstructionSet;
+    instructionSet = visualizationIinstructionSet; %computationIinstructionSet; % visualizationIinstructionSet; % visualizationIinstructionSet;  computationIinstructionSet;
     sceneSetName = 'manchester';
-    resultsDir = sprintf('%s/@osLinear', 'Overlap0.40_Fixation200ms_MicrofixationGain1_DesignMatrixPreProcessing3');
+    resultsDir = sprintf('%s/@osLinear', 'Overlap0.40_Fixation200ms_MicrofixationGain1_ResponsePreProcessing2');
+    fprintf('<strong>Will visualize data from ''%s''. Hit enter to continue.</strong>\n', resultsDir);
+    pause
     trainingDataPercentange = 50;
     testingDataPercentage = 50;
             
@@ -51,12 +52,8 @@ function RunExperiment
             case 'assembleTrainingDataSet'
                 core.assembleTrainingSet(sceneSetName, resultsDir, trainingDataPercentange, testingDataPercentage);
 
-            case 'preprocessDesignMatrices'
-                decoder.preProcessDesignMatrices(sceneSetName, resultsDir);
-                
             case 'computeDecodingFilter'
-                onlyComputeDesignMatrixRank = false;
-                decoder.computeDecodingFilter(sceneSetName, resultsDir, onlyComputeDesignMatrixRank);
+                decoder.computeDecodingFilter(sceneSetName, resultsDir);
 
             case 'computeOutOfSamplePrediction'
                 decoder.computeOutOfSamplePrediction(sceneSetName, resultsDir);
@@ -93,9 +90,14 @@ function expParams = experimentParams(sceneSetName)
         'temporalSamplingInMilliseconds', 10, ...                   % temporal resolution of reconstruction
         'latencyInMillseconds', -150, ...                           % latency of the decoder filter (negative for non-causal time delays)
         'memoryInMilliseconds', 500, ...                            % memory of the decoder filter
-        'designMatrixPreProcessing', 3 ...                          % 0: nothing, 1:centering, 2:centering+norm, 3:centering+norm+whitening
+        'designMatrixPreProcessing', 0, ...                         % 0: nothing, 1:centering, 2:centering+norm, 3:centering+norm+whitening
+        'responsePreProcessing', 2 ...                              % 0: nothing, 1:centering, 2:centering+norm,
     );
 
+    if ((decoderParams.designMatrixPreProcessing > 0) && (decoderParams.responsePreProcessing > 0))
+        error('Choose preprocessing of either the raw responses OR of the design matrix, NOT BOTH');
+    end
+    
     sensorTimeStepInMilliseconds = 0.1;                             % must be small enough to avoid numerical instability in the outer segment current computation
     integrationTimeInMilliseconds = 50;
     
@@ -143,7 +145,13 @@ function expParams = experimentParams(sceneSetName)
     );
     
     % assemble resultsDir based on key params
-    resultsDir = sprintf('Overlap%2.2f_Fixation%dms_MicrofixationGain%d_DesignMatrixPreProcessing%d/%s', overlap, sensorParams.eyeMovementScanningParams.meanFixationDurationInMilliseconds, sensorParams.eyeMovementScanningParams.microFixationGain, decoderParams.designMatrixPreProcessing, outerSegmentParams.type);
+    if (decoderParams.designMatrixPreProcessing > 0)
+         resultsDir = sprintf('Overlap%2.2f_Fixation%dms_MicrofixationGain%d_DesignMatrixPreProcessing%d/%s', overlap, sensorParams.eyeMovementScanningParams.meanFixationDurationInMilliseconds, sensorParams.eyeMovementScanningParams.microFixationGain, decoderParams.designMatrixPreProcessing, outerSegmentParams.type);
+    elseif (decoderParams.responsePreProcessing > 0)
+        resultsDir = sprintf('Overlap%2.2f_Fixation%dms_MicrofixationGain%d_ResponsePreProcessing%d/%s', overlap, sensorParams.eyeMovementScanningParams.meanFixationDurationInMilliseconds, sensorParams.eyeMovementScanningParams.microFixationGain, decoderParams.responsePreProcessing, outerSegmentParams.type);
+    else
+        resultsDir = sprintf('Overlap%2.2f_Fixation%dms_MicrofixationGain%d_NoPreProcessing/%s', overlap, sensorParams.eyeMovementScanningParams.meanFixationDurationInMilliseconds, sensorParams.eyeMovementScanningParams.microFixationGain, outerSegmentParams.type);
+    end
     
     % organize all  param structs into one superstruct
     expParams = struct(...
