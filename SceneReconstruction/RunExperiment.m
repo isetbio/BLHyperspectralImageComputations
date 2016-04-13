@@ -25,9 +25,11 @@ function RunExperiment
     
     
     sceneSetName = 'harvard_manchester';
-    resultsDir = sprintf('%s/@osLinear', 'Overlap0.40_Fixation200ms_MicrofixationGain1_ResponsePreProcessing2');
-    fprintf('<strong>Will visualize data from ''%s''. Hit enter to continue.</strong>\n', resultsDir);
-    pause
+    resultsDir = sprintf('%s/@osLinear', 'Overlap0.60_Fixation200ms_MicrofixationGain1_ResponsePreProcessing2');
+    if (~ismember('compute outer segment responses', instructionSet))
+        fprintf('<strong>Will use data from ''%s''. Hit enter to continue.</strong>\n', resultsDir);
+        pause
+    end
     trainingDataPercentange = 50;
     testingDataPercentage = 50;
             
