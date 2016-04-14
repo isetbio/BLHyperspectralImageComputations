@@ -91,7 +91,8 @@ function RunExperiment
                 core.assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, trainingDataPercentange, testingDataPercentage, preProcessingParams);
 
             case 'computeDecodingFilter'
-                decoder.computeDecodingFilter(sceneSetName, decodingDataDir);
+                computeSVD = true;
+                decoder.computeDecodingFilter(sceneSetName, decodingDataDir, computeSVD);
 
             case 'computeOutOfSamplePrediction'
                 decoder.computeOutOfSamplePrediction(sceneSetName, decodingDataDir);
