@@ -7,19 +7,21 @@ function renderPredictionsFigures(sceneSetName, decodingDataDir, InSampleOrOutOf
         load(fileName,  'Ctrain', 'CtrainPrediction', 'trainingTimeAxis', 'trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'originalTrainingStimulusSize', 'expParams');
         fprintf('Done.\n');
         imageFileName = generateImageFileName(InSampleOrOutOfSample, decodingDataDir, expParams);
-        renderReconstructionPerformancePlots(imageFileName, Ctrain, CtrainPrediction,  originalTrainingStimulusSize, expParams );
+        figNo = 0;
+        renderReconstructionPerformancePlots(figNo, imageFileName, Ctrain, CtrainPrediction,  originalTrainingStimulusSize, expParams);
     elseif (strcmp(InSampleOrOutOfSample, 'OutOfSample'))
         fileName = fullfile(decodingDataDir, sprintf('%s_outOfSamplePrediction.mat', sceneSetName));
         load(fileName,  'Ctest', 'CtestPrediction', 'testingTimeAxis', 'testingScanInsertionTimes', 'testingSceneLMSbackground', 'originalTestingStimulusSize', 'expParams');
         fprintf('Done.\n');
+        figNo = 1000;
         imageFileName = generateImageFileName(InSampleOrOutOfSample, decodingDataDir, expParams);
-        renderReconstructionPerformancePlots(imageFileName, Ctest, CtestPrediction,  originalTestingStimulusSize, expParams);
+        renderReconstructionPerformancePlots(figNo, imageFileName, Ctest, CtestPrediction,  originalTestingStimulusSize, expParams);
     else
         error('Unknown mode: ''%s''.', InSampleOrOutOfSample);
     end
 end
 
-function renderReconstructionPerformancePlots(imageFileName, C, Creconstruction, originalStimulusSize, expParams)
+function renderReconstructionPerformancePlots(figNo, imageFileName, C, Creconstruction, originalStimulusSize, expParams)
     
     LMScontrastSequenceReconstruction  = ...
         decoder.reformatStimulusSequence('FromDesignMatrixFormat', ...
@@ -68,7 +70,7 @@ function renderReconstructionPerformancePlots(imageFileName, C, Creconstruction,
     
     for coneContrastIndex = 1:3
         
-        hFig = figure(100 + coneContrastIndex); clf;
+        hFig = figure(figNo + coneContrastIndex); clf;
         set(hFig, 'Position', [10 10 800 580], 'Color', [1 1 1]);
         
         for iRow = 1:numel(rowsToPlot)

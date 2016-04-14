@@ -20,31 +20,47 @@ function RunExperiment
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
     };
   
+    % Specify what to compute
+    instructionSet = computationInstructionSet;  
+    %instructionSet = visualizationInstructionSet;
+    
+    
     % Set data preprocessing params - This affects the name of the decodingDataDir
-    designMatrixBased = 0;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+    designMatrixBased = 2;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
     rawResponseBased = 0;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:not implemented
     preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased);
     
-    % Set the scene data base to be used
-    % Large data set
-    sceneSetName = 'harvard_manchester'; 
-    scanSpatialOverlapFactor = 0.40; 
+    % Specify the data set to use
+    whichDataSet = 'small';
     
-    % Small data set
-    sceneSetName = 'manchester';  
-    scanSpatialOverlapFactor = 1.00; 
+    switch (whichDataSet)
+        case 'very_small'
+            sceneSetName = 'manchester';  
+            scanSpatialOverlapFactor = 0.40; 
+       
+        case 'small'
+            sceneSetName = 'manchester';  
+            scanSpatialOverlapFactor = 0.50;  
+            
+        case 'original'
+            sceneSetName = 'manchester';  
+            scanSpatialOverlapFactor = 1.0; 
+            
+        case 'large'
+            sceneSetName = 'harvard_manchester';  
+            scanSpatialOverlapFactor = 0.60; 
+            
+        otherwise
+            error('Unknown dataset:''%s''.', whichDataSet)
+    end
     
     
-    
-    % Specify what to compute
-    instructionSet = computationInstructionSet;  % visualizationInstructionSet;  computationInstructionSet;
     
     if (~ismember('compute outer segment responses', instructionSet))
         % Select an existing set of scans data (according to the following params)
         fixationMeanDuration = 200; 
         microFixationGain = 1; 
         osType = '@osLinear';
-        
         resultsDir = core.getResultsDir(scanSpatialOverlapFactor,fixationMeanDuration, microFixationGain, osType);
         decodingDataDir = core.getDecodingDataDir(resultsDir, preProcessingParams);
         p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
@@ -52,7 +68,6 @@ function RunExperiment
     end  
     
     for k = 1:numel(instructionSet)
-
         switch instructionSet{k}
             case 'lookAtScenes' 
                 core.lookAtScenes(sceneSetName);
