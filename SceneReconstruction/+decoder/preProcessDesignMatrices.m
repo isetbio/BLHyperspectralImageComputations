@@ -5,7 +5,7 @@ function preProcessDesignMatrices(sceneSetName, decodingDataDir)
     
     tic
     % Load train design matrix
-    fprintf('1a. Loading design matrix from ''%s''  ... ', fileNameXtrain);
+    fprintf('\n1a. Loading design matrix from ''%s''  ... ', fileNameXtrain);
     load(fileNameXtrain, 'Xtrain', 'preProcessingParams');
     
     fprintf('Done after %2.1f minutes.\n', toc/60);

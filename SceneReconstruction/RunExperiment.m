@@ -22,7 +22,7 @@ function RunExperiment
   
     % Specify what to compute
     instructionSet = computationInstructionSet;  
-    %instructionSet = visualizationInstructionSet;
+   % instructionSet = visualizationInstructionSet;
     
     
     % Set data preprocessing params - This affects the name of the decodingDataDir
@@ -31,7 +31,7 @@ function RunExperiment
     preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased);
     
     % Specify the data set to use
-    whichDataSet = 'small';
+    whichDataSet = 'large';
     
     switch (whichDataSet)
         case 'very_small'

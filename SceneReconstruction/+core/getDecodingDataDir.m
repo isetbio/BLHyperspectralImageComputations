@@ -1,6 +1,5 @@
 function decodingDataDir = getDecodingDataDir(resultsDir, preProcessingParams)
 
-    
     p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
     decodingDataDir = fullfile(p.computedDataDir, resultsDir, 'decodingData');
     

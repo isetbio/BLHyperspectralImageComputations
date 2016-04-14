@@ -14,14 +14,14 @@ function computeDecodingFilter(sceneSetName, decodingDataDir)
     fprintf('2a. Computing rank(X) [%d x %d]...',  timeSamples, filterDimensions);
     XtrainRank = rank(Xtrain);
     fprintf('Done after %2.1f minutes.\n', toc/60);
-    fprintf('<strong>Rank(X) = %d</strong>\n', XtrainRank);
+    fprintf('<strong>Rank (X) = %d</strong>\n', XtrainRank);
     
     tic
     fprintf('2b. Computing optimal linear decoding filter: pinv(X) [%d x %d] ... ', timeSamples, filterDimensions);
     pseudoInverseOfX = pinv(Xtrain);
     fprintf('Done after %2.1f minutes.\n', toc/60);
     
-    computeSVD = false;
+    computeSVD = true;
     if (computeSVD)
         tic
         % Compute and save the SVD decomposition of X so we can check (later) how the
