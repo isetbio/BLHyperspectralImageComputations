@@ -1,5 +1,5 @@
 % Method to visualize the cone mosaic
-function renderConeMosaic(sceneSetName, resultsDir) 
+function renderConeMosaic(sceneSetName, resultsDir, decodingDataDir) 
 
     sceneIndex = 1;
     scanFileName = core.getScanFileName(sceneSetName, resultsDir, sceneIndex);
@@ -43,7 +43,7 @@ function renderConeMosaic(sceneSetName, resultsDir)
     ylabel(sprintf('%2.1f microns', maxY - minY), 'FontSize', 18, 'FontWeight', 'bold');
     
     drawnow;
-    imageFileName = fullfile(core.getDecodingDataDir(resultsDir), 'sensor.png')
+    imageFileName = fullfile(decodingDataDir, 'sensor.png');
     
     NicePlot.exportFigToPNG(imageFileName, hFig, 300);    
 end

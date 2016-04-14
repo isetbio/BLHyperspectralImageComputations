@@ -27,7 +27,6 @@ function scanData = computeScanData(scene,  oi,  sensor, osOBJ, ...
     sensor = coneAbsorptions(sensor, oi);
     isomerizationRate = sensorGet(sensor, 'photon rate');
     
-    
     % Resample the optical image in the decoder's spatial resolution
     [oiResampledToDecoderResolution, opticalImageXData, opticalImageYData] = ...
         computeResampledOpticalScene(oi, decodedSceneSpatialSampleSizeInRetinalMicrons);
@@ -112,12 +111,15 @@ function scanData = computeScanData(scene,  oi,  sensor, osOBJ, ...
             oiLMSexcitationSequence(:,:,coneIndex,:) = oiLMSexcitationSequence(:,:,coneIndex,:)/oiBackgroundExcitations(coneIndex) - 1;
         end
         
-        
         fprintf('Completed in %2.2f seconds\n', toc);
-        fprintf('scan time axis spans: %2.1f - %2.1f milliseconds\n', subSampledScanTimeAxis(1),subSampledScanTimeAxis(end));
-        fprintf('mean cone excitations estimated between %2.1f and %2.1f milliseconds\n', subSampledScanTimeAxis(timeBinsForEstimatingMeanLMScontrast(1)), subSampledScanTimeAxis(timeBinsForEstimatingMeanLMScontrast(end)));
-        fprintf('values for scene image  : %2.5f %2.5f %2.5f\n', sceneBackgroundExcitations(1), sceneBackgroundExcitations(2), sceneBackgroundExcitations(3));
-        fprintf('values for optical image: %2.5f %2.5f %2.5f\n', oiBackgroundExcitations(1), oiBackgroundExcitations(2), oiBackgroundExcitations(3));
+        
+        printScanDataInfo = false;
+        if (printScanDataInfo)
+            fprintf('scan time axis spans: %2.1f - %2.1f milliseconds\n', subSampledScanTimeAxis(1),subSampledScanTimeAxis(end));
+            fprintf('mean cone excitations estimated between %2.1f and %2.1f milliseconds\n', subSampledScanTimeAxis(timeBinsForEstimatingMeanLMScontrast(1)), subSampledScanTimeAxis(timeBinsForEstimatingMeanLMScontrast(end)));
+            fprintf('values for scene image  : %2.5f %2.5f %2.5f\n', sceneBackgroundExcitations(1), sceneBackgroundExcitations(2), sceneBackgroundExcitations(3));
+            fprintf('values for optical image: %2.5f %2.5f %2.5f\n', oiBackgroundExcitations(1), oiBackgroundExcitations(2), oiBackgroundExcitations(3));
+        end
         
         % Save scanData for this scan
         scanData{scanIndex} = struct(...

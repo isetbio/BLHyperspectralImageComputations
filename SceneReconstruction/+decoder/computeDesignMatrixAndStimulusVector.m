@@ -1,8 +1,20 @@
-function [X, C, Coi] = computeDesignMatrixAndStimulusVector(signals, stimulus, stimulusOI, decoderParams)
+function [X, C, Coi] = computeDesignMatrixAndStimulusVector(signals, stimulus, stimulusOI, decoderParams, preProcessingParams)
 
     conesNum  = size(signals,1);
     totalBins = size(signals,2);
     stimulusDimensions = size(stimulus,2);
+    
+    if (preProcessingParams.rawResponseBased > 0)
+        fprintf('\nCentering raw responses (zero mean)...');
+        signals = bsxfun(@minus, signals, mean(signals,2));
+        if (preProcessingParams.rawResponseBased > 1)
+            fprintf('\nNormalizing raw responses (unity std.dev.)...');
+            signals = bsxfun(@times, signals, 1.0./(sqrt(mean(signals.^2,2))));
+            if (preProcessingParams.rawResponseBased > 2)
+                fprintf('\nWhitening NOT YET implemented for raw response - based\n');
+            end
+        end
+    end
     
     latencyBins = decoderParams.latencyInMillseconds / decoderParams.temporalSamplingInMilliseconds;
     memoryBins  = decoderParams.memoryInMilliseconds / decoderParams.temporalSamplingInMilliseconds;
@@ -46,5 +58,6 @@ function [X, C, Coi] = computeDesignMatrixAndStimulusVector(signals, stimulus, s
             fprintf('index %d > size(stimulus): %d\n', row-minTimeBin, size(stimulus,1));
         end 
     end % row
-   
+    
+    fprintf('Done.\n');
 end

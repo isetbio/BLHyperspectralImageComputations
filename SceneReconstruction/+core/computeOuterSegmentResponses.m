@@ -27,9 +27,9 @@ function computeOuterSegmentResponses(expParams)
         oi = oiCreate('human');
         oi = oiCompute(oi, scene);
 
-        % Resample the optical image with a resolution = 0.5 cone aperture. NOTE: this may be different for decoding
-        %spatialSample = expParams.sensorParams.coneApertureInMicrons/2.0;
-        %oi = oiSpatialResample(oi, spatialSample, 'um', 'linear', false);
+        % Resample the optical image with a resolution = 0.5 x cone aperture. NOTE: this may be different for decoding
+        spatialSample = expParams.sensorParams.coneApertureInMicrons/2.0;
+        oi = oiSpatialResample(oi, spatialSample, 'um', 'linear', false);
         
         % Create custom human sensor
         sensor = sensorCreate('human');
@@ -70,7 +70,7 @@ function computeOuterSegmentResponses(expParams)
         );
 
         scanFileName = core.getScanFileName(expParams.sceneSetName, expParams.resultsDir, sceneIndex);
-        fprintf('\nSaving responses from scene  to %s ...',  scanFileName);
+        fprintf('Saving responses from scene  to %s ...',  scanFileName);
         save(scanFileName, 'scanData', 'scene', 'oi', 'expParams', '-v7.3');
         fprintf('Done saving \n');
         

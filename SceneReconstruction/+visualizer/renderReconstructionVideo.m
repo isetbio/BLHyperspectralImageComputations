@@ -1,11 +1,10 @@
-function renderReconstructionVideo(sceneSetName, resultsDir)
+function renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir)
 
     % Retrieve resources needed to convert LMS RGB for a hypothetical super display that can display the natural scenes
     displayName = 'LCD-Apple'; %'OLED-Samsung'; % 'OLED-Samsung', 'OLED-Sony';
     gain = 8;
     [coneFundamentals, displaySPDs, RGBtoXYZ, wave] = core.LMSRGBconversionData(displayName, gain);
     
-    decodingDataDir = core.getDecodingDataDir(resultsDir);
     whichOne = input('In-sample (1) out-of-sample(2) , or both (3) data : ');
     
     slideSize = [2560 1440]/2;
@@ -25,7 +24,7 @@ function renderReconstructionVideo(sceneSetName, resultsDir)
             outerSegmentNoiseString = 'NoNoise';
         end
         
-        videoFileName = fullfile(core.getDecodingDataDir(resultsDir), sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dInSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
+        videoFileName = fullfile(decodingDataDir, sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dInSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
         set(hFig, 'Name', videoFileName);
         videoFilename = sprintf('%s.m4v', videoFileName);
         fprintf('Will export video to %s.m4v\n', videoFileName);
@@ -53,7 +52,7 @@ function renderReconstructionVideo(sceneSetName, resultsDir)
         else
             outerSegmentNoiseString = 'NoNoise';
         end
-        videoFileName = fullfile(core.getDecodingDataDir(resultsDir), sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dOutOfSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
+        videoFileName = fullfile(decodingDataDir, sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dOutOfSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
         set(hFig, 'Name', videoFileName);
         videoFilename = sprintf('%s.m4v', videoFileName);
         fprintf('Will export video to %s.m4v\n', videoFileName);
@@ -81,7 +80,7 @@ function renderReconstructionVideo(sceneSetName, resultsDir)
         else
             outerSegmentNoiseString = 'NoNoise';
         end
-        videoFileName = fullfile(core.getDecodingDataDir(resultsDir), sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dInAndOutOfSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
+        videoFileName = fullfile(decodingDataDir, sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dInAndOutOfSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
         set(hFig, 'Name', videoFileName);
         videoFilename = sprintf('%s.m4v', videoFileName);
         fprintf('Will export video to %s.m4v\n', videoFileName);

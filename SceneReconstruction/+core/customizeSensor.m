@@ -61,7 +61,7 @@ function [sensor, fixationTimes, adaptingFieldFixationTimes] = customizeSensor(o
         xNodesPos =  (round(0.35*(1.0-2.2*borderFraction) * oiWidthInMicrons/sensorWidthInMicrons * sensorParams.eyeMovementScanningParams.fixationOverlapFactor));
         yNodes = (round(0.35 * oiHeightInMicrons/sensorHeightInMicrons * sensorParams.eyeMovementScanningParams.fixationOverlapFactor));
         if (yNodes == 0)
-            error(sprintf('\nZero saccadic eye nodes were generated. Consider increasing the fixationOverlapFactor (currently set to: %2.4f)\n', sensorParams.eyeMovementScanningParams.fixationOverlapFactor));
+            error('\nZero saccadic eye nodes were generated. Consider increasing the fixationOverlapFactor (currently set to: %2.4f)\n', sensorParams.eyeMovementScanningParams.fixationOverlapFactor);
         end
         fx(1) = sensorWidthInMicrons / sensorParams.eyeMovementScanningParams.fixationOverlapFactor;  
         fx(2) = sensorHeightInMicrons / sensorParams.eyeMovementScanningParams.fixationOverlapFactor; 
@@ -99,11 +99,12 @@ function [sensor, fixationTimes, adaptingFieldFixationTimes] = customizeSensor(o
     adaptingFieldFixationDurationsInTimeSteps = adaptingFieldFixationDurationsInMilliseconds/sensorParams.eyeMovementScanningParams.samplingIntervalInMilliseconds;
     eyeMovementsNum = eyeMovementsNum + sum(adaptingFieldFixationDurationsInTimeSteps);
     
-    
-    fprintf('number of total eye movements: %d\n', eyeMovementsNum);
-    fprintf('mean fixation dur: %2.1f (std: %2.1f))\n', mean(fixationDurationsInMilliseconds), std(fixationDurationsInMilliseconds));
-    fprintf('mean (adapting)fixation dur: %2.1f (std: %2.1f))\n', mean(adaptingFieldFixationDurationsInMilliseconds), std(adaptingFieldFixationDurationsInMilliseconds));
-   
+    printEyeMovementStats = false;
+    if (printEyeMovementStats)
+        fprintf('number of total eye movements: %d\n', eyeMovementsNum);
+        fprintf('mean fixation dur: %2.1f (std: %2.1f))\n', mean(fixationDurationsInMilliseconds), std(fixationDurationsInMilliseconds));
+        fprintf('mean (adapting)fixation dur: %2.1f (std: %2.1f))\n', mean(adaptingFieldFixationDurationsInMilliseconds), std(adaptingFieldFixationDurationsInMilliseconds));
+    end
     
     % generate all eye movements centered at (0,0)
     eyeMovementPositions = zeros(eyeMovementsNum,2);
@@ -117,7 +118,7 @@ function [sensor, fixationTimes, adaptingFieldFixationTimes] = customizeSensor(o
     adaptingFieldFixationTimes.offsetBins = zeros(1, adaptingFieldFixationsNum);
     
     % add saccadic targets to sensor
-    eyeMovementPositions = sensorGet(sensor,'positions');
+    eyeMovementPositions = sensorGet(sensor,'positions') * sensorParams.eyeMovementScanningParams.microFixationGain;
     lastPos = 0;
     for fixationIndex = 1:fixationsNum 
         saccadicPos = squeeze(saccadicTargetPos(fixationIndex,:));
