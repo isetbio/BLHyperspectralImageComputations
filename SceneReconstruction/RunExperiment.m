@@ -3,7 +3,7 @@ function RunExperiment
     setPrefsForHyperspectralImageIsetbioComputations();
         
     % Computation steps. Uncomment the ones you want to execute
-    computationIinstructionSet = {...
+    computationInstructionSet = {...
        %'lookAtScenes' ...
        %'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
        'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
@@ -11,7 +11,7 @@ function RunExperiment
        'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
     };
     
-    visualizationIinstructionSet = {...
+    visualizationInstructionSet = {...
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
        'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
        'visualizeInSamplePrediction' ...            % visualize the decoder's in-sample deperformance
@@ -21,11 +21,11 @@ function RunExperiment
     };
   
  
-    instructionSet = computationIinstructionSet; % visualizationIinstructionSet; % visualizationIinstructionSet;  computationIinstructionSet;
+    instructionSet = computationInstructionSet; % visualizationInstructionSet; % visualizationInstructionSet;  computationInstructionSet;
     
     
     sceneSetName = 'harvard_manchester';
-    resultsDir = sprintf('%s/@osLinear', 'Overlap0.60_Fixation200ms_MicrofixationGain1_ResponsePreProcessing2');
+    resultsDir = sprintf('%s/@osLinear', 'Overlap0.50_Fixation200ms_MicrofixationGain1_ResponsePreProcessing2');
     if (~ismember('compute outer segment responses', instructionSet))
         fprintf('<strong>Will use data from ''%s''. Hit enter to continue.</strong>\n', resultsDir);
         pause
@@ -95,7 +95,7 @@ function expParams = experimentParams(sceneSetName)
         'latencyInMillseconds', -150, ...                           % latency of the decoder filter (negative for non-causal time delays)
         'memoryInMilliseconds', 500, ...                            % memory of the decoder filter
         'designMatrixPreProcessing', 0, ...                         % 0: nothing, 1:centering, 2:centering+norm, 3:centering+norm+whitening
-        'responsePreProcessing', 2 ...                              % 0: nothing, 1:centering, 2:centering+norm,
+        'responsePreProcessing', 1 ...                              % 0: nothing, 1:centering, 2:centering+norm,
     );
 
     if ((decoderParams.designMatrixPreProcessing > 0) && (decoderParams.responsePreProcessing > 0))
@@ -106,7 +106,7 @@ function expParams = experimentParams(sceneSetName)
     integrationTimeInMilliseconds = 50;
     
     % sensor params for scene viewing
-    overlap = 0.4;
+    overlap = 0.40;
     sensorParams = struct(...
         'coneApertureInMicrons', 3.0, ...        
         'LMSdensities', [0.6 0.3 0.1], ...        
