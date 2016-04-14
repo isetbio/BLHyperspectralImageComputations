@@ -1,33 +1,33 @@
-function preProcessDesignMatrices(sceneSetName, resultsDir)
+function preProcessDesignMatrices(sceneSetName, decodingDataDir)
 
-    decodingDataDir = core.getDecodingDataDir(resultsDir);
     fileNameXtrain = fullfile(decodingDataDir, sprintf('%s_trainingDesignMatrices.mat', sceneSetName));
+    fileNameXtest  = fullfile(decodingDataDir, sprintf('%s_testingDesignMatrices.mat', sceneSetName));
     
     tic
     % Load train design matrix
-    fprintf('\n1a. Loading design matrix from ''%s''  ... ', fileNameXtrain);
-    load(fileNameXtrain, 'Xtrain', 'expParams');
+    fprintf('1a. Loading design matrix from ''%s''  ... ', fileNameXtrain);
+    load(fileNameXtrain, 'Xtrain', 'preProcessingParams');
+    
     fprintf('Done after %2.1f minutes.\n', toc/60);
     trainingSamples = size(Xtrain,1);
     filterDimensions = size(Xtrain,2);
     
     % Load test design matrix
     tic
-    fileNameXtest = fullfile(decodingDataDir, sprintf('%s_testingDesignMatrices.mat', sceneSetName));
-    fprintf('\n1b. Loading test design matrix ''%s''... ', fileNameXtest);
+    fprintf('1b. Loading test design matrix ''%s''... ', fileNameXtest);
     load(fileNameXtest, 'Xtest');
     fprintf('Done after %2.1f minutes.\n', toc/60);
     testingSamples = size(Xtest,1);
     
     tic
-    fprintf('\n1c. Computing rank(X) (before pre-processing) [%d x %d]...',  trainingSamples, filterDimensions);
+    fprintf('1c. Computing rank(X) (before pre-processing) [%d x %d]...',  trainingSamples, filterDimensions);
     XtrainRank = rank(Xtrain);
     fprintf('Done after %2.1f minutes.\n', toc/60);
     fprintf('<strong>Rank (X) (before pre-processing) = %d</strong>\n', XtrainRank);
     
     % Concatenate matrices into a grand design matrix
     tic
-    fprintf('\n1d. Concatenating traing and test design matrices...');
+    fprintf('1d. Concatenating traing and test design matrices...');
     Xgrand = cat(1, Xtrain, Xtest);
     fprintf('Done after %2.1f minutes.\n', toc/60);
     
@@ -37,9 +37,9 @@ function preProcessDesignMatrices(sceneSetName, resultsDir)
     timeSamples = size(Xgrand,1);
     filterDimensions = size(Xgrand,2);
     
-    if (expParams.decoderParams.designMatrixPreProcessing>0)
+    if (preProcessingParams.designMatrixBased > 0)
         tic
-        fprintf('\n2aa. Centering (X) [%d x %d]...',  timeSamples, filterDimensions);
+        fprintf('2aa. Centering (X) [%d x %d]...',  timeSamples, filterDimensions);
         
         % Compute degree of whiteness of Xgrand
         varianceCovarianceMatrix = 1/timeSamples*(Xgrand')*Xgrand;
@@ -56,21 +56,21 @@ function preProcessDesignMatrices(sceneSetName, resultsDir)
         Xgrand(:,1) = 1;
         fprintf('Done after %2.1f minutes.\n', toc/60);
         
-        if (expParams.decoderParams.designMatrixPreProcessing > 1)  
+        if (preProcessingParams.designMatrixBased > 1)  
             tic
-            fprintf('\n2ab. Normalizing (X) [%d x %d]...',  timeSamples, filterDimensions);
+            fprintf('2ab. Normalizing (X) [%d x %d]...',  timeSamples, filterDimensions);
         
             % Compute normalizing operator: divide by stddev
             designMatrixPreprocessing.normalizingOperator = (1./(sqrt(1/timeSamples*((Xgrand.^2)')*oneColVector)))';
 
-            % Normaize Xgrand
+            % Normalize Xgrand
             Xgrand= bsxfun(@times, Xgrand, designMatrixPreprocessing.normalizingOperator);
             Xgrand(:,1) = 1;
             fprintf('Done after %2.1f minutes.\n', toc/60);
         
-            if (expParams.decoderParams.designMatrixPreProcessing > 2)
+            if (preProcessingParams.designMatrixBased > 2)
                 tic
-                fprintf('\n2ac. Whitening (X) [%d x %d]...',  timeSamples, filterDimensions);
+                fprintf('2ac. Whitening (X) [%d x %d]...',  timeSamples, filterDimensions);
         
                 % Compute whitening operator:
                 Sigma = 1/timeSamples * (Xgrand') * Xgrand;
@@ -78,7 +78,7 @@ function preProcessDesignMatrices(sceneSetName, resultsDir)
                 designMatrixPreprocessing.whiteningOperator = U * (inv(sqrt(Gamma))) * V';
 
                 % Whiten Xgrand
-                Xgrand = Xgrand* designMatrixPreprocessing.whiteningOperator;
+                Xgrand = Xgrand * designMatrixPreprocessing.whiteningOperator;
                 Xgrand(:,1) = 1;
                 fprintf('Done after %2.1f minutes.\n', toc/60);
             end
@@ -86,7 +86,7 @@ function preProcessDesignMatrices(sceneSetName, resultsDir)
     end
     
     tic
-    fprintf('\n3. Saving preprocessed design matrices ...');
+    fprintf('3. Saving preprocessed design matrices ...');
     
     Xtrain = Xgrand(1:trainingSamples,:);
     Xtest  = Xgrand(trainingSamples+(1:testingSamples),:);

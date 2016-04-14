@@ -70,7 +70,7 @@ function computeOuterSegmentResponses(expParams)
         );
 
         scanFileName = core.getScanFileName(expParams.sceneSetName, expParams.resultsDir, sceneIndex);
-        fprintf('\nSaving responses from scene  to %s ...',  scanFileName);
+        fprintf('Saving responses from scene  to %s ...',  scanFileName);
         save(scanFileName, 'scanData', 'scene', 'oi', 'expParams', '-v7.3');
         fprintf('Done saving \n');
         

@@ -20,63 +20,81 @@ function RunExperiment
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
     };
   
- 
-    instructionSet = computationInstructionSet; % visualizationInstructionSet; % visualizationInstructionSet;  computationInstructionSet;
+    % Set data preprocessing params - This affects the name of the decodingDataDir
+    designMatrixBased = 0;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+    rawResponseBased = 0;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:not implemented
+    preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased);
+    
+    % Set the scene data base to be used
+    % Large data set
+    sceneSetName = 'harvard_manchester'; 
+    scanSpatialOverlapFactor = 0.40; 
+    
+    % Small data set
+    sceneSetName = 'manchester';  
+    scanSpatialOverlapFactor = 1.00; 
     
     
-    sceneSetName = 'harvard_manchester';
-    overlap = 0.40;
-    resultsDir = sprintf('%s/@osLinear', sprintf('Overlap%2.2f_Fixation200ms_MicrofixationGain1_ResponsePreProcessing1', overlap));
+    
+    % Specify what to compute
+    instructionSet = computationInstructionSet;  % visualizationInstructionSet;  computationInstructionSet;
+    
     if (~ismember('compute outer segment responses', instructionSet))
-        fprintf('<strong>Will use data from ''%s''. Hit enter to continue.</strong>\n', resultsDir);
-        pause
-    end
-    trainingDataPercentange = 50;
-    testingDataPercentage = 50;
-            
+        % Select an existing set of scans data (according to the following params)
+        fixationMeanDuration = 200; 
+        microFixationGain = 1; 
+        osType = '@osLinear';
+        
+        resultsDir = core.getResultsDir(scanSpatialOverlapFactor,fixationMeanDuration, microFixationGain, osType);
+        decodingDataDir = core.getDecodingDataDir(resultsDir, preProcessingParams);
+        p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
+        fprintf('<strong>Using data from:\nResultsDir: ''%s''\nDecodingDataDir: ''%s''. </strong>\n', resultsDir, strrep(decodingDataDir,sprintf('%s/',p.computedDataDir),''));
+    end  
+    
     for k = 1:numel(instructionSet)
-
-        if (exist('expParams', 'var'))
-            sceneSetName = expParams.sceneSetName;
-            resultsDir = expParams.resultsDir;
-            fprintf('Will analyze data from %s and %s\n', sceneSetName, resultsDir);
-        end
 
         switch instructionSet{k}
             case 'lookAtScenes' 
                 core.lookAtScenes(sceneSetName);
 
             case 'compute outer segment responses'
-                expParams = experimentParams(sceneSetName, overlap);
+                expParams = experimentParams(sceneSetName, scanSpatialOverlapFactor);
                 core.computeOuterSegmentResponses(expParams);
+                
+                % Set the sceneSetName, resultsDir, decodingDataDir according to the params set by experimentParams()
+                sceneSetName = expParams.sceneSetName;
+                resultsDir = expParams.resultsDir;
+                decodingDataDir = core.getDecodingDataDir(resultsDir, preProcessingParams);
 
             case 'visualizeScan'
                 sceneIndex = input('Select the scene index to visualize: ');
                 visualizer.renderScan(sceneSetName, resultsDir, sceneIndex);
 
             case 'assembleTrainingDataSet'
-                core.assembleTrainingSet(sceneSetName, resultsDir, trainingDataPercentange, testingDataPercentage);
+                trainingDataPercentange = 50;
+                testingDataPercentage = 50;
+                core.assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, trainingDataPercentange, testingDataPercentage, preProcessingParams);
 
             case 'computeDecodingFilter'
-                decoder.computeDecodingFilter(sceneSetName, resultsDir);
+                decoder.computeDecodingFilter(sceneSetName, decodingDataDir);
 
             case 'computeOutOfSamplePrediction'
-                decoder.computeOutOfSamplePrediction(sceneSetName, resultsDir);
+                decoder.computeOutOfSamplePrediction(sceneSetName, decodingDataDir);
 
             case 'visualizeDecodingFilter'
-                visualizer.renderDecoderFilterDynamicsFigures(sceneSetName, resultsDir);
+                visualizer.renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir);
 
             case 'visualizeInSamplePrediction'
-                visualizer.renderPredictionsFigures(sceneSetName, resultsDir, 'InSample');
+                visualizer.renderPredictionsFigures(sceneSetName, decodingDataDir, 'InSample');
 
             case 'visualizeOutOfSamplePrediction'
-                visualizer.renderPredictionsFigures(sceneSetName, resultsDir, 'OutOfSample');
+                visualizer.renderPredictionsFigures(sceneSetName, decodingDataDir, 'OutOfSample');
 
             case 'makeReconstructionVideo'
-                visualizer.renderReconstructionVideo(sceneSetName, resultsDir);
+                visualizer.renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir);
 
             case 'visualizeConeMosaic'
-                visualizer.renderConeMosaic(sceneSetName, resultsDir);
+                visualizer.renderConeMosaic(sceneSetName, resultsDir, decodingDataDir);
 
             otherwise
                 error('Unknown instruction: ''%s''.\n', instructionSet{k});
@@ -85,7 +103,7 @@ function RunExperiment
 end
 
 
-function expParams = experimentParams(sceneSetName, overlap)
+function expParams = experimentParams(sceneSetName, scanSpatialOverlapFactor)
 
    decoderParams = struct(...
         'type', 'optimalLinearFilter', ...
@@ -94,14 +112,8 @@ function expParams = experimentParams(sceneSetName, overlap)
         'extraMicronsAroundSensorBorder', 0, ...                    % decode this many additional (or less, if negative) microns on each side of the sensor
         'temporalSamplingInMilliseconds', 10, ...                   % temporal resolution of reconstruction
         'latencyInMillseconds', -150, ...                           % latency of the decoder filter (negative for non-causal time delays)
-        'memoryInMilliseconds', 500, ...                            % memory of the decoder filter
-        'designMatrixPreProcessing', 0, ...                         % 0: nothing, 1:centering, 2:centering+norm, 3:centering+norm+whitening
-        'responsePreProcessing', 1 ...                              % 0: nothing, 1:centering, 2:centering+norm,
+        'memoryInMilliseconds', 500 ...                             % memory of the decoder filter
     );
-
-    if ((decoderParams.designMatrixPreProcessing > 0) && (decoderParams.responsePreProcessing > 0))
-        error('Choose preprocessing of either the raw responses OR of the design matrix, NOT BOTH');
-    end
     
     sensorTimeStepInMilliseconds = 0.1;                             % must be small enough to avoid numerical instability in the outer segment current computation
     integrationTimeInMilliseconds = 50;
@@ -121,7 +133,7 @@ function expParams = experimentParams(sceneSetName, overlap)
             'meanFixationDurationInMillisecondsForAdaptingField', 200, ...
             'stDevFixationDurationInMillisecondsForAdaptingField', 20, ...
             'microFixationGain', 1, ...
-            'fixationOverlapFactor', overlap^2, ...     
+            'fixationOverlapFactor', scanSpatialOverlapFactor^2, ...     
             'saccadicScanMode',  'randomized'...                                    % 'randomized' or 'sequential', to visit eye position grid sequentially
         ) ...
     );
@@ -149,13 +161,7 @@ function expParams = experimentParams(sceneSetName, overlap)
     );
     
     % assemble resultsDir based on key params
-    if (decoderParams.designMatrixPreProcessing > 0)
-         resultsDir = sprintf('Overlap%2.2f_Fixation%dms_MicrofixationGain%d_DesignMatrixPreProcessing%d/%s', overlap, sensorParams.eyeMovementScanningParams.meanFixationDurationInMilliseconds, sensorParams.eyeMovementScanningParams.microFixationGain, decoderParams.designMatrixPreProcessing, outerSegmentParams.type);
-    elseif (decoderParams.responsePreProcessing > 0)
-        resultsDir = sprintf('Overlap%2.2f_Fixation%dms_MicrofixationGain%d_ResponsePreProcessing%d/%s', overlap, sensorParams.eyeMovementScanningParams.meanFixationDurationInMilliseconds, sensorParams.eyeMovementScanningParams.microFixationGain, decoderParams.responsePreProcessing, outerSegmentParams.type);
-    else
-        resultsDir = sprintf('Overlap%2.2f_Fixation%dms_MicrofixationGain%d_NoPreProcessing/%s', overlap, sensorParams.eyeMovementScanningParams.meanFixationDurationInMilliseconds, sensorParams.eyeMovementScanningParams.microFixationGain, outerSegmentParams.type);
-    end
+    resultsDir = core.getResultsDir(scanSpatialOverlapFactor,sensorParams.eyeMovementScanningParams.meanFixationDurationInMilliseconds, sensorParams.eyeMovementScanningParams.microFixationGain, outerSegmentParams.type);
     
     % organize all  param structs into one superstruct
     expParams = struct(...
@@ -166,4 +172,15 @@ function expParams = experimentParams(sceneSetName, overlap)
         'outerSegmentParams',   outerSegmentParams, ...
         'decoderParams',        decoderParams ...
     );
+end
+
+function preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased)
+    preProcessingParams = struct(...
+        'designMatrixBased', designMatrixBased, ...                                 % 0: nothing, 1:centering, 2:centering+norm, 3:centering+norm+whitening
+        'rawResponseBased', rawResponseBased ...                                    % 0: nothing, 1:centering, 2:centering+norm,
+    );
+    
+    if ((preProcessingParams.designMatrixBased > 0) && (preProcessingParams.rawResponseBased > 0))
+        error('Choose preprocessing of either the raw responses OR of the design matrix, NOT BOTH');
+    end
 end

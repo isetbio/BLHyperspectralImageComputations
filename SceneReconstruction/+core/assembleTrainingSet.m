@@ -1,4 +1,4 @@
-function assembleTrainingSet(sceneSetName, resultsDir, trainingDataPercentange, testingDataPercentage)
+function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, trainingDataPercentange, testingDataPercentage, preProcessingParams)
 
     totalTrainingScansNum = 0;
     totalTestingScansNum = 0;
@@ -157,11 +157,11 @@ function assembleTrainingSet(sceneSetName, resultsDir, trainingDataPercentange, 
         decoder.reformatStimulusSequence('ToDesignMatrixFormat', trainingOpticalImageLMScontrastSequence);
     
     % Compute training design matrix and stimulus vector
-    [Xtrain, Ctrain, oiCtrain] = decoder.computeDesignMatrixAndStimulusVector(trainingResponses, trainingStimulus, trainingStimulusOI, expParams.decoderParams);
+    [Xtrain, Ctrain, oiCtrain] = decoder.computeDesignMatrixAndStimulusVector(trainingResponses, trainingStimulus, trainingStimulusOI, expParams.decoderParams, preProcessingParams);
     
-    whos 'Xtrain'
-    whos 'Ctrain'
-                
+    s = whos('Xtrain');
+    fprintf('<strong>Size(Xtrain): %d x %d (%2.2f GBytes)</strong>\n', s.size(1), s.size(2), s.bytes/1024/1024/1024);
+    
     % Save cone types and spatiotemporal support
     spatioTemporalSupport = struct(...
        'sensorRetinalXaxis',  sensorRetinalXaxis, ...
@@ -169,17 +169,17 @@ function assembleTrainingSet(sceneSetName, resultsDir, trainingDataPercentange, 
        'sensorFOVxaxis', sensorFOVxaxis, ...                  % spatial support of decoded scene
        'sensorFOVyaxis', sensorFOVyaxis, ...
        'timeAxis',       expParams.decoderParams.latencyInMillseconds + (0:1:round(expParams.decoderParams.memoryInMilliseconds/expParams.decoderParams.temporalSamplingInMilliseconds)-1) * ...
-                           expParams.decoderParams.temporalSamplingInMilliseconds);
+                         expParams.decoderParams.temporalSamplingInMilliseconds);
                        
     % Save design matrices and stimulus vectors
-    decodingDataDir = core.getDecodingDataDir(resultsDir);
+    
     fileName = fullfile(decodingDataDir, sprintf('%s_trainingDesignMatrices.mat', sceneSetName));
-    fprintf('\nSaving training design matrix and stim vector ''%s''... ', fileName);
+    fprintf('Saving training design matrix and stim vector ''%s''... ', fileName);
     save(fileName, 'Xtrain', 'Ctrain', 'oiCtrain', 'trainingTimeAxis', ...
         'trainingSceneIndexSequence', 'trainingSensorPositionSequence', ...
         'trainingScanInsertionTimes', 'trainingSceneLMSbackground', ...
         'trainingOpticalImageLMSbackground', 'originalTrainingStimulusSize', ...
-        'expParams', 'coneTypes', 'spatioTemporalSupport', '-v7.3');
+        'expParams', 'preProcessingParams', 'coneTypes', 'spatioTemporalSupport', '-v7.3');
     fprintf('Done.\n');
     clear 'Xtrain'; clear 'Ctrain'; clear 'oiCtrain'
     
@@ -195,24 +195,22 @@ function assembleTrainingSet(sceneSetName, resultsDir, trainingDataPercentange, 
         decoder.reformatStimulusSequence('ToDesignMatrixFormat', testingOpticalImageLMScontrastSequence);
     
     % Compute testing design matrix and stimulus vector
-    [Xtest, Ctest, oiCtest] = decoder.computeDesignMatrixAndStimulusVector(testingResponses, testingStimulus, testingStimulusOI, expParams.decoderParams);
-    whos 'Xtest'
-    whos 'Ctest'
+    [Xtest, Ctest, oiCtest] = decoder.computeDesignMatrixAndStimulusVector(testingResponses, testingStimulus, testingStimulusOI, expParams.decoderParams, preProcessingParams);
     
     % Save design matrices and stimulus vectors
-    decodingDataDir = core.getDecodingDataDir(resultsDir);
     fileName = fullfile(decodingDataDir, sprintf('%s_testingDesignMatrices.mat', sceneSetName));
-    fprintf('\nSaving test design matrix and stim vector to ''%s''... ', fileName);
+    fprintf('Saving test design matrix and stim vector to ''%s''... ', fileName);
     save(fileName, 'Xtest', 'Ctest', 'oiCtest', 'testingTimeAxis', ...
         'testingSceneIndexSequence', 'testingSensorPositionSequence', ...
         'testingScanInsertionTimes',  'testingSceneLMSbackground', ...
         'testingOpticalImageLMSbackground', 'originalTestingStimulusSize', ...
-        'expParams', 'coneTypes', 'spatioTemporalSupport', '-v7.3');
+        'expParams', 'preProcessingParams', 'coneTypes', 'spatioTemporalSupport', '-v7.3');
     fprintf('Done.\n');
     clear 'Xtest'; clear 'Ctest'; clear 'oiCtest';
     
-    % Pre-processe design matrices
-    if (expParams.decoderParams.designMatrixPreProcessing > 0)
-        decoder.preProcessDesignMatrices(sceneSetName, resultsDir);
+    % Pre-process design matrices
+    if (preProcessingParams.designMatrixBased > 0)
+        decoder.preProcessDesignMatrices(sceneSetName, decodingDataDir);
     end
+    
 end
