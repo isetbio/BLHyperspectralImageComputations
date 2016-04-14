@@ -48,7 +48,7 @@ function RunExperiment
             
         case 'large'
             sceneSetName = 'harvard_manchester';  
-            scanSpatialOverlapFactor = 0.60; 
+            scanSpatialOverlapFactor = 0.50; 
             
         otherwise
             error('Unknown dataset:''%s''.', whichDataSet)
