@@ -5,7 +5,7 @@ function RunExperiment
     % Computation steps. Uncomment the ones you want to execute
     computationInstructionSet = {...
        %'lookAtScenes' ...
-       %'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
+       'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
        'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
        'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
        'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
@@ -25,7 +25,8 @@ function RunExperiment
     
     
     sceneSetName = 'harvard_manchester';
-    resultsDir = sprintf('%s/@osLinear', 'Overlap0.50_Fixation200ms_MicrofixationGain1_ResponsePreProcessing2');
+    overlap = 0.40;
+    resultsDir = sprintf('%s/@osLinear', sprintf('Overlap%2.2f_Fixation200ms_MicrofixationGain1_ResponsePreProcessing1', overlap));
     if (~ismember('compute outer segment responses', instructionSet))
         fprintf('<strong>Will use data from ''%s''. Hit enter to continue.</strong>\n', resultsDir);
         pause
@@ -46,7 +47,7 @@ function RunExperiment
                 core.lookAtScenes(sceneSetName);
 
             case 'compute outer segment responses'
-                expParams = experimentParams(sceneSetName);
+                expParams = experimentParams(sceneSetName, overlap);
                 core.computeOuterSegmentResponses(expParams);
 
             case 'visualizeScan'
@@ -84,7 +85,7 @@ function RunExperiment
 end
 
 
-function expParams = experimentParams(sceneSetName)
+function expParams = experimentParams(sceneSetName, overlap)
 
    decoderParams = struct(...
         'type', 'optimalLinearFilter', ...
@@ -106,7 +107,6 @@ function expParams = experimentParams(sceneSetName)
     integrationTimeInMilliseconds = 50;
     
     % sensor params for scene viewing
-    overlap = 0.40;
     sensorParams = struct(...
         'coneApertureInMicrons', 3.0, ...        
         'LMSdensities', [0.6 0.3 0.1], ...        
