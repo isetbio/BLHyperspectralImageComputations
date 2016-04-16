@@ -127,7 +127,7 @@ function [X, originalXRank, designMatrixPreprocessing] = preProcessDesignMatrix(
             if (preProcessingParams.designMatrixBased > 2)
                 tic
                 fprintf('\t2c. Whitening (X) [%d x %d]...',  timeSamples, filterDimensions);
-        
+                
                 % Compute whitening operator:
                 Sigma = 1/timeSamples * (X') * X;
                 [U, Gamma, V] = svd(Sigma, 'econ');

@@ -1,17 +1,39 @@
-function [X, C, Coi] = computeDesignMatrixAndStimulusVector(signals, stimulus, stimulusOI, decoderParams, preProcessingParams)
+function [X, C, Coi, rawResponsePreprocessing] = computeDesignMatrixAndStimulusVector(signals, stimulus, stimulusOI, decoderParams, preProcessingParams,rawResponsePreprocessing)
 
     conesNum  = size(signals,1);
     totalBins = size(signals,2);
     stimulusDimensions = size(stimulus,2);
     
-    if (preProcessingParams.rawResponseBased > 0)
-        fprintf('\nCentering raw responses (zero mean)...');
-        signals = bsxfun(@minus, signals, mean(signals,2));
-        if (preProcessingParams.rawResponseBased > 1)
-            fprintf('\nNormalizing raw responses (unity std.dev.)...');
-            signals = bsxfun(@times, signals, 1.0./(sqrt(mean(signals.^2,2))));
-            if (preProcessingParams.rawResponseBased > 2)
-                fprintf('\nWhitening NOT YET implemented for raw response - based\n');
+    if (~isempty(rawResponsePreprocessing))
+        if (preProcessingParams.rawResponseBased > 0)
+            fprintf('\nCentering raw responses (zero mean)...');
+            signals = bsxfun(@minus, signals, rawResponsePreprocessing.centering);
+            if (preProcessingParams.rawResponseBased > 1)
+                fprintf('\nNormalizing raw responses (unity std.dev.)...');
+                signals = bsxfun(@times, signals, rawResponsePreprocessing.scaling);
+                if (preProcessingParams.rawResponseBased > 2)
+                    fprintf('\nWhitenning raw responses ...');
+                    signals = signals * rawResponsePreprocessing.whiteningOperator;
+                end
+            end
+        end
+    else
+        if (preProcessingParams.rawResponseBased > 0)
+            fprintf('\nCentering raw responses (zero mean)...');
+            rawResponsePreprocessing.centering = mean(signals,2);
+            signals = bsxfun(@minus, signals, rawResponsePreprocessing.centering);
+            if (preProcessingParams.rawResponseBased > 1)
+                fprintf('\nNormalizing raw responses (unity std.dev.)...');
+                rawResponsePreprocessing.scaling = 1.0./(sqrt(mean(signals.^2,2)));
+                signals = bsxfun(@times, signals, rawResponsePreprocessing.scaling);
+                if (preProcessingParams.rawResponseBased > 2)
+                    fprintf('\nWhitenning raw responses ...');
+                    Sigma = 1/totalBins * (signals') * signals;
+                    [U, Gamma, V] = svd(Sigma, 'econ');
+                    rawResponsePreprocessing.whitening = U * (inv(sqrt(Gamma))) * V';
+                    % Whiten signals
+                    signals = signals * rawResponsePreprocessing.whitening;
+                end
             end
         end
     end
