@@ -1,6 +1,6 @@
 function computeDecodingFilter(sceneSetName, decodingDataDir, computeSVD)
 
-    fprintf('\n1. Loading design matrix (X) and stimulus vector ... ');
+    fprintf('\n1. Loading training design matrix (X) and stimulus vector ... ');
     tic
     fileName = fullfile(decodingDataDir, sprintf('%s_trainingDesignMatrices.mat', sceneSetName));
     load(fileName, 'Xtrain', 'Ctrain', 'oiCtrain', 'trainingTimeAxis', 'trainingSceneIndexSequence', 'trainingSensorPositionSequence','trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'trainingOpticalImageLMSbackground', 'originalTrainingStimulusSize', 'expParams', 'coneTypes', 'spatioTemporalSupport');

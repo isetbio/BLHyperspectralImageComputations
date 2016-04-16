@@ -5,7 +5,7 @@ function RunExperiment
     % Computation steps. Uncomment the ones you want to execute
     computationInstructionSet = {...
        %'lookAtScenes' ...
-       %'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
+       'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
        'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
        'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
        'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
@@ -22,16 +22,16 @@ function RunExperiment
   
     % Specify what to compute
     instructionSet = computationInstructionSet;  
-   % instructionSet = visualizationInstructionSet;
+    %instructionSet = visualizationInstructionSet;
     
     
     % Set data preprocessing params - This affects the name of the decodingDataDir
-    designMatrixBased = 2;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+    designMatrixBased = 3;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
     rawResponseBased = 0;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:not implemented
     preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased);
     
     % Specify the data set to use
-    whichDataSet = 'large';
+    whichDataSet = 'original';
     
     switch (whichDataSet)
         case 'very_small'

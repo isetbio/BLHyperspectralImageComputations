@@ -12,10 +12,10 @@ function preProcessDesignMatrices(sceneSetName, decodingDataDir)
     trainingSamples = size(Xtrain,1);
     filterDimensions = size(Xtrain,2);
     
-    fprintf('2. Proprocessing training matrix  [%d x %d]... ', trainingSamples, filterDimensions);
+    fprintf('2. Preprocessing training matrix  [%d x %d]...\n ', trainingSamples, filterDimensions);
     tic
     Xtrain = preProcessDesignMatrix(Xtrain, preProcessingParams);
-    fprintf('Done after %2.1f minutes.\n', toc/60);
+    fprintf('Done with pre-processing of training matrix after %2.1f minutes.\n', toc/60);
     
     fprintf('3. Saving training matrix  ... ');
     tic
@@ -30,10 +30,10 @@ function preProcessDesignMatrices(sceneSetName, decodingDataDir)
     fprintf('Done after %2.1f minutes.\n', toc/60);
     testingSamples = size(Xtest,1);
     
-    fprintf('2. Proprocessing test matrix  [%d x %d]... ', testingSamples, filterDimensions);
+    fprintf('2. Preprocessing test matrix  [%d x %d]... \n', testingSamples, filterDimensions);
     tic
     Xtest = preProcessDesignMatrix(Xtest, preProcessingParams);
-    fprintf('Done after %2.1f minutes.\n', toc/60);
+    fprintf('Done  with pre-processing of test matrix after %2.1f minutes.\n', toc/60);
     
     fprintf('3. Saving test matrix  ... ');
     tic
@@ -50,7 +50,7 @@ function X = preProcessDesignMatrix(X, preProcessingParams)
     
     if (preProcessingParams.designMatrixBased > 0)
         tic
-        fprintf('2a. Centering (X) [%d x %d]...',  timeSamples, filterDimensions);
+        fprintf('\t2a. Centering (X) [%d x %d]...',  timeSamples, filterDimensions);
         
         % Compute degree of whiteness of X
         varianceCovarianceMatrix = 1/timeSamples*(X')*X;
@@ -69,7 +69,7 @@ function X = preProcessDesignMatrix(X, preProcessingParams)
         
         if (preProcessingParams.designMatrixBased > 1)  
             tic
-            fprintf('2b. Normalizing (X) [%d x %d]...',  timeSamples, filterDimensions);
+            fprintf('\t2b. Normalizing (X) [%d x %d]...',  timeSamples, filterDimensions);
         
             % Compute normalizing operator: divide by stddev
             designMatrixPreprocessing.normalizingOperator = (1./(sqrt(1/timeSamples*((X.^2)')*oneColVector)))';
@@ -81,7 +81,7 @@ function X = preProcessDesignMatrix(X, preProcessingParams)
         
             if (preProcessingParams.designMatrixBased > 2)
                 tic
-                fprintf('2c. Whitening (X) [%d x %d]...',  timeSamples, filterDimensions);
+                fprintf('\t2c. Whitening (X) [%d x %d]...',  timeSamples, filterDimensions);
         
                 % Compute whitening operator:
                 Sigma = 1/timeSamples * (X') * X;
