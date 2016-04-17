@@ -1,21 +1,47 @@
-function renderPredictionsFigures(sceneSetName, decodingDataDir, InSampleOrOutOfSample)
+function renderPredictionsFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, InSampleOrOutOfSample)
 
     fprintf('\nLoading stimulus prediction data ...');
 
     if (strcmp(InSampleOrOutOfSample, 'InSample'))
         fileName = fullfile(decodingDataDir, sprintf('%s_inSamplePrediction.mat', sceneSetName));
         load(fileName,  'Ctrain', 'CtrainPrediction', 'trainingTimeAxis', 'trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'originalTrainingStimulusSize', 'expParams');
+        if (computeSVDbasedLowRankFiltersAndPredictions)
+            load(fileName, 'CtrainPredictionSVDbased', 'rankApproximations');
+        else
+            CtrainPredictionSVDbased = [];
+            rankApproximations = [];
+        end
         fprintf('Done.\n');
+        
         imageFileName = generateImageFileName(InSampleOrOutOfSample, decodingDataDir, expParams);
         figNo = 0;
         renderReconstructionPerformancePlots(figNo, imageFileName, Ctrain, CtrainPrediction,  originalTrainingStimulusSize, expParams);
+    
+        for kIndex = 1:numel(rankApproximations)
+            figNo = kIndex;
+            renderReconstructionPerformancePlots(figNo, imageFileName, Ctrain, squeeze(CtrainPredictionSVDbased(kIndex,:, :)),  originalTrainingStimulusSize, expParams);
+        end
+        
     elseif (strcmp(InSampleOrOutOfSample, 'OutOfSample'))
         fileName = fullfile(decodingDataDir, sprintf('%s_outOfSamplePrediction.mat', sceneSetName));
         load(fileName,  'Ctest', 'CtestPrediction', 'testingTimeAxis', 'testingScanInsertionTimes', 'testingSceneLMSbackground', 'originalTestingStimulusSize', 'expParams');
+        if (computeSVDbasedLowRankFiltersAndPredictions)
+            load(fileName, 'CtestPredictionSVDbased', 'rankApproximations');
+        else
+            CtestPredictionSVDbased = [];
+            rankApproximations = [];
+        end
         fprintf('Done.\n');
-        figNo = 1000;
+        
         imageFileName = generateImageFileName(InSampleOrOutOfSample, decodingDataDir, expParams);
+        figNo = 1000;
         renderReconstructionPerformancePlots(figNo, imageFileName, Ctest, CtestPrediction,  originalTestingStimulusSize, expParams);
+    
+        for kIndex = 1:numel(rankApproximations)
+            figNo = 1000+kIndex;
+            renderReconstructionPerformancePlots(figNo, imageFileName, Ctest, squeeze(CtestPredictionSVDbased(kIndex,:, :)),  originalTestingStimulusSize, expParams);
+        end
+        
     else
         error('Unknown mode: ''%s''.', InSampleOrOutOfSample);
     end
@@ -70,7 +96,7 @@ function renderReconstructionPerformancePlots(figNo, imageFileName, C, Creconstr
     
     for coneContrastIndex = 1:3
         
-        hFig = figure(figNo + coneContrastIndex); clf;
+        hFig = figure(figNo + 100*coneContrastIndex); clf;
         set(hFig, 'Position', [10 10 800 580], 'Color', [1 1 1]);
         
         for iRow = 1:numel(rowsToPlot)

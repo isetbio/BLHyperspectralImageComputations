@@ -13,24 +13,18 @@ function computeOutOfSamplePrediction(sceneSetName, decodingDataDir, computeSVDb
     if (computeSVDbasedFPredictions)
         load(fileName, 'wVectorSVDbased', 'rankApproximations');
     end
-    
     fprintf('Done\n');
     
     tic
     stimulusDimensions = size(Ctest,2);
     fprintf('3. Computing out-of-sample predictions [%d x %d]...',  size(Xtest,1), stimulusDimensions);
-    CtestPrediction = Ctest*0;
-    for stimDim = 1:stimulusDimensions
-        CtestPrediction(:, stimDim) = Xtest * wVector(:,stimDim);
-    end
-    
+    CtestPrediction = Xtest * wVector;    
+        
     if (computeSVDbasedFPredictions)
         CtestPredictionSVDbased = zeros(numel(rankApproximations), size(CtestPrediction,1), size(CtestPrediction,2));
         for kIndex = 1:numel(rankApproximations)
             w = squeeze(wVectorSVDbased(kIndex,:,:));
-            for stimDim = 1:stimulusDimensions
-                CtestPredictionSVDbased(kIndex,:, stimDim) = Xtest * w(:,stimDim);
-            end
+            CtestPredictionSVDbased(kIndex,:, :) = Xtest * w;
         end
     end
     fprintf('Done after %2.1f minutes.\n', toc/60);
@@ -44,5 +38,4 @@ function computeOutOfSamplePrediction(sceneSetName, decodingDataDir, computeSVDb
     end
     
     fprintf('Done after %2.1f minutes.\n', toc/60);
-     
 end

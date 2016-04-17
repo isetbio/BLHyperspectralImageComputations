@@ -156,9 +156,12 @@ function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, training
     [trainingStimulusOI, ~] = ...
         decoder.reformatStimulusSequence('ToDesignMatrixFormat', trainingOpticalImageLMScontrastSequence);
     
+    % Preprocess raw signals
+    rawTrainingResponsePreprocessing = [];
+    [trainingResponses, rawTrainingResponsePreprocessing] = decoder.preProcessRawResponses(trainingResponses, preProcessingParams, rawTrainingResponsePreprocessing);
+    
     % Compute training design matrix and stimulus vector
-    rawResponsePreprocessing = [];
-    [Xtrain, Ctrain, oiCtrain, rawResponsePreprocessing] = decoder.computeDesignMatrixAndStimulusVector(trainingResponses, trainingStimulus, trainingStimulusOI, expParams.decoderParams, preProcessingParams, rawResponsePreprocessing);
+    [Xtrain, Ctrain, oiCtrain] = decoder.computeDesignMatrixAndStimulusVector(trainingResponses, trainingStimulus, trainingStimulusOI, expParams.decoderParams;
     s = whos('Xtrain');
     fprintf('<strong>Size(Xtrain): %d x %d (%2.2f GBytes)</strong>\n', s.size(1), s.size(2), s.bytes/1024/1024/1024);
     
@@ -179,7 +182,7 @@ function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, training
         'trainingSceneIndexSequence', 'trainingSensorPositionSequence', ...
         'trainingScanInsertionTimes', 'trainingSceneLMSbackground', ...
         'trainingOpticalImageLMSbackground', 'originalTrainingStimulusSize', ...
-        'expParams', 'preProcessingParams', 'coneTypes', 'spatioTemporalSupport', '-v7.3');
+        'expParams', 'preProcessingParams', 'rawTrainingResponsePreprocessing', 'coneTypes', 'spatioTemporalSupport', '-v7.3');
     fprintf('Done.\n');
     clear 'Xtrain'; clear 'Ctrain'; clear 'oiCtrain'
     
@@ -194,8 +197,12 @@ function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, training
     [testingStimulusOI, ~] = ...
         decoder.reformatStimulusSequence('ToDesignMatrixFormat', testingOpticalImageLMScontrastSequence);
     
+    % Preprocess raw signals
+    rawTestResponsePreprocessing = rawTrainingResponsePreprocessing;
+    [testingResponses, rawTestResponsePreprocessing] = decoder.preProcessRawResponses(testingResponses, preProcessingParams, rawTestResponsePreprocessing);
+    
     % Compute testing design matrix and stimulus vector
-    [Xtest, Ctest, oiCtest, ~] = decoder.computeDesignMatrixAndStimulusVector(testingResponses, testingStimulus, testingStimulusOI, expParams.decoderParams, preProcessingParams, rawResponsePreprocessing);
+    [Xtest, Ctest, oiCtest] = decoder.computeDesignMatrixAndStimulusVector(testingResponses, testingStimulus, testingStimulusOI, expParams.decoderParams);
     s = whos('Xtest');
     fprintf('<strong>Size(Xtest): %d x %d (%2.2f GBytes)</strong>\n', s.size(1), s.size(2), s.bytes/1024/1024/1024);
     
@@ -206,7 +213,7 @@ function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, training
         'testingSceneIndexSequence', 'testingSensorPositionSequence', ...
         'testingScanInsertionTimes',  'testingSceneLMSbackground', ...
         'testingOpticalImageLMSbackground', 'originalTestingStimulusSize', ...
-        'expParams', 'preProcessingParams', 'coneTypes', 'spatioTemporalSupport', '-v7.3');
+        'expParams', 'preProcessingParams', 'rawTestResponsePreprocessing', 'coneTypes', 'spatioTemporalSupport', '-v7.3');
     fprintf('Done.\n');
     clear 'Xtest'; clear 'Ctest'; clear 'oiCtest';
     

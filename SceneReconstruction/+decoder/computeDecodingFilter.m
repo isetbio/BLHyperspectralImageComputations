@@ -3,7 +3,7 @@ function computeDecodingFilter(sceneSetName, decodingDataDir, computeSVDbasedFil
     fprintf('\n1. Loading training design matrix (X) and stimulus vector ... ');
     tic
     fileName = fullfile(decodingDataDir, sprintf('%s_trainingDesignMatrices.mat', sceneSetName));
-    load(fileName, 'Xtrain', 'Ctrain', 'oiCtrain', 'trainingTimeAxis', 'trainingSceneIndexSequence', 'trainingSensorPositionSequence','trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'trainingOpticalImageLMSbackground', 'originalTrainingStimulusSize', 'expParams', 'coneTypes', 'spatioTemporalSupport');
+    load(fileName, 'Xtrain', 'Ctrain', 'oiCtrain', 'trainingTimeAxis', 'trainingSceneIndexSequence', 'trainingSensorPositionSequence','trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'trainingOpticalImageLMSbackground', 'originalTrainingStimulusSize', 'expParams', 'preProcessingParams', 'rawTrainingResponsePreprocessing', 'coneTypes', 'spatioTemporalSupport');
     fprintf('Done after %2.1f minutes.\n', toc/60);
     
     
@@ -14,7 +14,7 @@ function computeDecodingFilter(sceneSetName, decodingDataDir, computeSVDbasedFil
     fprintf('2a. Computing rank(X) [%d x %d]... ',  timeSamples, filterDimensions);
     tic
     XtrainRank = rank(Xtrain);
-    fprintf('Done after %2.1f minutes.', toc/60);
+    fprintf('Done after %2.1f minutes. ', toc/60);
     fprintf('<strong>Rank (X) = %d</strong>\n', XtrainRank);
      
     fprintf('2b. Computing optimal linear decoding filter: pinv(X) [%d x %d] ... ', timeSamples, filterDimensions);
@@ -24,10 +24,7 @@ function computeDecodingFilter(sceneSetName, decodingDataDir, computeSVDbasedFil
     
     fprintf('2c. Computing optimal linear decoding filter: coefficients [%d x %d] ... ', filterDimensions, stimulusDimensions);
     tic
-    wVector = zeros(filterDimensions, stimulusDimensions);
-    for stimDim = 1:stimulusDimensions
-        wVector(:,stimDim) = pseudoInverseOfX * Ctrain(:,stimDim);
-    end
+    wVector = pseudoInverseOfX * Ctrain;
     fprintf('Done after %2.1f minutes.\n', toc/60);
     
     if (computeSVDbasedFilters)
@@ -40,7 +37,8 @@ function computeDecodingFilter(sceneSetName, decodingDataDir, computeSVDbasedFil
         wVectorSVDbased = zeros(numel(rankApproximations), filterDimensions, stimulusDimensions);
         for kIndex = 1:numel(rankApproximations)
             includedComponentsNum = rankApproximations(kIndex);
-            wVector = (Vtrain(:,1:includedComponentsNum)*inv(Strain(1:includedComponentsNum,1:includedComponentsNum))*(Utrain(:,1:includedComponentsNum))') * Ctrain;
+            lowRankSVDbasedPinvX = decoder.lowRankApproximationFromSVDcomponents(Vtrain, Strain, Utrain, includedComponentsNum);
+            wVector = lowRankSVDbasedPinvX * Ctrain;
             wVectorSVDbased(kIndex,:,:) = wVector;
         end
         fprintf('Done after %2.1f minutes.\n', toc/60);
@@ -48,18 +46,13 @@ function computeDecodingFilter(sceneSetName, decodingDataDir, computeSVDbasedFil
     
     fprintf('3. Computing in-sample predictions [%d x %d]...',  timeSamples, stimulusDimensions);
     tic
-    CtrainPrediction = Ctrain*0;
-    for stimDim = 1:stimulusDimensions
-        CtrainPrediction(:, stimDim) = Xtrain * wVector(:,stimDim);
-    end
-    
+    CtrainPrediction = Xtrain * wVector;
+
     if (computeSVDbasedFilters)
         CtrainPredictionSVDbased = zeros(numel(rankApproximations), size(CtrainPrediction,1), size(CtrainPrediction,2));
         for kIndex = 1:numel(rankApproximations)
             w = squeeze(wVectorSVDbased(kIndex,:,:));
-            for stimDim = 1:stimulusDimensions
-                CtrainPredictionSVDbased(kIndex,:, stimDim) = Xtrain * w(:,stimDim);
-            end
+            CtrainPredictionSVDbased(kIndex,:, :) = Xtrain * w;
         end
     end
     

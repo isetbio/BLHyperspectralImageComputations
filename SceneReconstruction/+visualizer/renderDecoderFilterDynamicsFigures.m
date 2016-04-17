@@ -16,9 +16,7 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir, compu
         pause
         wVectorSVD = squeeze(wVectorSVDbased(kIndex,:,:));
         generateAllFigures(decodingDataDir, wVectorSVD, spatioTemporalSupport, coneTypes, expParams)
-    end
-     
-     
+    end  
 end
 
 function generateAllFigures(decodingDataDir, wVector, spatioTemporalSupport, coneTypes, expParams)

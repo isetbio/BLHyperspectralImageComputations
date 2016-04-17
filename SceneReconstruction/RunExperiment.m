@@ -5,7 +5,7 @@ function RunExperiment
     % Computation steps. Uncomment the ones you want to execute
     computationInstructionSet = {...
        %'lookAtScenes' ...
-       %'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
+       'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
        'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
        'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
        'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
@@ -13,9 +13,9 @@ function RunExperiment
     
     visualizationInstructionSet = {...
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
-       'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
-      % 'visualizeInSamplePrediction' ...            % visualize the decoder's in-sample deperformance
-      % 'visualizeOutOfSamplePrediction' ...         % visualize the decoder's out-of-sample deperformance
+       %'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
+       'visualizeInSamplePrediction' ...            % visualize the decoder's in-sample deperformance
+       'visualizeOutOfSamplePrediction' ...         % visualize the decoder's out-of-sample deperformance
        % 'makeReconstructionVideo' ...              % generate video of the reconstruction
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
     };
@@ -31,28 +31,31 @@ function RunExperiment
     preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased);
     
     computeSVDbasedLowRankFiltersAndPredictions = true;
-    lowRankApproximations = [10 30 60 100 300 600 1000];
-    
+    lowRankApproximations = [100 200 400 800 1600 3200 6400 12800];
     
     % Specify the data set to use
-    whichDataSet = 'original';
+    whichDataSet = 'very_small';
     
     switch (whichDataSet)
         case 'very_small'
             sceneSetName = 'manchester';  
             scanSpatialOverlapFactor = 0.40; 
-       
+            fixationsPerScan = 10;
+            
         case 'small'
             sceneSetName = 'manchester';  
             scanSpatialOverlapFactor = 0.50;  
+            fixationsPerScan = 10;
             
         case 'original'
             sceneSetName = 'manchester';  
-            scanSpatialOverlapFactor = 1.0; 
+            scanSpatialOverlapFactor = 0.8; 
+            fixationsPerScan = 20;
             
         case 'large'
             sceneSetName = 'harvard_manchester';  
             scanSpatialOverlapFactor = 0.50; 
+            fixationsPerScan = 20;
             
         otherwise
             error('Unknown dataset:''%s''.', whichDataSet)
@@ -77,7 +80,7 @@ function RunExperiment
                 core.lookAtScenes(sceneSetName);
 
             case 'compute outer segment responses'
-                expParams = experimentParams(sceneSetName, scanSpatialOverlapFactor);
+                expParams = experimentParams(sceneSetName, scanSpatialOverlapFactor, fixationsPerScan);
                 core.computeOuterSegmentResponses(expParams);
                 
                 % Set the sceneSetName, resultsDir, decodingDataDir according to the params set by experimentParams()
@@ -104,10 +107,10 @@ function RunExperiment
                 visualizer.renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions);
 
             case 'visualizeInSamplePrediction'
-                visualizer.renderPredictionsFigures(sceneSetName, decodingDataDir, 'InSample');
+                visualizer.renderPredictionsFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, 'InSample');
 
             case 'visualizeOutOfSamplePrediction'
-                visualizer.renderPredictionsFigures(sceneSetName, decodingDataDir, 'OutOfSample');
+                visualizer.renderPredictionsFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, 'OutOfSample');
 
             case 'makeReconstructionVideo'
                 visualizer.renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir);
@@ -122,7 +125,7 @@ function RunExperiment
 end
 
 
-function expParams = experimentParams(sceneSetName, scanSpatialOverlapFactor)
+function expParams = experimentParams(sceneSetName, scanSpatialOverlapFactor, fixationsPerScan)
 
    decoderParams = struct(...
         'type', 'optimalLinearFilter', ...
@@ -173,7 +176,7 @@ function expParams = experimentParams(sceneSetName, scanSpatialOverlapFactor)
     );
     
     viewModeParams = struct(...
-        'fixationsPerScan', 10, ...                                              % each scan file will contains this many fixations
+        'fixationsPerScan', fixationsPerScan, ...                                              % each scan file will contains this many fixations
         'consecutiveSceneFixationsBetweenAdaptingFieldPresentation', 50, ...     % use 1 to insert adapting field data after each scene fixation 
         'adaptingFieldParams', adaptingFieldParams, ...
         'forcedSceneMeanLuminance', 300 ...
