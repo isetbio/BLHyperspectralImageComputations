@@ -161,7 +161,7 @@ function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, training
     [trainingResponses, rawTrainingResponsePreprocessing] = decoder.preProcessRawResponses(trainingResponses, preProcessingParams, rawTrainingResponsePreprocessing);
     
     % Compute training design matrix and stimulus vector
-    [Xtrain, Ctrain, oiCtrain] = decoder.computeDesignMatrixAndStimulusVector(trainingResponses, trainingStimulus, trainingStimulusOI, expParams.decoderParams;
+    [Xtrain, Ctrain, oiCtrain] = decoder.computeDesignMatrixAndStimulusVector(trainingResponses, trainingStimulus, trainingStimulusOI, expParams.decoderParams);
     s = whos('Xtrain');
     fprintf('<strong>Size(Xtrain): %d x %d (%2.2f GBytes)</strong>\n', s.size(1), s.size(2), s.bytes/1024/1024/1024);
     
