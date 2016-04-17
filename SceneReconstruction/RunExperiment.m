@@ -14,21 +14,25 @@ function RunExperiment
     visualizationInstructionSet = {...
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
        'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
-       'visualizeInSamplePrediction' ...            % visualize the decoder's in-sample deperformance
-       'visualizeOutOfSamplePrediction' ...         % visualize the decoder's out-of-sample deperformance
+      % 'visualizeInSamplePrediction' ...            % visualize the decoder's in-sample deperformance
+      % 'visualizeOutOfSamplePrediction' ...         % visualize the decoder's out-of-sample deperformance
        % 'makeReconstructionVideo' ...              % generate video of the reconstruction
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
     };
   
     % Specify what to compute
     instructionSet = computationInstructionSet;  
-    instructionSet = visualizationInstructionSet;
+    %instructionSet = visualizationInstructionSet;
     
     
     % Set data preprocessing params - This affects the name of the decodingDataDir
     designMatrixBased = 0;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
-    rawResponseBased = 2;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:not implemented
+    rawResponseBased = 3;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
     preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased);
+    
+    computeSVDbasedLowRankFiltersAndPredictions = true;
+    lowRankApproximations = [10 30 60 100 300 600 1000];
+    
     
     % Specify the data set to use
     whichDataSet = 'original';
@@ -91,14 +95,13 @@ function RunExperiment
                 core.assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, trainingDataPercentange, testingDataPercentage, preProcessingParams);
 
             case 'computeDecodingFilter'
-                computeSVD = true;
-                decoder.computeDecodingFilter(sceneSetName, decodingDataDir, computeSVD);
+                decoder.computeDecodingFilter(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, lowRankApproximations);
 
             case 'computeOutOfSamplePrediction'
-                decoder.computeOutOfSamplePrediction(sceneSetName, decodingDataDir);
+                decoder.computeOutOfSamplePrediction(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions);
 
             case 'visualizeDecodingFilter'
-                visualizer.renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir);
+                visualizer.renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions);
 
             case 'visualizeInSamplePrediction'
                 visualizer.renderPredictionsFigures(sceneSetName, decodingDataDir, 'InSample');

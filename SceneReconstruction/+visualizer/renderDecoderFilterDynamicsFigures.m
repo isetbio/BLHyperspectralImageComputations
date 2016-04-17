@@ -1,10 +1,28 @@
-function renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir)
+function renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions)
  
     fprintf('\nLoading decoder filter ...');
     fileName = fullfile(decodingDataDir, sprintf('%s_decodingFilter.mat', sceneSetName));
-    load(fileName, 'wVector', 'spatioTemporalSupport', 'coneTypes', 'expParams');
+    load(fileName, 'wVector',  'spatioTemporalSupport', 'coneTypes', 'expParams');
     fprintf('Done.\n');
 
+    if (computeSVDbasedLowRankFiltersAndPredictions)
+        load(fileName, 'wVectorSVDbased', 'rankApproximations');%, 'Utrain', 'Strain', 'Vtrain');
+    end
+    
+    generateAllFigures(decodingDataDir, wVector, spatioTemporalSupport, coneTypes, expParams)
+
+    for kIndex = 1:numel(rankApproximations)
+        fprintf('Hit enter to see the rank %d filter\n', rankApproximations(kIndex));
+        pause
+        wVectorSVD = squeeze(wVectorSVDbased(kIndex,:,:));
+        generateAllFigures(decodingDataDir, wVectorSVD, spatioTemporalSupport, coneTypes, expParams)
+    end
+     
+     
+end
+
+function generateAllFigures(decodingDataDir, wVector, spatioTemporalSupport, coneTypes, expParams)
+    
     dcTerm = 1;
     % Normalize wVector for plotting in [-1 1]
     wVector = wVector / max(max(abs(wVector(dcTerm+1:size(wVector,1),:))));
@@ -93,7 +111,7 @@ function generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTempo
         
         % determine coords of peak response
         spatioTemporalFilter = squeeze(stimDecoder(stimConeContrastIndex, stimulusLocation.y, stimulusLocation.x, :,:,:));
-        indicesForPeakResponseEstimation = find(abs(spatioTemporalSupport.timeAxis) < 100);
+        indicesForPeakResponseEstimation = find(abs(spatioTemporalSupport.timeAxis) < 30);
         tmp = squeeze(spatioTemporalFilter(:,:,indicesForPeakResponseEstimation));
         [~, idx] = max(abs(tmp(:)));
         [peakConeRow, peakConeCol, idx] = ind2sub(size(tmp), idx);
@@ -266,7 +284,7 @@ function generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioT
         
         % determine coords of peak response
         spatioTemporalFilter = squeeze(stimDecoder(stimConeContrastIndex, stimulusLocation.y, stimulusLocation.x, :,:,:));
-        indicesForPeakResponseEstimation = find(abs(spatioTemporalSupport.timeAxis) < 100);
+        indicesForPeakResponseEstimation = find(abs(spatioTemporalSupport.timeAxis) < 30);
         tmp = squeeze(spatioTemporalFilter(:,:,indicesForPeakResponseEstimation));
         [~, idx] = max(abs(tmp(:)));
         [peakConeRow, peakConeCol, idx] = ind2sub(size(tmp), idx);
@@ -367,7 +385,7 @@ function generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTe
             spatioTemporalFilter = squeeze(stimDecoder(stimConeContrastIndex, ySpatialBin, xSpatialBin, :,:,:));
             
             % determine coords of peak response
-            indicesForPeakResponseEstimation = find(abs(spatioTemporalSupport.timeAxis) < 100);
+            indicesForPeakResponseEstimation = find(abs(spatioTemporalSupport.timeAxis) < 30);
             tmp = squeeze(spatioTemporalFilter(:,:,indicesForPeakResponseEstimation));
             [~, idx] = max(abs(tmp(:)));
             [peakConeRow, peakConeCol, idx] = ind2sub(size(tmp), idx);

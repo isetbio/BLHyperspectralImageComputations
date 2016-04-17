@@ -13,7 +13,9 @@ function [X, C, Coi, rawResponsePreprocessing] = computeDesignMatrixAndStimulusV
                 signals = bsxfun(@times, signals, rawResponsePreprocessing.scaling);
                 if (preProcessingParams.rawResponseBased > 2)
                     fprintf('\nWhitenning raw responses ...');
-                    signals = signals * rawResponsePreprocessing.whiteningOperator;
+                    signals = signals';
+                    signals = signals * rawResponsePreprocessing.whitening;
+                    signals = signals';
                 end
             end
         end
@@ -28,11 +30,10 @@ function [X, C, Coi, rawResponsePreprocessing] = computeDesignMatrixAndStimulusV
                 signals = bsxfun(@times, signals, rawResponsePreprocessing.scaling);
                 if (preProcessingParams.rawResponseBased > 2)
                     fprintf('\nWhitenning raw responses ...');
-                    Sigma = 1/totalBins * (signals') * signals;
-                    [U, Gamma, V] = svd(Sigma, 'econ');
-                    rawResponsePreprocessing.whitening = U * (inv(sqrt(Gamma))) * V';
+                    % Compute whitening operator
+                    rawResponsePreprocessing.whitening = decoder.computeWhiteningMatrix(signals');
                     % Whiten signals
-                    signals = signals * rawResponsePreprocessing.whitening;
+                    signals = ((signals')* rawResponsePreprocessing.whitening)';
                 end
             end
         end

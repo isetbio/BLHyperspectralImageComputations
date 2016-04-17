@@ -128,11 +128,8 @@ function [X, originalXRank, designMatrixPreprocessing] = preProcessDesignMatrix(
                 tic
                 fprintf('\t2c. Whitening (X) [%d x %d]...',  timeSamples, filterDimensions);
                 
-                % Compute whitening operator:
-                Sigma = 1/timeSamples * (X') * X;
-                [U, Gamma, V] = svd(Sigma, 'econ');
-                designMatrixPreprocessing.whiteningOperator = U * (inv(sqrt(Gamma))) * V';
-
+                % Compute whitening operator
+                designMatrixPreprocessing.whiteningOperator = decoder.computeWhiteningMatrix(X);
                 % Whiten X
                 X = X * designMatrixPreprocessing.whiteningOperator;
                 X(:,1) = 1;
