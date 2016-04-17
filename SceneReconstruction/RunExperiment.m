@@ -34,7 +34,7 @@ function RunExperiment
     lowRankApproximations = [100 200 400 800 1600 3200 6400 12800];
     
     % Specify the data set to use
-    whichDataSet = 'very_small';
+    whichDataSet = 'original'; % very_small';
     
     switch (whichDataSet)
         case 'very_small'
