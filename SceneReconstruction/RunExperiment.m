@@ -5,7 +5,7 @@ function RunExperiment
     % Computation steps. Uncomment the ones you want to execute
     computationInstructionSet = {...
        %'lookAtScenes' ...
-       'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
+       %'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
        'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
        'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
        'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
@@ -28,28 +28,29 @@ function RunExperiment
     % Set data preprocessing params - This affects the name of the decodingDataDir
     designMatrixBased = 0;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
     rawResponseBased = 3;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
-    preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased);
+    thresholdVarianceExplainedForWhiteningMatrix = 95.0;  % 95% results in nearly equal in-sample and out-of-sample performance in the  'small' data set (linearOS)
+    preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased, thresholdVarianceExplainedForWhiteningMatrix);
     
     computeSVDbasedLowRankFiltersAndPredictions = true;
-    lowRankApproximations = [100 200 400 800 1600 3200 6400 12800];
+    SVDbasedLowRankFilterVariancesExplained = [80 85 90 92 94 96 97 98 99];
     
     % Specify the data set to use
-    whichDataSet = 'original'; % very_small';
+    whichDataSet =  'original';
     
     switch (whichDataSet)
         case 'very_small'
             sceneSetName = 'manchester';  
-            scanSpatialOverlapFactor = 0.40; 
+            scanSpatialOverlapFactor = 0.4; 
             fixationsPerScan = 10;
             
         case 'small'
             sceneSetName = 'manchester';  
-            scanSpatialOverlapFactor = 0.50;  
-            fixationsPerScan = 10;
+            scanSpatialOverlapFactor = 0.60;  
+            fixationsPerScan = 20;
             
         case 'original'
             sceneSetName = 'manchester';  
-            scanSpatialOverlapFactor = 0.8; 
+            scanSpatialOverlapFactor = 0.85; 
             fixationsPerScan = 20;
             
         case 'large'
@@ -98,7 +99,7 @@ function RunExperiment
                 core.assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, trainingDataPercentange, testingDataPercentage, preProcessingParams);
 
             case 'computeDecodingFilter'
-                decoder.computeDecodingFilter(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, lowRankApproximations);
+                decoder.computeDecodingFilter(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, SVDbasedLowRankFilterVariancesExplained);
 
             case 'computeOutOfSamplePrediction'
                 decoder.computeOutOfSamplePrediction(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions);
@@ -196,10 +197,11 @@ function expParams = experimentParams(sceneSetName, scanSpatialOverlapFactor, fi
     );
 end
 
-function preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased)
+function preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased, thresholdVarianceExplainedForWhiteningMatrix)
     preProcessingParams = struct(...
-        'designMatrixBased', designMatrixBased, ...                                 % 0: nothing, 1:centering, 2:centering+norm, 3:centering+norm+whitening
-        'rawResponseBased', rawResponseBased ...                                    % 0: nothing, 1:centering, 2:centering+norm,
+        'designMatrixBased', designMatrixBased, ...                                  % 0: nothing, 1:centering, 2:centering+norm, 3:centering+norm+whitening
+        'rawResponseBased', rawResponseBased, ...                                    % 0: nothing, 1:centering, 2:centering+norm,
+        'thresholdVarianceExplainedForWhiteningMatrix', thresholdVarianceExplainedForWhiteningMatrix ...
     );
     
     if ((preProcessingParams.designMatrixBased > 0) && (preProcessingParams.rawResponseBased > 0))

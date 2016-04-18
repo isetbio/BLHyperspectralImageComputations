@@ -11,7 +11,7 @@ function computeOutOfSamplePrediction(sceneSetName, decodingDataDir, computeSVDb
     fileName = fullfile(decodingDataDir, sprintf('%s_decodingFilter.mat', sceneSetName));
     load(fileName, 'wVector', 'spatioTemporalSupport');
     if (computeSVDbasedFPredictions)
-        load(fileName, 'wVectorSVDbased', 'rankApproximations');
+        load(fileName, 'wVectorSVDbased', 'SVDbasedLowRankFilterVariancesExplained');
     end
     fprintf('Done\n');
     
@@ -21,8 +21,8 @@ function computeOutOfSamplePrediction(sceneSetName, decodingDataDir, computeSVDb
     CtestPrediction = Xtest * wVector;    
         
     if (computeSVDbasedFPredictions)
-        CtestPredictionSVDbased = zeros(numel(rankApproximations), size(CtestPrediction,1), size(CtestPrediction,2));
-        for kIndex = 1:numel(rankApproximations)
+        CtestPredictionSVDbased = zeros(numel(SVDbasedLowRankFilterVariancesExplained), size(CtestPrediction,1), size(CtestPrediction,2));
+        for kIndex = 1:numel(SVDbasedLowRankFilterVariancesExplained)
             w = squeeze(wVectorSVDbased(kIndex,:,:));
             CtestPredictionSVDbased(kIndex,:, :) = Xtest * w;
         end
@@ -34,7 +34,7 @@ function computeOutOfSamplePrediction(sceneSetName, decodingDataDir, computeSVDb
     save(fileName,  'Ctest', 'CtestPrediction', 'oiCtest', 'testingTimeAxis', 'testingSceneIndexSequence', 'testingSensorPositionSequence', 'testingScanInsertionTimes', 'testingSceneLMSbackground', 'testingOpticalImageLMSbackground', 'originalTestingStimulusSize', 'expParams', '-v7.3');
     
     if (computeSVDbasedFPredictions)
-        save(fileName, 'CtestPredictionSVDbased', 'rankApproximations', '-append');
+        save(fileName, 'CtestPredictionSVDbased', 'SVDbasedLowRankFilterVariancesExplained', '-append');
     end
     
     fprintf('Done after %2.1f minutes.\n', toc/60);

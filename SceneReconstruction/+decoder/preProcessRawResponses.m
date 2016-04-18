@@ -32,7 +32,7 @@ function [signals, rawResponsePreprocessing] = preProcessRawResponses(signals, p
                 if (preProcessingParams.rawResponseBased > 2)
                     fprintf('\nWhitenning raw responses ...');
                     % Compute whitening operator
-                    rawResponsePreprocessing.whitening = decoder.computeWhiteningMatrix(signals');
+                    rawResponsePreprocessing.whitening = decoder.computeWhiteningMatrix(signals', preProcessingParams.thresholdVarianceExplainedForWhiteningMatrix);
                     % Whiten signals
                     signals = ((signals')* rawResponsePreprocessing.whitening)';
                 end

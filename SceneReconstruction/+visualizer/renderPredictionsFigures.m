@@ -6,40 +6,48 @@ function renderPredictionsFigures(sceneSetName, decodingDataDir, computeSVDbased
         fileName = fullfile(decodingDataDir, sprintf('%s_inSamplePrediction.mat', sceneSetName));
         load(fileName,  'Ctrain', 'CtrainPrediction', 'trainingTimeAxis', 'trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'originalTrainingStimulusSize', 'expParams');
         if (computeSVDbasedLowRankFiltersAndPredictions)
-            load(fileName, 'CtrainPredictionSVDbased', 'rankApproximations');
+            load(fileName, 'CtrainPredictionSVDbased', 'SVDbasedLowRankFilterVariancesExplained');
         else
             CtrainPredictionSVDbased = [];
-            rankApproximations = [];
+            SVDbasedLowRankFilterVariancesExplained = [];
         end
         fprintf('Done.\n');
         
         imageFileName = generateImageFileName(InSampleOrOutOfSample, decodingDataDir, expParams);
         figNo = 0;
-        renderReconstructionPerformancePlots(figNo, imageFileName, Ctrain, CtrainPrediction,  originalTrainingStimulusSize, expParams);
+        componentString = 'Full';
+        renderReconstructionPerformancePlots(figNo, imageFileName, componentString, Ctrain, CtrainPrediction,  originalTrainingStimulusSize, expParams);
     
-        for kIndex = 1:numel(rankApproximations)
+        for kIndex = 1:numel(SVDbasedLowRankFilterVariancesExplained)
+            fprintf('Hit enter to see in-sample performance of the filter accounting for %2.2f%% of the variance.\n', SVDbasedLowRankFilterVariancesExplained(kIndex));
+            pause
             figNo = kIndex;
-            renderReconstructionPerformancePlots(figNo, imageFileName, Ctrain, squeeze(CtrainPredictionSVDbased(kIndex,:, :)),  originalTrainingStimulusSize, expParams);
+            componentString = sprintf('SVD_%2.3f', SVDbasedLowRankFilterVariancesExplained(kIndex));
+            renderReconstructionPerformancePlots(figNo, imageFileName, componentString, Ctrain, squeeze(CtrainPredictionSVDbased(kIndex,:, :)),  originalTrainingStimulusSize, expParams);
         end
         
     elseif (strcmp(InSampleOrOutOfSample, 'OutOfSample'))
         fileName = fullfile(decodingDataDir, sprintf('%s_outOfSamplePrediction.mat', sceneSetName));
         load(fileName,  'Ctest', 'CtestPrediction', 'testingTimeAxis', 'testingScanInsertionTimes', 'testingSceneLMSbackground', 'originalTestingStimulusSize', 'expParams');
         if (computeSVDbasedLowRankFiltersAndPredictions)
-            load(fileName, 'CtestPredictionSVDbased', 'rankApproximations');
+            load(fileName, 'CtestPredictionSVDbased', 'SVDbasedLowRankFilterVariancesExplained');
         else
             CtestPredictionSVDbased = [];
-            rankApproximations = [];
+            SVDbasedLowRankFilterVariancesExplained = [];
         end
         fprintf('Done.\n');
         
         imageFileName = generateImageFileName(InSampleOrOutOfSample, decodingDataDir, expParams);
         figNo = 1000;
-        renderReconstructionPerformancePlots(figNo, imageFileName, Ctest, CtestPrediction,  originalTestingStimulusSize, expParams);
+        componentString = 'Full';
+        renderReconstructionPerformancePlots(figNo, imageFileName, componentString, Ctest, CtestPrediction,  originalTestingStimulusSize, expParams);
     
-        for kIndex = 1:numel(rankApproximations)
+        for kIndex = 1:numel(SVDbasedLowRankFilterVariancesExplained)
+            fprintf('Hit enter to see the out-of-sample performance of the filter accounting for %2.2f%% of the variance.\n', SVDbasedLowRankFilterVariancesExplained(kIndex));
+            pause
             figNo = 1000+kIndex;
-            renderReconstructionPerformancePlots(figNo, imageFileName, Ctest, squeeze(CtestPredictionSVDbased(kIndex,:, :)),  originalTestingStimulusSize, expParams);
+            componentString = sprintf('SVD_%2.3f', SVDbasedLowRankFilterVariancesExplained(kIndex));
+            renderReconstructionPerformancePlots(figNo, imageFileName, componentString, Ctest, squeeze(CtestPredictionSVDbased(kIndex,:, :)),  originalTestingStimulusSize, expParams);
         end
         
     else
@@ -47,7 +55,7 @@ function renderPredictionsFigures(sceneSetName, decodingDataDir, computeSVDbased
     end
 end
 
-function renderReconstructionPerformancePlots(figNo, imageFileName, C, Creconstruction, originalStimulusSize, expParams)
+function renderReconstructionPerformancePlots(figNo, imageFileName, componentString, C, Creconstruction, originalStimulusSize, expParams)
     
     LMScontrastSequenceReconstruction  = ...
         decoder.reformatStimulusSequence('FromDesignMatrixFormat', ...
@@ -121,7 +129,7 @@ function renderReconstructionPerformancePlots(figNo, imageFileName, C, Creconstr
         drawnow
         end
         
-        NicePlot.exportFigToPNG(sprintf('%s%s.png', imageFileName, coneString{coneContrastIndex}), hFig, 300);
+        NicePlot.exportFigToPNG(sprintf('%s%s%s.png', imageFileName, componentString, coneString{coneContrastIndex}), hFig, 300);
     end
 end
 

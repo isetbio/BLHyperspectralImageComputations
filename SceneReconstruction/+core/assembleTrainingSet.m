@@ -198,7 +198,7 @@ function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, training
         decoder.reformatStimulusSequence('ToDesignMatrixFormat', testingOpticalImageLMScontrastSequence);
     
     % Preprocess raw signals
-    rawTestResponsePreprocessing = rawTrainingResponsePreprocessing;
+    rawTestResponsePreprocessing = []; % rawTrainingResponsePreprocessing;
     [testingResponses, rawTestResponsePreprocessing] = decoder.preProcessRawResponses(testingResponses, preProcessingParams, rawTestResponsePreprocessing);
     
     % Compute testing design matrix and stimulus vector

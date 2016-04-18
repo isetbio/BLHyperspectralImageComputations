@@ -5,11 +5,11 @@ function testPreprocessing
     
     Xtrain = 5 + randn(samples,1+dims);
     Xtrain(:,1) = 1;
-    Xtrain(:,2) = Xtrain(:,3)*2.8 + Xtrain(:,2)*0.85
+    Xtrain(:,2) = Xtrain(:,3)*2.8 + Xtrain(:,2)*0.85;
     
     Xtest = 5 + randn(samples*0.8,1+dims);
     Xtest(:,1) = 1;
-    Xtest(:,2) = Xtest(:,3)*2.8 + Xtest(:,2)*0.85
+    Xtest(:,2) = Xtest(:,3)*2.8 + Xtest(:,2)*0.85;
     
     
     maxAll = max([max(abs(squeeze(Xtrain(:,2)))) max(abs(squeeze(Xtrain(:,3))))]);
@@ -149,4 +149,12 @@ function testPreprocessing
     title('whitened (based on Xtrain)');
     
     
+end
+
+
+function [X] = whiten(X,fudgefactor)
+    X = bsxfun(@minus, X, mean(X));
+    A = X'*X;
+    [V,D] = eig(A);
+    X = X*V*diag(1./(diag(D)+fudgefactor).^(1/2))*V';
 end
