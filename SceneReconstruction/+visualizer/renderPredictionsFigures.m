@@ -13,17 +13,16 @@ function renderPredictionsFigures(sceneSetName, decodingDataDir, computeSVDbased
         end
         fprintf('Done.\n');
         
-        imageFileName = generateImageFileName(InSampleOrOutOfSample, decodingDataDir, expParams);
+        componentString = 'PINVbased';
+        imageFileName = generateImageFileName(InSampleOrOutOfSample, componentString, decodingDataDir, expParams);
         figNo = 0;
-        componentString = 'Full';
-        renderReconstructionPerformancePlots(figNo, imageFileName, componentString, Ctrain, CtrainPrediction,  originalTrainingStimulusSize, expParams);
+        renderReconstructionPerformancePlots(figNo, imageFileName, Ctrain, CtrainPrediction,  originalTrainingStimulusSize, expParams);
     
         for kIndex = 1:numel(SVDbasedLowRankFilterVariancesExplained)
-            fprintf('Hit enter to see in-sample performance of the filter accounting for %2.2f%% of the variance.\n', SVDbasedLowRankFilterVariancesExplained(kIndex));
-            pause
             figNo = kIndex;
-            componentString = sprintf('SVD_%2.3f', SVDbasedLowRankFilterVariancesExplained(kIndex));
-            renderReconstructionPerformancePlots(figNo, imageFileName, componentString, Ctrain, squeeze(CtrainPredictionSVDbased(kIndex,:, :)),  originalTrainingStimulusSize, expParams);
+            componentString = sprintf('SVD_%2.3f%%VarianceExplained', SVDbasedLowRankFilterVariancesExplained(kIndex));
+            imageFileName = generateImageFileName(InSampleOrOutOfSample, componentString, decodingDataDir, expParams);
+            renderReconstructionPerformancePlots(figNo, imageFileName, Ctrain, squeeze(CtrainPredictionSVDbased(kIndex,:, :)),  originalTrainingStimulusSize, expParams);
         end
         
     elseif (strcmp(InSampleOrOutOfSample, 'OutOfSample'))
@@ -37,17 +36,18 @@ function renderPredictionsFigures(sceneSetName, decodingDataDir, computeSVDbased
         end
         fprintf('Done.\n');
         
-        imageFileName = generateImageFileName(InSampleOrOutOfSample, decodingDataDir, expParams);
+        componentString = 'PINVbased';
+        imageFileName = generateImageFileName(InSampleOrOutOfSample, componentString, decodingDataDir, expParams);
         figNo = 1000;
-        componentString = 'Full';
-        renderReconstructionPerformancePlots(figNo, imageFileName, componentString, Ctest, CtestPrediction,  originalTestingStimulusSize, expParams);
+        renderReconstructionPerformancePlots(figNo, imageFileName, Ctest, CtestPrediction,  originalTestingStimulusSize, expParams);
     
         for kIndex = 1:numel(SVDbasedLowRankFilterVariancesExplained)
             fprintf('Hit enter to see the out-of-sample performance of the filter accounting for %2.2f%% of the variance.\n', SVDbasedLowRankFilterVariancesExplained(kIndex));
             pause
             figNo = 1000+kIndex;
-            componentString = sprintf('SVD_%2.3f', SVDbasedLowRankFilterVariancesExplained(kIndex));
-            renderReconstructionPerformancePlots(figNo, imageFileName, componentString, Ctest, squeeze(CtestPredictionSVDbased(kIndex,:, :)),  originalTestingStimulusSize, expParams);
+            componentString = sprintf('SVD_%2.3f%%VarianceExplained', SVDbasedLowRankFilterVariancesExplained(kIndex));
+            imageFileName = generateImageFileName(InSampleOrOutOfSample, componentString, decodingDataDir, expParams);
+            renderReconstructionPerformancePlots(figNo, imageFileName, Ctest, squeeze(CtestPredictionSVDbased(kIndex,:, :)),  originalTestingStimulusSize, expParams);
         end
         
     else
@@ -55,7 +55,7 @@ function renderPredictionsFigures(sceneSetName, decodingDataDir, computeSVDbased
     end
 end
 
-function renderReconstructionPerformancePlots(figNo, imageFileName, componentString, C, Creconstruction, originalStimulusSize, expParams)
+function renderReconstructionPerformancePlots(figNo, imageFileName, C, Creconstruction, originalStimulusSize, expParams)
     
     LMScontrastSequenceReconstruction  = ...
         decoder.reformatStimulusSequence('FromDesignMatrixFormat', ...
@@ -129,16 +129,16 @@ function renderReconstructionPerformancePlots(figNo, imageFileName, componentStr
         drawnow
         end
         
-        NicePlot.exportFigToPNG(sprintf('%s%s%s.png', imageFileName, componentString, coneString{coneContrastIndex}), hFig, 300);
+        NicePlot.exportFigToPNG(sprintf('%s%s.png', imageFileName, coneString{coneContrastIndex}), hFig, 300);
     end
 end
 
-function imageFileName = generateImageFileName(InSampleOrOutOfSample, decodingDataDir, expParams)
+function imageFileName = generateImageFileName(InSampleOrOutOfSample, componentString, decodingDataDir, expParams)
         if (expParams.outerSegmentParams.addNoise)
             outerSegmentNoiseString = 'Noise';
         else
             outerSegmentNoiseString = 'NoNoise';
         end
-        imageFileName = fullfile(decodingDataDir, sprintf('%sPerformance%s%sOverlap%2.1fMeanLum%d', InSampleOrOutOfSample, expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
+        imageFileName = fullfile(decodingDataDir, sprintf('%sPerformance%s%s%sOverlap%2.1fMeanLum%d', InSampleOrOutOfSample, componentString, expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
       
 end

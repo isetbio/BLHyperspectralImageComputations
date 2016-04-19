@@ -13,9 +13,9 @@ function RunExperiment
     
     visualizationInstructionSet = {...
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
-       %'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
-       'visualizeInSamplePrediction' ...            % visualize the decoder's in-sample deperformance
-       'visualizeOutOfSamplePrediction' ...         % visualize the decoder's out-of-sample deperformance
+       'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
+       %'visualizeInSamplePrediction' ...            % visualize the decoder's in-sample deperformance
+       %'visualizeOutOfSamplePrediction' ...         % visualize the decoder's out-of-sample deperformance
        % 'makeReconstructionVideo' ...              % generate video of the reconstruction
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
     };
@@ -28,11 +28,12 @@ function RunExperiment
     % Set data preprocessing params - This affects the name of the decodingDataDir
     designMatrixBased = 0;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
     rawResponseBased = 3;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
-    thresholdVarianceExplainedForWhiteningMatrix = 95.0;  % 95% results in nearly equal in-sample and out-of-sample performance in the  'small' data set (linearOS)
+    thresholdVarianceExplainedForWhiteningMatrix = 100.0; %95.0;  % 95% results in nearly equal in-sample and out-of-sample performance in the  'small' data set (linearOS)
     preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased, thresholdVarianceExplainedForWhiteningMatrix);
+    useIdenticalPreprocessingOperationsForTrainingAndTestData = true;
     
-    computeSVDbasedLowRankFiltersAndPredictions = true;
-    SVDbasedLowRankFilterVariancesExplained = [80 85 90 92 94 96 97 98 99];
+    computeSVDbasedLowRankFiltersAndPredictions = false;
+    SVDbasedLowRankFilterVariancesExplained = [80 85 90 92 94 95 96 97 98 99.5 99.9 99.999];
     
     % Specify the data set to use
     whichDataSet =  'original';
@@ -96,7 +97,7 @@ function RunExperiment
             case 'assembleTrainingDataSet'
                 trainingDataPercentange = 50;
                 testingDataPercentage = 50;
-                core.assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, trainingDataPercentange, testingDataPercentage, preProcessingParams);
+                core.assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, trainingDataPercentange, testingDataPercentage, preProcessingParams, useIdenticalPreprocessingOperationsForTrainingAndTestData);
 
             case 'computeDecodingFilter'
                 decoder.computeDecodingFilter(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, SVDbasedLowRankFilterVariancesExplained);

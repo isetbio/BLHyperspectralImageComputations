@@ -5,14 +5,12 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir, compu
     load(fileName, 'wVector',  'spatioTemporalSupport', 'coneTypes', 'expParams');
     fprintf('Done.\n');
     
-    componentString = 'Full';
+    componentString = 'PINVbased';
     generateAllFigures(decodingDataDir, componentString, wVector, spatioTemporalSupport, coneTypes, expParams)
 
     if (computeSVDbasedLowRankFiltersAndPredictions)
         load(fileName, 'wVectorSVDbased', 'SVDbasedLowRankFilterVariancesExplained');%, 'Utrain', 'Strain', 'Vtrain');
         for kIndex = 1:numel(SVDbasedLowRankFilterVariancesExplained)
-            fprintf('Hit enter to see the filter accounting for %2.2f%% of the variance.\n', SVDbasedLowRankFilterVariancesExplained(kIndex));
-            pause
             wVectorSVD = squeeze(wVectorSVDbased(kIndex,:,:));
             componentString = sprintf('SVD_%2.3f%%VarianceExplained', SVDbasedLowRankFilterVariancesExplained(kIndex));
             generateAllFigures(decodingDataDir, componentString, wVectorSVD, spatioTemporalSupport, coneTypes, expParams)

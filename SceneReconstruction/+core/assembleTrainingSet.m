@@ -1,4 +1,4 @@
-function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, trainingDataPercentange, testingDataPercentage, preProcessingParams)
+function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, trainingDataPercentange, testingDataPercentage, preProcessingParams, useIdenticalPreprocessingOperationsForTrainingAndTestData)
 
     totalTrainingScansNum = 0;
     totalTestingScansNum = 0;
@@ -198,7 +198,11 @@ function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, training
         decoder.reformatStimulusSequence('ToDesignMatrixFormat', testingOpticalImageLMScontrastSequence);
     
     % Preprocess raw signals
-    rawTestResponsePreprocessing = []; % rawTrainingResponsePreprocessing;
+    if (useIdenticalPreprocessingOperationsForTrainingAndTestData)
+        rawTestResponsePreprocessing = rawTrainingResponsePreprocessing;
+    else
+        rawTestResponsePreprocessing = [];
+    end
     [testingResponses, rawTestResponsePreprocessing] = decoder.preProcessRawResponses(testingResponses, preProcessingParams, rawTestResponsePreprocessing);
     
     % Compute testing design matrix and stimulus vector
