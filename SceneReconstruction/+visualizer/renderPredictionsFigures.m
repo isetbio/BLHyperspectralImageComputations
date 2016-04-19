@@ -42,8 +42,6 @@ function renderPredictionsFigures(sceneSetName, decodingDataDir, computeSVDbased
         renderReconstructionPerformancePlots(figNo, imageFileName, Ctest, CtestPrediction,  originalTestingStimulusSize, expParams);
     
         for kIndex = 1:numel(SVDbasedLowRankFilterVariancesExplained)
-            fprintf('Hit enter to see the out-of-sample performance of the filter accounting for %2.2f%% of the variance.\n', SVDbasedLowRankFilterVariancesExplained(kIndex));
-            pause
             figNo = 1000+kIndex;
             componentString = sprintf('SVD_%2.3f%%VarianceExplained', SVDbasedLowRankFilterVariancesExplained(kIndex));
             imageFileName = generateImageFileName(InSampleOrOutOfSample, componentString, decodingDataDir, expParams);
