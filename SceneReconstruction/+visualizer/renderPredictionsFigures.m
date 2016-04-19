@@ -29,9 +29,10 @@ function renderPredictionsFigures(sceneSetName, decodingDataDir, computeSVDbased
                 [inSampleSVDcorrelations(:, kIndex), inSampleSVDrmsErrors] = renderReconstructionPerformancePlots(figNo, imageFileName, Ctrain, squeeze(CtrainPredictionSVDbased(kIndex,:, :)),  originalTrainingStimulusSize, expParams);
             end
             
-            figure(222);
+            hFig = figure(222);
+            set(hFig, 'Position', [10 10 740 1024], 'Name', 'In-sample performance');
             clf;
-            subplot(1,2,1);
+            subplot(2,1,1);
             xaxis = 1:numel(SVDbasedLowRankFilterVariancesExplained);
             plot(xaxis, inSampleSVDcorrelations(1,:), 'r-');
             hold on;
@@ -44,8 +45,8 @@ function renderPredictionsFigures(sceneSetName, decodingDataDir, computeSVDbased
             set(gca, 'XTick', xaxis, 'XTickLabel', SVDbasedLowRankFilterVariancesExplained,  'FontSize', 12);
             xlabel('variance explained', 'FontSize', 12);
             ylabel('corr. coefficient',  'FontSize', 12);
-            
-            subplot(1,2,2);
+            legend('SVD-based (L)', 'SVD-based (M)', 'SVD-based (S)', 'Pinv-based (L)', 'Pinv-based (M)', 'Pinv-based (S)');
+            subplot(2,1,2);
             plot(xaxis, inSampleSVDrmsErrors(1,:), 'r-');
             hold on;
             plot(xaxis, inSampleSVDrmsErrors(2,:), 'g-');
@@ -54,6 +55,7 @@ function renderPredictionsFigures(sceneSetName, decodingDataDir, computeSVDbased
             plot([xaxis(1) xaxis(end)], inSamplePINVrmsErrors(2)*[1 1], 'g--');
             plot([xaxis(1) xaxis(end)], inSamplePINVrmsErrors(3)*[1 1], 'b--');
             hold off;
+            legend('SVD-based (L)', 'SVD-based (M)', 'SVD-based (S)', 'Pinv-based (L)', 'Pinv-based (M)', 'Pinv-based (S)')
             set(gca, 'XTick', xaxis, 'XTickLabel', SVDbasedLowRankFilterVariancesExplained,  'FontSize', 12);
             xlabel('variance explained', 'FontSize', 12);
             ylabel('rms error', 'FontSize', 12);
@@ -87,10 +89,11 @@ function renderPredictionsFigures(sceneSetName, decodingDataDir, computeSVDbased
                 [outOfSampleSVDcorrelations(:, kIndex), outOfSampleSVDrmsErrors(:, kIndex)]   = renderReconstructionPerformancePlots(figNo, imageFileName, Ctest, squeeze(CtestPredictionSVDbased(kIndex,:, :)),  originalTestingStimulusSize, expParams);
             end
             
-            figure(223);
+            hFig = figure(223);
+            set(hFig, 'Position', [10 10 740 1024],  'Name', 'Out-of-sample performance');
             clf;
             xaxis = 1:numel(SVDbasedLowRankFilterVariancesExplained);
-            subplot(1,2,1)
+            subplot(2,1,1)
             plot(xaxis, outOfSampleSVDcorrelations(1,:), 'r-');
             hold on;
             plot(xaxis, outOfSampleSVDcorrelations(2,:), 'g-');
@@ -99,11 +102,12 @@ function renderPredictionsFigures(sceneSetName, decodingDataDir, computeSVDbased
             plot([xaxis(1) xaxis(end)], outOfSamplePINVcorrelations(2)*[1 1], 'g--');
             plot([xaxis(1) xaxis(end)], outOfSamplePINVcorrelations(3)*[1 1], 'b--');
             hold off;
+            legend('SVD-based (L)', 'SVD-based (M)', 'SVD-based (S)', 'Pinv-based (L)', 'Pinv-based (M)', 'Pinv-based (S)')
             set(gca, 'XTick', xaxis, 'XTickLabel', SVDbasedLowRankFilterVariancesExplained,  'FontSize', 12);
             xlabel('variance explained');
             ylabel('corr. coefficient');
             
-            subplot(1,2,2);
+            subplot(2,1,2);
             plot(xaxis, outOfSampleSVDrmsErrors(1,:), 'r-');
             hold on;
             plot(xaxis, outOfSampleSVDrmsErrors(2,:), 'g-');
@@ -112,6 +116,7 @@ function renderPredictionsFigures(sceneSetName, decodingDataDir, computeSVDbased
             plot([xaxis(1) xaxis(end)], outOfSamplePINVrmsErrors(2)*[1 1], 'g--');
             plot([xaxis(1) xaxis(end)], outOfSamplePINVrmsErrors(3)*[1 1], 'b--');
             hold off;
+            legend('SVD-based (L)', 'SVD-based (M)', 'SVD-based (S)', 'Pinv-based (L)', 'Pinv-based (M)', 'Pinv-based (S)')
             set(gca, 'XTick', xaxis, 'XTickLabel', SVDbasedLowRankFilterVariancesExplained,  'FontSize', 12);
             xlabel('variance explained', 'FontSize', 12);
             ylabel('rms error', 'FontSize', 12);
