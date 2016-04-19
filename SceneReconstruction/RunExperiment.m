@@ -14,7 +14,7 @@ function RunExperiment
     visualizationInstructionSet = {...
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
        %'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
-       %'visualizeInSamplePrediction' ...            % visualize the decoder's in-sample deperformance
+       'visualizeInSamplePrediction' ...            % visualize the decoder's in-sample deperformance
        'visualizeOutOfSamplePrediction' ...         % visualize the decoder's out-of-sample deperformance
        % 'makeReconstructionVideo' ...              % generate video of the reconstruction
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
@@ -27,7 +27,7 @@ function RunExperiment
     
     % Set data preprocessing params - This affects the name of the decodingDataDir
     designMatrixBased = 0;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
-    rawResponseBased = 2;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+    rawResponseBased = 3;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
     thresholdVarianceExplainedForWhiteningMatrix = 100.0; %95.0;  % 95% results in nearly equal in-sample and out-of-sample performance in the  'small' data set (linearOS)
     preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased, thresholdVarianceExplainedForWhiteningMatrix);
     useIdenticalPreprocessingOperationsForTrainingAndTestData = false;
