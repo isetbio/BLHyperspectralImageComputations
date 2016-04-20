@@ -21,14 +21,14 @@ function renderPerformanceFigures(sceneSetName, decodingDataDir, computeSVDbased
         if (computeSVDbasedLowRankFiltersAndPredictions)  
             inSampleSVDcorrelationCoeffs = zeros(3, numel(SVDbasedLowRankFilterVariancesExplained));
             inSampleSVDrmsErrors = zeros(3, numel(SVDbasedLowRankFilterVariancesExplained));
+            figNo = 1000;
             for kIndex = 1:numel(SVDbasedLowRankFilterVariancesExplained)
-                figNo = 999;
                 componentString = sprintf('SVD_%2.3f%%VarianceExplained', SVDbasedLowRankFilterVariancesExplained(kIndex));
                 imageFileName = generateImageFileName(InSampleOrOutOfSample, componentString, decodingDataDir, expParams);
                 [inSampleSVDcorrelationCoeffs(:, kIndex), inSampleSVDrmsErrors(:, kIndex)] = renderReconstructionPerformancePlots(figNo, imageFileName, Ctrain, squeeze(CtrainPredictionSVDbased(kIndex,:, :)),  originalTrainingStimulusSize, expParams);
             end
             
-            figNo = 222;
+            figNo = 1100;
             imageFileName = generateImageFileName(InSampleOrOutOfSample, 'Summary', decodingDataDir, expParams);
             renderSummaryPerformancePlot(figNo, 'In-sample performance', imageFileName, SVDbasedLowRankFilterVariancesExplained, inSampleSVDcorrelationCoeffs, inSamplePINVcorrelationCoeffs, inSampleSVDrmsErrors, inSamplePINVrmsErrors);
         end
@@ -47,20 +47,20 @@ function renderPerformanceFigures(sceneSetName, decodingDataDir, computeSVDbased
         
         componentString = 'PINVbased';
         imageFileName = generateImageFileName(InSampleOrOutOfSample, componentString, decodingDataDir, expParams);
-        figNo = 0;
+        figNo = 10;
         [outOfSamplePINVcorrelationCoeffs, outOfSamplePINVrmsErrors] = renderReconstructionPerformancePlots(figNo, imageFileName, Ctest, CtestPrediction,  originalTestingStimulusSize, expParams);
     
         if (computeSVDbasedLowRankFiltersAndPredictions)  
             outOfSampleSVDcorrelationCoeffs = zeros(3, numel(SVDbasedLowRankFilterVariancesExplained));
             outOfSampleSVDrmsErrors = zeros(3, numel(SVDbasedLowRankFilterVariancesExplained));
+            figNo = 2000;
             for kIndex = 1:numel(SVDbasedLowRankFilterVariancesExplained)
-                figNo = 1000;
                 componentString = sprintf('SVD_%2.3f%%VarianceExplained', SVDbasedLowRankFilterVariancesExplained(kIndex));
                 imageFileName = generateImageFileName(InSampleOrOutOfSample, componentString, decodingDataDir, expParams);
                 [outOfSampleSVDcorrelationCoeffs(:, kIndex), outOfSampleSVDrmsErrors(:, kIndex)]   = renderReconstructionPerformancePlots(figNo, imageFileName, Ctest, squeeze(CtestPredictionSVDbased(kIndex,:, :)),  originalTestingStimulusSize, expParams);
             end
             
-            figNo = 223;
+            figNo = 2100;
             imageFileName = generateImageFileName(InSampleOrOutOfSample, 'Summary', decodingDataDir, expParams);
             renderSummaryPerformancePlot(figNo, 'Out-of-sample performance', imageFileName, SVDbasedLowRankFilterVariancesExplained, outOfSampleSVDcorrelationCoeffs, outOfSamplePINVcorrelationCoeffs, outOfSampleSVDrmsErrors, outOfSamplePINVrmsErrors);
         end
@@ -172,7 +172,7 @@ function [correlations, rmsErrors] = renderReconstructionPerformancePlots(figNo,
     rmsErrors = zeros(3,1);
     for coneContrastIndex = 1:3
         
-        hFig = figure(figNo + 100*coneContrastIndex); clf;
+        hFig = figure(figNo + coneContrastIndex); clf;
         set(hFig, 'Position', [10 10 800 650], 'Color', [1 1 1]);
          
         for iRow = 1:numel(rowsToPlot)
