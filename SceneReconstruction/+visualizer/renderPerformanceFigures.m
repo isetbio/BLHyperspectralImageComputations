@@ -30,7 +30,7 @@ function renderPerformanceFigures(sceneSetName, decodingDataDir, computeSVDbased
             
             figNo = 1100;
             imageFileName = generateImageFileName(InSampleOrOutOfSample, 'Summary', decodingDataDir, expParams);
-            renderSummaryPerformancePlot(figNo, 'In-sample performance', imageFileName, SVDbasedLowRankFilterVariancesExplained, inSampleSVDcorrelationCoeffs, inSamplePINVcorrelationCoeffs, inSampleSVDrmsErrors, inSamplePINVrmsErrors);
+            renderSummaryPerformancePlot(figNo, 'in-sample', imageFileName, SVDbasedLowRankFilterVariancesExplained, inSampleSVDcorrelationCoeffs, inSamplePINVcorrelationCoeffs, inSampleSVDrmsErrors, inSamplePINVrmsErrors);
         end
         
         
@@ -62,7 +62,7 @@ function renderPerformanceFigures(sceneSetName, decodingDataDir, computeSVDbased
             
             figNo = 2100;
             imageFileName = generateImageFileName(InSampleOrOutOfSample, 'Summary', decodingDataDir, expParams);
-            renderSummaryPerformancePlot(figNo, 'Out-of-sample performance', imageFileName, SVDbasedLowRankFilterVariancesExplained, outOfSampleSVDcorrelationCoeffs, outOfSamplePINVcorrelationCoeffs, outOfSampleSVDrmsErrors, outOfSamplePINVrmsErrors);
+            renderSummaryPerformancePlot(figNo, 'out-of-sample', imageFileName, SVDbasedLowRankFilterVariancesExplained, outOfSampleSVDcorrelationCoeffs, outOfSamplePINVcorrelationCoeffs, outOfSampleSVDrmsErrors, outOfSamplePINVrmsErrors);
         end
         
     else
@@ -78,43 +78,45 @@ function renderSummaryPerformancePlot(figNo, figTitle, imageFileName, SVDbasedLo
                'colsNum', 1, ...
                'heightMargin',   0.06, ...
                'widthMargin',    0.008, ...
-               'leftMargin',     0.05, ...
-               'rightMargin',    0.02, ...
+               'leftMargin',     0.06, ...
+               'rightMargin',    0.01, ...
                'bottomMargin',   0.03, ...
                'topMargin',      0.000);
            
     hFig = figure(figNo);
-    set(hFig, 'Position', [10 10 740 1150], 'Name', figTitle);
+    set(hFig, 'Position', [10 10 740 1150], 'Name', figTitle, 'Color', [1 1 1]);
     clf;
     subplot('position',subplotPosVectors(1,1).v)
     xaxis = 1:numel(SVDbasedLowRankFilterVariancesExplained);
-    plot(xaxis, SVDcorrelationCoefficients(1,:), 'ro-', 'MarkerSize', 12, 'MarkerFaceColor', [1.0 0.8 0.8]);
+    plot(xaxis, SVDcorrelationCoefficients(1,:), 'ro-', 'LineWidth', 2.0, 'MarkerSize', 12, 'MarkerFaceColor', [1.0 0.8 0.8]);
     hold on;
-    plot(xaxis, SVDcorrelationCoefficients(2,:), 'go-', 'MarkerSize', 12, 'MarkerFaceColor', [0.8 1.0 0.8], 'MarkerEdgeColor', [0.6 0.8 0.6], 'Color', [0.0 0.8 0.0]);
-    plot(xaxis, SVDcorrelationCoefficients(3,:), 'bo-', 'MarkerSize', 12, 'MarkerFaceColor', [0.8 0.8 1.0]);
+    plot(xaxis, SVDcorrelationCoefficients(2,:), 'go-', 'LineWidth', 2.0, 'MarkerSize', 12, 'MarkerFaceColor', [0.8 1.0 0.8], 'MarkerEdgeColor', [0.6 0.8 0.6], 'Color', [0.0 0.8 0.0]);
+    plot(xaxis, SVDcorrelationCoefficients(3,:), 'bo-', 'LineWidth', 2.0, 'MarkerSize', 12, 'MarkerFaceColor', [0.8 0.8 1.0]);
     plot([xaxis(1) xaxis(end)], PINVcorrelationCoefficients(1)*[1 1], 'r--', 'LineWidth', 2.0);
     plot([xaxis(1) xaxis(end)], PINVcorrelationCoefficients(2)*[1 1], 'g--', 'LineWidth', 2.0, 'Color', [0.0 0.8 0.0]);
     plot([xaxis(1) xaxis(end)], PINVcorrelationCoefficients(3)*[1 1], 'b--', 'LineWidth', 2.0);
     hold off;
-    set(gca, 'XLim', [xaxis(1)-1 xaxis(end)+1], 'YLim', [0 1], 'XTick', xaxis, 'XTickLabel', SVDbasedLowRankFilterVariancesExplained,  'FontSize', 12);
+    set(gca, 'XLim', [xaxis(1)-0.5 xaxis(end)+0.5], 'YLim', [0 1], 'XTick', xaxis, 'XTickLabel', SVDbasedLowRankFilterVariancesExplained,  'FontSize', 12);
+    box 'off'
     xlabel('variance explained', 'FontSize', 14);
     ylabel('corr. coefficient',  'FontSize', 14);
     legend('SVD-based (L)', 'SVD-based (M)', 'SVD-based (S)', 'PINV-based (L)', 'PINV-based (M)', 'PINV-based (S)', 'Location', 'NorthOutside', 'Orientation', 'horizontal');
-    title('Correlation Coefficients', 'FontSize', 12);
+    title(sprintf('Correlation Coefficients (%s)', figTitle), 'FontSize', 12);
     
     subplot('position',subplotPosVectors(2,1).v)
-    plot(xaxis, SVDrmsErrors(1,:), 'ro-', 'MarkerSize', 12, 'MarkerFaceColor', [1.0 0.8 0.8]);
+    plot(xaxis, SVDrmsErrors(1,:), 'ro-', 'MarkerSize', 12, 'LineWidth', 2.0, 'MarkerFaceColor', [1.0 0.8 0.8]);
     hold on;
-    plot(xaxis, SVDrmsErrors(2,:), 'go-', 'MarkerSize', 12, 'MarkerFaceColor', [0.8 1.0 0.8], 'MarkerEdgeColor', [0.6 0.8 0.6], 'Color', [0.0 0.8 0.0]);
-    plot(xaxis, SVDrmsErrors(3,:), 'bo-', 'MarkerSize', 12, 'MarkerFaceColor', [0.8 0.8 1.0]);
+    plot(xaxis, SVDrmsErrors(2,:), 'go-', 'MarkerSize', 12, 'LineWidth', 2.0, 'MarkerFaceColor', [0.8 1.0 0.8], 'MarkerEdgeColor', [0.6 0.8 0.6], 'Color', [0.0 0.8 0.0]);
+    plot(xaxis, SVDrmsErrors(3,:), 'bo-', 'MarkerSize', 12, 'LineWidth', 2.0, 'MarkerFaceColor', [0.8 0.8 1.0]);
     plot([xaxis(1) xaxis(end)], PINVrmsErrors(1)*[1 1], 'r--', 'LineWidth', 2.0);
     plot([xaxis(1) xaxis(end)], PINVrmsErrors(2)*[1 1], 'g--', 'LineWidth', 2.0, 'Color', [0.0 0.8 0.0])
     plot([xaxis(1) xaxis(end)], PINVrmsErrors(3)*[1 1], 'b--', 'LineWidth', 2.0);
     hold off;
-    set(gca, 'XLim', [xaxis(1)-1 xaxis(end)+1], 'XTick', xaxis, 'XTickLabel', SVDbasedLowRankFilterVariancesExplained,  'FontSize', 12);
+    set(gca, 'XLim', [xaxis(1)-0.5 xaxis(end)+0.5], 'XTick', xaxis, 'XTickLabel', SVDbasedLowRankFilterVariancesExplained,  'FontSize', 12);
+    box 'off'
     xlabel('variance explained', 'FontSize', 14);
     ylabel('rms error', 'FontSize', 14);
-    title('RMS errors', 'FontSize', 12);
+    title(sprintf('RMS errors (%s)', figTitle), 'FontSize', 12);
      
     drawnow;
     NicePlot.exportFigToPNG(sprintf('%s.png', imageFileName), hFig, 300);
