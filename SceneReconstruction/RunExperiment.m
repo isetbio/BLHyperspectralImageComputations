@@ -14,15 +14,15 @@ function RunExperiment
     visualizationInstructionSet = {...
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
        %'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
-       'visualizeInSamplePrediction' ...            % visualize the decoder's in-sample deperformance
-       'visualizeOutOfSamplePrediction' ...         % visualize the decoder's out-of-sample deperformance
+       'visualizeInSamplePerformance' ...            % visualize the decoder's in-sample deperformance
+       'visualizeOutOfSamplePerformance' ...         % visualize the decoder's out-of-sample deperformance
        % 'makeReconstructionVideo' ...              % generate video of the reconstruction
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
     };
   
     % Specify what to compute
-    instructionSet = computationInstructionSet;  
-    %instructionSet = visualizationInstructionSet;
+    %instructionSet = computationInstructionSet;  
+    instructionSet = visualizationInstructionSet;
     
     
     % Set data preprocessing params - This affects the name of the decodingDataDir
@@ -33,10 +33,10 @@ function RunExperiment
     useIdenticalPreprocessingOperationsForTrainingAndTestData = false;
     
     computeSVDbasedLowRankFiltersAndPredictions = true;
-    SVDbasedLowRankFilterVariancesExplained = [80 85 90 92 94 95 96 97 98 99.5 99.9 99.999];
+    
     %
     % Specify the data set to use
-    whichDataSet =  'large';
+    whichDataSet =  'original';
 
     switch (whichDataSet)
         case 'very_small'
@@ -100,6 +100,7 @@ function RunExperiment
                 core.assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, trainingDataPercentange, testingDataPercentage, preProcessingParams, useIdenticalPreprocessingOperationsForTrainingAndTestData);
 
             case 'computeDecodingFilter'
+                SVDbasedLowRankFilterVariancesExplained = [80 85 90 92 94 95 96 97 98 99.5 99.9 99.999];
                 decoder.computeDecodingFilter(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, SVDbasedLowRankFilterVariancesExplained);
 
             case 'computeOutOfSamplePrediction'
@@ -108,11 +109,11 @@ function RunExperiment
             case 'visualizeDecodingFilter'
                 visualizer.renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions);
 
-            case 'visualizeInSamplePrediction'
-                visualizer.renderPredictionsFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, 'InSample');
+            case 'visualizeInSamplePerformance'
+                visualizer.renderPerformanceFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, 'InSample');
 
-            case 'visualizeOutOfSamplePrediction'
-                visualizer.renderPredictionsFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, 'OutOfSample');
+            case 'visualizeOutOfSamplePerformance'
+                visualizer.renderPerformanceFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, 'OutOfSample');
 
             case 'makeReconstructionVideo'
                 visualizer.renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir);
