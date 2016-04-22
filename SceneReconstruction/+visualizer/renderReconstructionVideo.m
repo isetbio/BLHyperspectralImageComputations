@@ -1,4 +1,4 @@
-function renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir)
+function renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, visualizeSVDfiltersForVarianceExplained)
 
     % Retrieve resources needed to convert LMS RGB for a hypothetical super display that can display the natural scenes
     displayName = 'LCD-Apple'; %'OLED-Samsung'; % 'OLED-Samsung', 'OLED-Sony';
@@ -22,6 +22,12 @@ function renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir)
             outerSegmentNoiseString = 'Noise';
         else
             outerSegmentNoiseString = 'NoNoise';
+        end
+        
+        if (computeSVDbasedLowRankFiltersAndPredictions)
+            load(fileName, 'CtrainPredictionSVDbased', 'SVDbasedLowRankFilterVariancesExplained');
+            [~,kk] = min(abs(SVDbasedLowRankFilterVariancesExplained-visualizeSVDfiltersForVarianceExplained(1)));
+            CtrainPrediction = squeeze(CtrainPredictionSVDbased(kk,:, :));
         end
         
         videoFileName = fullfile(decodingDataDir, sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dInSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
@@ -52,6 +58,13 @@ function renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir)
         else
             outerSegmentNoiseString = 'NoNoise';
         end
+        
+        if (computeSVDbasedLowRankFiltersAndPredictions)
+            load(fileName, 'CtestPredictionSVDbased', 'SVDbasedLowRankFilterVariancesExplained');
+            [~,kk] = min(abs(SVDbasedLowRankFilterVariancesExplained-visualizeSVDfiltersForVarianceExplained(1)));
+            CtestPrediction = squeeze(CtestPredictionSVDbased(kk,:, :));
+        end
+        
         videoFileName = fullfile(decodingDataDir, sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dOutOfSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
         set(hFig, 'Name', videoFileName);
         videoFilename = sprintf('%s.m4v', videoFileName);
@@ -80,6 +93,13 @@ function renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir)
         else
             outerSegmentNoiseString = 'NoNoise';
         end
+        
+        if (computeSVDbasedLowRankFiltersAndPredictions)
+            load(fileName, 'CtestPredictionSVDbased', 'SVDbasedLowRankFilterVariancesExplained');
+            [~,kk] = min(abs(SVDbasedLowRankFilterVariancesExplained-visualizeSVDfiltersForVarianceExplained(1)));
+            CtestPrediction = squeeze(CtestPredictionSVDbased(kk,:, :));
+        end
+        
         videoFileName = fullfile(decodingDataDir, sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dInAndOutOfSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
         set(hFig, 'Name', videoFileName);
         videoFilename = sprintf('%s.m4v', videoFileName);
@@ -102,6 +122,11 @@ function renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir)
             'trainingScanInsertionTimes',  'trainingSceneLMSbackground', 'trainingOpticalImageLMSbackground', ...
             'originalTrainingStimulusSize', 'expParams');
         
+        if (computeSVDbasedLowRankFiltersAndPredictions)
+            load(fileName, 'CtrainPredictionSVDbased', 'SVDbasedLowRankFilterVariancesExplained');
+            [~,kk] = min(abs(SVDbasedLowRankFilterVariancesExplained-visualizeSVDfiltersForVarianceExplained(1)));
+            CtrainPrediction = squeeze(CtrainPredictionSVDbased(kk,:, :));
+        end
         
         makeVideo(hFig, writerObj, sceneSetName, resultsDir, coneFundamentals, displaySPDs, RGBtoXYZ, Ctrain, CtrainPrediction, oiCtrain, ...
                 trainingTimeAxis, trainingSceneIndexSequence, trainingSensorPositionSequence, trainingScanInsertionTimes, ...

@@ -1,4 +1,4 @@
-function renderPerformanceFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, InSampleOrOutOfSample)
+function renderPerformanceFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, visualizeSVDfiltersForVarianceExplained, InSampleOrOutOfSample)
 
     fprintf('\nLoading stimulus prediction data ...');
 
@@ -22,7 +22,13 @@ function renderPerformanceFigures(sceneSetName, decodingDataDir, computeSVDbased
             inSampleSVDcorrelationCoeffs = zeros(3, numel(SVDbasedLowRankFilterVariancesExplained));
             inSampleSVDrmsErrors = zeros(3, numel(SVDbasedLowRankFilterVariancesExplained));
             figNo = 1000;
-            for kIndex = 1:numel(SVDbasedLowRankFilterVariancesExplained)
+            if (isempty(visualizeSVDfiltersForVarianceExplained))
+                kk = 1:numel(SVDbasedLowRankFilterVariancesExplained);
+            else
+                [~,kk] = min(abs(SVDbasedLowRankFilterVariancesExplained-visualizeSVDfiltersForVarianceExplained(1)));
+            end
+            kk
+            for kIndex = kk
                 componentString = sprintf('SVD_%2.3f%%VarianceExplained', SVDbasedLowRankFilterVariancesExplained(kIndex));
                 imageFileName = generateImageFileName(InSampleOrOutOfSample, componentString, decodingDataDir, expParams);
                 [inSampleSVDcorrelationCoeffs(:, kIndex), inSampleSVDrmsErrors(:, kIndex)] = renderReconstructionPerformancePlots(figNo, imageFileName, Ctrain, squeeze(CtrainPredictionSVDbased(kIndex,:, :)),  originalTrainingStimulusSize, expParams);
@@ -53,8 +59,14 @@ function renderPerformanceFigures(sceneSetName, decodingDataDir, computeSVDbased
         if (computeSVDbasedLowRankFiltersAndPredictions)  
             outOfSampleSVDcorrelationCoeffs = zeros(3, numel(SVDbasedLowRankFilterVariancesExplained));
             outOfSampleSVDrmsErrors = zeros(3, numel(SVDbasedLowRankFilterVariancesExplained));
+            if (isempty(visualizeSVDfiltersForVarianceExplained))
+                kk = 1:numel(SVDbasedLowRankFilterVariancesExplained);
+            else
+                [~,kk] = min(abs(SVDbasedLowRankFilterVariancesExplained-visualizeSVDfiltersForVarianceExplained(1)));
+            end
+            kk
             figNo = 2000;
-            for kIndex = 1:numel(SVDbasedLowRankFilterVariancesExplained)
+            for kIndex = kk
                 componentString = sprintf('SVD_%2.3f%%VarianceExplained', SVDbasedLowRankFilterVariancesExplained(kIndex));
                 imageFileName = generateImageFileName(InSampleOrOutOfSample, componentString, decodingDataDir, expParams);
                 [outOfSampleSVDcorrelationCoeffs(:, kIndex), outOfSampleSVDrmsErrors(:, kIndex)]   = renderReconstructionPerformancePlots(figNo, imageFileName, Ctest, squeeze(CtestPredictionSVDbased(kIndex,:, :)),  originalTestingStimulusSize, expParams);

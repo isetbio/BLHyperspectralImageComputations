@@ -5,7 +5,7 @@ function RunExperiment
     % Computation steps. Uncomment the ones you want to execute
     computationInstructionSet = {...
        %'lookAtScenes' ...
-       'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
+       %'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
        'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
        'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
        'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
@@ -13,26 +13,27 @@ function RunExperiment
     
     visualizationInstructionSet = {...
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
-       %'visualizeInSamplePerformance' ...            % visualize the decoder's in-sample deperformance
+       'visualizeInSamplePerformance' ...            % visualize the decoder's in-sample deperformance
        %'visualizeOutOfSamplePerformance' ...         % visualize the decoder's out-of-sample deperformance
-       'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
+       %'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
        % 'makeReconstructionVideo' ...              % generate video of the reconstruction
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
     };
   
     % Specify what to compute
-    %instructionSet = computationInstructionSet;  
-    instructionSet = visualizationInstructionSet;
+    instructionSet = computationInstructionSet;  
+    %instructionSet = visualizationInstructionSet;
     
     
     % Set data preprocessing params - This affects the name of the decodingDataDir
-    designMatrixBased = 0;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
-    rawResponseBased = 3;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+    designMatrixBased = 3;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+    rawResponseBased = 0;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
     thresholdVarianceExplainedForWhiteningMatrix = 100.0; %95.0;  % 95% results in nearly equal in-sample and out-of-sample performance in the  'small' data set (linearOS)
     preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased, thresholdVarianceExplainedForWhiteningMatrix);
-    useIdenticalPreprocessingOperationsForTrainingAndTestData = false;
+    useIdenticalPreprocessingOperationsForTrainingAndTestData = true;
     
     computeSVDbasedLowRankFiltersAndPredictions = true;
+    visualizeSVDfiltersForVarianceExplained = 99.99;
     
     %
     % Specify the data set to use
@@ -107,17 +108,17 @@ function RunExperiment
                 decoder.computeOutOfSamplePrediction(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions);
 
             case 'visualizeDecodingFilter'
-                visualizeSVDfiltersForVarianceExplained = 96;
                 visualizer.renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, visualizeSVDfiltersForVarianceExplained);
 
             case 'visualizeInSamplePerformance'
-                visualizer.renderPerformanceFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, 'InSample');
+                visualizeSVDfiltersForVarianceExplained2 = []; %99.99;
+                visualizer.renderPerformanceFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, visualizeSVDfiltersForVarianceExplained2, 'InSample');
 
             case 'visualizeOutOfSamplePerformance'
-                visualizer.renderPerformanceFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, 'OutOfSample');
+                visualizer.renderPerformanceFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, visualizeSVDfiltersForVarianceExplained2, 'OutOfSample');
 
             case 'makeReconstructionVideo'
-                visualizer.renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir);
+                visualizer.renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, visualizeSVDfiltersForVarianceExplained);
 
             case 'visualizeConeMosaic'
                 visualizer.renderConeMosaic(sceneSetName, resultsDir, decodingDataDir);
