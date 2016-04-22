@@ -1,4 +1,4 @@
-function renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions)
+function renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, visualizeSVDfiltersForVarianceExplained)
  
     fprintf('\nLoading decoder filter ...');
     fileName = fullfile(decodingDataDir, sprintf('%s_decodingFilter.mat', sceneSetName));
@@ -10,7 +10,13 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir, compu
 
     if (computeSVDbasedLowRankFiltersAndPredictions)
         load(fileName, 'wVectorSVDbased', 'SVDbasedLowRankFilterVariancesExplained');%, 'Utrain', 'Strain', 'Vtrain');
-        for kIndex = 1:numel(SVDbasedLowRankFilterVariancesExplained)
+        if (isempty(visualizeSVDfiltersForVarianceExplained))
+            kk = 1:numel(SVDbasedLowRankFilterVariancesExplained);
+        else
+            [~,kk] = min(abs(SVDbasedLowRankFilterVariancesExplained-visualizeSVDfiltersForVarianceExplained(1)));
+        end
+        kk
+        for kIndex = kk
             wVectorSVD = squeeze(wVectorSVDbased(kIndex,:,:));
             componentString = sprintf('SVD_%2.3f%%VarianceExplained', SVDbasedLowRankFilterVariancesExplained(kIndex));
             generateAllFigures(decodingDataDir, componentString, wVectorSVD, spatioTemporalSupport, coneTypes, expParams)
@@ -20,6 +26,7 @@ end
 
 function generateAllFigures(decodingDataDir, componentString, wVector, spatioTemporalSupport, coneTypes, expParams)
     
+    fprintf('Generating ''%s'' filter figures\n', componentString);
     dcTerm = 1;
     % Normalize wVector for plotting in [-1 1]
     wVector = wVector / max(max(abs(wVector(dcTerm+1:size(wVector,1),:))));

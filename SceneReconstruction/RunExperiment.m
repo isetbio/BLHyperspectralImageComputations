@@ -13,9 +13,9 @@ function RunExperiment
     
     visualizationInstructionSet = {...
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
-       %'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
-       'visualizeInSamplePerformance' ...            % visualize the decoder's in-sample deperformance
-       'visualizeOutOfSamplePerformance' ...         % visualize the decoder's out-of-sample deperformance
+       %'visualizeInSamplePerformance' ...            % visualize the decoder's in-sample deperformance
+       %'visualizeOutOfSamplePerformance' ...         % visualize the decoder's out-of-sample deperformance
+       'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
        % 'makeReconstructionVideo' ...              % generate video of the reconstruction
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
     };
@@ -36,7 +36,7 @@ function RunExperiment
     
     %
     % Specify the data set to use
-    whichDataSet =  'original';
+    whichDataSet =  'large';
 
     switch (whichDataSet)
         case 'very_small'
@@ -73,7 +73,7 @@ function RunExperiment
         resultsDir = core.getResultsDir(scanSpatialOverlapFactor,fixationMeanDuration, microFixationGain, osType);
         decodingDataDir = core.getDecodingDataDir(resultsDir, preProcessingParams);
         p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
-        fprintf('<strong>Using data from:\nResultsDir: ''%s''\nDecodingDataDir: ''%s''. </strong>\n', resultsDir, strrep(decodingDataDir,sprintf('%s/',p.computedDataDir),''));
+        fprintf('<strong>Using data from:\nResultsDir: ''%s''\nDecodingDataDir: ''%s''\nSceneSetName: ''%s''.</strong>\n', resultsDir, strrep(decodingDataDir,sprintf('%s/',p.computedDataDir),''), sceneSetName );
     end  
     
     for k = 1:numel(instructionSet)
@@ -107,7 +107,8 @@ function RunExperiment
                 decoder.computeOutOfSamplePrediction(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions);
 
             case 'visualizeDecodingFilter'
-                visualizer.renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions);
+                visualizeSVDfiltersForVarianceExplained = 96;
+                visualizer.renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, visualizeSVDfiltersForVarianceExplained);
 
             case 'visualizeInSamplePerformance'
                 visualizer.renderPerformanceFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, 'InSample');
