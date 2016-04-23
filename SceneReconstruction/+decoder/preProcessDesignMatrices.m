@@ -129,7 +129,7 @@ function [X, originalXRank, designMatrixPreprocessing] = preProcessDesignMatrix(
                 fprintf('\t2c. Whitening (X) [%d x %d]...',  timeSamples, filterDimensions);
                 
                 % Compute whitening operator
-                designMatrixPreprocessing.whiteningOperator = decoder.computeWhiteningMatrix(X);
+                designMatrixPreprocessing.whiteningOperator = decoder.computeWhiteningMatrix(X, preProcessingParams.thresholdVarianceExplainedForWhiteningMatrix);
                 % Whiten X
                 X = X * designMatrixPreprocessing.whiteningOperator;
                 X(:,1) = 1;
