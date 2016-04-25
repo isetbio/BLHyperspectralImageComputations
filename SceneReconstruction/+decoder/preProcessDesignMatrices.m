@@ -49,6 +49,7 @@ function [X, originalXRank, designMatrixPreprocessing] = preProcessDesignMatrix(
 
     timeSamples = size(X,1);
     filterDimensions = size(X,2);
+    originalXRank = [];
     
     if (~isempty(designMatrixPreprocessing))
         % Passed designMatrixPreprocessing is non empty, so use that one
@@ -83,10 +84,7 @@ function [X, originalXRank, designMatrixPreprocessing] = preProcessDesignMatrix(
     end
     
     % Passed designMatrixPreprocessing is empty, so compute one
-    originalXRank = [];
-    
     if (preProcessingParams.designMatrixBased > 0)
-        
         if (computeRank)
             fprintf('2aa. Computing rank(originalX) [%d x %d]...',  timeSamples, filterDimensions);
             tic

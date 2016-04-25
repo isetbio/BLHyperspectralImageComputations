@@ -5,7 +5,7 @@ function RunExperiment
     % Computation steps. Uncomment the ones you want to execute
     computationInstructionSet = {...
        %'lookAtScenes' ...
-       %'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
+       'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
        'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
        'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
        'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
@@ -13,8 +13,8 @@ function RunExperiment
     
     visualizationInstructionSet = {...
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
-       'visualizeInSamplePerformance' ...            % visualize the decoder's in-sample deperformance
-       %'visualizeOutOfSamplePerformance' ...         % visualize the decoder's out-of-sample deperformance
+       %'visualizeInSamplePerformance' ...            % visualize the decoder's in-sample deperformance
+       'visualizeOutOfSamplePerformance' ...         % visualize the decoder's out-of-sample deperformance
        %'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
        % 'makeReconstructionVideo' ...              % generate video of the reconstruction
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
@@ -22,7 +22,7 @@ function RunExperiment
   
     % Specify what to compute
     instructionSet = computationInstructionSet;  
-    %instructionSet = visualizationInstructionSet;
+    instructionSet = visualizationInstructionSet;
     
     
     % Set data preprocessing params - This affects the name of the decodingDataDir
@@ -69,7 +69,7 @@ function RunExperiment
     if (~ismember('compute outer segment responses', instructionSet))
         % Select an existing set of scans data (according to the following params)
         fixationMeanDuration = 200; 
-        microFixationGain = 1; 
+        microFixationGain = 0; 
         osType = '@osLinear';
         resultsDir = core.getResultsDir(scanSpatialOverlapFactor,fixationMeanDuration, microFixationGain, osType);
         decodingDataDir = core.getDecodingDataDir(resultsDir, preProcessingParams);
@@ -115,6 +115,7 @@ function RunExperiment
                 visualizer.renderPerformanceFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, visualizeSVDfiltersForVarianceExplained2, 'InSample');
 
             case 'visualizeOutOfSamplePerformance'
+                visualizeSVDfiltersForVarianceExplained2 = [];
                 visualizer.renderPerformanceFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, visualizeSVDfiltersForVarianceExplained2, 'OutOfSample');
 
             case 'makeReconstructionVideo'
@@ -159,7 +160,7 @@ function expParams = experimentParams(sceneSetName, scanSpatialOverlapFactor, fi
             'stDevFixationDurationInMilliseconds', 20, ...
             'meanFixationDurationInMillisecondsForAdaptingField', 200, ...
             'stDevFixationDurationInMillisecondsForAdaptingField', 20, ...
-            'microFixationGain', 1, ...
+            'microFixationGain', 0, ...
             'fixationOverlapFactor', scanSpatialOverlapFactor^2, ...     
             'saccadicScanMode',  'randomized'...                                    % 'randomized' or 'sequential', to visit eye position grid sequentially
         ) ...
