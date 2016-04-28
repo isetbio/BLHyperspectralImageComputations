@@ -50,6 +50,8 @@ function computeOuterSegmentResponses(expParams)
             osOBJ = osBioPhys();
         elseif (strcmp(expParams.outerSegmentParams.type, '@osLinear'))
             osOBJ = osLinear();
+        elseif (strcmp(expParams.outerSegmentParams.type, '@osIdentity'))
+            osOBJ = osIdentity();
         else
             error('Unknown outer segment type: ''%s'' \n', expParams.outerSegmentParams.type);
         end

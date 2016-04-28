@@ -71,8 +71,12 @@ function scanData = computeScanData(scene,  oi,  sensor, osOBJ, ...
         scanSensor = sensorSet(scanSensor, 'positions',   sensorPositionSequence/sensorSampleSeparationInMicrons(1));
 
         % Compute photocurrents for this scan path
-        osOBJ.osCompute(scanSensor);
-        photoCurrentSequence = osGet(osOBJ, 'ConeCurrentSignal');
+        if (isa(osOBJ, 'osIdentity'))
+            photoCurrentSequence = isomerizationRateSequence; % osGet(osOBJ, 'PhotonRate');
+        else
+            osOBJ.osCompute(scanSensor);
+            photoCurrentSequence = osGet(osOBJ, 'ConeCurrentSignal');
+        end
         
         % Assemble the LMS excitation sequence for this scanpath (both at the scene level and the optical image level) 
         [sceneLMSexcitationSequence, oiLMSexcitationSequence] = generateLMSexcitationSequence(...

@@ -1,4 +1,4 @@
-function preProcessDesignMatrices(sceneSetName, decodingDataDir)
+    function preProcessDesignMatrices(sceneSetName, decodingDataDir)
 
     fileNameXtrain = fullfile(decodingDataDir, sprintf('%s_trainingDesignMatrices.mat', sceneSetName));
     fileNameXtest  = fullfile(decodingDataDir, sprintf('%s_testingDesignMatrices.mat', sceneSetName));

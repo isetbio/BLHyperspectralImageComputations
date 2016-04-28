@@ -5,15 +5,15 @@ function RunExperiment
     % Computation steps. Uncomment the ones you want to execute
     computationInstructionSet = {...
        %'lookAtScenes' ...
-       'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
-       'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
+       %'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
+       %'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
        'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
        'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
     };
     
     visualizationInstructionSet = {...
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
-       %'visualizeInSamplePerformance' ...            % visualize the decoder's in-sample deperformance
+       'visualizeInSamplePerformance' ...            % visualize the decoder's in-sample deperformance
        'visualizeOutOfSamplePerformance' ...         % visualize the decoder's out-of-sample deperformance
        %'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
        % 'makeReconstructionVideo' ...              % generate video of the reconstruction
@@ -26,18 +26,18 @@ function RunExperiment
     
     
     % Set data preprocessing params - This affects the name of the decodingDataDir
-    designMatrixBased = 3;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+    designMatrixBased = 0;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
     rawResponseBased = 0;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
     thresholdVarianceExplainedForWhiteningMatrix = 100.0; %95.0;  % 95% results in nearly equal in-sample and out-of-sample performance in the  'small' data set (linearOS)
     preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased, thresholdVarianceExplainedForWhiteningMatrix);
     useIdenticalPreprocessingOperationsForTrainingAndTestData = true;
     
     computeSVDbasedLowRankFiltersAndPredictions = true;
-    visualizeSVDfiltersForVarianceExplained = 99.99;
+    visualizeSVDfiltersForVarianceExplained = 80;
     
     %
     % Specify the data set to use
-    whichDataSet =  'large';
+    whichDataSet =  'original';
 
     switch (whichDataSet)
         case 'very_small'
@@ -52,6 +52,11 @@ function RunExperiment
             
         case 'original'
             sceneSetName = 'manchester';  
+            scanSpatialOverlapFactor = 0.85; 
+            fixationsPerScan = 20;
+            
+        case 'original_3'
+            sceneSetName = 'manchester_3';  
             scanSpatialOverlapFactor = 0.85; 
             fixationsPerScan = 20;
             
@@ -70,7 +75,7 @@ function RunExperiment
         % Select an existing set of scans data (according to the following params)
         fixationMeanDuration = 200; 
         microFixationGain = 0; 
-        osType = '@osLinear';
+        osType = '@osIdentity';
         resultsDir = core.getResultsDir(scanSpatialOverlapFactor,fixationMeanDuration, microFixationGain, osType);
         decodingDataDir = core.getDecodingDataDir(resultsDir, preProcessingParams);
         p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
@@ -101,7 +106,7 @@ function RunExperiment
                 core.assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, trainingDataPercentange, testingDataPercentage, preProcessingParams, useIdenticalPreprocessingOperationsForTrainingAndTestData);
 
             case 'computeDecodingFilter'
-                SVDbasedLowRankFilterVariancesExplained = [80 85 90 92 94 95 96 97 98 99.5 99.9 99.999];
+                SVDbasedLowRankFilterVariancesExplained = [50 60 70 80 85 90 92 94 95 96 97 98 99.5 99.9 99.999];
                 decoder.computeDecodingFilter(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, SVDbasedLowRankFilterVariancesExplained);
 
             case 'computeOutOfSamplePrediction'
@@ -167,7 +172,7 @@ function expParams = experimentParams(sceneSetName, scanSpatialOverlapFactor, fi
     );
     
     outerSegmentParams = struct(...
-        'type', '@osLinear', ...                       % choose between '@osBiophys' and '@osLinear'
+        'type', '@osIdentity', ...                       % choose between '@osBiophys', '@osLinear', and @osIdentity
         'addNoise', true ...
     );
     

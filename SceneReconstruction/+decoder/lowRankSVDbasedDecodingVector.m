@@ -1,10 +1,17 @@
-function wVector = lowRankSVDbasedDecodingVector(U, S, V, C, thresholdVarianceExplained)  
+function wVector = lowRankSVDbasedDecodingVector(U, S, V, C, thresholdVarianceExplained)
+
     dd = (diag(S)).^2;
     varianceExplained = cumsum(dd) / sum(dd) * 100;
     
     indicesBelowThreshold = find(varianceExplained <= thresholdVarianceExplained);
-    includedComponentsNum = indicesBelowThreshold(end);
+    if (isempty(indicesBelowThreshold))
+        includedComponentsNum = 1;
+        fprintf(2,'\n<strong>varianceExplained(1) (%2.2f) > thresholdVarianceExplained (%2.2f).\nWill only use first SVD component.</strong>\n', varianceExplained(1), thresholdVarianceExplained);
+    else
+        includedComponentsNum = indicesBelowThreshold(end);
+    end
     
     k = min([size(S,1) includedComponentsNum]);
-    wVector =  (V(:,1:k) * inv(S(1:k,1:k)) * (U(:,1:k))') * C;
+    includedComponents = 1:k;
+    wVector =  (V(:,includedComponents) * inv(S(includedComponents,includedComponents)) * (U(:,includedComponents))') * C;
 end
