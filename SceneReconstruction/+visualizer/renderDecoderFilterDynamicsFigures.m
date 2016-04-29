@@ -1,4 +1,4 @@
-function renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, visualizeSVDfiltersForVarianceExplained)
+function renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions)
  
     fprintf('\nLoading decoder filter ...');
     fileName = fullfile(decodingDataDir, sprintf('%s_decodingFilter.mat', sceneSetName));
@@ -10,15 +10,10 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir, compu
 
     if (computeSVDbasedLowRankFiltersAndPredictions)
         load(fileName, 'wVectorSVDbased', 'SVDbasedLowRankFilterVariancesExplained');%, 'Utrain', 'Strain', 'Vtrain');
-        if (isempty(visualizeSVDfiltersForVarianceExplained))
-            kk = 1:numel(SVDbasedLowRankFilterVariancesExplained);
-        else
-            [~,kk] = min(abs(SVDbasedLowRankFilterVariancesExplained-visualizeSVDfiltersForVarianceExplained(1)));
-        end
-        kk
-        for kIndex = kk
-            wVectorSVD = squeeze(wVectorSVDbased(kIndex,:,:));
-            componentString = sprintf('SVD_%2.3f%%VarianceExplained', SVDbasedLowRankFilterVariancesExplained(kIndex));
+        svdIndices = core.promptUserForChoiceFromSelectionOfChoices('Select desired variance explained for which to display the decoder filters', SVDbasedLowRankFilterVariancesExplained);
+        for svdIndex = svdIndices
+            wVectorSVD = squeeze(wVectorSVDbased(svdIndex,:,:));
+            componentString = sprintf('SVD_%2.3f%%VarianceExplained', SVDbasedLowRankFilterVariancesExplained(svdIndex));
             generateAllFigures(decodingDataDir, componentString, wVectorSVD, spatioTemporalSupport, coneTypes, expParams)
         end
     end

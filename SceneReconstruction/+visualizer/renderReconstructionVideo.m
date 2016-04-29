@@ -1,4 +1,4 @@
-function renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, visualizeSVDfiltersForVarianceExplained)
+function renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions)
 
     % Retrieve resources needed to convert LMS RGB for a hypothetical super display that can display the natural scenes
     displayName = 'LCD-Apple'; %'OLED-Samsung'; % 'OLED-Samsung', 'OLED-Sony';
@@ -26,8 +26,9 @@ function renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir, co
         
         if (computeSVDbasedLowRankFiltersAndPredictions)
             load(fileName, 'CtrainPredictionSVDbased', 'SVDbasedLowRankFilterVariancesExplained');
-            [~,kk] = min(abs(SVDbasedLowRankFilterVariancesExplained-visualizeSVDfiltersForVarianceExplained(1)));
-            CtrainPrediction = squeeze(CtrainPredictionSVDbased(kk,:, :));
+            svdIndices = core.promptUserForChoiceFromSelectionOfChoices('Select desired variance explained for the reconstruction filters', SVDbasedLowRankFilterVariancesExplained);
+            svdIndex = svdIndices(1);
+            CtrainPrediction = squeeze(CtrainPredictionSVDbased(svdIndex,:, :));
         end
         
         videoFileName = fullfile(decodingDataDir, sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dInSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
@@ -61,8 +62,8 @@ function renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir, co
         
         if (computeSVDbasedLowRankFiltersAndPredictions)
             load(fileName, 'CtestPredictionSVDbased', 'SVDbasedLowRankFilterVariancesExplained');
-            [~,kk] = min(abs(SVDbasedLowRankFilterVariancesExplained-visualizeSVDfiltersForVarianceExplained(1)));
-            CtestPrediction = squeeze(CtestPredictionSVDbased(kk,:, :));
+            svdIndices = core.promptUserForChoiceFromSelectionOfChoices('Select desired variance explained for the reconstruction filters', SVDbasedLowRankFilterVariancesExplained);
+            CtestPrediction = squeeze(CtestPredictionSVDbased(svdIndex,:, :));
         end
         
         videoFileName = fullfile(decodingDataDir, sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dOutOfSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
@@ -96,8 +97,9 @@ function renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir, co
         
         if (computeSVDbasedLowRankFiltersAndPredictions)
             load(fileName, 'CtestPredictionSVDbased', 'SVDbasedLowRankFilterVariancesExplained');
-            [~,kk] = min(abs(SVDbasedLowRankFilterVariancesExplained-visualizeSVDfiltersForVarianceExplained(1)));
-            CtestPrediction = squeeze(CtestPredictionSVDbased(kk,:, :));
+            svdIndices = core.promptUserForChoiceFromSelectionOfChoices('Select desired variance explained for the reconstruction filters', SVDbasedLowRankFilterVariancesExplained);
+            svdIndex = svdIndices(1);
+            CtestPrediction = squeeze(CtestPredictionSVDbased(svdIndex,:, :));
         end
         
         videoFileName = fullfile(decodingDataDir, sprintf('Reconstruction%s%sOverlap%2.1fMeanLum%dInAndOutOfSample', expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
@@ -124,8 +126,7 @@ function renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir, co
         
         if (computeSVDbasedLowRankFiltersAndPredictions)
             load(fileName, 'CtrainPredictionSVDbased', 'SVDbasedLowRankFilterVariancesExplained');
-            [~,kk] = min(abs(SVDbasedLowRankFilterVariancesExplained-visualizeSVDfiltersForVarianceExplained(1)));
-            CtrainPrediction = squeeze(CtrainPredictionSVDbased(kk,:, :));
+            CtrainPrediction = squeeze(CtrainPredictionSVDbased(svdIndex,:, :));
         end
         
         makeVideo(hFig, writerObj, sceneSetName, resultsDir, coneFundamentals, displaySPDs, RGBtoXYZ, Ctrain, CtrainPrediction, oiCtrain, ...
