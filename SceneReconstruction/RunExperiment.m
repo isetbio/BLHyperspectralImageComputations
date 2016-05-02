@@ -243,7 +243,7 @@ function expParams = experimentParams(sceneSetName, opticalElements, inertPigmen
     meanLuminance = 300;
     if (strcmp(opticalElements, 'none'))
         meanLuminance = 5;
-        fprintf(2,'Because opticalElements is set to none, and to achieve a comparable retinal illuminance, we set the mean luminance to %2.2f\n', meanLuminance);
+        fprintf(2,'Because opticalElements is set to none, and to achieve a comparable retinal illuminance, we set the mean luminance to %2.1f cd/m2\n', meanLuminance);
     end
     
     adaptingFieldParams = struct(...
