@@ -1,7 +1,8 @@
-function renderPerformanceFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, visualizeSVDfiltersForVarianceExplained, InSampleOrOutOfSample)
+function renderPerformanceFigures(sceneSetName, decodingDataDir,  visualizeSVDfiltersForVarianceExplained, InSampleOrOutOfSample)
 
     fprintf('\nLoading stimulus prediction data ...');
-
+    computeSVDbasedLowRankFiltersAndPredictions = true;
+    
     if (strcmp(InSampleOrOutOfSample, 'InSample'))
         fileName = fullfile(decodingDataDir, sprintf('%s_inSamplePrediction.mat', sceneSetName));
         load(fileName,  'Ctrain', 'CtrainPrediction', 'trainingTimeAxis', 'trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'originalTrainingStimulusSize', 'expParams');
@@ -27,7 +28,6 @@ function renderPerformanceFigures(sceneSetName, decodingDataDir, computeSVDbased
             else
                 [~,kk] = min(abs(SVDbasedLowRankFilterVariancesExplained-visualizeSVDfiltersForVarianceExplained(1)));
             end
-            kk
             for kIndex = kk
                 componentString = sprintf('SVD_%2.3f%%VarianceExplained', SVDbasedLowRankFilterVariancesExplained(kIndex));
                 imageFileName = generateImageFileName(InSampleOrOutOfSample, componentString, decodingDataDir, expParams);

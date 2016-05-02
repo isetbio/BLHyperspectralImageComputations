@@ -1,4 +1,4 @@
-function renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions)
+function renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir)
 
     % Retrieve resources needed to convert LMS RGB for a hypothetical super display that can display the natural scenes
     displayName = 'LCD-Apple'; %'OLED-Samsung'; % 'OLED-Samsung', 'OLED-Sony';
@@ -10,6 +10,8 @@ function renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir, co
     slideSize = [2560 1440]/2;
     hFig = figure(1); clf;
     set(hFig, 'Position', [10 10 slideSize(1) slideSize(2)], 'Color', [1 1 1]);
+    
+    computeSVDbasedLowRankFiltersAndPredictions = true;
     
     if (whichOne == 1)
         

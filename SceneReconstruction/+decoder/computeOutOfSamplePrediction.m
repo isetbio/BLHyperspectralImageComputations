@@ -1,4 +1,4 @@
-function computeOutOfSamplePrediction(sceneSetName, decodingDataDir, computeSVDbasedFPredictions)
+function computeOutOfSamplePrediction(sceneSetName, decodingDataDir)
 
     % Load test design matrices and stimulus vectors
     fileName = fullfile(decodingDataDir, sprintf('%s_testingDesignMatrices.mat', sceneSetName));
@@ -20,6 +20,7 @@ function computeOutOfSamplePrediction(sceneSetName, decodingDataDir, computeSVDb
     fprintf('3. Computing out-of-sample predictions [%d x %d]...',  size(Xtest,1), stimulusDimensions);
     CtestPrediction = Xtest * wVector;    
         
+    computeSVDbasedFPredictions = true;
     if (computeSVDbasedFPredictions)
         CtestPredictionSVDbased = zeros(numel(SVDbasedLowRankFilterVariancesExplained), size(CtestPrediction,1), size(CtestPrediction,2));
         for kIndex = 1:numel(SVDbasedLowRankFilterVariancesExplained)

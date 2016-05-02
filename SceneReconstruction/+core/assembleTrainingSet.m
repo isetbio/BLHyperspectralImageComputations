@@ -1,5 +1,6 @@
-function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, trainingDataPercentange, testingDataPercentage, preProcessingParams, useIdenticalPreprocessingOperationsForTrainingAndTestData)
+function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, trainingDataPercentange, testingDataPercentage, preProcessingParams)
 
+     
     totalTrainingScansNum = 0;
     totalTestingScansNum = 0;
     trainingTimeAxis = [];
@@ -198,7 +199,7 @@ function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, training
         decoder.reformatStimulusSequence('ToDesignMatrixFormat', testingOpticalImageLMScontrastSequence);
     
     % Preprocess raw signals
-    if (useIdenticalPreprocessingOperationsForTrainingAndTestData)
+    if (preProcessingParams.useIdenticalPreprocessingOperationsForTrainingAndTestData)
         rawTestResponsePreprocessing = rawTrainingResponsePreprocessing;
     else
         rawTestResponsePreprocessing = [];
