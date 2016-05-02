@@ -1,4 +1,4 @@
-function computeDecodingFilter(sceneSetName, decodingDataDir, computeSVDbasedFilters, SVDbasedLowRankFilterVariancesExplained)
+function computeDecodingFilter(sceneSetName, decodingDataDir, SVDbasedLowRankFilterVariancesExplained)
 
     fprintf('\n1. Loading training design matrix (X) and stimulus vector ... ');
     tic
@@ -27,6 +27,7 @@ function computeDecodingFilter(sceneSetName, decodingDataDir, computeSVDbasedFil
     wVector = pseudoInverseOfX * Ctrain;
     fprintf('Done after %2.1f minutes.\n', toc/60);
     
+    computeSVDbasedFilters = true;
     if (computeSVDbasedFilters)
         % Compute and save the SVD decomposition of X so we can check (later) how the
         % filter dynamics depend on the # of SVD components

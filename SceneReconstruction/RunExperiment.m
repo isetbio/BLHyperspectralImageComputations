@@ -6,9 +6,9 @@ function RunExperiment
     computationInstructionSet = {...
        %'lookAtScenes' ...
        'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
-       %'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
-       %'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
-       %'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
+       'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
+       'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
+       'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
     };
     
     visualizationInstructionSet = {...
@@ -25,21 +25,12 @@ function RunExperiment
     %instructionSet = visualizationInstructionSet;
     
     
-    % Set data preprocessing params - This affects the name of the decodingDataDir
-    designMatrixBased = 3;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
-    rawResponseBased = 0;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
-    thresholdVarianceExplainedForWhiteningMatrix = 100.0; %95.0;  % 95% results in nearly equal in-sample and out-of-sample performance in the  'small' data set (linearOS)
-    preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased, thresholdVarianceExplainedForWhiteningMatrix);
-    useIdenticalPreprocessingOperationsForTrainingAndTestData = true;
-    
-    computeSVDbasedLowRankFiltersAndPredictions = true;
-    
     % Specify the optical elements employed - This affects the name of the resutls dir
     opticalElements = 'none';  % choose from 'none', 'noOTF', 'fNumber1.0', 'default'
     inertPigments = 'none';    % choose between 'none', 'noLens', 'noMacular', 'default'
         
     % Specify the data set to use
-    whichDataSet =  'original';
+    whichDataSet =  'large';
 
     switch (whichDataSet)
         case 'very_small'
@@ -74,6 +65,7 @@ function RunExperiment
     
     
     if (~ismember('compute outer segment responses', instructionSet))
+        
         % Select an existing set of scans data (according to the following params)
         opticalElements = 'none';  % choose from 'none', 'noOTF', 'fNumber1.0', 'default'
         inertPigments = 'none'; % choose between 'none', 'noLens', 'noMacular', 'default'
@@ -81,7 +73,14 @@ function RunExperiment
         microFixationGain = 0; 
         osType = '@osIdentity';
         resultsDir = core.getResultsDir(opticalElements, inertPigments, scanSpatialOverlapFactor, fixationMeanDuration, microFixationGain, osType);
+        
+        % Set data preprocessing params - This affects the name of the decodingDataDir
+        designMatrixBased = 3;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+        rawResponseBased = 0;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+        useIdenticalPreprocessingOperationsForTrainingAndTestData = true;
+        preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased, useIdenticalPreprocessingOperationsForTrainingAndTestData);
         decodingDataDir = core.getDecodingDataDir(resultsDir, preProcessingParams);
+        
         p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
         fprintf('<strong>Using data from:\nResultsDir: ''%s''\nDecodingDataDir: ''%s''\nSceneSetName: ''%s''.</strong>\n', resultsDir, strrep(decodingDataDir,sprintf('%s/',p.computedDataDir),''), sceneSetName );
     end  
@@ -98,6 +97,7 @@ function RunExperiment
                 % Set the sceneSetName, resultsDir, decodingDataDir according to the params set by experimentParams()
                 sceneSetName = expParams.sceneSetName;
                 resultsDir = expParams.resultsDir;
+                preProcessingParams = expParams.preProcessingParams;   % Get the data preprocessing params
                 decodingDataDir = core.getDecodingDataDir(resultsDir, preProcessingParams);
 
             case 'visualizeScan'
@@ -107,28 +107,29 @@ function RunExperiment
             case 'assembleTrainingDataSet'
                 trainingDataPercentange = 50;
                 testingDataPercentage = 50;
-                core.assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, trainingDataPercentange, testingDataPercentage, preProcessingParams, useIdenticalPreprocessingOperationsForTrainingAndTestData);
+                core.assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, trainingDataPercentange, testingDataPercentage, preProcessingParams);
 
             case 'computeDecodingFilter'
                 SVDbasedLowRankFilterVariancesExplained = [50 60 70 80 85 90 92 94 95 96 97 98 99.5 99.9 99.999];
-                decoder.computeDecodingFilter(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, SVDbasedLowRankFilterVariancesExplained);
-
+                decoder.computeDecodingFilter(sceneSetName, decodingDataDir, SVDbasedLowRankFilterVariancesExplained);
+                core.exportExpParamsToJSONfile(sceneSetName, decodingDataDir, expParams, SVDbasedLowRankFilterVariancesExplained);
+                
             case 'computeOutOfSamplePrediction'
-                decoder.computeOutOfSamplePrediction(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions);
+                decoder.computeOutOfSamplePrediction(sceneSetName, decodingDataDir);
 
             case 'visualizeDecodingFilter'
-                visualizer.renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions);
+                visualizer.renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir);
 
             case 'visualizeInSamplePerformance'
-                visualizePerformanceForVarianceExplained = []; %99.99;
-                visualizer.renderPerformanceFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, visualizePerformanceForVarianceExplained, 'InSample');
+                visualizePerformanceForVarianceExplained = []; %99.99;  % empty for all variance levels, 
+                visualizer.renderPerformanceFigures(sceneSetName, decodingDataDir, visualizePerformanceForVarianceExplained, 'InSample');
 
             case 'visualizeOutOfSamplePerformance'
-                visualizePerformanceForVarianceExplained = [];
-                visualizer.renderPerformanceFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, visualizePerformanceForVarianceExplained, 'OutOfSample');
+                visualizePerformanceForVarianceExplained = [];  %99.99;  % empty for all variance levels, 
+                visualizer.renderPerformanceFigures(sceneSetName, decodingDataDir,  visualizePerformanceForVarianceExplained, 'OutOfSample');
 
             case 'makeReconstructionVideo'
-                visualizer.renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions);
+                visualizer.renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir);
 
             case 'visualizeConeMosaic'
                 visualizer.renderConeMosaic(sceneSetName, resultsDir, decodingDataDir);
@@ -142,6 +143,11 @@ end
 
 function expParams = experimentParams(sceneSetName, opticalElements, inertPigments, scanSpatialOverlapFactor, fixationsPerScan)
 
+   designMatrixBased = 3;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+   rawResponseBased = 0;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+   useIdenticalPreprocessingOperationsForTrainingAndTestData = true;
+   preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased, useIdenticalPreprocessingOperationsForTrainingAndTestData);
+        
    decoderParams = struct(...
         'type', 'optimalLinearFilter', ...
         'thresholdConeSeparationForInclusionInDecoder', 0, ...      % 0 to include all cones
@@ -280,15 +286,17 @@ function expParams = experimentParams(sceneSetName, opticalElements, inertPigmen
         'opticsParams',         opticsParams, ...
         'sensorParams',         sensorParams, ...
         'outerSegmentParams',   outerSegmentParams, ...
+        'preProcessingParams',  preProcessingParams, ...
         'decoderParams',        decoderParams ...
     );
 end
 
-function preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased, thresholdVarianceExplainedForWhiteningMatrix)
+function preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased, useIdenticalPreprocessingOperationsForTrainingAndTestData)
     preProcessingParams = struct(...
         'designMatrixBased', designMatrixBased, ...                                  % 0: nothing, 1:centering, 2:centering+norm, 3:centering+norm+whitening
         'rawResponseBased', rawResponseBased, ...                                    % 0: nothing, 1:centering, 2:centering+norm,
-        'thresholdVarianceExplainedForWhiteningMatrix', thresholdVarianceExplainedForWhiteningMatrix ...
+        'useIdenticalPreprocessingOperationsForTrainingAndTestData', useIdenticalPreprocessingOperationsForTrainingAndTestData, ...
+        'thresholdVarianceExplainedForWhiteningMatrix', 100 ...
     );
     
     if ((preProcessingParams.designMatrixBased > 0) && (preProcessingParams.rawResponseBased > 0))

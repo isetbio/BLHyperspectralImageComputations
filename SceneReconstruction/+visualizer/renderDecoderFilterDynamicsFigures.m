@@ -1,4 +1,4 @@
-function renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions)
+function renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir)
  
     fprintf('\nLoading decoder filter ...');
     fileName = fullfile(decodingDataDir, sprintf('%s_decodingFilter.mat', sceneSetName));
@@ -8,6 +8,7 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir, compu
     componentString = 'PINVbased';
     generateAllFigures(decodingDataDir, componentString, wVector, spatioTemporalSupport, coneTypes, expParams)
 
+    computeSVDbasedLowRankFiltersAndPredictions = true;
     if (computeSVDbasedLowRankFiltersAndPredictions)
         load(fileName, 'wVectorSVDbased', 'SVDbasedLowRankFilterVariancesExplained');%, 'Utrain', 'Strain', 'Vtrain');
         svdIndices = core.promptUserForChoiceFromSelectionOfChoices('Select desired variance explained for which to display the decoder filters', SVDbasedLowRankFilterVariancesExplained);
