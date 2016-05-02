@@ -8,6 +8,27 @@ function [sensor, fixationTimes, adaptingFieldFixationTimes] = customizeSensor(o
        rng(sensorParams.randomSeed);
     end
     
+    % custom lens optical density
+    if (~isempty(sensorParams.lensOpticalDensity))   
+       lens = sensorGet(sensor, 'human lens');
+       lens = lensSet(lens, 'density', sensorParams.lensOpticalDensity);
+       sensor = sensorSet(sensor, 'human lens', lens);
+    end
+    
+    % custom macular optical density
+    if (~isempty(sensorParams.macularOpticalDensity))
+        macular = sensorGet(sensor, 'human macular');
+        macular = macularSet(macular, 'density', sensorParams.macularOpticalDensity);
+        sensor = sensorSet(sensor, 'human macular', macular);
+    end
+    
+    % custom cone peak optical densities
+    if (~isempty(sensorParams.conePeakOpticalDensities))
+        humanCone = sensorGet(sensor, 'human cone');
+        humanCone = coneSet(humanCone, 'pods', reshape(sensorParams.conePeakOpticalDensities, [3 1]));
+        sensor = sensorSet(sensor, 'human cone', humanCone);
+    end
+
     % custom aperture
     pixel  = sensorGet(sensor,'pixel');
     pixel  = pixelSet(pixel, 'size', [1.0 1.0]*sensorParams.coneApertureInMicrons*1e-6);  % specified in meters;

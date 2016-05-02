@@ -4,8 +4,8 @@ function RunExperiment
         
     % Computation steps. Uncomment the ones you want to execute
     computationInstructionSet = {...
-       'lookAtScenes' ...
-       %'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
+       %'lookAtScenes' ...
+       'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
        %'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
        %'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
        %'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
@@ -34,13 +34,16 @@ function RunExperiment
     
     computeSVDbasedLowRankFiltersAndPredictions = true;
     
-    
+    % Specify the optical elements employed - This affects the name of the resutls dir
+    opticalElements = 'none';  % choose from 'none', 'noOTF', 'fNumber1.0', 'default'
+    inertPigments = 'none';    % choose between 'none', 'noLens', 'noMacular', 'default'
+        
     % Specify the data set to use
     whichDataSet =  'original';
 
     switch (whichDataSet)
         case 'very_small'
-            sceneSetName = 'manchester';  
+            sceneSetName = 'manchester';
             scanSpatialOverlapFactor = 0.4; 
             fixationsPerScan = 10;
             
@@ -72,10 +75,12 @@ function RunExperiment
     
     if (~ismember('compute outer segment responses', instructionSet))
         % Select an existing set of scans data (according to the following params)
+        opticalElements = 'none';  % choose from 'none', 'noOTF', 'fNumber1.0', 'default'
+        inertPigments = 'none'; % choose between 'none', 'noLens', 'noMacular', 'default'
         fixationMeanDuration = 200; 
         microFixationGain = 0; 
         osType = '@osIdentity';
-        resultsDir = core.getResultsDir(scanSpatialOverlapFactor,fixationMeanDuration, microFixationGain, osType);
+        resultsDir = core.getResultsDir(opticalElements, inertPigments, scanSpatialOverlapFactor, fixationMeanDuration, microFixationGain, osType);
         decodingDataDir = core.getDecodingDataDir(resultsDir, preProcessingParams);
         p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
         fprintf('<strong>Using data from:\nResultsDir: ''%s''\nDecodingDataDir: ''%s''\nSceneSetName: ''%s''.</strong>\n', resultsDir, strrep(decodingDataDir,sprintf('%s/',p.computedDataDir),''), sceneSetName );
@@ -87,7 +92,7 @@ function RunExperiment
                 core.lookAtScenes(sceneSetName);
 
             case 'compute outer segment responses'
-                expParams = experimentParams(sceneSetName, scanSpatialOverlapFactor, fixationsPerScan);
+                expParams = experimentParams(sceneSetName, opticalElements, inertPigments, scanSpatialOverlapFactor, fixationsPerScan);
                 core.computeOuterSegmentResponses(expParams);
                 
                 % Set the sceneSetName, resultsDir, decodingDataDir according to the params set by experimentParams()
@@ -135,7 +140,7 @@ function RunExperiment
 end
 
 
-function expParams = experimentParams(sceneSetName, scanSpatialOverlapFactor, fixationsPerScan)
+function expParams = experimentParams(sceneSetName, opticalElements, inertPigments, scanSpatialOverlapFactor, fixationsPerScan)
 
    decoderParams = struct(...
         'type', 'optimalLinearFilter', ...
@@ -150,8 +155,68 @@ function expParams = experimentParams(sceneSetName, scanSpatialOverlapFactor, fi
     sensorTimeStepInMilliseconds = 0.1;                             % must be small enough to avoid numerical instability in the outer segment current computation
     integrationTimeInMilliseconds = 50;
     
-    % sensor params for scene viewing
+    % optical elements
+    switch (opticalElements)
+        
+        case 'none'
+            opticsParams = struct(...
+                'offAxisIlluminationFallOff', false, ...                    % true/empty:  (default off-axis) or false = no fall-off (custom setting)
+                'opticalTransferFunctionBased', false, ...                  % true/empty:  (default, shift-invariant OTF) or false (diffraction-limited)
+                'customFNumber', 1.0 ...                                      % empty: (for default value) or some value (custom)          
+            );
+        
+        case 'noOTF'
+            opticsParams = struct(...
+                'offAxisIlluminationFallOff', [], ...                       % true/empty:  (default off-axis) or false = no fall-off (custom setting)
+                'opticalTransferFunctionBased', false, ...                  % true/empty:  (default, shift-invariant OTF) or false (diffraction-limited)
+                'customFNumber', [] ...                                     % empty: (for default value) or some value (custom)          
+            );
+        
+        case 'fNumber1.0'
+            opticsParams = struct(...
+                'offAxisIlluminationFallOff', [], ...                       % true/empty:  (default off-axis) or false = no fall-off (custom setting)
+                'opticalTransferFunctionBased', [], ...                  % true/empty:  (default, shift-invariant OTF) or false (diffraction-limited)
+                'customFNumber', 1.0 ...                                     % empty: (for default value) or some value (custom)          
+            );
+        
+        case 'default'
+            opticsParams = struct(...
+                'offAxisIlluminationFallOff', [], ...                       % true/empty:  (default off-axis) or false = no fall-off (custom setting)
+                'opticalTransferFunctionBased', [], ...                     % true/empty:  (default, shift-invariant OTF) or false (diffraction-limited)
+                'customFNumber', [] ...                                     % empty: (for default value) or some value (custom)          
+            );
+        
+        otherwise
+            error('Unknown optical elements ''%s''!\n', opticalElements);
+    end
+    
+    % inert pigments
+    switch (inertPigments)
+        case 'none'
+            lensOpticalDensity = 0;
+            macularOpticalDensity = 0;
+            
+        case 'noLens'
+            lensOpticalDensity = 0;
+            macularOpticalDensity = [];
+           
+        case 'noMacular'
+            lensOpticalDensity = [];
+            macularOpticalDensity = 0;
+            
+        case 'default'
+            lensOpticalDensity = [];
+            macularOpticalDensity = [];
+            
+        otherwise
+            error('Unknown inert pigments ''%s''!\n', inertPigments);
+    end
+    
+    % sensor params 
     sensorParams = struct(...
+        'lensOpticalDensity', lensOpticalDensity, ...                                % empty (for default lens density) or a lens density number in [0..1] 0 = no absorption
+        'macularOpticalDensity', macularOpticalDensity, ...                             % empty (for default macular density) or a macular density number in [0..1]  0 = no absorption
+        'conePeakOpticalDensities', [0.5 0.5 0.5], ...              % empty (for default peak optical pigment densities) or a [3x1] vector in [0 .. 0.5]
         'coneApertureInMicrons', 3.0, ...        
         'LMSdensities', [0.6 0.3 0.1], ...        
         'spatialGrid', [18 26], ...                                                 % [rows, cols]
@@ -191,15 +256,22 @@ function expParams = experimentParams(sceneSetName, scanSpatialOverlapFactor, fi
         'adaptingFieldParams', adaptingFieldParams, ...
         'forcedSceneMeanLuminance', 300 ...
     );
-    
+
+
     % assemble resultsDir based on key params
-    resultsDir = core.getResultsDir(scanSpatialOverlapFactor,sensorParams.eyeMovementScanningParams.meanFixationDurationInMilliseconds, sensorParams.eyeMovementScanningParams.microFixationGain, outerSegmentParams.type);
+    resultsDir = core.getResultsDir(...
+        opticalElements, inertPigments, ...
+        scanSpatialOverlapFactor,...
+        sensorParams.eyeMovementScanningParams.meanFixationDurationInMilliseconds, ...
+        sensorParams.eyeMovementScanningParams.microFixationGain, ...
+        outerSegmentParams.type);
     
     % organize all  param structs into one superstruct
     expParams = struct(...
-        'resultsDir',           resultsDir, ...                               % Where computed data will be saved
+        'resultsDir',           resultsDir, ...                                % Where computed data will be saved
         'sceneSetName',         sceneSetName, ...                              % the name of the scene set to be used
         'viewModeParams',       viewModeParams, ...
+        'opticsParams',         opticsParams, ...
         'sensorParams',         sensorParams, ...
         'outerSegmentParams',   outerSegmentParams, ...
         'decoderParams',        decoderParams ...

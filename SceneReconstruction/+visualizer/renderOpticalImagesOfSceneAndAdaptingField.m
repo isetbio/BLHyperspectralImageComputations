@@ -9,7 +9,7 @@ function renderOpticalImagesOfSceneAndAdaptingField(oi, sensor, fixationTimes, a
     [retinalImageSRGB, clippedPixelsNum, illuminanceRange1] = core.XYZtoSRGB(tmpXYZ, []);
    
     % everything above maxSRGB will be clipped
-    maxSRGB = 0.06; % max(retinalImageSRGB(:))
+    maxSRGB = max(retinalImageSRGB(:))
     retinalImageSRGB = retinalImageSRGB / maxSRGB;
     retinalImageSRGB(retinalImageSRGB>1) = 1;
     retinalImageSRGB(retinalImageSRGB<0) = 0;
