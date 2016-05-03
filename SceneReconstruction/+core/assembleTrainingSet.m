@@ -1,4 +1,4 @@
-function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, trainingDataPercentange, testingDataPercentage, preProcessingParams)
+function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, trainingDataPercentange, testingDataPercentage, preProcessingParams, updateExpParams)
 
      
     totalTrainingScansNum = 0;
@@ -10,6 +10,10 @@ function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, training
     for sceneIndex = 1:numel(sceneSet) 
         scanFileName = core.getScanFileName(sceneSetName, resultsDir, sceneIndex);
         load(scanFileName, 'scanData', 'scene', 'oi', 'expParams');
+        
+        if (updateExpParams)
+            expParams.preProcessingParams = preProcessingParams;
+        end
         
         scansNum = numel(scanData);
         trainingScans = round(trainingDataPercentange/100.0*scansNum);
