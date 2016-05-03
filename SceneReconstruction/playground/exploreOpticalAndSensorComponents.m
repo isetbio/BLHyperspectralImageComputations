@@ -1,4 +1,57 @@
 function exploreOpticalAndSensorComponents
+    
+
+    
+    customOpticsParams = struct(...
+        'offAxisIlluminationFallOff', true, ...      % true  (default off-axis) or false (none)
+        'opticalTransferFunctionBased', true, ...    % true  (default, shift-invariant OTF) or false (diffraction-limited)
+        'customFNumber', [] ...                        % empty (for default fNumber) or an fNumber
+        );
+    
+    customSensorParams = struct(...
+        'customLensOpticalDensity', [], ...             % empty (for default lens density) or a lens density number in [0..1]
+        'customMacularOpticalDensity', [], ...          % empty (for default macular density) or a macular density number in [0..1]
+        'customConeOpticalDensities', [], ...    % empty (for default peak optical pigment densities) or a [3x1] vector in [0 .. 0.5]
+        'size', [128 128] ...
+        );
+
+    customOpticsParams = struct(...
+        'offAxisIlluminationFallOff', false, ...      % true  (default off-axis) or false (none)
+        'opticalTransferFunctionBased', false, ...    % true  (default, shift-invariant OTF) or false (diffraction-limited)
+        'customFNumber', 1 ...                        % empty (for default fNumber) or an fNumber
+        );
+    
+    customSensorParams = struct(...
+        'customLensOpticalDensity', 0, ...             % empty (for default lens density) or a lens density number in [0..1]
+        'customMacularOpticalDensity', 0, ...          % empty (for default macular density) or a macular density number in [0..1]
+        'customConeOpticalDensities', [0.5 0.5 0.5], ...    % empty (for default peak optical pigment densities) or a [3x1] vector in [0 .. 0.5]
+        'size', [128 128] ...
+        );
+    
+    customParams = struct('optics', customOpticsParams, 'sensor', customSensorParams);
+    opt.FileName = 'test.json';
+    savejson('',customParams, opt)
+   
+    allParams = loadjson('test.json')
+    allParams.optics
+    allParams.sensor
+    pause
+    
+    
+    customOpticsParams = struct(...
+        'offAxisIlluminationFallOff', false, ...      % true  (default off-axis) or false (none)
+        'opticalTransferFunctionBased', false, ...    % true  (default, shift-invariant OTF) or false (diffraction-limited)
+        'customFNumber', 1 ...                        % empty (for default fNumber) or an fNumber
+        );
+    
+    customSensorParams = struct(...
+        'customLensOpticalDensity', 0, ...             % empty (for default lens density) or a lens density number in [0..1]
+        'customMacularOpticalDensity', 0, ...          % empty (for default macular density) or a macular density number in [0..1]
+        'customConeOpticalDensities', [0.5 0.5 0.5], ...    % empty (for default peak optical pigment densities) or a [3x1] vector in [0 .. 0.5]
+        'size', [128 128] ...
+        );
+    
+
 
     customOpticsParams = struct(...
         'offAxisIlluminationFallOff', false, ...      % true  (default off-axis) or false (none)

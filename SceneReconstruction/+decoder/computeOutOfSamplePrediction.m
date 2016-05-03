@@ -10,7 +10,9 @@ function computeOutOfSamplePrediction(sceneSetName, decodingDataDir)
     fprintf('2. Loading decoder filter ... ');
     fileName = fullfile(decodingDataDir, sprintf('%s_decodingFilter.mat', sceneSetName));
     load(fileName, 'wVector', 'spatioTemporalSupport');
-    if (computeSVDbasedFPredictions)
+    
+    computeSVDbasedPredictions = true;
+    if (computeSVDbasedPredictions)
         load(fileName, 'wVectorSVDbased', 'SVDbasedLowRankFilterVariancesExplained');
     end
     fprintf('Done\n');

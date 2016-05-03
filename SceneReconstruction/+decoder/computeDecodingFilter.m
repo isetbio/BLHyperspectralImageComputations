@@ -6,6 +6,9 @@ function computeDecodingFilter(sceneSetName, decodingDataDir, SVDbasedLowRankFil
     load(fileName, 'Xtrain', 'Ctrain', 'oiCtrain', 'trainingTimeAxis', 'trainingSceneIndexSequence', 'trainingSensorPositionSequence','trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'trainingOpticalImageLMSbackground', 'originalTrainingStimulusSize', 'expParams', 'preProcessingParams', 'rawTrainingResponsePreprocessing', 'coneTypes', 'spatioTemporalSupport');
     fprintf('Done after %2.1f minutes.\n', toc/60);
     
+    % Save to params to JSON file
+    core.exportExpParamsToJSONfile(sceneSetName, decodingDataDir, expParams, SVDbasedLowRankFilterVariancesExplained);
+    
     
     % Compute the rank of X
     timeSamples = size(Xtrain,1);
