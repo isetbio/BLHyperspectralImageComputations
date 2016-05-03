@@ -15,23 +15,26 @@ function RunExperiment
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
        %'visualizeInSamplePerformance' ...            % visualize the decoder's in-sample deperformance
        %'visualizeOutOfSamplePerformance' ...         % visualize the decoder's out-of-sample deperformance
-       'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
-       % 'makeReconstructionVideo' ...              % generate video of the reconstruction
+       %'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
+        'makeReconstructionVideo' ...              % generate video of the reconstruction
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
     };
   
     % Specify what to compute
     instructionSet = computationInstructionSet;  
-   % instructionSet = visualizationInstructionSet;
+    %instructionSet = visualizationInstructionSet;
     
     
     % Specify the optical elements employed - This affects the name of the resutls dir
     opticalElements = 'none';  % choose from 'none', 'noOTF', 'fNumber1.0', 'default'
     inertPigments = 'none';    % choose between 'none', 'noLens', 'noMacular', 'default'
-    mosaicSize = [10 10];
+    
+    % Specify mosaic size and reconstructed stimulus spatial resolution - This affects the name of the results dir
+    mosaicSize = [16 22];
+    reconstructedStimulusSpatialResolutionInMicrons = 6;
     
     % Specify the data set to use
-    whichDataSet =  'large';
+    whichDataSet =  'original';
 
     switch (whichDataSet)
         case 'very_small'
@@ -46,12 +49,12 @@ function RunExperiment
             
         case 'original'
             sceneSetName = 'manchester';  
-            scanSpatialOverlapFactor = 0.85; 
+            scanSpatialOverlapFactor = 0.75; 
             fixationsPerScan = 20;
             
         case 'original_3'
             sceneSetName = 'manchester_3';  
-            scanSpatialOverlapFactor = 0.85; 
+            scanSpatialOverlapFactor = 0.75; 
             fixationsPerScan = 20;
             
         case 'large'
@@ -71,10 +74,13 @@ function RunExperiment
         opticalElements = 'none';  % choose from 'none', 'noOTF', 'fNumber1.0', 'default'
         inertPigments = 'none'; % choose between 'none', 'noLens', 'noMacular', 'default'
         fixationMeanDuration = 200; 
-        mosaicSize = [10 10];
         microFixationGain = 0; 
+        
+        mosaicSize = [10 10];
+        reconstructedStimulusSpatialResolutionInMicrons = 3;
+        
         osType = '@osIdentity';
-        resultsDir = core.getResultsDir(opticalElements, inertPigments, scanSpatialOverlapFactor, fixationMeanDuration, microFixationGain, mosaicSize, osType);
+        resultsDir = core.getResultsDir(opticalElements, inertPigments, scanSpatialOverlapFactor, fixationMeanDuration, microFixationGain, mosaicSize, reconstructedStimulusSpatialResolutionInMicrons, osType);
         
         % Set data preprocessing params - This affects the name of the decodingDataDir
         designMatrixBased = 3;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
@@ -94,7 +100,7 @@ function RunExperiment
                 core.lookAtScenes(sceneSetName);
 
             case 'compute outer segment responses'
-                expParams = experimentParams(sceneSetName, opticalElements, inertPigments, scanSpatialOverlapFactor, fixationsPerScan, mosaicSize);
+                expParams = experimentParams(sceneSetName, opticalElements, inertPigments, scanSpatialOverlapFactor, fixationsPerScan, mosaicSize, reconstructedStimulusSpatialResolutionInMicrons);
                 core.computeOuterSegmentResponses(expParams);
                 
                 % Set the sceneSetName, resultsDir, decodingDataDir according to the params set by experimentParams()
@@ -144,23 +150,9 @@ function RunExperiment
 end
 
 
-function expParams = experimentParams(sceneSetName, opticalElements, inertPigments, scanSpatialOverlapFactor, fixationsPerScan, mosaicSize)
+function expParams = experimentParams(sceneSetName, opticalElements, inertPigments, scanSpatialOverlapFactor, fixationsPerScan, mosaicSize, reconstructedStimulusSpatialResolutionInMicrons)
 
-   designMatrixBased = 3;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
-   rawResponseBased = 0;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
-   useIdenticalPreprocessingOperationsForTrainingAndTestData = true;
-   preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased, useIdenticalPreprocessingOperationsForTrainingAndTestData);
-        
-   decoderParams = struct(...
-        'type', 'optimalLinearFilter', ...
-        'thresholdConeSeparationForInclusionInDecoder', 0, ...      % 0 to include all cones
-        'spatialSamplingInRetinalMicrons', 3.0, ...                 % reconstructed scene resolution in retinal microns
-        'extraMicronsAroundSensorBorder', 0, ...                    % decode this many additional (or less, if negative) microns on each side of the sensor
-        'temporalSamplingInMilliseconds', 10, ...                   % temporal resolution of reconstruction
-        'latencyInMillseconds', -150, ...                           % latency of the decoder filter (negative for non-causal time delays)
-        'memoryInMilliseconds', 500 ...                             % memory of the decoder filter
-    );
-    
+     
     sensorTimeStepInMilliseconds = 0.1;                             % must be small enough to avoid numerical instability in the outer segment current computation
     integrationTimeInMilliseconds = 50;
     
@@ -273,6 +265,23 @@ function expParams = experimentParams(sceneSetName, opticalElements, inertPigmen
     );
 
 
+
+   designMatrixBased = 3;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+   rawResponseBased = 0;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+   useIdenticalPreprocessingOperationsForTrainingAndTestData = true;
+   preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased, useIdenticalPreprocessingOperationsForTrainingAndTestData);
+        
+   decoderParams = struct(...
+        'type', 'optimalLinearFilter', ...
+        'thresholdConeSeparationForInclusionInDecoder', 0, ...      % 0 to include all cones
+        'spatialSamplingInRetinalMicrons', reconstructedStimulusSpatialResolutionInMicrons, ...  % reconstructed scene resolution in retinal microns
+        'extraMicronsAroundSensorBorder', -3*sensorParams.coneApertureInMicrons, ...             % decode this many additional (or less, if negative) microns on each side of the sensor
+        'temporalSamplingInMilliseconds', 5, ...                    % temporal resolution of reconstruction (used to be 10)
+        'latencyInMillseconds', -120, ...                           % latency of the decoder filter (negative for non-causal time delays) (used to be -150)
+        'memoryInMilliseconds', 300 ...                             % memory of the decoder filter (used to be 500)
+    );
+  
+
     % assemble resultsDir based on key params
     resultsDir = core.getResultsDir(...
         opticalElements, inertPigments, ...
@@ -280,6 +289,7 @@ function expParams = experimentParams(sceneSetName, opticalElements, inertPigmen
         sensorParams.eyeMovementScanningParams.meanFixationDurationInMilliseconds, ...
         sensorParams.eyeMovementScanningParams.microFixationGain, ...
         sensorParams.spatialGrid, ...
+        decoderParams.spatialSamplingInRetinalMicrons, ...
         outerSegmentParams.type);
     
     % organize all  param structs into one superstruct

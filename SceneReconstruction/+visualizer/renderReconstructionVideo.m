@@ -2,7 +2,7 @@ function renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir)
 
     % Retrieve resources needed to convert LMS RGB for a hypothetical super display that can display the natural scenes
     displayName = 'LCD-Apple'; %'OLED-Samsung'; % 'OLED-Samsung', 'OLED-Sony';
-    gain = 8;
+    gain = 2; % 8;
     [coneFundamentals, displaySPDs, RGBtoXYZ, wave] = core.LMSRGBconversionData(displayName, gain);
     
     whichOne = input('In-sample (1) out-of-sample(2) , or both (3) data : ');
@@ -64,7 +64,7 @@ function renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir)
         
         if (computeSVDbasedLowRankFiltersAndPredictions)
             load(fileName, 'CtestPredictionSVDbased', 'SVDbasedLowRankFilterVariancesExplained');
-            svdIndices = core.promptUserForChoiceFromSelectionOfChoices('Select desired variance explained for the reconstruction filters', SVDbasedLowRankFilterVariancesExplained);
+            svdIndex = core.promptUserForChoiceFromSelectionOfChoices('Select desired variance explained for the reconstruction filters', SVDbasedLowRankFilterVariancesExplained);
             CtestPrediction = squeeze(CtestPredictionSVDbased(svdIndex,:, :));
         end
         

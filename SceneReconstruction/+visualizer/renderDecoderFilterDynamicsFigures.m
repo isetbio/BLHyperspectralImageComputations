@@ -346,6 +346,9 @@ function generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTe
     xSpatialBinsNum = numel(spatioTemporalSupport.sensorFOVxaxis);                   % spatial support of decoded scene
     ySpatialBinsNum = numel(spatioTemporalSupport.sensorFOVyaxis);
  
+    rowsToPlot = 2:2:numel(spatioTemporalSupport.sensorFOVyaxis)-1;
+    colsToPlot = 2:2:numel(spatioTemporalSupport.sensorFOVxaxis)-1;
+    
     if (ySpatialBinsNum > 12)
         [~, idx] = min(abs(spatioTemporalSupport.sensorFOVyaxis));
         rowsToPlot = idx + (-300:6:300);

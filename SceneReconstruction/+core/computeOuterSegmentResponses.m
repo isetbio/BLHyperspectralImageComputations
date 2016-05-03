@@ -18,8 +18,8 @@ function computeOuterSegmentResponses(expParams)
         scene = sceneAdjustLuminance(...
             scene, expParams.viewModeParams.forcedSceneMeanLuminance);
       
-        % Add to the scene an adapting field border (15% of the total width)
-        borderCols = round(sceneGet(scene, 'cols')*0.15);
+        % Add to the scene an adapting field border (10% of the total width)
+        borderCols = round(sceneGet(scene, 'cols')*0.10);
         scene = core.sceneAddAdaptingField(...
             scene, expParams.viewModeParams.adaptingFieldParams, borderCols); 
 
@@ -30,7 +30,7 @@ function computeOuterSegmentResponses(expParams)
         % Compute optical image
         oi = oiCompute(oi, scene);
         
-        % Resample the optical image with a resolution = 0.5 x cone aperture. NOTE: this may be different for decoding
+        % Resample the optical image with a resolution = 0.5 x cone aperture.
         spatialSample = expParams.sensorParams.coneApertureInMicrons/2.0;
         oi = oiSpatialResample(oi, spatialSample, 'um', 'linear', false);
         
