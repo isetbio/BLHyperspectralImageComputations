@@ -5,7 +5,7 @@ function RunExperiment
     % Computation steps. Uncomment the ones you want to execute
     computationInstructionSet = {...
        %'lookAtScenes' ...
-       %'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
+       'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
        'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
        'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
        'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
@@ -13,24 +13,25 @@ function RunExperiment
     
     visualizationInstructionSet = {...
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
-       'visualizeInSamplePerformance' ...            % visualize the decoder's in-sample deperformance
-       'visualizeOutOfSamplePerformance' ...         % visualize the decoder's out-of-sample deperformance
-       %'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
+       %'visualizeInSamplePerformance' ...            % visualize the decoder's in-sample deperformance
+       %'visualizeOutOfSamplePerformance' ...         % visualize the decoder's out-of-sample deperformance
+       'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
        % 'makeReconstructionVideo' ...              % generate video of the reconstruction
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
     };
   
     % Specify what to compute
     instructionSet = computationInstructionSet;  
-    %instructionSet = visualizationInstructionSet;
+   % instructionSet = visualizationInstructionSet;
     
     
     % Specify the optical elements employed - This affects the name of the resutls dir
     opticalElements = 'none';  % choose from 'none', 'noOTF', 'fNumber1.0', 'default'
     inertPigments = 'none';    % choose between 'none', 'noLens', 'noMacular', 'default'
-        
+    mosaicSize = [10 10];
+    
     % Specify the data set to use
-    whichDataSet =  'original';
+    whichDataSet =  'large';
 
     switch (whichDataSet)
         case 'very_small'
@@ -70,13 +71,14 @@ function RunExperiment
         opticalElements = 'none';  % choose from 'none', 'noOTF', 'fNumber1.0', 'default'
         inertPigments = 'none'; % choose between 'none', 'noLens', 'noMacular', 'default'
         fixationMeanDuration = 200; 
+        mosaicSize = [10 10];
         microFixationGain = 0; 
         osType = '@osIdentity';
-        resultsDir = core.getResultsDir(opticalElements, inertPigments, scanSpatialOverlapFactor, fixationMeanDuration, microFixationGain, osType);
+        resultsDir = core.getResultsDir(opticalElements, inertPigments, scanSpatialOverlapFactor, fixationMeanDuration, microFixationGain, mosaicSize, osType);
         
         % Set data preprocessing params - This affects the name of the decodingDataDir
-        designMatrixBased = 0;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
-        rawResponseBased = 3;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+        designMatrixBased = 3;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+        rawResponseBased = 0;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
         useIdenticalPreprocessingOperationsForTrainingAndTestData = true;
         preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased, useIdenticalPreprocessingOperationsForTrainingAndTestData);
         updateExpParams = true;
@@ -92,7 +94,7 @@ function RunExperiment
                 core.lookAtScenes(sceneSetName);
 
             case 'compute outer segment responses'
-                expParams = experimentParams(sceneSetName, opticalElements, inertPigments, scanSpatialOverlapFactor, fixationsPerScan);
+                expParams = experimentParams(sceneSetName, opticalElements, inertPigments, scanSpatialOverlapFactor, fixationsPerScan, mosaicSize);
                 core.computeOuterSegmentResponses(expParams);
                 
                 % Set the sceneSetName, resultsDir, decodingDataDir according to the params set by experimentParams()
@@ -142,7 +144,7 @@ function RunExperiment
 end
 
 
-function expParams = experimentParams(sceneSetName, opticalElements, inertPigments, scanSpatialOverlapFactor, fixationsPerScan)
+function expParams = experimentParams(sceneSetName, opticalElements, inertPigments, scanSpatialOverlapFactor, fixationsPerScan, mosaicSize)
 
    designMatrixBased = 3;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
    rawResponseBased = 0;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
@@ -226,7 +228,7 @@ function expParams = experimentParams(sceneSetName, opticalElements, inertPigmen
         'conePeakOpticalDensities', [0.5 0.5 0.5], ...              % empty (for default peak optical pigment densities) or a [3x1] vector in [0 .. 0.5]
         'coneApertureInMicrons', 3.0, ...        
         'LMSdensities', [0.6 0.3 0.1], ...        
-        'spatialGrid', [18 26], ...                                                 % [rows, cols]
+        'spatialGrid', mosaicSize, ... % [18 26], [rows, cols]
         'samplingIntervalInMilliseconds', sensorTimeStepInMilliseconds, ...  
         'integrationTimeInMilliseconds', integrationTimeInMilliseconds, ...
         'randomSeed',  1552784, ...                                                 % fixed value to ensure repeatable results
@@ -277,6 +279,7 @@ function expParams = experimentParams(sceneSetName, opticalElements, inertPigmen
         scanSpatialOverlapFactor,...
         sensorParams.eyeMovementScanningParams.meanFixationDurationInMilliseconds, ...
         sensorParams.eyeMovementScanningParams.microFixationGain, ...
+        sensorParams.spatialGrid, ...
         outerSegmentParams.type);
     
     % organize all  param structs into one superstruct
