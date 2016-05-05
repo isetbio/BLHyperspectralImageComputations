@@ -4,5 +4,5 @@ function exportExpParamsToJSONfile(sceneSetName, decodingDataDir, expParams, SVD
     expParams.SVDbasedLowRankFilterVariancesExplained = SVDbasedLowRankFilterVariancesExplained;
     opt.FileName = fileName;
     savejson('', expParams, opt);
-    fprintf('<strong>\nExperiment params saved to ''%s''.</strong>\n', fileName);
+    fprintf('<strong>\tExperiment params saved to ''%s''.</strong>\n', fileName);
 end

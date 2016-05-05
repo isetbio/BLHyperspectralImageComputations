@@ -109,7 +109,7 @@ function renderScan(sceneSetName, resultsDir, sceneIndex)
 
                 p5Axes = subplot(4,3,(7:9));
                 p5 = imagesc(timeAxis(timeBins), (1:conesNum), reshape(scanData{scanIndex}.photoCurrentSequence(:,:,timeBins),[conesNum numel(timeBins)]));
-                set(gca, 'CLim', [-100 0]);
+                %set(gca, 'CLim', [-100 0]);
                 set(h, 'Name', sprintf('t = %2.3f ms', timeAxis(k)));
                 hC = colorbar('westoutside');
                 hC.Label.String = 'photocurrents (pAMps)';

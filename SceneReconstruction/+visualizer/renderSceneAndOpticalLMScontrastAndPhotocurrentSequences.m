@@ -39,7 +39,7 @@ function renderSceneAndOpticalLMScontrastAndPhotocurrentSequences(sensorFOVxaxis
         set(gca, 'CLim', 0.5*[-1 1]);
         axis 'xy'; axis 'image'
 
-        photoCurrentRange = [-80 -20];
+        photoCurrentRange = [min(photoCurrentSequence(:)) max(photoCurrentSequence(:))];
         subplot(2,4,4);
         imagesc(sensorRetinalXaxis, sensorRetinalYaxis, squeeze(photoCurrentSequence(:,:,k)));
         title(sprintf('photocurrent (time: %2.4f sec)', timeAxis(k)/1000));
@@ -60,8 +60,8 @@ function renderSceneAndOpticalLMScontrastAndPhotocurrentSequences(sensorFOVxaxis
             end
         end
         hold off;
-        title(sprintf('photocurrent traces (time: %2.4f-%2.4f sec)', trainingTimeAxis(timeBins(1))/1000,trainingTimeAxis(timeBins(end))/1000));
-        set(gca, 'YLim', photoCurrentRange, 'XLim', [trainingTimeAxis(timeBins(1)) trainingTimeAxis(timeBins(end))]);
+        title(sprintf('photocurrent traces (time: %2.4f-%2.4f sec)', timeAxis(timeBins(1))/1000,timeAxis(timeBins(end))/1000));
+        set(gca, 'YLim', photoCurrentRange, 'XLim', [timeAxis(timeBins(1)) timeAxis(timeBins(end))]);
         axis 'square'
 
         drawnow

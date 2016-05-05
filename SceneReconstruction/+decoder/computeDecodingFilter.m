@@ -14,7 +14,7 @@ function computeDecodingFilter(sceneSetName, decodingDataDir, SVDbasedLowRankFil
     timeSamples = size(Xtrain,1);
     filterDimensions = size(Xtrain,2);
     stimulusDimensions = size(Ctrain,2);
-    fprintf('2a. Computing rank(X) [%d x %d]... ',  timeSamples, filterDimensions);
+    fprintf('2a. Computing rank(X) [%d (time samples) x %d (filter dimensions)]... ',  timeSamples, filterDimensions);
     tic
     XtrainRank = rank(Xtrain);
     fprintf('Done after %2.1f minutes. ', toc/60);
@@ -25,7 +25,7 @@ function computeDecodingFilter(sceneSetName, decodingDataDir, SVDbasedLowRankFil
     pseudoInverseOfX = pinv(Xtrain);
     fprintf('Done after %2.1f minutes.\n', toc/60);
     
-    fprintf('2c. Computing optimal linear decoding filter: coefficients [%d x %d] ... ', filterDimensions, stimulusDimensions);
+    fprintf('2c. Computing optimal linear decoding filter: coefficients [%d (filter dimensions) x %d (stimulus dimensions)] ... ', filterDimensions, stimulusDimensions);
     tic
     wVector = pseudoInverseOfX * Ctrain;
     fprintf('Done after %2.1f minutes.\n', toc/60);

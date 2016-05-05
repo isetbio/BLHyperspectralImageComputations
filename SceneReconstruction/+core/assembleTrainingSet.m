@@ -124,23 +124,23 @@ function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, training
         end % scanIndex - testing
     end % sceneIndex
         
-    fprintf('Training matrices\n');
-    fprintf('Total training scans: %d\n', totalTrainingScansNum)
-    fprintf('Size(timeAxis)         : %d %d\n', size(trainingTimeAxis,1), size(trainingTimeAxis,2));
-    fprintf('Size(sceneIndex)       : %d %d\n', size(trainingSceneIndexSequence,1), size(trainingSceneIndexSequence,2));
-    fprintf('Size(sensor positions) : %d %d\n', size(trainingSensorPositionSequence,1), size(trainingSensorPositionSequence,2));
-    fprintf('Size(scene LMS)        : %d %d %d %d\n', size(trainingSceneLMScontrastSequence,1), size(trainingSceneLMScontrastSequence,2), size(trainingSceneLMScontrastSequence,3), size(trainingSceneLMScontrastSequence,4));
-    fprintf('Size(optical image LMS): %d %d %d %d\n', size(trainingOpticalImageLMScontrastSequence,1), size(trainingOpticalImageLMScontrastSequence,2), size(trainingOpticalImageLMScontrastSequence,3), size(trainingOpticalImageLMScontrastSequence,4));
-    fprintf('Size(photocurrents)    : %d %d %d\n', size(trainingPhotoCurrentSequence,1), size(trainingPhotoCurrentSequence,2), size(trainingPhotoCurrentSequence,3));
+    fprintf('\nTraining matrices\n');
+    fprintf('\tTotal training scans: %d\n', totalTrainingScansNum)
+    fprintf('\tSize(timeAxis)         : %d %d\n', size(trainingTimeAxis,1), size(trainingTimeAxis,2));
+    fprintf('\tSize(sceneIndex)       : %d %d\n', size(trainingSceneIndexSequence,1), size(trainingSceneIndexSequence,2));
+    fprintf('\tSize(sensor positions) : %d %d\n', size(trainingSensorPositionSequence,1), size(trainingSensorPositionSequence,2));
+    fprintf('\tSize(scene LMS)        : %d %d %d %d\n', size(trainingSceneLMScontrastSequence,1), size(trainingSceneLMScontrastSequence,2), size(trainingSceneLMScontrastSequence,3), size(trainingSceneLMScontrastSequence,4));
+    fprintf('\tSize(optical image LMS): %d %d %d %d\n', size(trainingOpticalImageLMScontrastSequence,1), size(trainingOpticalImageLMScontrastSequence,2), size(trainingOpticalImageLMScontrastSequence,3), size(trainingOpticalImageLMScontrastSequence,4));
+    fprintf('\tSize(photocurrents)    : %d %d %d\n', size(trainingPhotoCurrentSequence,1), size(trainingPhotoCurrentSequence,2), size(trainingPhotoCurrentSequence,3));
                   
-    fprintf('Testing matrices\n');
-    fprintf('Total testing scans:  %d\n', totalTestingScansNum)
-    fprintf('Size(timeAxis)         : %d %d\n', size(testingTimeAxis,1), size(testingTimeAxis,2));
-    fprintf('Size(sceneIndex)       : %d %d\n', size(testingSceneIndexSequence,1), size(testingSceneIndexSequence,2));
-    fprintf('Size(sensor positions) : %d %d\n', size(testingSensorPositionSequence,1), size(testingSensorPositionSequence,2));
-    fprintf('Size(scene LMS)        : %d %d %d %d\n', size(testingSceneLMScontrastSequence,1), size(testingSceneLMScontrastSequence,2), size(testingSceneLMScontrastSequence,3), size(testingSceneLMScontrastSequence,4));
-    fprintf('Size(optical image LMS): %d %d %d %d\n', size(testingOpticalImageLMScontrastSequence,1), size(testingOpticalImageLMScontrastSequence,2), size(testingOpticalImageLMScontrastSequence,3), size(testingOpticalImageLMScontrastSequence,4));
-    fprintf('Size(photocurrents)    : %d %d %d\n', size(testingPhotoCurrentSequence,1), size(testingPhotoCurrentSequence,2), size(testingPhotoCurrentSequence,3));
+    fprintf('\nTesting matrices\n');
+    fprintf('\tTotal testing scans:  %d\n', totalTestingScansNum)
+    fprintf('\tSize(timeAxis)         : %d %d\n', size(testingTimeAxis,1), size(testingTimeAxis,2));
+    fprintf('\tSize(sceneIndex)       : %d %d\n', size(testingSceneIndexSequence,1), size(testingSceneIndexSequence,2));
+    fprintf('\tSize(sensor positions) : %d %d\n', size(testingSensorPositionSequence,1), size(testingSensorPositionSequence,2));
+    fprintf('\tSize(scene LMS)        : %d %d %d %d\n', size(testingSceneLMScontrastSequence,1), size(testingSceneLMScontrastSequence,2), size(testingSceneLMScontrastSequence,3), size(testingSceneLMScontrastSequence,4));
+    fprintf('\tSize(optical image LMS): %d %d %d %d\n', size(testingOpticalImageLMScontrastSequence,1), size(testingOpticalImageLMScontrastSequence,2), size(testingOpticalImageLMScontrastSequence,3), size(testingOpticalImageLMScontrastSequence,4));
+    fprintf('\tSize(photocurrents)    : %d %d %d\n\n', size(testingPhotoCurrentSequence,1), size(testingPhotoCurrentSequence,2), size(testingPhotoCurrentSequence,3));
     
     if (1==2)
        visualizer.renderSceneAndOpticalLMScontrastAndPhotocurrentSequences(sensorFOVxaxis, sensorFOVyaxis, sensorRetinalXaxis, sensorRetinalYaxis, trainingTimeAxis, trainingPhotoCurrentSequence, trainingSceneLMScontrastSequence,trainingOpticalImageLMScontrastSequence); 
@@ -180,7 +180,6 @@ function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, training
                          expParams.decoderParams.temporalSamplingInMilliseconds);
                        
     % Save design matrices and stimulus vectors
-    
     fileName = fullfile(decodingDataDir, sprintf('%s_trainingDesignMatrices.mat', sceneSetName));
     fprintf('Saving training design matrix and stim vector ''%s''... ', fileName);
     save(fileName, 'Xtrain', 'Ctrain', 'oiCtrain', 'trainingTimeAxis', ...

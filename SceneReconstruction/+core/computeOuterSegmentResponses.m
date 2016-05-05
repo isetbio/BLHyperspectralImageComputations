@@ -81,8 +81,3 @@ function computeOuterSegmentResponses(expParams)
         
     end % sceneIndex
 end
-
-
-
-
-
