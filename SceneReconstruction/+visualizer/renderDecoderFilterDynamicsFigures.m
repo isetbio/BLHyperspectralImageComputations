@@ -26,7 +26,7 @@ function generateAllFigures(decodingDataDir, componentString, wVector, spatioTem
     dcTerm = 1;
     % Normalize wVector for plotting in [-1 1]
     wVector = wVector / max(max(abs(wVector(dcTerm+1:size(wVector,1),:))));
-    weightsRange = 0.5*[-1 1];
+    weightsRange = 0.9*[-1 1];
     
     % Allocate memory for unpacked stimDecoder
     sensorRows      = numel(spatioTemporalSupport.sensorRetinalYaxis);
@@ -70,12 +70,11 @@ function generateAllFigures(decodingDataDir, componentString, wVector, spatioTem
         stimulusLocation.y = round((ySpatialBinsNum+1)/2);
     end
     
-    coneNeighborhood.center.x = stimulusLocation.x;
-    coneNeighborhood.center.y = stimulusLocation.y;
+    coneNeighborhood.center.x = round(size(stimDecoder, 5)/2);
+    coneNeighborhood.center.y = round(size(stimDecoder, 4)/2);
     coneNeighborhood.extent.x = -3:3;
     coneNeighborhood.extent.y = -2:2;
     generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, coneNeighborhood, expParams, decodingDataDir, componentString);
-    
     generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation,expParams, decodingDataDir, componentString);
     
 end
@@ -253,7 +252,7 @@ function generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioT
     nearbyConeColumns = coneNeighborhood.center.x + coneNeighborhood.extent.x;
     nearbyConeRows    = coneNeighborhood.center.y + coneNeighborhood.extent.y;
     nearbyConeColumns = nearbyConeColumns(nearbyConeColumns >= 1);
-    nearbyConeRows    = nearbyConeColumns(nearbyConeRows >= 1);
+    nearbyConeRows    = nearbyConeRows(nearbyConeRows >= 1);
     nearbyConeColumns = nearbyConeColumns(nearbyConeColumns <= size(stimDecoder, 5));
     nearbyConeRows    = nearbyConeRows(nearbyConeRows <= size(stimDecoder, 4));
     
@@ -261,6 +260,7 @@ function generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioT
     mConeIndices = find(coneTypes == 3);
     sConeIndices = find(coneTypes == 4);
     
+
     % Outline of sensor region over which we will display the temporal pooling functions
     outlineX = [ spatioTemporalSupport.sensorRetinalXaxis(min(nearbyConeColumns))-dX/2 ...
                  spatioTemporalSupport.sensorRetinalXaxis(max(nearbyConeColumns))+dX/2 ...
