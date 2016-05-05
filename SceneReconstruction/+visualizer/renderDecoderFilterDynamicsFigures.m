@@ -59,10 +59,19 @@ function generateAllFigures(decodingDataDir, componentString, wVector, spatioTem
     generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, expParams, decodingDataDir, componentString);
     
     % Generate temporal pooling filters figure (at one stimulus location and at a local mosaic neighborhood)
-    stimulusLocation.x = round(xSpatialBinsNum/2);
-    stimulusLocation.y = round(ySpatialBinsNum/2);
-    coneNeighborhood.center.x = stimulusLocation.x-2;
-    coneNeighborhood.center.y = stimulusLocation.y+2;
+    if (mod(xSpatialBinsNum,2) == 0)
+        stimulusLocation.x = round(xSpatialBinsNum/2);
+    else
+        stimulusLocation.x = round((xSpatialBinsNum+1)/2);
+    end
+    if (mod(ySpatialBinsNum,2) == 0)
+        stimulusLocation.y = round(ySpatialBinsNum/2);
+    else
+        stimulusLocation.y = round((ySpatialBinsNum+1)/2);
+    end
+    
+    coneNeighborhood.center.x = stimulusLocation.x;
+    coneNeighborhood.center.y = stimulusLocation.y;
     coneNeighborhood.extent.x = -3:3;
     coneNeighborhood.extent.y = -2:2;
     generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, coneNeighborhood, expParams, decodingDataDir, componentString);
@@ -346,21 +355,30 @@ function generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTe
     xSpatialBinsNum = numel(spatioTemporalSupport.sensorFOVxaxis);                   % spatial support of decoded scene
     ySpatialBinsNum = numel(spatioTemporalSupport.sensorFOVyaxis);
  
-    rowsToPlot = 2:2:numel(spatioTemporalSupport.sensorFOVyaxis)-1;
-    colsToPlot = 2:2:numel(spatioTemporalSupport.sensorFOVxaxis)-1;
-    
-    if (ySpatialBinsNum > 12)
+    if (ySpatialBinsNum <= 6)
+        rowsToPlot = 1:numel(spatioTemporalSupport.sensorFOVyaxis);
+        fprintf('Showing all y-positions\n');
+    elseif (ySpatialBinsNum > 6) && (ySpatialBinsNum <= 12)
+        rowsToPlot = 2:2:numel(spatioTemporalSupport.sensorFOVyaxis)-1;
+        fprintf('Stimulus y-positions are between 6 and 12. will only show every other row\n');
+    elseif (ySpatialBinsNum > 12)
         [~, idx] = min(abs(spatioTemporalSupport.sensorFOVyaxis));
         rowsToPlot = idx + (-300:6:300);
         rowsToPlot = rowsToPlot((rowsToPlot>=1) & (rowsToPlot<= numel(spatioTemporalSupport.sensorFOVyaxis)));
         fprintf('Stimulus y-positions are more than 12 will only show every 6th row\n');
     end
     
-    if (xSpatialBinsNum > 12)
+    if (xSpatialBinsNum <= 6)
+        colsToPlot = 1:numel(spatioTemporalSupport.sensorFOVxaxis);
+        fprintf('Showing all x-positions\n');
+    elseif (xSpatialBinsNum > 6) && (xSpatialBinsNum <= 12)
+        colsToPlot = 2:2:numel(spatioTemporalSupport.sensorFOVxaxis)-1;
+        fprintf('Stimulus x-positions are between 6 and 12. will only show every other col\n');
+    elseif (xSpatialBinsNum > 12)
         [~, idx] = min(abs(spatioTemporalSupport.sensorFOVxaxis));
         colsToPlot = idx + (-300:6:300);
         colsToPlot = colsToPlot((colsToPlot>=1) & (colsToPlot<= numel(spatioTemporalSupport.sensorFOVxaxis)));
-        fprintf('Stimulus y-positions are more than 12 will only show every 6th col\n');
+        fprintf('Stimulus x-positions are more than 12 will only show every 6th col\n');
     end
     
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...

@@ -35,8 +35,9 @@ function renderPerformanceFigures(sceneSetName, decodingDataDir,  visualizeSVDfi
             end
             
             figNo = 1100;
+            figPos = [313 116 740 1150];
             imageFileName = generateImageFileName(InSampleOrOutOfSample, 'Summary', decodingDataDir, expParams);
-            renderSummaryPerformancePlot(figNo, 'in-sample', imageFileName, SVDbasedLowRankFilterVariancesExplained, inSampleSVDcorrelationCoeffs, inSamplePINVcorrelationCoeffs, inSampleSVDrmsErrors, inSamplePINVrmsErrors);
+            renderSummaryPerformancePlot(figNo, figPos, 'in-sample', imageFileName, SVDbasedLowRankFilterVariancesExplained, inSampleSVDcorrelationCoeffs, inSamplePINVcorrelationCoeffs, inSampleSVDrmsErrors, inSamplePINVrmsErrors);
         end
         
         
@@ -73,8 +74,9 @@ function renderPerformanceFigures(sceneSetName, decodingDataDir,  visualizeSVDfi
             end
             
             figNo = 2100;
+            figPos = [1056 116 740 1150]
             imageFileName = generateImageFileName(InSampleOrOutOfSample, 'Summary', decodingDataDir, expParams);
-            renderSummaryPerformancePlot(figNo, 'out-of-sample', imageFileName, SVDbasedLowRankFilterVariancesExplained, outOfSampleSVDcorrelationCoeffs, outOfSamplePINVcorrelationCoeffs, outOfSampleSVDrmsErrors, outOfSamplePINVrmsErrors);
+            renderSummaryPerformancePlot(figNo, figPos, 'out-of-sample', imageFileName, SVDbasedLowRankFilterVariancesExplained, outOfSampleSVDcorrelationCoeffs, outOfSamplePINVcorrelationCoeffs, outOfSampleSVDrmsErrors, outOfSamplePINVrmsErrors);
         end
         
     else
@@ -83,7 +85,7 @@ function renderPerformanceFigures(sceneSetName, decodingDataDir,  visualizeSVDfi
 end
 
 
-function renderSummaryPerformancePlot(figNo, figTitle, imageFileName, SVDbasedLowRankFilterVariancesExplained, SVDcorrelationCoefficients, PINVcorrelationCoefficients, SVDrmsErrors, PINVrmsErrors)
+function renderSummaryPerformancePlot(figNo, figPos, figTitle, imageFileName, SVDbasedLowRankFilterVariancesExplained, SVDcorrelationCoefficients, PINVcorrelationCoefficients, SVDrmsErrors, PINVrmsErrors)
     
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
                'rowsNum', 2, ...
@@ -96,7 +98,7 @@ function renderSummaryPerformancePlot(figNo, figTitle, imageFileName, SVDbasedLo
                'topMargin',      0.000);
            
     hFig = figure(figNo);
-    set(hFig, 'Position', [10 10 740 1150], 'Name', figTitle, 'Color', [1 1 1]);
+    set(hFig, 'Position', figPos, 'Name', figTitle, 'Color', [1 1 1]);
     clf;
     subplot('position',subplotPosVectors(1,1).v)
     xaxis = 1:numel(SVDbasedLowRankFilterVariancesExplained);
