@@ -1,11 +1,11 @@
 function RunExperiment
 
     setPrefsForHyperspectralImageIsetbioComputations();
-        
+       % 
     % Computation steps. Uncomment the ones you want to execute
     computationInstructionSet = {...
        %'lookAtScenes' ...
-       'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
+       %'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
        'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
        'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
        'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
@@ -13,16 +13,16 @@ function RunExperiment
     
     visualizationInstructionSet = {...
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
-       %'visualizeInSamplePerformance' ...            % visualize the decoder's in-sample deperformance
-       %'visualizeOutOfSamplePerformance' ...         % visualize the decoder's out-of-sample deperformance
+       'visualizeInSamplePerformance' ...            % visualize the decoder's in-sample deperformance
+       'visualizeOutOfSamplePerformance' ...         % visualize the decoder's out-of-sample deperformance
        %'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
-        'makeReconstructionVideo' ...              % generate video of the reconstruction
+       % 'makeReconstructionVideo' ...              % generate video of the reconstruction
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
     };
   
     % Specify what to compute
     instructionSet = computationInstructionSet;  
-    %instructionSet = visualizationInstructionSet;
+    instructionSet = visualizationInstructionSet;
     
     
     % Specify the optical elements employed - This affects the name of the resutls dir
@@ -30,11 +30,10 @@ function RunExperiment
     inertPigments = 'none';    % choose between 'none', 'noLens', 'noMacular', 'default'
     
     % Specify mosaic size and reconstructed stimulus spatial resolution - This affects the name of the results dir
-    mosaicSize = [16 22];
-    reconstructedStimulusSpatialResolutionInMicrons = 6;
-    
+    mosaicSize = [16 20];
+    reconstructedStimulusSpatialResolutionInMicrons = 6
     % Specify the data set to use
-    whichDataSet =  'original';
+    whichDataSet =  'large';
 
     switch (whichDataSet)
         case 'very_small'
@@ -76,14 +75,14 @@ function RunExperiment
         fixationMeanDuration = 200; 
         microFixationGain = 0; 
         
-        mosaicSize = [10 10];
-        reconstructedStimulusSpatialResolutionInMicrons = 3;
+        mosaicSize = [16 20];
+        reconstructedStimulusSpatialResolutionInMicrons = 6;
         
         osType = '@osIdentity';
         resultsDir = core.getResultsDir(opticalElements, inertPigments, scanSpatialOverlapFactor, fixationMeanDuration, microFixationGain, mosaicSize, reconstructedStimulusSpatialResolutionInMicrons, osType);
         
         % Set data preprocessing params - This affects the name of the decodingDataDir
-        designMatrixBased = 3;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+        designMatrixBased = 1;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
         rawResponseBased = 0;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
         useIdenticalPreprocessingOperationsForTrainingAndTestData = true;
         preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased, useIdenticalPreprocessingOperationsForTrainingAndTestData);
@@ -275,10 +274,10 @@ function expParams = experimentParams(sceneSetName, opticalElements, inertPigmen
         'type', 'optimalLinearFilter', ...
         'thresholdConeSeparationForInclusionInDecoder', 0, ...      % 0 to include all cones
         'spatialSamplingInRetinalMicrons', reconstructedStimulusSpatialResolutionInMicrons, ...  % reconstructed scene resolution in retinal microns
-        'extraMicronsAroundSensorBorder', -3*sensorParams.coneApertureInMicrons, ...             % decode this many additional (or less, if negative) microns on each side of the sensor
-        'temporalSamplingInMilliseconds', 5, ...                    % temporal resolution of reconstruction (used to be 10)
+        'extraMicronsAroundSensorBorder', -5*sensorParams.coneApertureInMicrons, ...             % decode this many additional (or less, if negative) microns on each side of the sensor
+        'temporalSamplingInMilliseconds', 10, ...                    % temporal resolution of reconstruction (used to be 10)
         'latencyInMillseconds', -120, ...                           % latency of the decoder filter (negative for non-causal time delays) (used to be -150)
-        'memoryInMilliseconds', 300 ...                             % memory of the decoder filter (used to be 500)
+        'memoryInMilliseconds', 320 ...                             % memory of the decoder filter (used to be 500)
     );
   
 
