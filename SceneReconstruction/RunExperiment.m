@@ -5,16 +5,16 @@ function RunExperiment
     % Computation steps. Uncomment the ones you want to execute
     computationInstructionSet = {...
        %'lookAtScenes' ...
-       %'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
+       'compute outer segment responses' ...       % compute OS responses. Data saved in the scansData directory
        'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
        'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
        'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
     };
     
     visualizationInstructionSet = {...
-       % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
-       'visualizeInSamplePerformance' ...            % visualize the decoder's in-sample deperformance
-       'visualizeOutOfSamplePerformance' ...         % visualize the decoder's out-of-sample deperformance
+        'visualizeScan' ...                        % visualize the responses from one scan - under construction
+       %'visualizeInSamplePerformance' ...            % visualize the decoder's in-sample deperformance
+       %'visualizeOutOfSamplePerformance' ...         % visualize the decoder's out-of-sample deperformance
        %'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
        % 'makeReconstructionVideo' ...              % generate video of the reconstruction
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
@@ -22,7 +22,7 @@ function RunExperiment
   
     % Specify what to compute
     instructionSet = computationInstructionSet;  
-    instructionSet = visualizationInstructionSet;
+    %instructionSet = visualizationInstructionSet;
     
     
     % Specify the optical elements employed - This affects the name of the resutls dir
@@ -33,7 +33,7 @@ function RunExperiment
     mosaicSize = [16 20];
     reconstructedStimulusSpatialResolutionInMicrons = 6
     % Specify the data set to use
-    whichDataSet =  'large';
+    whichDataSet =  'small';
 
     switch (whichDataSet)
         case 'very_small'
@@ -43,7 +43,7 @@ function RunExperiment
             
         case 'small'
             sceneSetName = 'manchester';  
-            scanSpatialOverlapFactor = 0.60;  
+            scanSpatialOverlapFactor = 0.75;  
             fixationsPerScan = 20;
             
         case 'original'
@@ -72,7 +72,7 @@ function RunExperiment
         % Select an existing set of scans data (according to the following params)
         opticalElements = 'none';  % choose from 'none', 'noOTF', 'fNumber1.0', 'default'
         inertPigments = 'none'; % choose between 'none', 'noLens', 'noMacular', 'default'
-        fixationMeanDuration = 200; 
+        fixationMeanDuration = 100; 
         microFixationGain = 0; 
         
         mosaicSize = [16 20];
@@ -82,7 +82,7 @@ function RunExperiment
         resultsDir = core.getResultsDir(opticalElements, inertPigments, scanSpatialOverlapFactor, fixationMeanDuration, microFixationGain, mosaicSize, reconstructedStimulusSpatialResolutionInMicrons, osType);
         
         % Set data preprocessing params - This affects the name of the decodingDataDir
-        designMatrixBased = 1;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+        designMatrixBased = 0;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
         rawResponseBased = 0;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
         useIdenticalPreprocessingOperationsForTrainingAndTestData = true;
         preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased, useIdenticalPreprocessingOperationsForTrainingAndTestData);
@@ -225,10 +225,10 @@ function expParams = experimentParams(sceneSetName, opticalElements, inertPigmen
         'randomSeed',  1552784, ...                                                 % fixed value to ensure repeatable results
         'eyeMovementScanningParams', struct(...
             'samplingIntervalInMilliseconds', sensorTimeStepInMilliseconds, ...
-            'meanFixationDurationInMilliseconds', 200, ...
-            'stDevFixationDurationInMilliseconds', 20, ...
-            'meanFixationDurationInMillisecondsForAdaptingField', 200, ...
-            'stDevFixationDurationInMillisecondsForAdaptingField', 20, ...
+            'meanFixationDurationInMilliseconds', 100, ...
+            'stDevFixationDurationInMilliseconds', 0, ...
+            'meanFixationDurationInMillisecondsForAdaptingField', 100, ...
+            'stDevFixationDurationInMillisecondsForAdaptingField', 0, ...
             'microFixationGain', 0, ...
             'fixationOverlapFactor', scanSpatialOverlapFactor^2, ...     
             'saccadicScanMode',  'randomized'...                                    % 'randomized' or 'sequential', to visit eye position grid sequentially
@@ -265,7 +265,7 @@ function expParams = experimentParams(sceneSetName, opticalElements, inertPigmen
 
 
 
-   designMatrixBased = 3;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+   designMatrixBased = 0;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
    rawResponseBased = 0;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
    useIdenticalPreprocessingOperationsForTrainingAndTestData = true;
    preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased, useIdenticalPreprocessingOperationsForTrainingAndTestData);
