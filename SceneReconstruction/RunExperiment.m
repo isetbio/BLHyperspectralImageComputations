@@ -15,8 +15,8 @@ function RunExperiment
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
        %'visualizeInSamplePerformance' ...            % visualize the decoder's in-sample deperformance
        %'visualizeOutOfSamplePerformance' ...         % visualize the decoder's out-of-sample deperformance
-       %'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
-        'makeReconstructionVideo' ...              % generate video of the reconstruction
+      'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
+       % 'makeReconstructionVideo' ...              % generate video of the reconstruction
        % 'visualizeConeMosaic' 2...                  % visualize the LMS cone mosaic used
     };
   
@@ -31,9 +31,9 @@ function RunExperiment
     
     % Specify mosaic size and reconstructed stimulus spatial resolution - This affects the name of the results dir
     mosaicSize = [16 20];
-    reconstructedStimulusSpatialResolutionInMicrons = 6;
+    reconstructedStimulusSpatialResolutionInMicrons = 3;
     % Specify the data set to use
-    whichDataSet =  'original';
+    whichDataSet =  'large';
 
     switch (whichDataSet)
         case 'very_small'
@@ -76,13 +76,13 @@ function RunExperiment
         microFixationGain = 0; 
         
         mosaicSize = [16 20];
-        reconstructedStimulusSpatialResolutionInMicrons = 6;
+        reconstructedStimulusSpatialResolutionInMicrons = 3;
         
         osType = '@osIdentity';
         resultsDir = core.getResultsDir(opticalElements, inertPigments, scanSpatialOverlapFactor, fixationMeanDuration, microFixationGain, mosaicSize, reconstructedStimulusSpatialResolutionInMicrons, osType);
         
         % Set data preprocessing params - This affects the name of the decodingDataDir
-        designMatrixBased = 0;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+        designMatrixBased = 2;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
         rawResponseBased = 0;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
         useIdenticalPreprocessingOperationsForTrainingAndTestData = true;
         preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased, useIdenticalPreprocessingOperationsForTrainingAndTestData);
