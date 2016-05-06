@@ -47,6 +47,9 @@ end
 
 function [X, originalXRank, designMatrixPreprocessing] = preProcessDesignMatrix(X, preProcessingParams, computeRank, designMatrixPreprocessing)
 
+    % remove first column of ones
+    X = X(:,2:end);
+    
     timeSamples = size(X,1);
     filterDimensions = size(X,2);
     originalXRank = [];
@@ -57,7 +60,6 @@ function [X, originalXRank, designMatrixPreprocessing] = preProcessDesignMatrix(
             fprintf('\t2a. Centering (X) [%d x %d]...',  timeSamples, filterDimensions);
             % Center X
             X = bsxfun(@minus, X, designMatrixPreprocessing.centeringOperator);
-            X(:,1) = 1;
             fprintf('Done after %2.1f minutes.\n', toc/60);
             
             if (preProcessingParams.designMatrixBased > 1)  
@@ -66,7 +68,6 @@ function [X, originalXRank, designMatrixPreprocessing] = preProcessDesignMatrix(
 
                 % Normalize X
                 X = bsxfun(@times, X, designMatrixPreprocessing.normalizingOperator);
-                X(:,1) = 1;
                 fprintf('Done after %2.1f minutes.\n', toc/60);
         
                 if (preProcessingParams.designMatrixBased > 2)
@@ -75,11 +76,13 @@ function [X, originalXRank, designMatrixPreprocessing] = preProcessDesignMatrix(
 
                     % Whiten X
                     X = X * designMatrixPreprocessing.whiteningOperator;
-                    X(:,1) = 1;
                     fprintf('Done after %2.1f minutes.\n', toc/60);
                 end
             end
         end
+        
+        % add first column of all ones back
+        X = cat(2, ones(size(X,1), 1), X);
         return;
     end
     
@@ -107,7 +110,6 @@ function [X, originalXRank, designMatrixPreprocessing] = preProcessDesignMatrix(
         
         % Center X
         X = bsxfun(@minus, X, designMatrixPreprocessing.centeringOperator);
-        X(:,1) = 1;
         fprintf('Done after %2.1f minutes.\n', toc/60);
         
         if (preProcessingParams.designMatrixBased > 1)  
@@ -118,8 +120,7 @@ function [X, originalXRank, designMatrixPreprocessing] = preProcessDesignMatrix(
             designMatrixPreprocessing.normalizingOperator = (1./(sqrt(1/timeSamples*((X.^2)')*oneColVector)))';
 
             % Normalize X
-            X= bsxfun(@times, X, designMatrixPreprocessing.normalizingOperator);
-            X(:,1) = 1;
+            X = bsxfun(@times, X, designMatrixPreprocessing.normalizingOperator);
             fprintf('Done after %2.1f minutes.\n', toc/60);
         
             if (preProcessingParams.designMatrixBased > 2)
@@ -130,7 +131,6 @@ function [X, originalXRank, designMatrixPreprocessing] = preProcessDesignMatrix(
                 designMatrixPreprocessing.whiteningOperator = decoder.computeWhiteningMatrix(X, preProcessingParams.thresholdVarianceExplainedForWhiteningMatrix);
                 % Whiten X
                 X = X * designMatrixPreprocessing.whiteningOperator;
-                X(:,1) = 1;
                 fprintf('Done after %2.1f minutes.\n', toc/60);
             end
         end
@@ -140,6 +140,9 @@ function [X, originalXRank, designMatrixPreprocessing] = preProcessDesignMatrix(
         originalXCovariances = upperDiagElements(:);
         normOfpreProcessedXCovariances = sqrt(1/numel(originalXCovariances)*sum(originalXCovariances.^2));
         fprintf('\nNorm of covariances: original(X) = %2.2f, preProcessed(X) = %2.2f\n', normOfOriginalXCovariances, normOfpreProcessedXCovariances);
+    
+        % add first column of all ones back
+        X = cat(2, ones(size(X,1), 1), X);
     end
 end
 
