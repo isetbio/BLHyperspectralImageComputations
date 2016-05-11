@@ -14,6 +14,11 @@ function computeOuterSegmentResponses(expParams)
         % Get the scene
         scene = sceneData{sceneIndex};
         
+        % Standardize scene pixel size, so that all scenes have identical
+        % angular resolution (0.0050 deg/pixel, or 200 pixels/deg)
+        standardizedAngularResolition = 0.0050;
+        scene = core.standardizeScenePixelSize(scene, standardizedAngularResolition);
+        
         % Force scene mean luminance to a set value
         scene = sceneAdjustLuminance(...
             scene, expParams.viewModeParams.forcedSceneMeanLuminance);
