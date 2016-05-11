@@ -5,7 +5,7 @@ function RunExperiment
     % Computation steps. Uncomment the ones you want to execute
     computationInstructionSet = {...
        %'lookAtScenes' ...
-       %'compute outer segment responses' ...      % compute OS responses. Data saved in the scansData directory
+       'compute outer segment responses' ...      % compute OS responses. Data saved in the scansData directory
        'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
        'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
        'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
@@ -13,8 +13,8 @@ function RunExperiment
     
     visualizationInstructionSet = {...
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
-       %'visualizeInSamplePerformance' ...            % visualize the decoder's in-sample deperformance
-       %'visualizeOutOfSamplePerformance' ...         % visualize the decoder's out-of-sample deperformance
+       'visualizeInSamplePerformance' ...            % visualize the decoder's in-sample deperformance
+       'visualizeOutOfSamplePerformance' ...         % visualize the decoder's out-of-sample deperformance
       'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
        % 'makeReconstructionVideo' ...              % generate video of the reconstruction
        % 'visualizeConeMosaic' 2...                  % visualize the LMS cone mosaic used
@@ -33,7 +33,7 @@ function RunExperiment
     mosaicSize = [16 20];
     reconstructedStimulusSpatialResolutionInMicrons = 3;
     % Specify the data set to use
-    whichDataSet =  'large';
+    whichDataSet =  'harvard'; 
 
     switch (whichDataSet)
         case 'very_small'
@@ -60,6 +60,11 @@ function RunExperiment
             sceneSetName = 'harvard_manchester';  
             scanSpatialOverlapFactor = 0.60; 
             fixationsPerScan = 20;
+        
+        case 'harvard'
+            sceneSetName = 'harvard';  
+            scanSpatialOverlapFactor = 0.60; 
+            fixationsPerScan = 20;
             
         otherwise
             error('Unknown dataset:''%s''.', whichDataSet)
@@ -82,7 +87,7 @@ function RunExperiment
         resultsDir = core.getResultsDir(opticalElements, inertPigments, scanSpatialOverlapFactor, fixationMeanDuration, microFixationGain, mosaicSize, reconstructedStimulusSpatialResolutionInMicrons, osType);
         
         % Set data preprocessing params - This affects the name of the decodingDataDir
-        designMatrixBased = 2;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+        designMatrixBased = 0;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
         rawResponseBased = 0;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
         useIdenticalPreprocessingOperationsForTrainingAndTestData = true;
         preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased, useIdenticalPreprocessingOperationsForTrainingAndTestData);
