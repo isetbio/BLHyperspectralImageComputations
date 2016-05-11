@@ -7,6 +7,6 @@ function scene = standardizeScenePixelSize(scene, standardizedAngularResolition)
     scene = sceneSet(scene,'hfov', requiredFOV);
     resultingAngularResolution = sceneGet(scene, 'w angular resolution');
     resultingFOV = resultingAngularResolution * sceneColumns;
-    fprintf('Original scene angular res: %2.4 deg/pixels, Adjusted to %2.2f deg/pixels (original FOV: %2.2deg, adjusted FOV: %2.2f deg)\n', originalAngularResolution, resultingAngularResolution, originalFOV, resultingFOV);
+    fprintf('Original scene angular res: %2.4f deg/pixels, Adjusted to %2.4f deg/pixels (original FOV: %2.2fdeg, adjusted FOV: %2.2f deg)\n', originalAngularResolution, resultingAngularResolution, originalFOV, resultingFOV);
 end
 
