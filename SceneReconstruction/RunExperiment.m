@@ -13,8 +13,8 @@ function RunExperiment
     
     visualizationInstructionSet = {...
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
-       'visualizeInSamplePerformance' ...            % visualize the decoder's in-sample deperformance
-       'visualizeOutOfSamplePerformance' ...         % visualize the decoder's out-of-sample deperformance
+      % 'visualizeInSamplePerformance' ...            % visualize the decoder's in-sample deperformance
+      % 'visualizeOutOfSamplePerformance' ...         % visualize the decoder's out-of-sample deperformance
       'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
        % 'makeReconstructionVideo' ...              % generate video of the reconstruction
        % 'visualizeConeMosaic' 2...                  % visualize the LMS cone mosaic used
@@ -22,7 +22,7 @@ function RunExperiment
   
     % Specify what to compute
     instructionSet = computationInstructionSet;  
-    instructionSet = visualizationInstructionSet;
+    %instructionSet = visualizationInstructionSet;
     
     
     % Specify the optical elements employed - This affects the name of the resutls dir
@@ -33,7 +33,7 @@ function RunExperiment
     mosaicSize = [16 20];
     reconstructedStimulusSpatialResolutionInMicrons = 3;
     % Specify the data set to use
-    whichDataSet =  'original'; 
+    whichDataSet =  'harvard'; 
 
     switch (whichDataSet)
         case 'very_small'
