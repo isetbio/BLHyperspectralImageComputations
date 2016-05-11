@@ -21,6 +21,14 @@ function sceneSet = sceneSetWithName(sceneSetName)
                 sceneSet{numel(sceneSet)+1} = {'harvard_database', sceneNames{k}};    
             end
             
+        case 'upenn'
+            sceneNames = {...
+                'BearFruitGrayR' 'BearFruitGrayG' 'BearFruitGrayB' 'BearFruitGrayY' ...
+                };
+            sceneSet = {};
+            for k = 1:numel(sceneNames)
+                sceneSet{numel(sceneSet)+1} = {'penn_database', sceneNames{k}};    
+            end
             
         case 'harvard_manchester'
             sceneNames = {...

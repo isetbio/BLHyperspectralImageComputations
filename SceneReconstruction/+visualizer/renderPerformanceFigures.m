@@ -65,7 +65,7 @@ function renderPerformanceFigures(sceneSetName, decodingDataDir,  visualizeSVDfi
             else
                 [~,kk] = min(abs(SVDbasedLowRankFilterVariancesExplained-visualizeSVDfiltersForVarianceExplained(1)));
             end
-            kk
+           
             figNo = 2000;
             for kIndex = kk
                 componentString = sprintf('SVD_%2.3f%%VarianceExplained', SVDbasedLowRankFilterVariancesExplained(kIndex));
@@ -74,7 +74,7 @@ function renderPerformanceFigures(sceneSetName, decodingDataDir,  visualizeSVDfi
             end
             
             figNo = 2100;
-            figPos = [1056 116 740 1150]
+            figPos = [1056 116 740 1150];
             imageFileName = generateImageFileName(InSampleOrOutOfSample, 'Summary', decodingDataDir, expParams);
             renderSummaryPerformancePlot(figNo, figPos, 'out-of-sample', imageFileName, SVDbasedLowRankFilterVariancesExplained, outOfSampleSVDcorrelationCoeffs, outOfSamplePINVcorrelationCoeffs, outOfSampleSVDrmsErrors, outOfSamplePINVrmsErrors);
         end
@@ -218,7 +218,7 @@ function [correlations, rmsErrors] = renderReconstructionPerformancePlots(figNo,
         drawnow
         end
         correlations(coneContrastIndex) = correlations(coneContrastIndex)/(numel(rowsToPlot)*numel(colsToPlot));
-        
+        rmsErrors(coneContrastIndex) = rmsErrors(coneContrastIndex)/(numel(rowsToPlot)*numel(colsToPlot));
         NicePlot.exportFigToPNG(sprintf('%s%s.png', imageFileName, coneString{coneContrastIndex}), hFig, 300);
     end
 end

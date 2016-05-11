@@ -33,7 +33,7 @@ function RunExperiment
     mosaicSize = [16 20];
     reconstructedStimulusSpatialResolutionInMicrons = 3;
     % Specify the data set to use
-    whichDataSet =  'harvard'; 
+    whichDataSet =  'original'; 
 
     switch (whichDataSet)
         case 'very_small'
@@ -61,9 +61,14 @@ function RunExperiment
             scanSpatialOverlapFactor = 0.60; 
             fixationsPerScan = 20;
         
+        case 'upenn'
+            sceneSetName = 'upenn';  
+            scanSpatialOverlapFactor = 0.60; 
+            fixationsPerScan = 20;
+            
         case 'harvard'
             sceneSetName = 'harvard';  
-            scanSpatialOverlapFactor = 0.60; 
+            scanSpatialOverlapFactor = 0.70; 
             fixationsPerScan = 20;
             
         otherwise
