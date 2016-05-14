@@ -79,8 +79,8 @@ function [sensor, fixationTimes, adaptingFieldFixationTimes] = customizeSensor(o
         fx = 1.0;
     else
         xNodesNeg = -(round(0.36 * oiWidthInMicrons/sensorWidthInMicrons * sensorParams.eyeMovementScanningParams.fixationOverlapFactor));
-        xNodesPos = (round(0.36*(1.0-2.2*borderFraction) * oiWidthInMicrons/sensorWidthInMicrons * sensorParams.eyeMovementScanningParams.fixationOverlapFactor));
-        yNodes = (round(0.36 * oiHeightInMicrons/sensorHeightInMicrons * sensorParams.eyeMovementScanningParams.fixationOverlapFactor));
+        xNodesPos = (round(0.34*(1.0-2.2*borderFraction) * oiWidthInMicrons/sensorWidthInMicrons * sensorParams.eyeMovementScanningParams.fixationOverlapFactor));
+        yNodes = (round(0.34 * oiHeightInMicrons/sensorHeightInMicrons * sensorParams.eyeMovementScanningParams.fixationOverlapFactor));
         if (yNodes == 0)
             error('\nZero saccadic eye nodes were generated. Consider increasing the fixationOverlapFactor (currently set to: %2.4f)\n', sensorParams.eyeMovementScanningParams.fixationOverlapFactor);
         end

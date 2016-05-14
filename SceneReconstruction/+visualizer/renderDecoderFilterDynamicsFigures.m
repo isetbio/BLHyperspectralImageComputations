@@ -25,7 +25,10 @@ function generateAllFigures(decodingDataDir, componentString, wVector, spatioTem
     fprintf('Generating ''%s'' filter figures\n', componentString);
     dcTerm = 1;
     % Normalize wVector for plotting in [-1 1]
-    wVector = wVector / max(max(abs(wVector(dcTerm+1:size(wVector,1),:))));
+    dcTerms = wVector(1,:);
+    maxOfAllDCterms = max(abs(dcTerms));
+    
+    maxNoDCterm = max(max(abs(wVector((dcTerm+1):size(wVector,1),:))));
     weightsRange = 0.9*[-1 1];
     
     % Allocate memory for unpacked stimDecoder
@@ -48,12 +51,14 @@ function generateAllFigures(decodingDataDir, componentString, wVector, spatioTem
                 coneIndex = sub2ind([sensorRows sensorCols], coneRow, coneCol);
                 neuralResponseFeatureIndices = (coneIndex-1)*timeBinsNum + (1:timeBinsNum);
                 stimDecoder(stimConeContrastIndex, ySpatialBin, xSpatialBin, coneRow, coneCol, :) = ...
-                    squeeze(wVector(dcTerm + neuralResponseFeatureIndices, stimulusDimension));       
+                    squeeze(wVector(dcTerm + neuralResponseFeatureIndices, stimulusDimension))/maxNoDCterm;       
             end % coneRow
             end % coneCol
         end % xSpatialBin
         end % ySpatialBin
     end % coneContrastIndex
+    
+    max(abs(stimDecoder(:)))
     
     % Generate spatial pooling filters figure (at select stimulus locations)
     generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, expParams, decodingDataDir, componentString);
@@ -105,9 +110,9 @@ function generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTempo
                'topMargin',      0.04);
            
     prefix = sprintf('SubMosaicSampling%s', componentString);
-    imageFileName = composeImageFilename(expParams, decodingDataDir, prefix, ''); 
+    figureFileName = composeImageFilename(expParams, decodingDataDir, prefix, ''); 
     hFig = figure(10); 
-    clf; set(hFig, 'position', [700 10 1024 750], 'Color', [1 1 1], 'Name', imageFileName);
+    clf; set(hFig, 'position', [700 10 1024 750], 'Color', [1 1 1], 'Name', strrep(figureFileName, decodingDataDir, ''));
     colormap(grayRedLUT);        
     
     % Outline of the decoded position
@@ -130,7 +135,7 @@ function generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTempo
         subplot('position',subplotPosVectors(1, stimConeContrastIndex).v);
         imagesc(spatioTemporalSupport.sensorRetinalXaxis, spatioTemporalSupport.sensorRetinalYaxis, allConesSpatialPooling);
         hold on;
-        plot(decodedPosOutline.x, decodedPosOutline.y, 'g-', 'LineWidth', 2.0);
+        plot(decodedPosOutline.x, decodedPosOutline.y, 'b-', 'LineWidth', 2.0);
         hold off;
         axis 'image'; axis 'xy'; 
         set(gca, 'XTick', (-150:15:150), 'YTick', (-150:15:150), 'XTickLabel', {}, 'YTickLabel', {}, ...
@@ -200,7 +205,7 @@ function generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTempo
         end    
     end % stimConeContrastIndex
     drawnow;
-    NicePlot.exportFigToPNG(sprintf('%s.png', imageFileName), hFig, 300);
+    NicePlot.exportFigToPNG(sprintf('%s.png', figureFileName), hFig, 300);
      
     % Helper drawing function
     function generateContourPlot(spatialWeightingKernel, weightsRange, coneCoordsSubmosaic1, RGBColor1, coneCoordsSubmosaic2,  RGBColor2)
@@ -286,9 +291,9 @@ function generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioT
     coneString = {'Lcone contrast', 'Mcone contrast', 'Scone contrast'};
     for stimConeContrastIndex = 1:numel(coneString)
         prefix = sprintf('TemporalPooling%s',componentString);
-        imageFileName = composeImageFilename(expParams, decodingDataDir, prefix, coneString{stimConeContrastIndex}); 
+        figureFileName = composeImageFilename(expParams, decodingDataDir, prefix, coneString{stimConeContrastIndex}); 
         hFig = figure(1000+(stimConeContrastIndex-1)*10); 
-        clf; set(hFig, 'position', [700 10 1024 800], 'Color', [1 1 1], 'Name', imageFileName);
+        clf; set(hFig, 'position', [700 10 1024 800], 'Color', [1 1 1], 'Name', strrep(figureFileName, decodingDataDir, ''));
         colormap(grayRedLUT); 
         
         % determine coords of peak response
@@ -303,7 +308,7 @@ function generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioT
         subplot('position',subplotPosVectors(1, 1+round((numel(nearbyConeColumns)-1)/2)).v);
         imagesc(spatioTemporalSupport.sensorRetinalXaxis, spatioTemporalSupport.sensorRetinalYaxis, squeeze(spatioTemporalFilter(:,:,peakTimeBin)));
         hold on;
-        plot(outlineX, outlineY, 'k-', 'LineWidth', 2.0);
+        plot(outlineX, outlineY, 'k-', 'LineWidth', 1.0);
         hold off;
         axis 'image'; axis 'xy'; 
         set(gca, 'XTick', (-150:15:150), 'YTick', (-150:15:150), ... %'XTickLabel', {}, 'YTickLabel', {}, ...
@@ -339,7 +344,7 @@ function generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioT
                 set(gca, 'XLim', [spatioTemporalSupport.timeAxis(1) spatioTemporalSupport.timeAxis(end)], 'YLim', weightsRange);
           end
         end
-        NicePlot.exportFigToPNG(sprintf('%s.png', imageFileName), hFig, 300);
+        NicePlot.exportFigToPNG(sprintf('%s.png', figureFileName), hFig, 300);
     end % stimConeContrastIndex
 end
 
@@ -355,7 +360,7 @@ function generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTe
     xSpatialBinsNum = numel(spatioTemporalSupport.sensorFOVxaxis);                   % spatial support of decoded scene
     ySpatialBinsNum = numel(spatioTemporalSupport.sensorFOVyaxis);
  
-    if (ySpatialBinsNum <= 6)
+    if (ySpatialBinsNum <= 99996)
         rowsToPlot = 1:numel(spatioTemporalSupport.sensorFOVyaxis);
         fprintf('Showing all y-positions\n');
     elseif (ySpatialBinsNum > 6) && (ySpatialBinsNum <= 12)
@@ -368,7 +373,7 @@ function generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTe
         fprintf('Stimulus y-positions are more than 12 will only show every 6th row\n');
     end
     
-    if (xSpatialBinsNum <= 6)
+    if (xSpatialBinsNum <= 99996)
         colsToPlot = 1:numel(spatioTemporalSupport.sensorFOVxaxis);
         fprintf('Showing all x-positions\n');
     elseif (xSpatialBinsNum > 6) && (xSpatialBinsNum <= 12)
@@ -380,6 +385,8 @@ function generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTe
         colsToPlot = colsToPlot((colsToPlot>=1) & (colsToPlot<= numel(spatioTemporalSupport.sensorFOVxaxis)));
         fprintf('Stimulus x-positions are more than 12 will only show every 6th col\n');
     end
+    
+    
     
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
                'rowsNum', numel(rowsToPlot), ...
@@ -394,9 +401,9 @@ function generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTe
     coneString = {'L cone contrast', 'Mcone contrast', 'Scone contrast'};
     for stimConeContrastIndex = 1:numel(coneString)
         prefix = sprintf('SpatialPooling%s',componentString);
-        imageFileName = composeImageFilename(expParams, decodingDataDir, prefix, coneString{stimConeContrastIndex}); 
+        figureFileName = composeImageFilename(expParams, decodingDataDir, prefix, coneString{stimConeContrastIndex}); 
         hFig = figure(100+(stimConeContrastIndex-1)*10); 
-        clf; set(hFig, 'position', [700 10 1550 720], 'Color', [1 1 1], 'Name', imageFileName);
+        clf; set(hFig, 'position', [700 10 1550 720], 'Color', [1 1 1], 'Name', strrep(figureFileName, decodingDataDir, ''));
         colormap(grayRedLUT); 
         
         for iRow = 1:numel(rowsToPlot)
@@ -423,11 +430,11 @@ function generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTe
             if (iRow > 1 || iCol > 1)
                 set(gca, 'XTickLabel', {}, 'YTickLabel', {});
             end
-            title(sprintf('%s decoder at (%2.1f,%2.1f)um', coneString{stimConeContrastIndex}, spatioTemporalSupport.sensorFOVxaxis(xSpatialBin), spatioTemporalSupport.sensorFOVyaxis(ySpatialBin)), 'FontSize', 14);
+            title(sprintf('(%2.1f,%2.1f)um', spatioTemporalSupport.sensorFOVxaxis(xSpatialBin), spatioTemporalSupport.sensorFOVyaxis(ySpatialBin)), 'FontSize', 8, 'FontName', 'Menlo');
         end
         end
         % Export figure
-        NicePlot.exportFigToPNG(sprintf('%s.png', imageFileName), hFig, 300);
+        NicePlot.exportFigToPNG(sprintf('%s.png', figureFileName), hFig, 300);
     end
 end
 
