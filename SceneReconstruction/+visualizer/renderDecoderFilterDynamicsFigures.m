@@ -58,7 +58,6 @@ function generateAllFigures(decodingDataDir, componentString, wVector, spatioTem
         end % ySpatialBin
     end % coneContrastIndex
     
-    max(abs(stimDecoder(:)))
     
     % Generate spatial pooling filters figure (at select stimulus locations)
     generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, expParams, decodingDataDir, componentString);
@@ -80,8 +79,7 @@ function generateAllFigures(decodingDataDir, componentString, wVector, spatioTem
     coneNeighborhood.extent.x = -3:3;
     coneNeighborhood.extent.y = -2:2;
     generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, coneNeighborhood, expParams, decodingDataDir, componentString);
-    generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation,expParams, decodingDataDir, componentString);
-    
+    generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation,expParams, decodingDataDir, componentString)
 end
 
 function generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, expParams, decodingDataDir, componentString)
@@ -418,7 +416,7 @@ function generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTe
             [~, idx] = max(abs(tmp(:)));
             [peakConeRow, peakConeCol, idx] = ind2sub(size(tmp), idx);
             peakTimeBin = indicesForPeakResponseEstimation(idx);
-            fprintf('filter at (%d,%d) peaks at %2.0f msec\n', xSpatialBin, ySpatialBin, spatioTemporalSupport.timeAxis(peakTimeBin));
+            %fprintf('filter at (%d,%d) peaks at %2.0f msec\n', xSpatialBin, ySpatialBin, spatioTemporalSupport.timeAxis(peakTimeBin));
 
             subplot('position',subplotPosVectors(numel(rowsToPlot)-iRow+1,iCol).v);
 

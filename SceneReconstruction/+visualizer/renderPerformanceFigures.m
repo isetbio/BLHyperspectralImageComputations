@@ -38,7 +38,7 @@ function renderPerformanceFigures(sceneSetName, decodingDataDir,  visualizeSVDfi
         fprintf('Done.\n');
         
         componentString = 'PINVbased';
-        imageFileName = generateImageFileName(InSampleOrOutOfSample, componentString, decodingDataDir, expParams);
+        imageFileName = generateImageFileName('InSample', componentString, decodingDataDir, expParams);
         figNo = 0;
         [inSamplePINVcorrelationCoeffs, inSamplePINVrmsErrors] = ...
             renderReconstructionPerformancePlots(figNo, imageFileName, decodingDataDir, Ctrain, CtrainPrediction,  originalTrainingStimulusSize, expParams);
@@ -54,7 +54,7 @@ function renderPerformanceFigures(sceneSetName, decodingDataDir,  visualizeSVDfi
             end
             for kIndex = kk
                 componentString = sprintf('SVD_%2.3f%%VarianceExplained', SVDbasedLowRankFilterVariancesExplained(kIndex));
-                imageFileName = generateImageFileName(InSampleOrOutOfSample, componentString, decodingDataDir, expParams);
+                imageFileName = generateImageFileName('InSample', componentString, decodingDataDir, expParams);
                 [inSampleSVDcorrelationCoeffs(:, kIndex), inSampleSVDrmsErrors(:, kIndex)] = ...
                     renderReconstructionPerformancePlots(figNo, imageFileName, decodingDataDir, Ctrain, squeeze(CtrainPredictionSVDbased(kIndex,:, :)),  originalTrainingStimulusSize, expParams);
             end
@@ -76,7 +76,7 @@ function renderPerformanceFigures(sceneSetName, decodingDataDir,  visualizeSVDfi
         fprintf('Done.\n');
         
         componentString = 'PINVbased';
-        imageFileName = generateImageFileName(InSampleOrOutOfSample, componentString, decodingDataDir, expParams);
+        imageFileName = generateImageFileName('OutOfSample', componentString, decodingDataDir, expParams);
         figNo = 10;
         [outOfSamplePINVcorrelationCoeffs, outOfSamplePINVrmsErrors] = ...
             renderReconstructionPerformancePlots(figNo, imageFileName, decodingDataDir, Ctest, CtestPrediction,  originalTestingStimulusSize, expParams);
@@ -93,7 +93,7 @@ function renderPerformanceFigures(sceneSetName, decodingDataDir,  visualizeSVDfi
             figNo = 2000;
             for kIndex = kk
                 componentString = sprintf('SVD_%2.3f%%VarianceExplained', SVDbasedLowRankFilterVariancesExplained(kIndex));
-                imageFileName = generateImageFileName(InSampleOrOutOfSample, componentString, decodingDataDir, expParams);
+                imageFileName = generateImageFileName('OutOfSample', componentString, decodingDataDir, expParams);
                 [outOfSampleSVDcorrelationCoeffs(:, kIndex), outOfSampleSVDrmsErrors(:, kIndex)] = ...
                     renderReconstructionPerformancePlots(figNo, imageFileName, decodingDataDir, Ctest, squeeze(CtestPredictionSVDbased(kIndex,:, :)),  originalTestingStimulusSize, expParams);
             end

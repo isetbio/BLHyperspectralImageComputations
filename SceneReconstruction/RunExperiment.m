@@ -15,7 +15,7 @@ function RunExperiment
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
        %'visualizeInSamplePerformance' ...            % visualize the decoder's in-sample deperformance
        %'visualizeOutOfSamplePerformance' ...         % visualize the decoder's out-of-sample deperformance
-       %'visualizeInAndOutOfSamplePerformance' ...    % visualize the decoder's in & out-of-sample deperformance
+       'visualizeInAndOutOfSamplePerformance' ...    % visualize the decoder's in & out-of-sample deperformance
       'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
        % 'makeReconstructionVideo' ...              % generate video of the reconstruction
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
@@ -23,7 +23,7 @@ function RunExperiment
   
     % Specify what to compute
     instructionSet = computationInstructionSet;  
-    %instructionSet = visualizationInstructionSet;
+    instructionSet = visualizationInstructionSet;
     
     
     % Specify the optical elements employed - This affects the name of the resutls dir
@@ -31,7 +31,7 @@ function RunExperiment
     inertPigments = 'none';    % choose between 'none', 'noLens', 'noMacular', 'default'
     
     % Specify mosaic size and reconstructed stimulus spatial resolution - This affects the name of the results dir
-    mosaicSize = [28 20];
+    mosaicSize = [22 26];
     reconstructedStimulusSpatialResolutionInMicrons = 3;
     
     % Specify preprocessing params
@@ -92,7 +92,7 @@ function RunExperiment
         fixationMeanDuration = 150; 
         microFixationGain = 0; 
         
-        mosaicSize = [28 20];
+        mosaicSize = [22 26];
         reconstructedStimulusSpatialResolutionInMicrons = 3;
         
         osType = '@osIdentity';
