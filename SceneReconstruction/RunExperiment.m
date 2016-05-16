@@ -45,7 +45,7 @@ function RunExperiment
     osType = '@osIdentity';
     
     % Specify the data set to use
-    whichDataSet =  'small'; 
+    whichDataSet =  'harvard_machester_upenn';      % 'very_small', 'small', 'harvard', 'upenn', 'large', 'original'
     
     core.executeProgram(program, whichDataSet, ...
         opticalElements, inertPigments, ...
