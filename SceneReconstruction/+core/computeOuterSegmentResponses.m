@@ -80,7 +80,8 @@ function computeOuterSegmentResponses(expParams)
         );
 
         scanFileName = core.getScanFileName(expParams.sceneSetName, expParams.resultsDir, sceneIndex);
-        fprintf('Saving responses from scene  to %s ...',  scanFileName);
+        p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
+        fprintf('Saving responses to %s ...',  strrep(scanFileName, sprintf('%s/',p.computedDataDir),''));
         save(scanFileName, 'scanData', 'scene', 'oi', 'expParams', '-v7.3');
         fprintf('Done saving \n');
         

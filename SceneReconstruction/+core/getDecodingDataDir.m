@@ -1,7 +1,7 @@
 function decodingDataDir = getDecodingDataDir(resultsDir, preProcessingParams)
 
     p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
-    decodingDataDir = fullfile(p.computedDataDir, resultsDir, 'decodingData');
+    decodingDataDir = fullfile(resultsDir, 'decodingData');
     
     if (preProcessingParams.designMatrixBased > 0)
         decodingDataDir = fullfile(decodingDataDir, sprintf('designMatrixBasedPreProcessing%d', preProcessingParams.designMatrixBased));
@@ -12,7 +12,7 @@ function decodingDataDir = getDecodingDataDir(resultsDir, preProcessingParams)
     end
     
     if (~exist(decodingDataDir, 'dir'))
-        fprintf('Directory ''%s'' does not exist. Will create it now.', decodingDataDir);
+        fprintf('Directory ''%s'' does not exist. Will create it now.\n', decodingDataDir);
         mkdir(decodingDataDir);
     end
 end

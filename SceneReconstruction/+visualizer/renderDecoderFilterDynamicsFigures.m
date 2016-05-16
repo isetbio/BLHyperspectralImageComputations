@@ -62,6 +62,33 @@ function generateAllFigures(decodingDataDir, componentString, wVector, spatioTem
     % Generate spatial pooling filters figure (at select stimulus locations)
     generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, expParams, decodingDataDir, componentString);
     
+    
+     
+    
+    % Generate submosaic sampling  figure at all locations
+    videoFileName = composeImageFilename(expParams.decodingDataDir, 'SubMosaicSamplingAllPositions', componentString);
+    videoFilename = sprintf('%s.m4v', videoFileName);
+    fprintf('Will export video to %s.m4v\n', videoFileName);
+    writerObj = VideoWriter(videoFilename, 'MPEG-4'); % H264 format
+    writerObj.FrameRate = 15; 
+    writerObj.Quality = 100;
+    writerObj.open();
+    for yStimLocationIndex = 1:ySpatialBinsNum
+        stimulusLocation.y = yStimLocationIndex;
+        if (mod(yStimLocationIndex-1,2) == 0)
+            xStimLocationRange = 1:xSpatialBinsNum;
+        else
+            xStimLocationRange = xSpatialBinsNum:-1:1;
+        end
+        for xStimLocationIndex = xStimLocationRange
+            stimulusLocation.x = xStimLocationIndex;
+            hFig = generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, expParams, decodingDataDir, sprintf('StimPos_%d_%d', xStimLocationIndex, yStimLocationIndex), componentString);
+            writerObj.writeVideo(getframe(hFig));
+        end
+    end
+    writerObj.close();
+    
+    
     % Generate temporal pooling filters figure (at one stimulus location and at a local mosaic neighborhood)
     if (mod(xSpatialBinsNum,2) == 0)
         stimulusLocation.x = round(xSpatialBinsNum/2);
@@ -79,10 +106,10 @@ function generateAllFigures(decodingDataDir, componentString, wVector, spatioTem
     coneNeighborhood.extent.x = -3:3;
     coneNeighborhood.extent.y = -2:2;
     generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, coneNeighborhood, expParams, decodingDataDir, componentString);
-    generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation,expParams, decodingDataDir, componentString)
+    
 end
 
-function generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, expParams, decodingDataDir, componentString)
+function hFig = generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, expParams, decodingDataDir, prefix, componentString)
     % Load grayRed colormap
     p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
     load(fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'), 'grayRedLUT');
@@ -107,10 +134,10 @@ function generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTempo
                'bottomMargin',   0.01, ...
                'topMargin',      0.04);
            
-    prefix = sprintf('SubMosaicSampling%s', componentString);
-    figureFileName = composeImageFilename(expParams, decodingDataDir, prefix, ''); 
+    postfix = sprintf('SubMosaicSampling%s', componentString);
+    figureFileName = composeImageFilename(expParams.decodingDataDir, prefix, postfix); 
     hFig = figure(10); 
-    clf; set(hFig, 'position', [700 10 1024 750], 'Color', [1 1 1], 'Name', strrep(figureFileName, decodingDataDir, ''));
+    clf; set(hFig, 'position', [700 10 1024 750], 'Color', [1 1 1], 'Name', strrep(figureFileName, decodingDataDir, postfix));
     colormap(grayRedLUT);        
     
     % Outline of the decoded position
@@ -129,7 +156,7 @@ function generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTempo
         peakTimeBin = indicesForPeakResponseEstimation(idx);
         
         allConesSpatialPooling = squeeze(spatioTemporalFilter(:,:,peakTimeBin));
-        % Plot the spatial pooling filter (across all cone types) at the top
+        % Plot the spatial pooling filter (all cone types) at the top
         subplot('position',subplotPosVectors(1, stimConeContrastIndex).v);
         imagesc(spatioTemporalSupport.sensorRetinalXaxis, spatioTemporalSupport.sensorRetinalYaxis, allConesSpatialPooling);
         hold on;
@@ -177,29 +204,29 @@ function generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTempo
         if (stimConeContrastIndex == 1)
             subplot('position',subplotPosVectors(2,stimConeContrastIndex).v);
             generateContourPlot(lConeSpatialWeightingKernel, weightsRange, lConeCoords, [1 0.5 0.7], [],[]); 
-            title(sprintf('spatial pooling across L-cone submosaic'), 'FontSize', 14);
+            title(sprintf('spatial pooling (L-cone submosaic)'), 'FontSize', 14);
             
             subplot('position',subplotPosVectors(3,stimConeContrastIndex).v);
             generateContourPlot(mConeSpatialWeightingKernel, weightsRange, mConeCoords, [0.5 0.9 0.7], [],[]);
-            title(sprintf('spatial pooling across M-cone  submosaic'), 'FontSize', 14);
+            title(sprintf('spatial pooling (M-cone  submosaic)'), 'FontSize', 14);
             
         elseif (stimConeContrastIndex == 2)
             subplot('position',subplotPosVectors(2,stimConeContrastIndex).v);
             generateContourPlot(mConeSpatialWeightingKernel, weightsRange, mConeCoords, [0.5 0.9 0.7], [], []);
-            title(sprintf('spatial pooling across M-cone  submosaic'), 'FontSize', 14);
+            title(sprintf('spatial pooling (M-cone  submosaic)'), 'FontSize', 14);
             
             subplot('position',subplotPosVectors(3,stimConeContrastIndex).v);
             generateContourPlot(lConeSpatialWeightingKernel, weightsRange, lConeCoords, [1 0.5 0.7], [],[]);
-            title(sprintf('spatial pooling across L-cone  submosaic'), 'FontSize', 14);
+            title(sprintf('spatial pooling (L-cone  submosaic)'), 'FontSize', 14);
             
         elseif (stimConeContrastIndex == 3)
             subplot('position',subplotPosVectors(2,stimConeContrastIndex).v);
             generateContourPlot(sConeSpatialWeightingKernel, weightsRange, sConeCoords, [0.7 0.5 1], [],[]);
-            title(sprintf('spatial pooling across S-cone  submosaic'), 'FontSize', 14);
+            title(sprintf('spatial pooling (S-cone  submosaic)'), 'FontSize', 14);
             
             subplot('position',subplotPosVectors(3,stimConeContrastIndex).v);
             generateContourPlot(lmConeSpatialWeightingKernel, weightsRange, lConeCoords, [1 0.5 0.7], mConeCoords, [0.5 0.9 0.7]);
-            title(sprintf('spatial pooling across L/M-cone  submosaics'), 'FontSize', 14);
+            title(sprintf('spatial pooling (L/M-cone  submosaics)'), 'FontSize', 14);
         end    
     end % stimConeContrastIndex
     drawnow;
@@ -207,6 +234,66 @@ function generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTempo
      
     % Helper drawing function
     function generateContourPlot(spatialWeightingKernel, weightsRange, coneCoordsSubmosaic1, RGBColor1, coneCoordsSubmosaic2,  RGBColor2)
+        
+        for coneIndex = 1:size(coneCoordsSubmosaic1,1)
+            coneXcoord = coneCoordsSubmosaic1(coneIndex,1);
+            coneYcoord = coneCoordsSubmosaic1(coneIndex,2);
+            [~,ix] = min(abs(x-coneXcoord));
+            [~,iy] = min(abs(y-coneYcoord));
+            w(coneIndex) = spatialWeightingKernel(iy,ix);
+        end
+
+        cStep = max(weightsRange)/12;
+        boost = 2;
+       % w(abs(w) < cStep) = 0;
+        w = boost * w / max(weightsRange);
+        
+        % Plot the cones
+        markerSize = 80;
+        for coneIndex = 1:size(coneCoordsSubmosaic1,1)
+            RGBColors1(coneIndex,:) = [1 1 1]*(1-w(coneIndex)) + RGBColor1 * w(coneIndex);
+        end
+        RGBColors1(RGBColors1>1) = 1;
+        RGBColors1(RGBColors1<0) = 0;
+         
+        scatter(squeeze(coneCoordsSubmosaic1(:,1)), squeeze(coneCoordsSubmosaic1(:,2)), markerSize,  RGBColors1, 'filled');
+        hold on;
+        
+        if (~isempty(coneCoordsSubmosaic2))
+            for coneIndex = 1:size(coneCoordsSubmosaic1,1)
+                RGBColors2(coneIndex,:) = [1 1 1]*(1-w(coneIndex)) + RGBColor2 * w(coneIndex);
+            end
+            RGBColors2(RGBColors2>1) = 1;
+            RGBColors2(RGBColors2<0) = 0;
+            scatter(squeeze(coneCoordsSubmosaic2(:,1)), squeeze(coneCoordsSubmosaic2(:,2)), markerSize,  RGBColors2, 'filled');
+        end
+        
+        contourLineColor = [0.4 0.4 0.4];
+        % negative contours
+        hold on
+        [C,H] = contour(xx,yy, spatialWeightingKernel, (weightsRange(1):cStep:-cStep));
+        H.LineWidth = 1;
+        H.LineStyle = '--';
+        H.LineColor = contourLineColor;
+        
+        % positive contours
+        [C,H] = contour(xx,yy, spatialWeightingKernel, (cStep:cStep:weightsRange(2)));
+        H.LineWidth = 1;
+        H.LineStyle = '-';
+        H.LineColor = contourLineColor;
+        
+        hold off;
+        box on;
+        axis 'image'; axis 'xy'; 
+        set(gca, 'XTick', (-150:15:150), 'YTick', (-150:15:150), 'XTickLabel', {}, 'YTickLabel', {}, ...
+                 'XLim', [spatioTemporalSupport.sensorRetinalXaxis(1)-dX/2 spatioTemporalSupport.sensorRetinalXaxis(end)+dX/2], ...
+                 'YLim', [spatioTemporalSupport.sensorRetinalYaxis(1)-dY/2 spatioTemporalSupport.sensorRetinalYaxis(end)+dY/2], 'CLim', weightsRange);
+        set(gca, 'CLim', weightsRange);
+        
+    end
+
+    % Helper drawing function
+    function generateContourPlotOLD(spatialWeightingKernel, weightsRange, coneCoordsSubmosaic1, RGBColor1, coneCoordsSubmosaic2,  RGBColor2)
         
         contourLineColor = [0.4 0.4 0.4];
         cStep = max(weightsRange)/12;
@@ -222,7 +309,6 @@ function generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTempo
         H.LineWidth = 1;
         H.LineStyle = '-';
         H.LineColor = contourLineColor;
-        
         
         % Plot the cones
         markerSize = 60;
@@ -289,7 +375,7 @@ function generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioT
     coneString = {'Lcone contrast', 'Mcone contrast', 'Scone contrast'};
     for stimConeContrastIndex = 1:numel(coneString)
         prefix = sprintf('TemporalPooling%s',componentString);
-        figureFileName = composeImageFilename(expParams, decodingDataDir, prefix, coneString{stimConeContrastIndex}); 
+        figureFileName = composeImageFilename(expParams.decodingDataDir, prefix, coneString{stimConeContrastIndex}); 
         hFig = figure(1000+(stimConeContrastIndex-1)*10); 
         clf; set(hFig, 'position', [700 10 1024 800], 'Color', [1 1 1], 'Name', strrep(figureFileName, decodingDataDir, ''));
         colormap(grayRedLUT); 
@@ -351,7 +437,6 @@ function generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTe
     % Load grayRed colormap
     p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
     load(fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'), 'grayRedLUT');
-    whos('-file', fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'));
     
     dX = spatioTemporalSupport.sensorRetinalXaxis(2)-spatioTemporalSupport.sensorRetinalXaxis(1);
     dY = spatioTemporalSupport.sensorRetinalYaxis(2)-spatioTemporalSupport.sensorRetinalYaxis(1);
@@ -399,7 +484,7 @@ function generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTe
     coneString = {'L cone contrast', 'Mcone contrast', 'Scone contrast'};
     for stimConeContrastIndex = 1:numel(coneString)
         prefix = sprintf('SpatialPooling%s',componentString);
-        figureFileName = composeImageFilename(expParams, decodingDataDir, prefix, coneString{stimConeContrastIndex}); 
+        figureFileName = composeImageFilename(expParams.decodingDataDir, prefix, coneString{stimConeContrastIndex}); 
         hFig = figure(100+(stimConeContrastIndex-1)*10); 
         clf; set(hFig, 'position', [700 10 1550 720], 'Color', [1 1 1], 'Name', strrep(figureFileName, decodingDataDir, ''));
         colormap(grayRedLUT); 
@@ -437,11 +522,6 @@ function generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTe
 end
 
 
-function imageFileName = composeImageFilename(expParams, decodingDataDir, prefix, postfix)
-    if (expParams.outerSegmentParams.addNoise)
-        outerSegmentNoiseString = 'Noise';
-    else
-        outerSegmentNoiseString = 'NoNoise';
-    end 
-    imageFileName = fullfile(decodingDataDir, sprintf('%s%s%sOverlap%2.1fMeanLum%d%s', prefix, expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance, postfix));    
+function imageFileName = composeImageFilename(decodingDataDir, prefix, postfix)
+    imageFileName = fullfile(decodingDataDir, sprintf('%s%s', prefix, postfix));    
 end

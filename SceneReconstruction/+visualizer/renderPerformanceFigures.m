@@ -1,6 +1,6 @@
 function renderPerformanceFigures(sceneSetName, decodingDataDir,  visualizeSVDfiltersForVarianceExplained, InSampleOrOutOfSample)
 
-    
+
     if (strcmp(InSampleOrOutOfSample, 'InAndOutOfSample'))
         figureWidth = 1250;
     elseif ((strcmp(InSampleOrOutOfSample, 'InSample')) || (strcmp(InSampleOrOutOfSample, 'OutOfSample')))
@@ -236,11 +236,11 @@ function [correlations, rmsErrors] = renderReconstructionPerformancePlots(figNo,
 end
 
 function imageFileName = generateImageFileName(InSampleOrOutOfSample, componentString, decodingDataDir, expParams)
-        if (expParams.outerSegmentParams.addNoise)
-            outerSegmentNoiseString = 'Noise';
-        else
-            outerSegmentNoiseString = 'NoNoise';
-        end
-        imageFileName = fullfile(decodingDataDir, sprintf('%sPerformance%s%s%sOverlap%2.1fMeanLum%d', InSampleOrOutOfSample, componentString, expParams.outerSegmentParams.type, outerSegmentNoiseString, expParams.sensorParams.eyeMovementScanningParams.fixationOverlapFactor,expParams.viewModeParams.forcedSceneMeanLuminance));
-      
+    if (expParams.outerSegmentParams.addNoise)
+        outerSegmentNoiseString = 'Noise';
+    else
+        outerSegmentNoiseString = 'NoNoise';
+    end
+    imageFileName = fullfile(decodingDataDir, sprintf('%sPerformance%s', InSampleOrOutOfSample, componentString));
+    
 end

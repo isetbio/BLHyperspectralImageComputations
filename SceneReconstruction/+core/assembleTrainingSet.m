@@ -1,4 +1,4 @@
-function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, trainingDataPercentange, testingDataPercentage, preProcessingParams, updateExpParams)
+function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, trainingDataPercentange, testingDataPercentage, preProcessingParams)
 
      
     totalTrainingScansNum = 0;
@@ -10,10 +10,6 @@ function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, training
     for sceneIndex = 1:numel(sceneSet) 
         scanFileName = core.getScanFileName(sceneSetName, resultsDir, sceneIndex);
         load(scanFileName, 'scanData', 'scene', 'oi', 'expParams');
-        
-        if (updateExpParams)
-            expParams.preProcessingParams = preProcessingParams;
-        end
         
         scansNum = numel(scanData);
         trainingScans = round(trainingDataPercentange/100.0*scansNum);
@@ -181,7 +177,8 @@ function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, training
                        
     % Save design matrices and stimulus vectors
     fileName = fullfile(decodingDataDir, sprintf('%s_trainingDesignMatrices.mat', sceneSetName));
-    fprintf('Saving training design matrix and stim vector ''%s''... ', fileName);
+    p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
+    fprintf('Saving training design matrix and stim vector ''%s''... ', strrep(fileName, sprintf('%s/',p.computedDataDir),''));
     save(fileName, 'Xtrain', 'Ctrain', 'oiCtrain', 'trainingTimeAxis', ...
         'trainingSceneIndexSequence', 'trainingSensorPositionSequence', ...
         'trainingScanInsertionTimes', 'trainingSceneLMSbackground', ...
@@ -216,7 +213,7 @@ function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, training
     
     % Save design matrices and stimulus vectors
     fileName = fullfile(decodingDataDir, sprintf('%s_testingDesignMatrices.mat', sceneSetName));
-    fprintf('Saving test design matrix and stim vector to ''%s''... ', fileName);
+    fprintf('Saving test design matrix and stim vector to ''%s''... ', strrep(fileName, sprintf('%s/',p.computedDataDir),''));
     save(fileName, 'Xtest', 'Ctest', 'oiCtest', 'testingTimeAxis', ...
         'testingSceneIndexSequence', 'testingSensorPositionSequence', ...
         'testingScanInsertionTimes',  'testingSceneLMSbackground', ...

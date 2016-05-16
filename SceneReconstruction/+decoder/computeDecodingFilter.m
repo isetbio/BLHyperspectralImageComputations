@@ -9,7 +9,6 @@ function computeDecodingFilter(sceneSetName, decodingDataDir, SVDbasedLowRankFil
     % Save to params to JSON file
     core.exportExpParamsToJSONfile(sceneSetName, decodingDataDir, expParams, SVDbasedLowRankFilterVariancesExplained);
     
-    
     % Compute the rank of X
     timeSamples = size(Xtrain,1);
     filterDimensions = size(Xtrain,2);

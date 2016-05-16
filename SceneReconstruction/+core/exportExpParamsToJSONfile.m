@@ -1,8 +1,8 @@
 function exportExpParamsToJSONfile(sceneSetName, decodingDataDir, expParams, SVDbasedLowRankFilterVariancesExplained)
 
-    fileName = fullfile(decodingDataDir, sprintf('%s_expParams.json', sceneSetName));
+    opt.FileName = fullfile(decodingDataDir, sprintf('%s_expParams.json', sceneSetName));
     expParams.SVDbasedLowRankFilterVariancesExplained = SVDbasedLowRankFilterVariancesExplained;
-    opt.FileName = fileName;
     savejson('', expParams, opt);
-    fprintf('<strong>\tExperiment params saved to ''%s''.</strong>\n', fileName);
+    p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
+    fprintf('Experiment params saved to ''%s''.\n', strrep(opt.FileName, sprintf('%s/',p.computedDataDir),''));
 end
