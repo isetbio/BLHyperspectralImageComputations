@@ -66,7 +66,7 @@ function generateAllFigures(decodingDataDir, componentString, wVector, spatioTem
      
     
     % Generate submosaic sampling  figure at all locations
-    videoFileName = composeImageFilename(expParams.decodingDataDir, 'SubMosaicSamplingAllPositions', componentString);
+    videoFileName = composeImageFilename(decodingDataDir, 'SubMosaicSamplingAllPositions', componentString);
     videoFilename = sprintf('%s.m4v', videoFileName);
     fprintf('Will export video to %s.m4v\n', videoFileName);
     writerObj = VideoWriter(videoFilename, 'MPEG-4'); % H264 format
@@ -135,7 +135,7 @@ function hFig = generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spat
                'topMargin',      0.04);
            
     postfix = sprintf('SubMosaicSampling%s', componentString);
-    figureFileName = composeImageFilename(expParams.decodingDataDir, prefix, postfix); 
+    figureFileName = composeImageFilename(decodingDataDir, prefix, postfix); 
     hFig = figure(10); 
     clf; set(hFig, 'position', [700 10 1024 750], 'Color', [1 1 1], 'Name', strrep(figureFileName, decodingDataDir, postfix));
     colormap(grayRedLUT);        
@@ -260,7 +260,7 @@ function hFig = generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spat
         hold on;
         
         if (~isempty(coneCoordsSubmosaic2))
-            for coneIndex = 1:size(coneCoordsSubmosaic1,1)
+            for coneIndex = 1:size(coneCoordsSubmosaic2,1)
                 RGBColors2(coneIndex,:) = [1 1 1]*(1-w(coneIndex)) + RGBColor2 * w(coneIndex);
             end
             RGBColors2(RGBColors2>1) = 1;
@@ -375,7 +375,7 @@ function generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioT
     coneString = {'Lcone contrast', 'Mcone contrast', 'Scone contrast'};
     for stimConeContrastIndex = 1:numel(coneString)
         prefix = sprintf('TemporalPooling%s',componentString);
-        figureFileName = composeImageFilename(expParams.decodingDataDir, prefix, coneString{stimConeContrastIndex}); 
+        figureFileName = composeImageFilename(decodingDataDir, prefix, coneString{stimConeContrastIndex}); 
         hFig = figure(1000+(stimConeContrastIndex-1)*10); 
         clf; set(hFig, 'position', [700 10 1024 800], 'Color', [1 1 1], 'Name', strrep(figureFileName, decodingDataDir, ''));
         colormap(grayRedLUT); 
@@ -481,10 +481,11 @@ function generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTe
                'bottomMargin',   0.015, ...
                'topMargin',      0.00);
            
+    
     coneString = {'L cone contrast', 'Mcone contrast', 'Scone contrast'};
     for stimConeContrastIndex = 1:numel(coneString)
         prefix = sprintf('SpatialPooling%s',componentString);
-        figureFileName = composeImageFilename(expParams.decodingDataDir, prefix, coneString{stimConeContrastIndex}); 
+        figureFileName = composeImageFilename(decodingDataDir, prefix, coneString{stimConeContrastIndex}); 
         hFig = figure(100+(stimConeContrastIndex-1)*10); 
         clf; set(hFig, 'position', [700 10 1550 720], 'Color', [1 1 1], 'Name', strrep(figureFileName, decodingDataDir, ''));
         colormap(grayRedLUT); 
