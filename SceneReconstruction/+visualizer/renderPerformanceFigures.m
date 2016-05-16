@@ -12,7 +12,7 @@ function renderPerformanceFigures(sceneSetName, decodingDataDir,  visualizeSVDfi
     
     computeSVDbasedLowRankFiltersAndPredictions = true;
     
-    hFigSummary = figure(1000); clf;
+    hFigSummary = figure(5000); clf;
     set(hFigSummary, 'Position', [10 10 figureWidth 1150], 'Name', 'Reconstruction Performance Summary', 'Color', [1 1 1]);
     
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...

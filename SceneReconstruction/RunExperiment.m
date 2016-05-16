@@ -5,7 +5,7 @@ function RunExperiment
     % Computation steps. Uncomment the ones you want to execute
     computationInstructionSet = {...
        %'lookAtScenes' ...
-       'compute outer segment responses' ...      % compute OS responses. Data saved in the scansData directory
+       %'compute outer segment responses' ...      % compute OS responses. Data saved in the scansData directory
        'assembleTrainingDataSet' ...               % generates the training/testing design matrices. Data are saved in the decodingData directory
        'computeDecodingFilter' ...                 % computes the decoding filter based on the training data set (in-sample). Data stored in the decodingData directory
        'computeOutOfSamplePrediction' ...          % computes reconstructions based on the test data set (out-of-sample). Data stored in the decodingData directory
@@ -21,7 +21,7 @@ function RunExperiment
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
     };
   
-    % Specify what to compute
+    % Specify what to computeclose all
     instructionSet = computationInstructionSet;  
     instructionSet = visualizationInstructionSet;
     
@@ -36,7 +36,7 @@ function RunExperiment
     
     % Specify preprocessing params
     designMatrixBased = 0;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
-    rawResponseBased = 0;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+    rawResponseBased = 2;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
     useIdenticalPreprocessingOperationsForTrainingAndTestData = true;
 
     % Specify the data set to use
@@ -99,7 +99,7 @@ function RunExperiment
         resultsDir = core.getResultsDir(opticalElements, inertPigments, scanSpatialOverlapFactor, fixationMeanDuration, microFixationGain, mosaicSize, reconstructedStimulusSpatialResolutionInMicrons, osType);
         
         % Set data preprocessing params - This affects the name of the decodingDataDir
-        designMatrixBased = 0;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+        designMatrixBased = 1;    % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
         rawResponseBased = 0;     % 0: nothing, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
         useIdenticalPreprocessingOperationsForTrainingAndTestData = true;
         preProcessingParams = preProcessingParamsStruct(designMatrixBased, rawResponseBased, useIdenticalPreprocessingOperationsForTrainingAndTestData);
