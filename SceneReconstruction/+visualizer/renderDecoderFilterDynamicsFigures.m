@@ -194,39 +194,70 @@ function hFig = generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spat
             end
         end
         
-
-        lConeSpatialWeightingKernel = griddata(lConeWeights(:,1), lConeWeights(:,2), lConeWeights(:,3), xx, yy, 'cubic');
-        mConeSpatialWeightingKernel = griddata(mConeWeights(:,1), mConeWeights(:,2), mConeWeights(:,3), xx, yy, 'cubic');
-        sConeSpatialWeightingKernel = griddata(sConeWeights(:,1), sConeWeights(:,2), sConeWeights(:,3), xx, yy, 'cubic');
         lmConeWeights = [lConeWeights; mConeWeights];
-        lmConeSpatialWeightingKernel = griddata(lmConeWeights(:,1), lmConeWeights(:,2), lmConeWeights(:,3), xx, yy, 'cubic');
-            
+        
+        
+        lConeSpatialWeightingKernel = [];
+        mConeSpatialWeightingKernel = [];
+        sConeSpatialWeightingKernel = [];
+        lmConeSpatialWeightingKernel= [];
+        
+        if (~isempty(lConeWeights))
+            lConeSpatialWeightingKernel = griddata(lConeWeights(:,1), lConeWeights(:,2), lConeWeights(:,3), xx, yy, 'cubic');   
+        end
+        
+        if (~isempty(mConeWeights))
+            mConeSpatialWeightingKernel = griddata(mConeWeights(:,1), mConeWeights(:,2), mConeWeights(:,3), xx, yy, 'cubic'); 
+        end
+        
+        if (~isempty(sConeWeights))
+            sConeSpatialWeightingKernel = griddata(sConeWeights(:,1), sConeWeights(:,2), sConeWeights(:,3), xx, yy, 'cubic');
+        end
+        
+        
+        if (~isempty(lmConeWeights))
+            lmConeSpatialWeightingKernel = griddata(lmConeWeights(:,1), lmConeWeights(:,2), lmConeWeights(:,3), xx, yy, 'cubic');
+        end
+        
         if (stimConeContrastIndex == 1)
-            subplot('position',subplotPosVectors(2,stimConeContrastIndex).v);
-            generateContourPlot(lConeSpatialWeightingKernel, weightsRange, lConeCoords, [1 0.5 0.7], [],[]); 
-            title(sprintf('spatial pooling (L-cone submosaic)'), 'FontSize', 14);
             
-            subplot('position',subplotPosVectors(3,stimConeContrastIndex).v);
-            generateContourPlot(mConeSpatialWeightingKernel, weightsRange, mConeCoords, [0.5 0.9 0.7], [],[]);
-            title(sprintf('spatial pooling (M-cone  submosaic)'), 'FontSize', 14);
+            if (~isempty(lConeSpatialWeightingKernel))
+                subplot('position',subplotPosVectors(2,stimConeContrastIndex).v);
+                generateContourPlot(lConeSpatialWeightingKernel, weightsRange, lConeCoords, [1 0.5 0.7], [],[]); 
+                title(sprintf('spatial pooling (L-cone submosaic)'), 'FontSize', 14);
+            end
+            
+            if (~isempty(mConeSpatialWeightingKernel))
+                subplot('position',subplotPosVectors(3,stimConeContrastIndex).v);
+                generateContourPlot(mConeSpatialWeightingKernel, weightsRange, mConeCoords, [0.5 0.9 0.7], [],[]);
+                title(sprintf('spatial pooling (M-cone  submosaic)'), 'FontSize', 14);
+            end
             
         elseif (stimConeContrastIndex == 2)
-            subplot('position',subplotPosVectors(2,stimConeContrastIndex).v);
-            generateContourPlot(mConeSpatialWeightingKernel, weightsRange, mConeCoords, [0.5 0.9 0.7], [], []);
-            title(sprintf('spatial pooling (M-cone  submosaic)'), 'FontSize', 14);
+            if (~isempty(mConeSpatialWeightingKernel))
+                subplot('position',subplotPosVectors(2,stimConeContrastIndex).v);
+                generateContourPlot(mConeSpatialWeightingKernel, weightsRange, mConeCoords, [0.5 0.9 0.7], [], []);
+                title(sprintf('spatial pooling (M-cone  submosaic)'), 'FontSize', 14);
+            end
             
-            subplot('position',subplotPosVectors(3,stimConeContrastIndex).v);
-            generateContourPlot(lConeSpatialWeightingKernel, weightsRange, lConeCoords, [1 0.5 0.7], [],[]);
-            title(sprintf('spatial pooling (L-cone  submosaic)'), 'FontSize', 14);
+            if (~isempty(lConeSpatialWeightingKernel))
+                subplot('position',subplotPosVectors(3,stimConeContrastIndex).v);
+                generateContourPlot(lConeSpatialWeightingKernel, weightsRange, lConeCoords, [1 0.5 0.7], [],[]);
+                title(sprintf('spatial pooling (L-cone  submosaic)'), 'FontSize', 14);
+            end
             
         elseif (stimConeContrastIndex == 3)
-            subplot('position',subplotPosVectors(2,stimConeContrastIndex).v);
-            generateContourPlot(sConeSpatialWeightingKernel, weightsRange, sConeCoords, [0.7 0.5 1], [],[]);
-            title(sprintf('spatial pooling (S-cone  submosaic)'), 'FontSize', 14);
+            if (~isempty(sConeSpatialWeightingKernel))
+                subplot('position',subplotPosVectors(2,stimConeContrastIndex).v);
+                generateContourPlot(sConeSpatialWeightingKernel, weightsRange, sConeCoords, [0.7 0.5 1], [],[]);
+                title(sprintf('spatial pooling (S-cone  submosaic)'), 'FontSize', 14);
+            end
             
-            subplot('position',subplotPosVectors(3,stimConeContrastIndex).v);
-            generateContourPlot(lmConeSpatialWeightingKernel, weightsRange, lConeCoords, [1 0.5 0.7], mConeCoords, [0.5 0.9 0.7]);
-            title(sprintf('spatial pooling (L/M-cone  submosaics)'), 'FontSize', 14);
+            if (~isempty(lmConeSpatialWeightingKernel))
+                subplot('position',subplotPosVectors(3,stimConeContrastIndex).v);
+                generateContourPlot(lmConeSpatialWeightingKernel, weightsRange, lConeCoords, [1 0.5 0.7], mConeCoords, [0.5 0.9 0.7]);
+                title(sprintf('spatial pooling (L/M-cone  submosaics)'), 'FontSize', 14);
+            end
         end    
     end % stimConeContrastIndex
     drawnow;

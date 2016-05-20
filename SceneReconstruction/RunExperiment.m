@@ -14,7 +14,7 @@ function RunExperiment
        %'visualizeInSamplePerformance' ...          % visualize the decoder's in-sample deperformance
        %'visualizeOutOfSamplePerformance' ...       % visualize the decoder's out-of-sample deperformance
        'visualizeInAndOutOfSamplePerformance' ...   % visualize the decoder's in & out-of-sample deperformance
-       %'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
+       'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
        % 'makeReconstructionVideo' ...              % generate video of the reconstruction
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
     };
@@ -24,25 +24,25 @@ function RunExperiment
     
     
     % Specify the optical elements employed
-    opticalElements = 'none';                       % choose from 'none', 'noOTF', 'fNumber1.0', 'default'
-    inertPigments = 'none';                         % choose between 'none', 'noLens', 'noMacular', 'default'
+    opticalElements = 'default';                       % choose from 'none', 'noOTF', 'fNumber1.0', 'default'
+    inertPigments = 'default';                         % choose between 'none', 'noLens', 'noMacular', 'default'
     
     % Specify mosaic size, mosaic LMS densities, and reconstructed stimulus spatial resolution
     mosaicSize = [22 26];                           % coneRows, coneCols
-    mosaicLMSdensities = [0.33 0.33 0.33];          % densities of LMS cones
+    mosaicLMSdensities = [0.6 0.3 0.1];             % densities of LMS cones
     reconstructedStimulusSpatialResolutionInMicrons = 3;
     
     % Specify eye movement kinetics
     meanFixationDuration = 150;
-    stdFixationDuration = 0;
-    microFixationGain = 0;                          % use 0 for static stimulation (i.e., stimuli flashed on for time = meanFixationDuration)
+    stdFixationDuration = 20;
+    microFixationGain = 1;                          % use 0 for static stimulation (i.e., stimuli flashed on for time = meanFixationDuration), 1 for normal eye movements
         
     % Specify preprocessing params
     designMatrixBasedPreProcessing = 0;             % 0: none, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
-    rawResponseBasedPreProcessing = 2;              % 0: none, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+    rawResponseBasedPreProcessing = 1;              % 0: none, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
 
     % Specify outer-segment type
-    osType = '@osIdentity';
+    osType = '@osLinear';
     
     % Specify the data set to use
     whichDataSet =  'harvard_machester_upenn';      % 'very_small', 'small', 'harvard', 'upenn', 'large', 'original'
