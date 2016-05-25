@@ -2,9 +2,9 @@ function renderPerformanceFigures(sceneSetName, decodingDataDir,  visualizeSVDfi
 
 
     if (strcmp(InSampleOrOutOfSample, 'InAndOutOfSample'))
-        figureWidth = 1250;
+        figureWidth = 2000; figureHeight = 1490;
     elseif ((strcmp(InSampleOrOutOfSample, 'InSample')) || (strcmp(InSampleOrOutOfSample, 'OutOfSample')))
-        figureWidth = 600;
+        figureWidth = 600; figureHeight = 1150;
     else
         error('Unknown mode: ''%s''.', InSampleOrOutOfSample);
     end
@@ -13,18 +13,19 @@ function renderPerformanceFigures(sceneSetName, decodingDataDir,  visualizeSVDfi
     computeSVDbasedLowRankFiltersAndPredictions = true;
     
     hFigSummary = figure(5000); clf;
-    set(hFigSummary, 'Position', [10 10 figureWidth 1150], 'Name', 'Reconstruction Performance Summary', 'Color', [1 1 1]);
+    set(hFigSummary, 'Position', [10 10 figureWidth figureHeight], 'Name', 'Reconstruction Performance Summary', 'Color', [1 1 1]);
     
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
                'rowsNum', 2, ...
                'colsNum', 2, ...
-               'heightMargin',   0.06, ...
+               'heightMargin',   0.05, ...
                'widthMargin',    0.03, ...
-               'leftMargin',     0.06, ...
+               'leftMargin',     0.04, ...
                'rightMargin',    0.01, ...
                'bottomMargin',   0.03, ...
-               'topMargin',      0.000);
-           
+               'topMargin',      0.01);
+    
+    rmsErrorRange = [];
     if ((strcmp(InSampleOrOutOfSample, 'InSample')) || (strcmp(InSampleOrOutOfSample, 'InAndOutOfSample')))
         fprintf('\nLoading in-sample prediction data ...');
         fileName = fullfile(decodingDataDir, sprintf('%s_inSamplePrediction.mat', sceneSetName));
@@ -59,7 +60,8 @@ function renderPerformanceFigures(sceneSetName, decodingDataDir,  visualizeSVDfi
                     renderReconstructionPerformancePlots(figNo, imageFileName, decodingDataDir, Ctrain, squeeze(CtrainPredictionSVDbased(kIndex,:, :)),  originalTrainingStimulusSize, expParams);
             end
             
-            renderSummaryPerformancePlot(hFigSummary, 'InSample', subplotPosVectors(1,1).v, subplotPosVectors(2,1).v, SVDbasedLowRankFilterVariancesExplained, inSampleSVDcorrelationCoeffs, inSamplePINVcorrelationCoeffs, inSampleSVDrmsErrors, inSamplePINVrmsErrors);
+            rmsErrorRange = [min(inSampleSVDrmsErrors(:)) max(inSampleSVDrmsErrors(:))];
+            renderSummaryPerformancePlot(hFigSummary, 'InSample', subplotPosVectors(1,1).v, subplotPosVectors(2,1).v, SVDbasedLowRankFilterVariancesExplained, inSampleSVDcorrelationCoeffs, inSamplePINVcorrelationCoeffs, inSampleSVDrmsErrors, inSamplePINVrmsErrors, rmsErrorRange);
         end
     end    
         
@@ -98,17 +100,20 @@ function renderPerformanceFigures(sceneSetName, decodingDataDir,  visualizeSVDfi
                     renderReconstructionPerformancePlots(figNo, imageFileName, decodingDataDir, Ctest, squeeze(CtestPredictionSVDbased(kIndex,:, :)),  originalTestingStimulusSize, expParams);
             end
             
-            renderSummaryPerformancePlot(hFigSummary, 'OutOfSample', subplotPosVectors(1,2).v, subplotPosVectors(2,2).v,  SVDbasedLowRankFilterVariancesExplained, outOfSampleSVDcorrelationCoeffs, outOfSamplePINVcorrelationCoeffs, outOfSampleSVDrmsErrors, outOfSamplePINVrmsErrors);
+            if (isempty(rmsErrorRange))
+                rmsErrorRange = [min(inSampleSVDrmsErrors(:)) max(inSampleSVDrmsErrors(:))];
+            end
+            renderSummaryPerformancePlot(hFigSummary, 'OutOfSample', subplotPosVectors(1,2).v, subplotPosVectors(2,2).v,  SVDbasedLowRankFilterVariancesExplained, outOfSampleSVDcorrelationCoeffs, outOfSamplePINVcorrelationCoeffs, outOfSampleSVDrmsErrors, outOfSamplePINVrmsErrors, rmsErrorRange);
         end  
     end
     
     imageFileName = generateImageFileName('', 'Summary', decodingDataDir, expParams);
-    NicePlot.exportFigToPNG(sprintf('%s.png', imageFileName), hFigSummary, 300);
+    NicePlot.exportFigToPDF(sprintf('%s.pdf', imageFileName), hFigSummary, 300);
      
 end
 
 
-function renderSummaryPerformancePlot(hFig, InOrOutOfSample, subplot1Position, subplot2Position, SVDbasedLowRankFilterVariancesExplained, SVDcorrelationCoefficients, PINVcorrelationCoefficients, SVDrmsErrors, PINVrmsErrors)
+function renderSummaryPerformancePlot(hFig, InOrOutOfSample, subplot1Position, subplot2Position, SVDbasedLowRankFilterVariancesExplained, SVDcorrelationCoefficients, PINVcorrelationCoefficients, SVDrmsErrors, PINVrmsErrors, rmsErrorRange)
     
     figure(hFig);
     subplot('position',subplot1Position);
@@ -121,14 +126,13 @@ function renderSummaryPerformancePlot(hFig, InOrOutOfSample, subplot1Position, s
     plot([xaxis(1) xaxis(end)], PINVcorrelationCoefficients(2)*[1 1], 'g--', 'LineWidth', 2.0, 'Color', [0.0 0.8 0.0]);
     plot([xaxis(1) xaxis(end)], PINVcorrelationCoefficients(3)*[1 1], 'b--', 'LineWidth', 2.0);
     hold off;
-    set(gca, 'XLim', [xaxis(1)-0.5 xaxis(end)+0.5], 'YLim', [0 1], 'XTick', xaxis, 'XTickLabel', SVDbasedLowRankFilterVariancesExplained,  'FontSize', 12);
+    set(gca, 'XLim', [xaxis(1)-0.5 xaxis(end)+0.5], 'YLim', [0.5 1], 'XTick', xaxis, 'XTickLabel', SVDbasedLowRankFilterVariancesExplained,  'FontSize', 14);
     box 'off'
-    xlabel('variance explained', 'FontSize', 14);
-    ylabel('corr. coefficient',  'FontSize', 14);
-    legend('SVD-based (L)', 'SVD-based (M)', 'SVD-based (S)', 'PINV-based (L)', 'PINV-based (M)', 'PINV-based (S)', 'Location', 'NorthOutside', 'Orientation', 'horizontal');
-    title(sprintf('Correlation Coefficients (%s)', InOrOutOfSample), 'FontSize', 12);
+    xlabel('variance explained', 'FontSize', 16, 'FontWeight', 'bold');
+    ylabel(sprintf('input/output correlation coefficient (%s)',InOrOutOfSample),  'FontSize', 16, 'FontWeight', 'bold');
+    hL = legend('SVD-based (L)', 'SVD-based (M)', 'SVD-based (S)', 'PINV-based (L)', 'PINV-based (M)', 'PINV-based (S)', 'Location', 'SouthEast');
+    set(hL, 'FontSize', 14, 'FontName', 'Menlo');
     
-    figure(hFig);
     subplot('position',subplot2Position)
     plot(xaxis, SVDrmsErrors(1,:), 'ro-', 'MarkerSize', 12, 'LineWidth', 2.0, 'MarkerFaceColor', [1.0 0.8 0.8]);
     hold on;
@@ -138,11 +142,13 @@ function renderSummaryPerformancePlot(hFig, InOrOutOfSample, subplot1Position, s
     plot([xaxis(1) xaxis(end)], PINVrmsErrors(2)*[1 1], 'g--', 'LineWidth', 2.0, 'Color', [0.0 0.8 0.0])
     plot([xaxis(1) xaxis(end)], PINVrmsErrors(3)*[1 1], 'b--', 'LineWidth', 2.0);
     hold off;
-    set(gca, 'XLim', [xaxis(1)-0.5 xaxis(end)+0.5], 'XTick', xaxis, 'XTickLabel', SVDbasedLowRankFilterVariancesExplained,  'FontSize', 12);
+    set(gca, 'XLim', [xaxis(1)-0.5 xaxis(end)+0.5], 'YLim', rmsErrorRange, 'XTick', xaxis, 'XTickLabel', SVDbasedLowRankFilterVariancesExplained,  'FontSize', 14);
     box 'off'
-    xlabel('variance explained', 'FontSize', 14);
-    ylabel('rms error', 'FontSize', 14);
-    title(sprintf('RMS errors (%s)', InOrOutOfSample), 'FontSize', 12);
+    xlabel('variance explained', 'FontSize', 16, 'FontWeight', 'bold');
+    ylabel(sprintf('RMS contrast residual (%s)',InOrOutOfSample), 'FontSize', 16, 'FontWeight', 'bold');
+    hL = legend('SVD-based (L)', 'SVD-based (M)', 'SVD-based (S)', 'PINV-based (L)', 'PINV-based (M)', 'PINV-based (S)', 'Location', 'NorthEast');
+    set(hL, 'FontSize', 14, 'FontName', 'Menlo');
+    title(sprintf('%s performance', InOrOutOfSample), 'FontSize', 16);
      
     drawnow;
 end

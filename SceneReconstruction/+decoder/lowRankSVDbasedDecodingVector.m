@@ -1,4 +1,4 @@
-function wVector = lowRankSVDbasedDecodingVector(U, S, V, C, thresholdVarianceExplained)
+function [wVector, includedComponentsNum] = lowRankSVDbasedDecodingVector(U, S, V, C, thresholdVarianceExplained)
 
     dd = (diag(S)).^2;
     varianceExplained = cumsum(dd) / sum(dd) * 100;

@@ -75,7 +75,7 @@ function executeProgram(instructionSet, whichDataSet, opticalElements, inertPigm
                 core.assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, trainingDataPercentange, testingDataPercentage, preProcessingParams);
 
             case 'computeDecodingFilter'
-                SVDbasedLowRankFilterVariancesExplained = [75 80 85 90 92 94 95 96 97 98 99.5 99.9 99.999];
+                SVDbasedLowRankFilterVariancesExplained = [85 90 92 94 95 96 97 98 99 99.2 99.4 99.6 99.8 99.90 99.925 99.950 99.990 99.995 99.999];
                 decoder.computeDecodingFilter(sceneSetName, decodingDataDir, SVDbasedLowRankFilterVariancesExplained);
                 
             case 'computeOutOfSamplePrediction'

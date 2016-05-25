@@ -261,7 +261,7 @@ function hFig = generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spat
         end    
     end % stimConeContrastIndex
     drawnow;
-    NicePlot.exportFigToPNG(sprintf('%s.png', figureFileName), hFig, 300);
+    NicePlot.exportFigToPDF(sprintf('%s.pdf', figureFileName), hFig, 300);
      
     % Helper drawing function
     function generateContourPlot(spatialWeightingKernel, weightsRange, coneCoordsSubmosaic1, RGBColor1, coneCoordsSubmosaic2,  RGBColor2)
@@ -459,7 +459,7 @@ function generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioT
                 set(gca, 'XLim', [spatioTemporalSupport.timeAxis(1) spatioTemporalSupport.timeAxis(end)], 'YLim', weightsRange);
           end
         end
-        NicePlot.exportFigToPNG(sprintf('%s.png', figureFileName), hFig, 300);
+        NicePlot.exportFigToPDF(sprintf('%s.pdf', figureFileName), hFig, 300);
     end % stimConeContrastIndex
 end
 
@@ -549,7 +549,7 @@ function generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTe
         end
         end
         % Export figure
-        NicePlot.exportFigToPNG(sprintf('%s.png', figureFileName), hFig, 300);
+        NicePlot.exportFigToPDF(sprintf('%s.pdf', figureFileName), hFig, 300);
     end
 end
 
