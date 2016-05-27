@@ -9,11 +9,11 @@ function computeOutOfSamplePrediction(sceneSetName, decodingDataDir)
 
     fprintf('2. Loading decoder filter ... ');
     fileName = fullfile(decodingDataDir, sprintf('%s_decodingFilter.mat', sceneSetName));
-    load(fileName, 'wVector', 'spatioTemporalSupport';
+    load(fileName, 'wVector', 'spatioTemporalSupport');
     
     computeSVDbasedPredictions = true;
     if (computeSVDbasedPredictions)
-        load(fileName, 'wVectorSVDbased', 'SVDbasedLowRankFilterVariancesExplained', 'includedComponentsNum');
+        load(fileName, 'wVectorSVDbased', 'SVDbasedLowRankFilterVariancesExplained', 'includedComponentsNum', 'XtrainRank');
     end
     fprintf('Done\n');
     
@@ -37,7 +37,7 @@ function computeOutOfSamplePrediction(sceneSetName, decodingDataDir)
     save(fileName,  'Ctest', 'CtestPrediction', 'oiCtest', 'testingTimeAxis', 'testingSceneIndexSequence', 'testingSensorPositionSequence', 'testingScanInsertionTimes', 'testingSceneLMSbackground', 'testingOpticalImageLMSbackground', 'originalTestingStimulusSize', 'expParams', '-v7.3');
     
     if (computeSVDbasedFPredictions)
-        save(fileName, 'CtestPredictionSVDbased', 'SVDbasedLowRankFilterVariancesExplained', 'includedComponentsNum', '-append');
+        save(fileName, 'CtestPredictionSVDbased', 'SVDbasedLowRankFilterVariancesExplained', 'includedComponentsNum', 'XtrainRank', '-append');
     end
     
     fprintf('Done after %2.1f minutes.\n', toc/60);

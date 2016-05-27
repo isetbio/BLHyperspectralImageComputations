@@ -6,8 +6,7 @@ function computeDecodingFilter(sceneSetName, decodingDataDir, SVDbasedLowRankFil
     load(fileName, 'Xtrain', 'Ctrain', 'oiCtrain', 'trainingTimeAxis', 'trainingSceneIndexSequence', 'trainingSensorPositionSequence','trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'trainingOpticalImageLMSbackground', 'originalTrainingStimulusSize', 'expParams', 'preProcessingParams', 'rawTrainingResponsePreprocessing', 'coneTypes', 'spatioTemporalSupport');
     fprintf('Done after %2.1f minutes.\n', toc/60);
     
-    % Save to params to JSON file
-    core.exportExpParamsToJSONfile(sceneSetName, decodingDataDir, expParams, SVDbasedLowRankFilterVariancesExplained);
+   
     
     % Compute the rank of X
     timeSamples = size(Xtrain,1);
@@ -37,6 +36,13 @@ function computeDecodingFilter(sceneSetName, decodingDataDir, SVDbasedLowRankFil
         tic
         [Utrain, Strain, Vtrain] = svd(Xtrain, 'econ');
         
+        % Add one more variance explained, corresponding to the XtrainRank
+        SVDcomponentsNum = XtrainRank;
+        varianceExplainedAtTrainRankComponents = decoder.determineVarianceExplainedBySpecificNumberOfComponents(Strain, SVDcomponentsNum);
+        SVDbasedLowRankFilterVariancesExplained(numel(SVDbasedLowRankFilterVariancesExplained)+1) = varianceExplainedAtTrainRankComponents;
+        SVDbasedLowRankFilterVariancesExplained = sort(SVDbasedLowRankFilterVariancesExplained);
+        
+        
         wVectorSVDbased = zeros(numel(SVDbasedLowRankFilterVariancesExplained), filterDimensions, stimulusDimensions);
         for kIndex = 1:numel(SVDbasedLowRankFilterVariancesExplained)
             varExplained = SVDbasedLowRankFilterVariancesExplained(kIndex);
@@ -44,6 +50,7 @@ function computeDecodingFilter(sceneSetName, decodingDataDir, SVDbasedLowRankFil
         end
         fprintf('Done after %2.1f minutes.\n', toc/60);
     end
+    
     
     fprintf('3. Computing in-sample predictions [%d x %d]...',  timeSamples, stimulusDimensions);
     tic
@@ -67,7 +74,7 @@ function computeDecodingFilter(sceneSetName, decodingDataDir, SVDbasedLowRankFil
     end
     
     fileName = fullfile(decodingDataDir, sprintf('%s_inSamplePrediction.mat', sceneSetName));
-    save(fileName,  'Ctrain', 'oiCtrain', 'CtrainPrediction', ...
+    save(fileName,  'Ctrain', 'oiCtrain', 'CtrainPrediction', 'XtrainRank', ...
         'trainingTimeAxis', 'trainingSceneIndexSequence', 'trainingSensorPositionSequence', ...
         'trainingScanInsertionTimes', 'trainingSceneLMSbackground', ...
         'trainingOpticalImageLMSbackground', 'originalTrainingStimulusSize', ...
@@ -76,6 +83,9 @@ function computeDecodingFilter(sceneSetName, decodingDataDir, SVDbasedLowRankFil
         save(fileName, 'CtrainPredictionSVDbased', 'SVDbasedLowRankFilterVariancesExplained', 'includedComponentsNum', '-append');
     end
     fprintf('Done after %2.1f minutes.\n', toc/60);
+    
+    % Save to params to JSON file
+    core.exportExpParamsToJSONfile(sceneSetName, decodingDataDir, expParams, SVDbasedLowRankFilterVariancesExplained);
 end
 
 

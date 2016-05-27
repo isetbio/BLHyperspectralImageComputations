@@ -11,11 +11,16 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir)
     computeSVDbasedLowRankFiltersAndPredictions = true;
     if (computeSVDbasedLowRankFiltersAndPredictions)
         load(fileName, 'wVectorSVDbased', 'SVDbasedLowRankFilterVariancesExplained');%, 'Utrain', 'Strain', 'Vtrain');
-        svdIndices = core.promptUserForChoiceFromSelectionOfChoices('Select desired variance explained for which to display the decoder filters', SVDbasedLowRankFilterVariancesExplained);
-        for svdIndex = svdIndices
-            wVectorSVD = squeeze(wVectorSVDbased(svdIndex,:,:));
-            componentString = sprintf('SVD_%2.3f%%VarianceExplained', SVDbasedLowRankFilterVariancesExplained(svdIndex));
-            generateAllFigures(decodingDataDir, componentString, wVectorSVD, spatioTemporalSupport, coneTypes, expParams)
+        while (true)
+            svdIndices = core.promptUserForChoiceFromSelectionOfChoices('Select desired variance explained for which to display the decoder filters', SVDbasedLowRankFilterVariancesExplained);
+            if (svdIndices==-1)
+                break;
+            end
+            for svdIndex = svdIndices
+                wVectorSVD = squeeze(wVectorSVDbased(svdIndex,:,:));
+                componentString = sprintf('SVD_%2.3f%%VarianceExplained', SVDbasedLowRankFilterVariancesExplained(svdIndex));
+                generateAllFigures(decodingDataDir, componentString, wVectorSVD, spatioTemporalSupport, coneTypes, expParams)
+            end
         end
     end
 end
@@ -62,31 +67,35 @@ function generateAllFigures(decodingDataDir, componentString, wVector, spatioTem
     % Generate spatial pooling filters figure (at select stimulus locations)
     generateSpatialPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, expParams, decodingDataDir, componentString);
     
-    
-     
-    
-    % Generate submosaic sampling  figure at all locations
-    videoFileName = composeImageFilename(decodingDataDir, 'SubMosaicSamplingAllPositions', componentString);
-    videoFilename = sprintf('%s.m4v', videoFileName);
-    fprintf('Will export video to %s.m4v\n', videoFileName);
-    writerObj = VideoWriter(videoFilename, 'MPEG-4'); % H264 format
-    writerObj.FrameRate = 15; 
-    writerObj.Quality = 100;
-    writerObj.open();
-    for yStimLocationIndex = 1:ySpatialBinsNum
-        stimulusLocation.y = yStimLocationIndex;
-        if (mod(yStimLocationIndex-1,2) == 0)
-            xStimLocationRange = 1:xSpatialBinsNum;
-        else
-            xStimLocationRange = xSpatialBinsNum:-1:1;
+    generateVideo = false;
+    if (generateVideo == false)
+        stimulusLocation.y = round(ySpatialBinsNum/2);
+        stimulusLocation.x = round(xSpatialBinsNum/2);
+        generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, expParams, decodingDataDir, sprintf('StimPos_%d_%d', stimulusLocation.x, stimulusLocation.y), componentString);
+    else
+        % Generate submosaic sampling  figure at all locations
+        videoFileName = composeImageFilename(decodingDataDir, 'SubMosaicSamplingAllPositions', componentString);
+        videoFilename = sprintf('%s.m4v', videoFileName);
+        fprintf('Will export video to %s.m4v\n', videoFileName);
+        writerObj = VideoWriter(videoFilename, 'MPEG-4'); % H264 format
+        writerObj.FrameRate = 15; 
+        writerObj.Quality = 100;
+        writerObj.open();
+        for yStimLocationIndex = 1:ySpatialBinsNum
+            stimulusLocation.y = yStimLocationIndex;
+            if (mod(yStimLocationIndex-1,2) == 0)
+                xStimLocationRange = 1:xSpatialBinsNum;
+            else
+                xStimLocationRange = xSpatialBinsNum:-1:1;
+            end
+            for xStimLocationIndex = xStimLocationRange
+                stimulusLocation.x = xStimLocationIndex;
+                hFig = generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, expParams, decodingDataDir, sprintf('StimPos_%d_%d', stimulusLocation.x, stimulusLocation.y), componentString);
+                writerObj.writeVideo(getframe(hFig));
+            end
         end
-        for xStimLocationIndex = xStimLocationRange
-            stimulusLocation.x = xStimLocationIndex;
-            hFig = generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, expParams, decodingDataDir, sprintf('StimPos_%d_%d', xStimLocationIndex, yStimLocationIndex), componentString);
-            writerObj.writeVideo(getframe(hFig));
-        end
+        writerObj.close();
     end
-    writerObj.close();
     
     
     % Generate temporal pooling filters figure (at one stimulus location and at a local mosaic neighborhood)

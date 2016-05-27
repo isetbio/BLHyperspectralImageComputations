@@ -21,7 +21,7 @@ function RunExperiment
     };
 
     program = computationInstructionSet;
-    program = visualizationInstructionSet;
+    %program = visualizationInstructionSet;
     
     
     % Specify the optical elements employed
@@ -40,7 +40,7 @@ function RunExperiment
         
     % Specify preprocessing params
     designMatrixBasedPreProcessing = 0;             % 0: none, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
-    rawResponseBasedPreProcessing = 1;              % 0: none, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+    rawResponseBasedPreProcessing = 0;              % 0: none, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
 
     % Specify outer-segment type
     %osType = '@osLinear';
