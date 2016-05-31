@@ -60,14 +60,31 @@ function computeOuterSegmentResponses(expParams)
             osOBJ = osLinear();
         elseif (strcmp(expParams.outerSegmentParams.type, '@osIdentity'))
             osOBJ = osIdentity();
+        elseif (strcmp(expParams.outerSegmentParams.type, '@osAllTypes'))
+            osOBJ.isMultiType = true;
+            osOBJ.biophys = osBioPhys();
+            osOBJ.linear = osLinear();
+            osOBJ.identity = osIdentity();
         else
             error('Unknown outer segment type: ''%s'' \n', expParams.outerSegmentParams.type);
         end
         
         if (expParams.outerSegmentParams.addNoise)
-            osOBJ.osSet('noiseFlag', 1);
+            if (strcmp(expParams.outerSegmentParams.type, '@osAllTypes'))
+                osOBJ.biophys.osSet('noiseFlag',1);
+                osOBJ.linear.osSet('noiseFlag', 1);
+                osOBJ.identity.osSet('noiseFlag', 1);
+            else
+                osOBJ.osSet('noiseFlag', 1);
+            end
         else
-            osOBJ.osSet('noiseFlag', 0);
+            if (strcmp(expParams.outerSegmentParams.type, '@osAllTypes'))
+                osOBJ.biophys.osSet('noiseFlag',0);
+                osOBJ.linear.osSet('noiseFlag', 0);
+                osOBJ.identity.osSet('noiseFlag', 0);
+            else
+                osOBJ.osSet('noiseFlag', 0);
+            end
         end
         
         scanData = core.computeScanData(scene, oi, sensor, osOBJ, ...
