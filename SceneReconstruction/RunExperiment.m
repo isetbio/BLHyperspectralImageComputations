@@ -14,7 +14,7 @@ function RunExperiment
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
        %'visualizeInSamplePerformance' ...          % visualize the decoder's in-sample deperformance
        %'visualizeOutOfSamplePerformance' ...       % visualize the decoder's out-of-sample deperformance
-       %'visualizeInAndOutOfSamplePerformance' ...   % visualize the decoder's in & out-of-sample deperformance
+       'visualizeInAndOutOfSamplePerformance' ...   % visualize the decoder's in & out-of-sample deperformance
        'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
        % 'makeReconstructionVideo' ...              % generate video of the reconstruction
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
@@ -44,7 +44,7 @@ function RunExperiment
 
     % Specify outer-segment type
     osType = '@osLinear';
-    %osType = '@osBiophys';
+    osType = '@osBiophys';
     
     % Specify the data set to use
     whichDataSet =  'harvard_machester_upenn';      % 'very_small', 'small', 'harvard', 'upenn', 'large', 'original', 'harvard_machester_upenn'

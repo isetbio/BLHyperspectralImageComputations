@@ -109,11 +109,19 @@ function generateAllFigures(decodingDataDir, componentString, wVector, spatioTem
     else
         stimulusLocation.y = round((ySpatialBinsNum+1)/2);
     end
-    
-    coneNeighborhood.center.x = round(size(stimDecoder, 5)/2)-2;
-    coneNeighborhood.center.y = round(size(stimDecoder, 4)/2)-1;
+    coneNeighborhood.center.x = round(size(stimDecoder, 5)/2);
+    coneNeighborhood.center.y = round(size(stimDecoder, 4)/2);
     coneNeighborhood.extent.x = -3:3;
-    coneNeighborhood.extent.y = -2:2;
+    coneNeighborhood.extent.y = -3:3;
+    
+    
+    % Move ROI to the left and to
+    xOffset = -2; yOffset = -1;
+    stimulusLocation.x = stimulusLocation.x + xOffset;
+    stimulusLocation.y = stimulusLocation.y + yOffset;
+    coneNeighborhood.center.x = coneNeighborhood.center.x + xOffset;
+    coneNeighborhood.center.y - coneNeighborhood.center.y + yOffset;
+    
     generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, coneNeighborhood, expParams, decodingDataDir, componentString);
     
 end
@@ -405,11 +413,11 @@ function generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioT
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
                'rowsNum', numel(nearbyConeRows)+1, ...
                'colsNum', numel(nearbyConeColumns), ...
-               'heightMargin',   0.005, ...
+               'heightMargin',   0.006, ...
                'widthMargin',    0.005, ...
-               'leftMargin',     0.03, ...
+               'leftMargin',     0.005, ...
                'rightMargin',    0.00, ...
-               'bottomMargin',   0.015, ...
+               'bottomMargin',   0.0, ...
                'topMargin',      0.00);
     
     coneString = {'Lcone contrast', 'Mcone contrast', 'Scone contrast'};
@@ -417,7 +425,7 @@ function generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioT
         prefix = sprintf('TemporalPooling%s',componentString);
         figureFileName = composeImageFilename(decodingDataDir, prefix, coneString{stimConeContrastIndex}); 
         hFig = figure(1000+(stimConeContrastIndex-1)*10); 
-        clf; set(hFig, 'position', [700 10 1024 800], 'Color', [1 1 1], 'Name', strrep(figureFileName, decodingDataDir, ''));
+        clf; set(hFig, 'position', [700 10 1024 1100], 'Color', [1 1 1], 'Name', strrep(figureFileName, decodingDataDir, ''));
         colormap(grayRedLUT); 
         
         % determine coords of peak response
