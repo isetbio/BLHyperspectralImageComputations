@@ -1,4 +1,4 @@
-    function preProcessDesignMatrices(sceneSetName, decodingDataDir)
+function preProcessDesignMatrices(sceneSetName, decodingDataDir)
 
     fileNameXtrain = fullfile(decodingDataDir, sprintf('%s_trainingDesignMatrices.mat', sceneSetName));
     fileNameXtest  = fullfile(decodingDataDir, sprintf('%s_testingDesignMatrices.mat', sceneSetName));
@@ -20,7 +20,7 @@
     
     fprintf('3. Saving training matrix  ... ');
     tic
-    save(fileNameXtrain, 'Xtrain', 'originalXtrainRank', '-append');
+    save(fileNameXtrain, 'Xtrain', 'originalXtrainRank', 'designMatrixPreprocessing', '-append');
     clear 'Xtrain';
     
     

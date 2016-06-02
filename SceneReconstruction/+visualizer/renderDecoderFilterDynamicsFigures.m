@@ -2,22 +2,22 @@ function renderDecoderFilterDynamicsFigures(sceneSetName, decodingDataDir)
  
     fprintf('\nLoading decoder filter ...');
     fileName = fullfile(decodingDataDir, sprintf('%s_decodingFilter.mat', sceneSetName));
-    load(fileName, 'wVector',  'spatioTemporalSupport', 'coneTypes', 'expParams');
+    load(fileName, 'wVector', 'wVectorAdjusted',  'spatioTemporalSupport', 'coneTypes', 'expParams');
     fprintf('Done.\n');
     
     componentString = 'PINVbased';
-    generateAllFigures(decodingDataDir, componentString, wVector, spatioTemporalSupport, coneTypes, expParams)
+    generateAllFigures(decodingDataDir, componentString, wVectorAdjusted, spatioTemporalSupport, coneTypes, expParams)
 
     computeSVDbasedLowRankFiltersAndPredictions = true;
     if (computeSVDbasedLowRankFiltersAndPredictions)
-        load(fileName, 'wVectorSVDbased', 'SVDbasedLowRankFilterVariancesExplained');%, 'Utrain', 'Strain', 'Vtrain');
+        load(fileName, 'wVectorSVDbased', 'wVectorSVDbasedAdjusted', 'SVDbasedLowRankFilterVariancesExplained');%, 'Utrain', 'Strain', 'Vtrain');
         while (true)
             svdIndices = core.promptUserForChoiceFromSelectionOfChoices('Select desired variance explained for which to display the decoder filters', SVDbasedLowRankFilterVariancesExplained);
             if (svdIndices==-1)
                 break;
             end
             for svdIndex = svdIndices
-                wVectorSVD = squeeze(wVectorSVDbased(svdIndex,:,:));
+                wVectorSVD = squeeze(wVectorSVDbasedAdjusted(svdIndex,:,:));
                 componentString = sprintf('SVD_%2.3f%%VarianceExplained', SVDbasedLowRankFilterVariancesExplained(svdIndex));
                 generateAllFigures(decodingDataDir, componentString, wVectorSVD, spatioTemporalSupport, coneTypes, expParams)
             end
@@ -34,7 +34,7 @@ function generateAllFigures(decodingDataDir, componentString, wVector, spatioTem
     maxOfAllDCterms = max(abs(dcTerms));
     
     maxNoDCterm = max(max(abs(wVector((dcTerm+1):size(wVector,1),:))));
-    weightsRange = 0.9*[-1 1];
+    weightsRange = [-1 1];
     
     % Allocate memory for unpacked stimDecoder
     sensorRows      = numel(spatioTemporalSupport.sensorRetinalYaxis);
@@ -110,8 +110,8 @@ function generateAllFigures(decodingDataDir, componentString, wVector, spatioTem
         stimulusLocation.y = round((ySpatialBinsNum+1)/2);
     end
     
-    coneNeighborhood.center.x = round(size(stimDecoder, 5)/2);
-    coneNeighborhood.center.y = round(size(stimDecoder, 4)/2);
+    coneNeighborhood.center.x = round(size(stimDecoder, 5)/2)-2;
+    coneNeighborhood.center.y = round(size(stimDecoder, 4)/2)-1;
     coneNeighborhood.extent.x = -3:3;
     coneNeighborhood.extent.y = -2:2;
     generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioTemporalSupport, coneTypes, stimulusLocation, coneNeighborhood, expParams, decodingDataDir, componentString);

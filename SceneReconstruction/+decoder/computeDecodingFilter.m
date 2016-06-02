@@ -3,7 +3,10 @@ function computeDecodingFilter(sceneSetName, decodingDataDir, SVDbasedLowRankFil
     fprintf('\n1. Loading training design matrix (X) and stimulus vector ... ');
     tic
     fileName = fullfile(decodingDataDir, sprintf('%s_trainingDesignMatrices.mat', sceneSetName));
-    load(fileName, 'Xtrain', 'Ctrain', 'oiCtrain', 'trainingTimeAxis', 'trainingSceneIndexSequence', 'trainingSensorPositionSequence','trainingScanInsertionTimes', 'trainingSceneLMSbackground', 'trainingOpticalImageLMSbackground', 'originalTrainingStimulusSize', 'expParams', 'preProcessingParams', 'rawTrainingResponsePreprocessing', 'coneTypes', 'spatioTemporalSupport');
+    load(fileName, 'Xtrain', 'Ctrain', 'oiCtrain', 'trainingTimeAxis', ...
+        'trainingSceneIndexSequence', 'trainingSensorPositionSequence','trainingScanInsertionTimes', ...
+        'trainingSceneLMSbackground', 'trainingOpticalImageLMSbackground', 'originalTrainingStimulusSize', ...
+        'expParams', 'preProcessingParams', 'rawTrainingResponsePreprocessing', 'coneTypes', 'spatioTemporalSupport');
     fprintf('Done after %2.1f minutes.\n', toc/60);
     
    
@@ -27,6 +30,8 @@ function computeDecodingFilter(sceneSetName, decodingDataDir, SVDbasedLowRankFil
     tic
     wVector = pseudoInverseOfX * Ctrain;
     fprintf('Done after %2.1f minutes.\n', toc/60);
+    
+    
     
     computeSVDbasedFilters = true;
     if (computeSVDbasedFilters)
@@ -65,12 +70,26 @@ function computeDecodingFilter(sceneSetName, decodingDataDir, SVDbasedLowRankFil
     
     fprintf('Done after %2.1f minutes.\n', toc/60);
 
+    if (preProcessingParams.designMatrixBased > 0)
+        fileName = fullfile(decodingDataDir, sprintf('%s_trainingDesignMatrices.mat', sceneSetName));
+        load(fileName, 'designMatrixPreprocessing');
+        wVectorAdjusted = adjustWvector(preProcessingParams, wVector, designMatrixPreprocessing);
+        if (computeSVDbasedFilters)
+            wVectorSVDbasedAdjusted = adjustWvector(preProcessingParams, wVectorSVDbased, designMatrixPreprocessing);
+        end
+    else
+        wVectorAdjusted = wVector;
+        if (computeSVDbasedFilters)
+            wVectorSVDbasedAdjusted = wVectorSVDbased;
+        end
+    end
+    
     fprintf('4. Saving decoder filter and in-sample predictions ... ');
     fileName = fullfile(decodingDataDir, sprintf('%s_decodingFilter.mat', sceneSetName));
     tic
-    save(fileName, 'wVector', 'spatioTemporalSupport', 'coneTypes', 'XtrainRank', 'expParams', '-v7.3');
+    save(fileName, 'wVector', 'wVectorAdjusted', 'spatioTemporalSupport', 'coneTypes', 'XtrainRank', 'expParams', '-v7.3');
     if (computeSVDbasedFilters)
-        save(fileName, 'Utrain', 'Strain', 'Vtrain', 'wVectorSVDbased', 'includedComponentsNum', 'SVDbasedLowRankFilterVariancesExplained', '-append'); 
+        save(fileName, 'Utrain', 'Strain', 'Vtrain', 'wVectorSVDbased', 'wVectorSVDbasedAdjusted', 'includedComponentsNum', 'SVDbasedLowRankFilterVariancesExplained', '-append'); 
     end
     
     fileName = fullfile(decodingDataDir, sprintf('%s_inSamplePrediction.mat', sceneSetName));
@@ -84,8 +103,33 @@ function computeDecodingFilter(sceneSetName, decodingDataDir, SVDbasedLowRankFil
     end
     fprintf('Done after %2.1f minutes.\n', toc/60);
     
+    
+    
     % Save to params to JSON file
     core.exportExpParamsToJSONfile(sceneSetName, decodingDataDir, expParams, SVDbasedLowRankFilterVariancesExplained);
 end
 
 
+function wVectorAdjusted = adjustWvector(preProcessingParams, wVector, designMatrixPreprocessing)
+    % We can only undo the scaling, the offset affects the b0 term (bias)
+    if (preProcessingParams.designMatrixBased == 2) && (~isempty(designMatrixPreprocessing))
+        if (ndims(wVector) == 3)
+            for kIndex = 1:size(wVector,1)
+                wVectorAdjusted(kIndex,:,:) = undoScalingPreProcessing(squeeze(wVector(kIndex,:,:)), designMatrixPreprocessing);
+            end
+        else
+            wVectorAdjusted = undoScalingPreProcessing(wVector, designMatrixPreprocessing);
+        end
+    else
+        wVectorAdjusted = wVector;
+    end
+end
+
+function wVectorAdjusted = undoScalingPreProcessing(wVector, designMatrixPreprocessing)
+    [neuralFeaturesNum, stimFeaturesNum] = size(wVector);
+    wVectorAdjusted = wVector;
+    if (isfield(designMatrixPreprocessing, 'normalizingOperator'))
+       wVectorAdjusted(2:end,:) = bsxfun(@times, wVector(2:end,:), reshape(designMatrixPreprocessing.normalizingOperator, [neuralFeaturesNum-1 1]));
+    end 
+   
+end
