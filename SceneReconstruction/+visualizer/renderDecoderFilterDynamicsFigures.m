@@ -111,12 +111,12 @@ function generateAllFigures(decodingDataDir, componentString, wVector, spatioTem
     end
     coneNeighborhood.center.x = round(size(stimDecoder, 5)/2);
     coneNeighborhood.center.y = round(size(stimDecoder, 4)/2);
-    coneNeighborhood.extent.x = -3:3;
+    coneNeighborhood.extent.x = -5:5;
     coneNeighborhood.extent.y = -3:3;
     
     
     % Move ROI to the left and to
-    xOffset = -2; yOffset = -1;
+    xOffset = -3; yOffset = -1;
     stimulusLocation.x = stimulusLocation.x + xOffset;
     stimulusLocation.y = stimulusLocation.y + yOffset;
     coneNeighborhood.center.x = coneNeighborhood.center.x + xOffset;
@@ -425,7 +425,7 @@ function generateTemporalPoolingFiltersFigure(stimDecoder, weightsRange, spatioT
         prefix = sprintf('TemporalPooling%s',componentString);
         figureFileName = composeImageFilename(decodingDataDir, prefix, coneString{stimConeContrastIndex}); 
         hFig = figure(1000+(stimConeContrastIndex-1)*10); 
-        clf; set(hFig, 'position', [700 10 1024 1100], 'Color', [1 1 1], 'Name', strrep(figureFileName, decodingDataDir, ''));
+        clf; set(hFig, 'position', [700 10 1674 1030], 'Color', [1 1 1], 'Name', strrep(figureFileName, decodingDataDir, ''));
         colormap(grayRedLUT); 
         
         % determine coords of peak response
