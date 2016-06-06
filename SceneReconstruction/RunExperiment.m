@@ -14,14 +14,14 @@ function RunExperiment
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
        %'visualizeInSamplePerformance' ...          % visualize the decoder's in-sample deperformance
        %'visualizeOutOfSamplePerformance' ...       % visualize the decoder's out-of-sample deperformance
-       'visualizeInAndOutOfSamplePerformance' ...   % visualize the decoder's in & out-of-sample deperformance
-       'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
-       % 'makeReconstructionVideo' ...              % generate video of the reconstruction
+       %'visualizeInAndOutOfSamplePerformance' ...   % visualize the decoder's in & out-of-sample deperformance
+       %'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
+        'makeInSampleReconstructionVideo' ...              % generate video of the reconstruction
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
     };
 
     program = computationInstructionSet;
-    %program = visualizationInstructionSet;
+    program = visualizationInstructionSet;
     
     
     % Specify the optical elements employed
@@ -43,12 +43,12 @@ function RunExperiment
     rawResponseBasedPreProcessing = 0;              % 0: none, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
 
     % Specify outer-segment type
-    %osType = '@osLinear';
-    osType = '@osBiophys';
-    osType = '@osAllTypes';
+    osType = '@osLinear';
+    %osType = '@osBiophys';
+    %osType = '@osAllTypes';
 
     % Specify the data set to use
-    whichDataSet =  'small';     % 'very_small', 'small', 'harvard', 'upenn', 'large', 'original', 'harvard_machester_upenn';  
+    whichDataSet =  'original';     % 'very_small', 'small', 'harvard', 'upenn', 'large', 'original', 'harvard_machester_upenn';  
     
     core.executeProgram(program, whichDataSet, ...
         opticalElements, inertPigments, ...
