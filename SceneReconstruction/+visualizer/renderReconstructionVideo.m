@@ -52,28 +52,52 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             previousSceneIndex = sceneIndexSequence(tBin);
             
             % Plot it: 
-            subplot(2,2,1);
+            subplot(2,4,1);
             imagesc(sceneData.RGBforRenderingDisplay); axis image;
             
-            subplot(2,2,2)
+            subplot(2,4,2)
             imagesc(sceneData.LuminanceMap); axis image; colorbar;
 
-            subplot(2,2,3)
-            imagesc(oiData.RGBforRenderingDisplay); axis 'image'
+            subplot(2,4,5)
+            imagesc(oiData.fullOpticalImageSpatialSupportX, oiData.fullOpticalImageSpatialSupportY, oiData.RGBforRenderingDisplay); axis 'image'
+            % overlay sensor position sequence
+            hold on;
+            p1 = plot(oiData.sensorSpatialOutlineX + sensorPositionSequence(tBin,1), oiData.sensorSpatialOutlineY + sensorPositionSequence(tBin,2), 'w-', 'LineWidth', 2.0);
+            hold off;
             
-            subplot(2,2,4)
+            subplot(2,4,6)
             imagesc(oiData.LuminanceMap); axis 'image'; colorbar
-            drawnow;
         end
         
-        sensorFOVdata = retrieveSensorFOVData(LMScontrastInput, LMScontrastReconstruction, ...
-                        oiLMScontrastInput, ...
-                        tBin, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, renderingDisplay, boostFactorForOpticalImage, displayGamma);
-         
+        set(p1, 'XData', oiData.sensorSpatialOutlineX + sensorPositionSequence(tBin,1), 'YData', oiData.sensorSpatialOutlineY + sensorPositionSequence(tBin,2));
+        
+        
+        % Retrieve current time bin data
+        sensorIOdata = retrieveSensorInputAndReconstructedData(tBin,LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, ...
+                        sceneBackgroundExcitation,  opticalImageBackgroundExcitation, renderingDisplay, boostFactorForOpticalImage, displayGamma);
+        
+        % Plot it
+        subplot(2,4,3);
+        imagesc(oiData.sensorDecodedImageSpatialSupportX, oiData.sensorDecodedImageSpatialSupportY, sensorIOdata.inputRGBforRenderingDisplay); axis 'image'
+        set(gca, 'XLim', [oiData.sensorSpatialSupportX(1) oiData.sensorSpatialSupportX(end)], 'YLim', [oiData.sensorSpatialSupportY(1) oiData.sensorSpatialSupportY(end)]);
+            
+        subplot(2,4,4);
+        imagesc(oiData.sensorDecodedImageSpatialSupportX, oiData.sensorDecodedImageSpatialSupportY, sensorIOdata.reconstructedRGBforRenderingDisplay); axis 'image'
+        set(gca, 'XLim', [oiData.sensorSpatialSupportX(1) oiData.sensorSpatialSupportX(end)], 'YLim', [oiData.sensorSpatialSupportY(1) oiData.sensorSpatialSupportY(end)]);
+        title(sprintf('time: %2.2f', timeAxis(tBin)));
+        
+        subplot(2,4,7);
+        LconeInputContrast = LMScontrastInput(:,:,1,tBin);
+        LconeReconstructedContrast = LMScontrastReconstruction(:,:,1,tBin);
+        plot(LconeInputContrast(:), LconeReconstructedContrast(:),  'k.');
+        set(gca, 'XLim', [-2 5], 'YLim', [-2 5]); axis 'square';
+        
+        drawnow;
+        
      end % tBin  
 end
 
-function sensorFOVdata = retrieveSensorFOVData(LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, tBin, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, renderingDisplay, boostFactorForOpticalImage, displayGamma)
+function sensorIOdata = retrieveSensorInputAndReconstructedData(tBin, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, renderingDisplay, boostFactorForOpticalImage, displayGamma)
     
     % Get the input LMS contrast
     inputLMScontrastFrame = squeeze(LMScontrastInput(:,:,:,tBin));
@@ -95,9 +119,8 @@ function sensorFOVdata = retrieveSensorFOVData(LMScontrastInput, LMScontrastReco
     % Compute the input RGB and luminance maps 
     beVerbose = true; boostFactor = 1.0;
     [reconstructedImageRGB, ~, ~, reconstructedImageLum] = core.LMStoRGBforSpecificDisplay(reconstructedLMSexcitationFrame, renderingDisplay, boostFactor, displayGamma, beVerbose);
-    
-    
-    sensorFOVdata = struct(...
+
+    sensorIOdata = struct(...
         'inputRGBforRenderingDisplay',          inputImageRGB, ...
         'inputLuminanceMap',                    inputImageLum, ...
         'reconstructedRGBforRenderingDisplay',  reconstructedImageRGB, ...
@@ -128,6 +151,21 @@ function [sceneData, oiData] = retrieveCurrentSceneAndOpticalImageData(sceneSetN
     boostFactor = boostFactorForOpticalImage;
     [oiData.RGBforRenderingDisplay, oiData.RGBpixelsBelowGamut, oiData.RGBpixelsAboveGamut, oiData.LuminanceMap] = ...
         core.LMStoRGBforSpecificDisplay(opticalImageLMSexcitations, renderingDisplay, boostFactor, displayGamma, beVerbose);
+    
+    % Get spatial support data
+    oiData.sceneRetinalProjectionSpatialSupportX = scanData{1}.sceneRetinalProjectionXData;
+    oiData.sceneRetinalProjectionSpatialSupportY = scanData{1}.sceneRetinalProjectionYData;
+    oiData.fullOpticalImageSpatialSupportX  = scanData{1}.opticalImageXData;
+    oiData.fullOpticalImageSpatialSupportY  = scanData{1}.opticalImageYData;
+    
+    % Sensor data    
+    oiData.sensorSpatialSupportX = scanData{1}.sensorRetinalXaxis;
+    oiData.sensorSpatialSupportY = scanData{1}.sensorRetinalYaxis;
+    oiData.sensorSpatialOutlineX = [oiData.sensorSpatialSupportX(1) oiData.sensorSpatialSupportX(end) oiData.sensorSpatialSupportX(end) oiData.sensorSpatialSupportX(1)  oiData.sensorSpatialSupportX(1)];
+    oiData.sensorSpatialOutlineY = [oiData.sensorSpatialSupportY(1) oiData.sensorSpatialSupportY(1)   oiData.sensorSpatialSupportY(end) oiData.sensorSpatialSupportY(end) oiData.sensorSpatialSupportY(1)];
+    oiData.sensorDecodedImageSpatialSupportX = scanData{1}.sensorFOVxaxis;
+    oiData.sensorDecodedImageSpatialSupportY = scanData{1}.sensorFOVyaxis;
+
 end
 
 
