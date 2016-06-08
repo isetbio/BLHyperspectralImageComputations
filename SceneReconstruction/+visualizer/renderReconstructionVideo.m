@@ -7,97 +7,420 @@ function renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir, In
         [timeAxis, LMScontrastInput, LMScontrastReconstruction, ...
          oiLMScontrastInput, ...
          sceneBackgroundExcitation,  opticalImageBackgroundExcitation, ...
-         sceneIndexSequence, sensorPositionSequence, ...
-         expParams, videoPostFix] = retrieveData(sceneSetName, decodingDataDir, InSampleOrOutOfSample, computeSVDbasedLowRankFiltersAndPredictions);
+         sceneIndexSequence, sensorPositionSequence, responseSequence, ...
+         expParams, videoPostFix] = retrieveReconstructionData(sceneSetName, decodingDataDir, InSampleOrOutOfSample, computeSVDbasedLowRankFiltersAndPredictions);
     end
     
-
-    makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, sceneIndexSequence, sensorPositionSequence, expParams, videoPostFix);
-    
+    makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, sceneIndexSequence, sensorPositionSequence, responseSequence, expParams, videoPostFix);
 end
 
 
 
-function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, sceneIndexSequence, sensorPositionSequence, expParams, videoPostFix)
+function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, sceneIndexSequence, sensorPositionSequence, responseSequence, expParams, videoPostFix)
     
     % Get luminance colormap
     p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
     load(fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'), 'grayRedLUT');
     colormap(grayRedLUT); 
     
+    % Generate colors for L,M,S contrast traces
+    LconeContrastColor = [247 200 193]/255;
+    MconeContrastColor = [137 246 224]/255;
+    SconeContrastColor = [219 211 252]/255;
+    
     % Generate super display for rendering
-    gain = 100;  displayGamma = 1/1.6;  boostFactorForOpticalImage = 50;
+    gain = 80;  displayGamma = 1/2.0;  boostFactorForOpticalImage = 50;
     renderingDisplay = displayCreate('LCD-Apple');
     displaySPDs = displayGet(renderingDisplay, 'spd');
     renderingDisplay = displaySet(renderingDisplay, 'spd', displaySPDs*gain);
-   
+
+    % Compute displayed ranges for all variables
+    outerSegmentResponseRange = round([min(responseSequence(:)) max(responseSequence(:))]/10)*10;
+    outerSegmentResponseTicks = [outerSegmentResponseRange(1) outerSegmentResponseRange(end)];
+    luminanceRange = [0 7000]; luminanceRangeTicks = (0: 2000: 10000); 
+    luminanceRangeTickLabels = sprintf('%2.0fK\n', luminanceRangeTicks/1000);
     
-    hFig = figure(1); clf; slideSize = [1860 1200];
-    set(hFig, 'Position', [10 10 slideSize(1) slideSize(2)], 'Color', [1 1 1]);
-    videoFilename = fullfile(expParams.decodingDataDir, sprintf('ReconstructionInSample%s.m4v', videoPostFix));
+    % Generate axes and figure handle
+    slideSize = [1920 1080]; slideCols = 6; slideRows = 4;
+    [axesDictionary, hFig] = generateAxes(slideSize, slideCols, slideRows);
+
+    % Generate video object
+    videoFilename = fullfile(expParams.decodingDataDir, sprintf('ReconstructionInSample%s.m4v', videoPostFix))
+    videoOBJ = generateVideoObject(videoFilename);
+
+    % Reset all plots
+    inputSceneLuminanceMapPlot = [];
+    inputSceneRGBrenditionPlot = [];
+    inputOpticalImageLuminanceMapPlot = [];
+    inputOpticalImageRGBrenditionPlot = [];
+    reconstructedSceneLuminanceMapPlot = [];
+    reconstructedSceneRGBrenditionPlot = [];
+    instantaneousSensorXYactivationPlot = [];
     
-    fprintf('Will export video to %s\n', videoFilename);
-    writerObj = VideoWriter(videoFilename, 'MPEG-4'); % H264 format
-    writerObj.FrameRate = 15; 
-    writerObj.Quality = 100;
-    writerObj.open();
     
     previousSceneIndex = 0;
-    for tBin = 1:numel(timeAxis)
-         
+    for tBin = 101:numel(timeAxis)
+        
+        recentTbins = [tBin-100:1:tBin];
+        
         % Get the current scene data
         if (sceneIndexSequence(tBin) ~= previousSceneIndex)
             fprintf('Retrieving new scene data at time bin: %d\n', tBin);
-            [sceneData, oiData] = retrieveCurrentSceneAndOpticalImageData(expParams.sceneSetName, expParams.resultsDir, sceneIndexSequence(tBin), renderingDisplay, boostFactorForOpticalImage, displayGamma);
+            [sceneData, oiData, sensorData] = retrieveComputedDataForCurrentScene(expParams.sceneSetName, expParams.resultsDir, sceneIndexSequence(tBin), renderingDisplay, boostFactorForOpticalImage, displayGamma);
             previousSceneIndex = sceneIndexSequence(tBin);
             
             % Plot it: 
-            subplot(2,4,1);
-            imagesc(sceneData.RGBforRenderingDisplay); axis image;
+            %subplot(3,3,1);
+            %imagesc(sceneData.RGBforRenderingDisplay); axis image;
             
-            subplot(2,4,2)
-            imagesc(sceneData.LuminanceMap); axis image; colorbar;
+            %subplot(3,3,2)
+           
+           
 
-            subplot(2,4,5)
-            imagesc(oiData.fullOpticalImageSpatialSupportX, oiData.fullOpticalImageSpatialSupportY, oiData.RGBforRenderingDisplay); axis 'image'
-            % overlay sensor position sequence
-            hold on;
-            p1 = plot(oiData.sensorSpatialOutlineX + sensorPositionSequence(tBin,1), oiData.sensorSpatialOutlineY + sensorPositionSequence(tBin,2), 'w-', 'LineWidth', 2.0);
-            hold off;
+            %subplot(3,3,5)
+            %imagesc(oiData.fullOpticalImageSpatialSupportX, oiData.fullOpticalImageSpatialSupportY, oiData.RGBforRenderingDisplay); axis 'image'
+            % overlay sensor position on optical image
+            %hold on;
+            %sensorPositionOnOpticalImagePlot = plot(sensorData.spatialOutlineX + sensorPositionSequence(tBin,1), sensorData.spatialOutlineY + sensorPositionSequence(tBin,2), 'w-', 'LineWidth', 2.0);
+            %hold off;
             
-            subplot(2,4,6)
-            imagesc(oiData.LuminanceMap); axis 'image'; colorbar
+            %subplot(3,3,6)
+            %imagesc(oiData.LuminanceMap); axis 'image';
         end
         
-        set(p1, 'XData', oiData.sensorSpatialOutlineX + sensorPositionSequence(tBin,1), 'YData', oiData.sensorSpatialOutlineY + sensorPositionSequence(tBin,2));
+        % Update sensor position in optical image
+        %set(sensorPositionOnOpticalImagePlot, 'XData', sensorData.spatialOutlineX + sensorPositionSequence(tBin,1), 'YData', sensorData.spatialOutlineY + sensorPositionSequence(tBin,2));
         
         
-        % Retrieve current time bin data
-        sensorIOdata = retrieveSensorInputAndReconstructedData(tBin,LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, ...
+        % Convert the various LMS contrasts to RGB settings and luminances for the rendering display
+        RGBsettingsAndLuminanceData = LMScontrastsToRGBsettingsAndLuminanceforRenderingDisplay(tBin,LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, ...
                         sceneBackgroundExcitation,  opticalImageBackgroundExcitation, renderingDisplay, boostFactorForOpticalImage, displayGamma);
         
-        % Plot it
-        subplot(2,4,3);
-        imagesc(oiData.sensorDecodedImageSpatialSupportX, oiData.sensorDecodedImageSpatialSupportY, sensorIOdata.inputRGBforRenderingDisplay); axis 'image'
-        set(gca, 'XLim', [oiData.sensorSpatialSupportX(1) oiData.sensorSpatialSupportX(end)], 'YLim', [oiData.sensorSpatialSupportY(1) oiData.sensorSpatialSupportY(end)]);
+        if (isempty(inputSceneLuminanceMapPlot))
+            xTicks = [];
+            yTicks = [];
+            xlabelString = '';
+            ylabelString = 'input scene';
+            titleString = 'luminance map';
+            colorbarStruct = [];
+            imageOutline = struct('x', sensorData.decodedImageOutlineX, 'y', sensorData.decodedImageOutlineY, 'color', [0 1 0]);
+            inputSceneLuminanceMapPlot = initializeDecodedImagePlot(...
+                  axesDictionary('inputSceneLuminanceMap'), titleString, ...
+                  RGBsettingsAndLuminanceData.inputLuminanceMap, luminanceRange,...
+                  [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
+                  sensorData.decodedImageSpatialSupportX, sensorData.decodedImageSpatialSupportY, imageOutline, ...
+                  xTicks, yTicks, xlabelString, ylabelString, colorbarStruct);  
+        else
+            set(inputSceneLuminanceMapPlot, 'CData', RGBsettingsAndLuminanceData.inputLuminanceMap);
+        end
+        
+        if (isempty(inputSceneRGBrenditionPlot))
+            xTicks = [];
+            yTicks = [];
+            xlabelString = '';
+            ylabelString = '';
+            titleString = 'RGB rendition';
+            colorbarStruct = [];
+            imageOutline = struct('x', sensorData.decodedImageOutlineX, 'y', sensorData.decodedImageOutlineY, 'color', [0 1 0]);
+            inputSceneRGBrenditionPlot = initializeDecodedImagePlot(...
+                  axesDictionary('inputSceneRGBrendition'), titleString, ...
+                  RGBsettingsAndLuminanceData.inputRGBforRenderingDisplay, [0 1],...
+                  [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
+                  sensorData.decodedImageSpatialSupportX, sensorData.decodedImageSpatialSupportY, imageOutline, ...
+                  xTicks, yTicks, xlabelString, ylabelString, colorbarStruct);  
+        else
+            set(inputSceneRGBrenditionPlot, 'CData', RGBsettingsAndLuminanceData.inputRGBforRenderingDisplay);
+        end
+        
+        if (isempty(inputOpticalImageLuminanceMapPlot))
+            xTicks = [];
+            yTicks = [];
+            xlabelString = '';
+            ylabelString = 'optical image';
+            titleString = ' ';
+            colorbarStruct = [];
+            imageOutline = struct('x', sensorData.decodedImageOutlineX, 'y', sensorData.decodedImageOutlineY, 'color', [0 1 0]);
+            inputOpticalImageLuminanceMapPlot = initializeDecodedImagePlot(...
+                  axesDictionary('inputOpticalImageIlluminanceMap'), titleString, ...
+                  RGBsettingsAndLuminanceData.inputOpticalImageLuminanceMap, luminanceRange,...
+                  [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
+                  sensorData.decodedImageSpatialSupportX, sensorData.decodedImageSpatialSupportY,imageOutline, ...
+                  xTicks, yTicks, xlabelString, ylabelString, colorbarStruct);  
+        else
+            set(inputOpticalImageLuminanceMapPlot, 'CData', RGBsettingsAndLuminanceData.inputOpticalImageLuminanceMap);
+        end
+        
+        if (isempty(inputOpticalImageRGBrenditionPlot))
+            xTicks = [];
+            yTicks = [];
+            xlabelString = '';
+            ylabelString = '';
+            titleString = ' ';
+            colorbarStruct = [];
+            imageOutline = struct('x', sensorData.decodedImageOutlineX, 'y', sensorData.decodedImageOutlineY, 'color', [0 1 0]);
+            inputOpticalImageRGBrenditionPlot = initializeDecodedImagePlot(...
+                  axesDictionary('inputOpticalImageRGBrendition'), titleString, ...
+                  RGBsettingsAndLuminanceData.inputOpticalImageRGBforRenderingDisplay, [0 1],...
+                  [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
+                  sensorData.decodedImageSpatialSupportX, sensorData.decodedImageSpatialSupportY, imageOutline, ...
+                  xTicks, yTicks, xlabelString, ylabelString, colorbarStruct);  
+        else
+            set(inputOpticalImageRGBrenditionPlot, 'CData', RGBsettingsAndLuminanceData.inputOpticalImageRGBforRenderingDisplay);
+        end
+        
+        
+        if (isempty(reconstructedSceneLuminanceMapPlot))
+            xTicks = [sensorData.decodedImageSpatialSupportX(1) 0 sensorData.decodedImageSpatialSupportX(end)];
+            yTicks = [];
+            xlabelString = 'microns';
+            ylabelString = 'reconstruction';
+            titleString = ' ';
+            colorbarStruct = struct(...
+                'position', 'South', ...
+                'ticks', luminanceRangeTicks, ...
+                'tickLabels', luminanceRangeTickLabels, ...
+                'orientation', 'horizontal', ...
+                'title', '', ...
+                'fontSize', 14, ...
+                'fontName', 'Menlo', ...
+                'color', [0 1 0]...
+                );
+            imageOutline = struct('x', sensorData.decodedImageOutlineX, 'y', sensorData.decodedImageOutlineY, 'color', [0 1 0]);
+            reconstructedSceneLuminanceMapPlot = initializeDecodedImagePlot(...
+                    axesDictionary('reconstructedSceneLuminanceMap'), titleString, ...
+                    RGBsettingsAndLuminanceData.reconstructedLuminanceMap , luminanceRange,...
+                    [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
+                    sensorData.decodedImageSpatialSupportX, sensorData.decodedImageSpatialSupportY, imageOutline, ...
+                    xTicks, yTicks, xlabelString, ylabelString, colorbarStruct);
+        else
+            set(reconstructedSceneLuminanceMapPlot, 'CData', RGBsettingsAndLuminanceData.reconstructedLuminanceMap);
+        end
+
+        if (isempty(reconstructedSceneRGBrenditionPlot))
+            xTicks = [sensorData.decodedImageSpatialSupportX(1) 0 sensorData.decodedImageSpatialSupportX(end)];
+            yTicks = [];
+            xlabelString = 'microns';
+            ylabelString = '';
+            titleString = ' ';
+            colorbarStruct = [];
+            imageOutline = struct('x', sensorData.decodedImageOutlineX, 'y', sensorData.decodedImageOutlineY, 'color', [0 1 0]);
+            reconstructedSceneRGBrenditionPlot = initializeDecodedImagePlot(...
+                  axesDictionary('reconstructedSceneRGBrendition'), titleString, ...
+                  RGBsettingsAndLuminanceData.reconstructedRGBforRenderingDisplay , [0 1],...
+                  [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
+                  sensorData.decodedImageSpatialSupportX, sensorData.decodedImageSpatialSupportY, imageOutline, ...
+                  xTicks, yTicks, xlabelString, ylabelString, colorbarStruct);
+        else
+            set(reconstructedSceneRGBrenditionPlot, 'CData', RGBsettingsAndLuminanceData.reconstructedRGBforRenderingDisplay);
+        end
+        
+        
+        if (isempty(instantaneousSensorXYactivationPlot))
+            xTicks = [sensorData.spatialSupportX(1) 0 sensorData.spatialSupportX(end)];
+            yTicks = [];
+            xlabelString = 'microns';
+            ylabelString = '';
+            titleString = sprintf('%s mosaic activation', expParams.outerSegmentParams.type);
+            colorbarStruct = struct(...
+                'position', 'SouthOutside', ...
+                'ticks', outerSegmentResponseTicks, ...
+                'tickLabels', sprintf('%2.0f\n',outerSegmentResponseTicks), ...
+                'orientation', 'horizontal', ...
+                'title', 'pAmps', ...
+                'fontSize', 14, ...
+                'fontName', 'Menlo', ...
+                'color', [0 0 0]...
+                );
+            imageOutline = struct('x', sensorData.decodedImageOutlineX, 'y', sensorData.decodedImageOutlineY, 'color', [0 1 0]);
+            instantaneousSensorXYactivationPlot = initializeDecodedImagePlot(...
+                  axesDictionary('instantaneousSensorXYactivation'), titleString, ...
+                  squeeze(responseSequence(:,:,tBin)), outerSegmentResponseRange,...
+                  [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
+                  sensorData.spatialSupportX, sensorData.spatialSupportY, imageOutline, ...
+                  xTicks, yTicks, xlabelString, ylabelString, colorbarStruct);
+        else
+            set(instantaneousSensorXYactivationPlot, 'CData', squeeze(responseSequence(:,:,tBin)));
+            title(axesDictionary('instantaneousSensorXYactivation'),  sprintf('%s mosaic activation\ntime: %2.3f sec', expParams.outerSegmentParams.type, timeAxis(tBin)/1000));
+        end
+        
+    
+        if (1==2)
+        % Plot the input scene that is to be decoded
+        subplot(3,3,3);
+        imagesc(sensorData.decodedImageSpatialSupportX, sensorData.decodedImageSpatialSupportY, RGBsettingsAndLuminanceData.inputRGBforRenderingDisplay); axis 'image'
+        set(gca, 'XLim', [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], 'YLim', [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)]);
             
-        subplot(2,4,4);
-        imagesc(oiData.sensorDecodedImageSpatialSupportX, oiData.sensorDecodedImageSpatialSupportY, sensorIOdata.reconstructedRGBforRenderingDisplay); axis 'image'
-        set(gca, 'XLim', [oiData.sensorSpatialSupportX(1) oiData.sensorSpatialSupportX(end)], 'YLim', [oiData.sensorSpatialSupportY(1) oiData.sensorSpatialSupportY(end)]);
+        % Plot the decoded scene
+        subplot(3,3,4);
+        imagesc(sensorData.decodedImageSpatialSupportX, sensorData.decodedImageSpatialSupportY, RGBsettingsAndLuminanceData.reconstructedRGBforRenderingDisplay); axis 'image'
+        set(gca, 'XLim', [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], 'YLim', [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)]);
         title(sprintf('time: %2.2f', timeAxis(tBin)));
         
-        subplot(2,4,7);
-        LconeInputContrast = LMScontrastInput(:,:,1,tBin);
-        LconeReconstructedContrast = LMScontrastReconstruction(:,:,1,tBin);
-        plot(LconeInputContrast(:), LconeReconstructedContrast(:),  'k.');
-        set(gca, 'XLim', [-2 5], 'YLim', [-2 5]); axis 'square';
+        % Plot the corresponding optical image
+        subplot(3,3,7);
+        imagesc(sensorData.decodedImageSpatialSupportX, sensorData.decodedImageSpatialSupportY, RGBsettingsAndLuminanceData.opticalImageRGBforRenderingDisplay); axis 'image'
+        set(gca, 'XLim', [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], 'YLim', [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)]);
+        title('optical image');
+        
+        
+        subplot(3,3,8);
+        responseXYactivation = responseSequence(:,:,tBin);
+        imagesc(sensorData.spatialSupportX, sensorData.spatialSupportY, responseXYactivation); axis 'image'
+        hold on;
+        % indentify tracked cones
+        plot(sensorData.centralMostLCone.xyCoord(1), sensorData.centralMostLCone.xyCoord(2), 'rx');
+        plot(sensorData.centralMostMCone.xyCoord(1), sensorData.centralMostMCone.xyCoord(2), 'gx');
+        plot(sensorData.centralMostSCone.xyCoord(1), sensorData.centralMostSCone.xyCoord(2), 'bx');
+        plot(sensorData.decodedImageOutlineX, sensorData.decodedImageOutlineY, 'g-', 'LineWidth', 2.0);
+        hold off;
+        
+        set(gca, 'XLim', [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], ...
+                 'YLim', [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
+                 'CLim', outerSegmentResponseRange);
+        % Add colorbar inside the density plot at the bottom
+        hCbar = colorbar('south', 'peer', gca, 'Ticks', outerSegmentResponseTicks, 'TickLabels', sprintf('%2.0f\n',outerSegmentResponseTicks));
+        hCBar.Orientation = 'horizontal'; hCbar.Label.String = ''; hCbar.FontSize = 12; hCbar.FontName = 'Menlo'; hCbar.Color = [0 1 0];
+        title('outer segment mosaic activation')
+        
+        
+        subplot(3,3,9);
+        recentResponseCentralMostLcone = squeeze(responseSequence(sensorData.centralMostLCone.rowcolCoord(1), sensorData.centralMostLCone.rowcolCoord(2), recentTbins));
+        recentResponseCentralMostMcone = squeeze(responseSequence(sensorData.centralMostMCone.rowcolCoord(1), sensorData.centralMostMCone.rowcolCoord(2), recentTbins));
+        recentResponseCentralMostScone = squeeze(responseSequence(sensorData.centralMostSCone.rowcolCoord(1), sensorData.centralMostSCone.rowcolCoord(2), recentTbins));
+        recentTime = timeAxis(recentTbins)-timeAxis(recentTbins(end));
+        plot([recentTime(1) recentTime(end)], [0 0], 'k-'); hold on
+        plot(recentTime, recentResponseCentralMostLcone, 'r-', 'LineWidth', 2.0);
+        plot(recentTime, recentResponseCentralMostMcone, 'g-', 'LineWidth', 2.0);
+        plot(recentTime, recentResponseCentralMostScone, 'b-', 'LineWidth', 2.0);
+        hold off
+        box off;
+        set(gca, 'YLim', outerSegmentResponseRange, 'YTick', outerSegmentResponseTicks);
+        
+        subplot(3,3,6);
+        recentLconeContrastReconstruction = squeeze(LMScontrastReconstruction(sensorData.centralMostLCone.nearestDecodedPosition(1), sensorData.centralMostLCone.nearestDecodedPosition(2), 1, recentTbins));
+        recentMconeContrastReconstruction = squeeze(LMScontrastReconstruction(sensorData.centralMostMCone.nearestDecodedPosition(1), sensorData.centralMostMCone.nearestDecodedPosition(2), 2, recentTbins));
+        recentSconeContrastReconstruction = squeeze(LMScontrastReconstruction(sensorData.centralMostSCone.nearestDecodedPosition(1), sensorData.centralMostSCone.nearestDecodedPosition(2), 3, recentTbins));
+        plot([recentTime(1) recentTime(end)], [0 0], 'k-'); hold on
+        plot(recentTime, recentLconeContrastReconstruction, 'k-', 'Color', LconeContrastColor, 'LineWidth', 2.0);
+        plot(recentTime, recentMconeContrastReconstruction, 'k-', 'Color', MconeContrastColor, 'LineWidth', 2.0);
+        plot(recentTime, recentSconeContrastReconstruction, 'k-', 'Color', SconeContrastColor, 'LineWidth', 2.0);
+        hold off
+        box off; grid on
+        set(gca, 'YLim', [-2 5], 'YTick', (-2:0:10));
+        
+        
+%         LconeInputContrast = LMScontrastInput(:,:,1,tBin);
+%         LconeReconstructedContrast = LMScontrastReconstruction(:,:,1,tBin);
+%         plot(LconeInputContrast(:), LconeReconstructedContrast(:),  'k.');
+%         set(gca, 'XLim', [-2 5], 'YLim', [-2 5]); axis 'square';
+        
+        end
+        
         
         drawnow;
-        
+        videoOBJ.writeVideo(getframe(hFig));
      end % tBin  
+     
+     videoOBJ.close();
 end
 
-function sensorIOdata = retrieveSensorInputAndReconstructedData(tBin, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, renderingDisplay, boostFactorForOpticalImage, displayGamma)
+function decodedImagePlot = initializeDecodedImagePlot(theAxes, titleString, theCData, theCDataRange, theXDataRange, theYDataRange, spatialSupportX, spatialSupportY, imageOutline, xTicks, yTicks, xlabelString, ylabelString, cbarStruct)
+    decodedImagePlot = imagesc(spatialSupportX, spatialSupportY, theCData, 'parent', theAxes);
+    axis(theAxes, 'image');
+    dx = spatialSupportX(2)-spatialSupportX(1);
+    dy = spatialSupportY(2)-spatialSupportY(1);
+    set(theAxes, 'XLim', [theXDataRange(1)-dx/2 theXDataRange(2)+dx/2], ...
+                 'YLim', [theYDataRange(1)-dy/2 theYDataRange(2)+dy/2], ...
+                 'XTick', xTicks, 'XTickLabel', sprintf('%2.1f\n', xTicks), ...
+                 'YTick', yTicks, 'XTickLabel', sprintf('%2.1f\n', xTicks), ...
+                 'CLim', theCDataRange, 'FontSize', 16, 'FontName', 'Menlo', ...
+                 'Color', [0 0 0], 'LineWidth', 2.0);
+             
+    % Add colorbar
+    if (~isempty(cbarStruct))
+        originalPosition = get(theAxes, 'position');
+        % Add colorbar
+        hCbar = colorbar(cbarStruct.position, 'peer', theAxes, 'Ticks', cbarStruct.ticks, 'TickLabels', cbarStruct.tickLabels);
+        hCbar.Orientation = cbarStruct.orientation; 
+        hCbar.Label.String = cbarStruct.title; 
+        hCbar.FontSize = cbarStruct.fontSize; 
+        hCbar.FontName = cbarStruct.fontName; 
+        hCbar.Color = cbarStruct.color;
+        % The addition changes the figure size, so undo this change
+        newPosition = get(theAxes, 'position');
+        set(theAxes,'position',[newPosition(1) newPosition(2) originalPosition(3) originalPosition(4)]);
+    end
+    
+    if (~isempty(imageOutline))
+        hold(theAxes, 'on');
+        plot(theAxes, imageOutline.x, imageOutline.y, '-', 'Color', imageOutline.color, 'LineWidth', 2.0);
+        hold(theAxes, 'off');
+    end
+            
+    xlabel(theAxes, xlabelString, 'FontSize', 18, 'FontWeight', 'bold');
+    ylabel(theAxes, ylabelString, 'FontSize', 18, 'FontWeight', 'bold');
+    title(theAxes,  titleString,  'FontSize', 18, 'FontWeight', 'bold');   
+end
+
+function [axesDictionary, hFig] = generateAxes(slideSize, slideCols, slideRows)
+
+    hFig = figure(1); clf; 
+    set(hFig, 'Position', [10 10 slideSize(1) slideSize(2)], 'Color', [1 1 1], 'MenuBar', 'none');
+    
+    subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+               'rowsNum', slideRows, ...
+               'colsNum', slideCols, ...
+               'heightMargin',   0.01, ...
+               'widthMargin',    0.01, ...
+               'leftMargin',     0.015, ...
+               'rightMargin',    0.00, ...
+               'bottomMargin',   0.025, ...
+               'topMargin',      0.02);
+           
+    axesDictionary = containers.Map();
+    
+    % The left 2 columns with luminance maps and RGB renditions
+    axesDictionary('inputSceneLuminanceMap') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(2,1).v);
+    axesDictionary('inputSceneRGBrendition') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(2,2).v);
+    axesDictionary('inputOpticalImageIlluminanceMap') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(3,1).v);
+    axesDictionary('inputOpticalImageRGBrendition')   = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(3,2).v);
+    axesDictionary('reconstructedSceneLuminanceMap')  = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(4,1).v);
+    axesDictionary('reconstructedSceneRGBrendition')  = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(4,2).v);
+    
+    % The middle: sensor activation
+    axesDictionary('instantaneousSensorXYactivation') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(3,3).v);
+    
+    % The right side: 
+    % First row: L,M,S contrast decoder filters at 3 select spatial positions
+    axesDictionary('LcontastDecoderFilterAtPosition1')  = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,4).v);
+    axesDictionary('McontrastDecoderFilterAtPosition2') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,5).v);
+    axesDictionary('ScontrastDecoderFilterAtPosition3') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,6).v);
+    
+    % Second row: outer-segment traces, weighted by the above L,M,S decoder spatial profiles
+    axesDictionary('sensorXTactivationWeightedByLcontrastDecoderAtPosition1') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(2,4).v);
+    axesDictionary('sensorXTactivationWeightedByLcontrastDecoderAtPosition2') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(2,5).v);
+    axesDictionary('sensorXTactivationWeightedByLcontrastDecoderAtPosition3') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(2,6).v);
+    
+    % Third row: input and reconstructed L,M,S cone contrasts at the 3 chosen decoded locations
+    axesDictionary('inputAndReconstructedLcontrastTracesAtPosition1') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(3,4).v);
+    axesDictionary('inputAndReconstructedMcontrastTracesAtPosition2') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(3,5).v);
+    axesDictionary('inputAndReconstructedScontrastTracesAtPosition3') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(3,6).v);
+    
+    % Fourth row: instaneous scatter of reconstructed vs. input L,M,S cone contrasts at all decoded locations
+    axesDictionary('reconstructedVSinputLcontrastAtAllDecodedPositions') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(4,4).v);
+    axesDictionary('reconstructedVSinputMcontrastAtAllDecodedPositions') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(4,5).v);
+    axesDictionary('reconstructedVSinputScontrastAtAllDecodedPositions') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(4,6).v);
+end
+
+function videoOBJ = generateVideoObject(videoFilename)
+    fprintf('Will export video to %s\n', videoFilename);
+    videoOBJ = VideoWriter(videoFilename, 'MPEG-4'); % H264 format
+    videoOBJ.FrameRate = 15; 
+    videoOBJ.Quality = 100;
+    videoOBJ.open();
+end
+
+function RGBsettingsAndLuminanceData = LMScontrastsToRGBsettingsAndLuminanceforRenderingDisplay(tBin, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, renderingDisplay, boostFactorForOpticalImage, displayGamma)
     
     % Get the input LMS contrast
     inputLMScontrastFrame = squeeze(LMScontrastInput(:,:,:,tBin));
@@ -120,20 +443,18 @@ function sensorIOdata = retrieveSensorInputAndReconstructedData(tBin, LMScontras
     beVerbose = true; boostFactor = 1.0;
     [reconstructedImageRGB, ~, ~, reconstructedImageLum] = core.LMStoRGBforSpecificDisplay(reconstructedLMSexcitationFrame, renderingDisplay, boostFactor, displayGamma, beVerbose);
 
-    sensorIOdata = struct(...
+    RGBsettingsAndLuminanceData = struct(...
         'inputRGBforRenderingDisplay',          inputImageRGB, ...
         'inputLuminanceMap',                    inputImageLum, ...
         'reconstructedRGBforRenderingDisplay',  reconstructedImageRGB, ...
         'reconstructedLuminanceMap',            reconstructedImageLum, ...
-        'opticalImageRGBforRenderingDisplay',   opticalImageRGB, ...
-        'opticalImageLuminanceMap',             opticalImageLum ...
+        'inputOpticalImageRGBforRenderingDisplay',   opticalImageRGB, ...
+        'inputOpticalImageLuminanceMap',             opticalImageLum ...
      );
-    
-    
 end
 
 
-function [sceneData, oiData] = retrieveCurrentSceneAndOpticalImageData(sceneSetName, resultsDir, sceneIndex, renderingDisplay, boostFactorForOpticalImage, displayGamma)
+function [sceneData, oiData, sensorData] = retrieveComputedDataForCurrentScene(sceneSetName, resultsDir, sceneIndex, renderingDisplay, boostFactorForOpticalImage, displayGamma)
     scanFileName = core.getScanFileName(sceneSetName, resultsDir, sceneIndex);
     load(scanFileName, 'scanData', 'scene', 'oi');
     
@@ -159,29 +480,67 @@ function [sceneData, oiData] = retrieveCurrentSceneAndOpticalImageData(sceneSetN
     oiData.fullOpticalImageSpatialSupportY  = scanData{1}.opticalImageYData;
     
     % Sensor data    
-    oiData.sensorSpatialSupportX = scanData{1}.sensorRetinalXaxis;
-    oiData.sensorSpatialSupportY = scanData{1}.sensorRetinalYaxis;
-    oiData.sensorSpatialOutlineX = [oiData.sensorSpatialSupportX(1) oiData.sensorSpatialSupportX(end) oiData.sensorSpatialSupportX(end) oiData.sensorSpatialSupportX(1)  oiData.sensorSpatialSupportX(1)];
-    oiData.sensorSpatialOutlineY = [oiData.sensorSpatialSupportY(1) oiData.sensorSpatialSupportY(1)   oiData.sensorSpatialSupportY(end) oiData.sensorSpatialSupportY(end) oiData.sensorSpatialSupportY(1)];
-    oiData.sensorDecodedImageSpatialSupportX = scanData{1}.sensorFOVxaxis;
-    oiData.sensorDecodedImageSpatialSupportY = scanData{1}.sensorFOVyaxis;
+    sensorData.spatialSupportX = scanData{1}.sensorRetinalXaxis;
+    sensorData.spatialSupportY = scanData{1}.sensorRetinalYaxis;
+    sensorData.spatialOutlineX = [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end) sensorData.spatialSupportX(end) sensorData.spatialSupportX(1)   sensorData.spatialSupportX(1)];
+    sensorData.spatialOutlineY = [sensorData.spatialSupportY(1) sensorData.spatialSupportY(1)   sensorData.spatialSupportY(end) sensorData.spatialSupportY(end) sensorData.spatialSupportY(1)];
+    sensorData.decodedImageSpatialSupportX = scanData{1}.sensorFOVxaxis;
+    sensorData.decodedImageSpatialSupportY = scanData{1}.sensorFOVyaxis;
+    dx = (sensorData.decodedImageSpatialSupportX(2)-sensorData.decodedImageSpatialSupportX(1))/2;
+    dy = (sensorData.decodedImageSpatialSupportY(2)-sensorData.decodedImageSpatialSupportY(1))/2;
+    sensorData.decodedImageOutlineX = [sensorData.decodedImageSpatialSupportX(1)-dx sensorData.decodedImageSpatialSupportX(1)-dx   sensorData.decodedImageSpatialSupportX(end)+dx sensorData.decodedImageSpatialSupportX(end)+dx sensorData.decodedImageSpatialSupportX(1)-dx];
+    sensorData.decodedImageOutlineY = [sensorData.decodedImageSpatialSupportY(1)-dy sensorData.decodedImageSpatialSupportY(end)+dy sensorData.decodedImageSpatialSupportY(end)+dy sensorData.decodedImageSpatialSupportY(1)-dy   sensorData.decodedImageSpatialSupportY(1)-dy];
+        
+    % returm other useful info: coords for the most central L,M, and S-cone
+    conePositions = sensorGet(scanData{1}.scanSensor, 'xy');
+    coneTypes = sensorGet(scanData{1}.scanSensor, 'cone type');
+    sensorData.centralMostLCone = centralMostCone(sensorData, conePositions, find(coneTypes == 2));
+    sensorData.centralMostMCone = centralMostCone(sensorData, conePositions, find(coneTypes == 3));
+    sensorData.centralMostSCone = centralMostCone(sensorData, conePositions, find(coneTypes == 4));
+    
+    
+    function s = centralMostCone(sensorData, conePositions, coneIndices)
+        if isempty(coneIndices)
+            s = [];
+            return;
+        end
+        coneDistances = sqrt(sum(conePositions.^2, 2));
+        [~, theIndex] = min(coneDistances(coneIndices));
+        [r,c] = ind2sub([numel(sensorData.spatialSupportY) numel(sensorData.spatialSupportX)], coneIndices(theIndex));
+        [X,Y] = meshgrid(sensorData.decodedImageSpatialSupportX, sensorData.decodedImageSpatialSupportY);
+        d = sqrt((X-conePositions(coneIndices(theIndex), 1)).^2 + (Y-conePositions(coneIndices(theIndex), 2)).^2);
+        [~,idx] = min(d);
+        [dr, rc] = ind2sub(size(X), idx);
+        s = struct(...
+            'rowcolCoord', [r c], ...
+            'xyCoord', conePositions(coneIndices(theIndex), :), ...
+            'nearestDecodedPosition', [dr rc]);
+        s
+    end
 
 end
 
 
 function [timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, ...
           sceneBackgroundExcitation,  opticalImageBackgroundExcitation, sceneIndexSequence, sensorPositionSequence, ...
-          expParams, videoPostfix] = retrieveData(sceneSetName, decodingDataDir, InSampleOrOutOfSample, computeSVDbasedLowRankFiltersAndPredictions)
+          responseSequence, expParams, videoPostfix] = ...
+          retrieveReconstructionData(sceneSetName, decodingDataDir, InSampleOrOutOfSample, computeSVDbasedLowRankFiltersAndPredictions)
     
     if (strcmp(InSampleOrOutOfSample, 'InSample'))
+        
+        fprintf('Loading design matrix to reconstruct the original responses ...');
+        fileName = fullfile(decodingDataDir, sprintf('%s_trainingDesignMatrices.mat', sceneSetName));
+        load(fileName, 'Xtrain', 'preProcessingParams', 'rawTrainingResponsePreprocessing', 'expParams');
+        responseSequence = decoder.reformatDesignMatrixToOriginalResponse(Xtrain, rawTrainingResponsePreprocessing, expParams);
+        
         fprintf('\nLoading in-sample prediction data ...');
         fileName = fullfile(decodingDataDir, sprintf('%s_inSamplePrediction.mat', sceneSetName));
         load(fileName, 'Ctrain', 'CtrainPrediction', 'oiCtrain', ...
                        'trainingSceneLMSbackground', 'trainingOpticalImageLMSbackground', ...
-                       'trainingTimeAxis', 'originalTrainingStimulusSize', 'expParams', ...
-                       'trainingSceneIndexSequence', 'trainingSensorPositionSequence');
+                       'trainingTimeAxis', 'originalTrainingStimulusSize', ...
+                       'trainingSceneIndexSequence', 'trainingSensorPositionSequence', 'expParams');
         videoPostfix = sprintf('PINVbased');
-        
+
         if (computeSVDbasedLowRankFiltersAndPredictions)
             load(fileName, 'CtrainPredictionSVDbased', 'SVDbasedLowRankFilterVariancesExplained');
             svdIndex = core.promptUserForChoiceFromSelectionOfChoices('Select desired variance explained for the reconstruction filters', SVDbasedLowRankFilterVariancesExplained);
@@ -217,8 +576,6 @@ function [timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastIn
     if (strcmp(InSampleOrOutOfSample, 'OutOfSample'))
         error('Not implemented')
     end
-    
-    
     
 end
 

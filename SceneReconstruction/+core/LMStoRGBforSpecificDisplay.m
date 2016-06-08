@@ -10,7 +10,7 @@ function [imageRGB, belowGamut, aboveGamut, imageLuminance] = LMStoRGBforSpecifi
     
     % Extract luma component, and reshape it in image format
     imageLuminance = CalFormatToImage((squeeze(tmpXYZ(:,2)))', nCols, mRows);
-
+    
     % Compute out-of-gamut pixels
     for channelIndex = 1:3
         belowGamut(channelIndex) = numel(find(squeeze(tmpRGB(:,channelIndex)) < 0));
@@ -23,6 +23,7 @@ function [imageRGB, belowGamut, aboveGamut, imageLuminance] = LMStoRGBforSpecifi
     % Apply boost factor - this is > 1 for optical images, because they are
     % much darker than the scenes
     imageRGB  = imageRGB  * boostFactor;
+    imageLuminance = imageLuminance * boostFactor;
     
     % Clip above and below
     imageRGB(imageRGB<0) = 0;
