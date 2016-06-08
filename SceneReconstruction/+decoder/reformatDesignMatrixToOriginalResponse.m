@@ -26,15 +26,15 @@ function responseSequence = reformatDesignMatrixToOriginalResponse(X,  rawTraini
     conesNum = expParams.sensorParams.spatialGrid(1) * expParams.sensorParams.spatialGrid(2);
     signals = zeros(conesNum, totalBins);
     
+    shiftToAlignWithScene = 0;
+    
     for row = 1:validTimeBins
         timeBins = latencyBins + row + (0:(memoryBins-1)) - minTimeBin;
         for coneIndex = 1:conesNum
             startingColumn = 2 + (coneIndex-1)*memoryBins;
             endingColumn = startingColumn + memoryBins - 1;
-            if (timeBins(end) <= size(signals,2))
-                signals(coneIndex, timeBins-latencyBins + minTimeBin) = X(row, startingColumn:endingColumn);
-            else
-                error('At row: %d (coneIndex:%d), column %d exceeds size(signals,2): %d\n', row, coneIndex, timeBins(end), size(signals,2));
+            if (timeBins(end)+ shiftToAlignWithScene <= size(signals,2)) && (timeBins(1)+shiftToAlignWithScene >= 1)
+                signals(coneIndex, timeBins + shiftToAlignWithScene) = X(row, startingColumn:endingColumn);
             end 
         end % coneIndex
     end % row
