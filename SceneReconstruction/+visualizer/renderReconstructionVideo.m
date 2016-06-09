@@ -24,7 +24,7 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
     colormap(grayRedLUT); 
     
     % Generate colors for L,M,S contrast traces
-    LconeContrastColor = [255 200 180]/255;
+    LconeContrastColor = [255 170 190]/255;
     MconeContrastColor = [120 255 224]/255;
     SconeContrastColor = [170 180 255]/255;
     
@@ -76,9 +76,10 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
     comboInputAndReconstructionTracesForTargetMcontrastDecoderPlot = [];
     comboInputAndReconstructionTracesForTargetScontrastDecoderPlot = [];
     
-    reconstructedVSinputLcontrastPlot = [];
-    reconstructedVSinputMcontrastPlot = [];
-    reconstructedVSinputScontrastPlot = [];
+    % The reconstructed/input cone contrast and ratios scatter plots
+    reconstructedVSinputContrastPlot = [];
+    reconstructedVSinputLvsMratioPlot = [];
+    reconstructedVSinputSvsLMratioPlot = [];
     
     previousSceneIndex = 0;
     for tBin = recentTbinsNum+1:numel(timeAxis)
@@ -96,13 +97,16 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             
             previousSceneIndex = sceneIndexSequence(tBin);
             
+            % The decoder region outline
+            theDecodedRegionOutline = struct('x', sensorData.decodedImageOutlineX, 'y', sensorData.decodedImageOutlineY, 'color', [0 0 0]);
+            
             % The full input scene
             sensorOutline.x = sensorData.spatialOutlineX + sensorPositionSequence(tBin,1);
             sensorOutline.y = sensorData.spatialOutlineY + sensorPositionSequence(tBin,2);
-            fullSceneSensorOutlinePlot = initializeFullScenePlot(axesDictionary('fullInputScene'), sceneData, sensorOutline);
-            
-            % The decoder region outline
-            theDecodedRegionOutline = struct('x', sensorData.decodedImageOutlineX, 'y', sensorData.decodedImageOutlineY, 'color', [0 0 1]);
+            decodedRegionOutline.x = sensorData.decodedImageOutlineX + + sensorPositionSequence(tBin,1);
+            decodedRegionOutline.y = sensorData.decodedImageOutlineY + + sensorPositionSequence(tBin,2);
+            decodedRegionOutline.color = theDecodedRegionOutline.color;
+            [fullSceneSensorOutlinePlot, fullSceneDecodedRegionOutlinePlot] = initializeFullScenePlot(axesDictionary('fullInputScene'), sceneData, sensorOutline, decodedRegionOutline);
         end
         
 
@@ -115,10 +119,16 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
         % Update sensor position in optical image
         sensorOutline.x = sensorData.spatialOutlineX + sensorPositionSequence(tBin,1);
         sensorOutline.y = sensorData.spatialOutlineY + sensorPositionSequence(tBin,2);
-        updateFullScenePlot(axesDictionary('fullInputScene'), fullSceneSensorOutlinePlot, sensorOutline, sceneData.fullSceneSpatialSupportX, sceneData.fullSceneSpatialSupportY);
+        decodedRegionOutline.x = sensorData.decodedImageOutlineX + sensorPositionSequence(tBin,1);
+        decodedRegionOutline.y = sensorData.decodedImageOutlineY + sensorPositionSequence(tBin,2);
+        updateFullScenePlot(axesDictionary('fullInputScene'), fullSceneSensorOutlinePlot, sensorOutline, fullSceneDecodedRegionOutlinePlot, decodedRegionOutline, sceneData.fullSceneSpatialSupportX, sceneData.fullSceneSpatialSupportY);
         
         
+        % TOP PLOTS
         % The luminance map of the input optical image patch
+        decodedRegionOutline = theDecodedRegionOutline;
+        decodedRegionOutline.x = decodedRegionOutline.x + sensorPositionSequence(tBin,1);
+        decodedRegionOutline.y = decodedRegionOutline.y + sensorPositionSequence(tBin,2);
         if (isempty(inputOpticalImageLuminanceMapPlot))
             xTicks = [];
             yTicks = [];
@@ -126,10 +136,9 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             ylabelString = 'optical image';
             titleString = 'luminance map';
             colorbarStruct = [];
-            axesColor = [1 0 0];
-            decodedRegionOutline = []; % theDecodedRegionOutline;
+            axesColor = [0 0 0];
             identifyTargetDecoderPositions = false;
-            inputOpticalImageLuminanceMapPlot = initializeDecodedImagePlot(...
+            [inputOpticalImageLuminanceMapPlot, inputOpticalImageLuminanceMapDecodedRegionOutlinePlot] = initializeDecodedImagePlot(...
                   axesDictionary('inputOpticalImageIlluminanceMap'), titleString, ...
                   oiData.LuminanceMap, luminanceRange,...
                   sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], sensorPositionSequence(tBin,2)+ [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
@@ -139,10 +148,13 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             set(axesDictionary('inputOpticalImageIlluminanceMap'), ...
                 'XLim', sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], ...
                 'YLim', sensorPositionSequence(tBin,2)+ [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)]);
-            %set(inputOpticalImageLuminanceMapPlot, 'CData', RGBsettingsAndLuminanceData.inputOpticalImageLuminanceMap);
+            set(inputOpticalImageLuminanceMapDecodedRegionOutlinePlot, 'XData', decodedRegionOutline.x, 'YData', decodedRegionOutline.y);
         end
         
         % The RGB rendition  of the input optical image patch
+        decodedRegionOutline = theDecodedRegionOutline;
+        decodedRegionOutline.x = decodedRegionOutline.x + sensorPositionSequence(tBin,1);
+        decodedRegionOutline.y = decodedRegionOutline.y + sensorPositionSequence(tBin,2);
         if (isempty(inputOpticalImageRGBrenditionPlot))
             xTicks = [];
             yTicks = [];
@@ -150,10 +162,9 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             ylabelString = '';
             titleString = 'RGB rendition';
             colorbarStruct = [];
-            axesColor = [1 0 0];
-            decodedRegionOutline = []; % theDecodedRegionOutline;
+            axesColor = [0 0 0];
             identifyTargetDecoderPositions = false;
-            inputOpticalImageRGBrenditionPlot = initializeDecodedImagePlot(...
+            [inputOpticalImageRGBrenditionPlot, inputOpticalImageRGBrenditionDecodedRegionOutlinePlot] = initializeDecodedImagePlot(...
                   axesDictionary('inputOpticalImageRGBrendition'), titleString, ...
                   oiData.RGBforRenderingDisplay, [0 1],...
                   sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], sensorPositionSequence(tBin,2)+ [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
@@ -163,19 +174,32 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             set(axesDictionary('inputOpticalImageRGBrendition'), ...
                 'XLim', sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], ...
                 'YLim', sensorPositionSequence(tBin,2)+ [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)]);
-            % set(inputOpticalImageRGBrenditionPlot, 'CData', RGBsettingsAndLuminanceData.inputOpticalImageRGBforRenderingDisplay);
+            set(inputOpticalImageRGBrenditionDecodedRegionOutlinePlot, 'XData', decodedRegionOutline.x, 'YData', decodedRegionOutline.y);
         end
         
         
+        % MIDDLE
         % The luminance map of the input scene patch
+        decodedRegionOutline = theDecodedRegionOutline;
+        decodedRegionOutline.x = decodedRegionOutline.x + sensorPositionSequence(tBin,1);
+        decodedRegionOutline.y = decodedRegionOutline.y + sensorPositionSequence(tBin,2);
         if (isempty(inputSceneLuminanceMapPlot))
             xTicks = []; yTicks = [];
             xlabelString = ''; ylabelString = 'input scene';
-            titleString = ''; colorbarStruct = [];
-            axesColor = [1 0 0];
-            decodedRegionOutline = []; % theDecodedRegionOutline;
+            titleString = ''; 
+            colorbarStruct = struct(...
+                'position', 'South', ...
+                'ticks', luminanceRangeTicks, ...
+                'tickLabels', luminanceRangeTickLabels, ...
+                'orientation', 'horizontal', ...
+                'title', '', ...
+                'fontSize', 14, ...
+                'fontName', 'Menlo', ...
+                'color', [0 1 0.7]...
+                );
+            axesColor = [0 0 0];
             identifyTargetDecoderPositions = false;
-            inputSceneLuminanceMapPlot = initializeDecodedImagePlot(...
+            [inputSceneLuminanceMapPlot, inputSceneLuminanceMapDecodedRegionOutlinePlot] = initializeDecodedImagePlot(...
                   axesDictionary('inputSceneLuminanceMap'), titleString, ...
                   sceneData.LuminanceMap, luminanceRange,...
                   sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], sensorPositionSequence(tBin,2)+ [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
@@ -185,10 +209,13 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             set(axesDictionary('inputSceneLuminanceMap'), ...
                 'XLim', sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], ...
                 'YLim', sensorPositionSequence(tBin,2)+ [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)]);
-            %set(inputSceneLuminanceMapPlot, 'CData', RGBsettingsAndLuminanceData.inputLuminanceMap);
+            set(inputSceneLuminanceMapDecodedRegionOutlinePlot, 'XData', decodedRegionOutline.x, 'YData', decodedRegionOutline.y);
         end
         
         % The RGB rendition of the input scene patch
+        decodedRegionOutline = theDecodedRegionOutline;
+        decodedRegionOutline.x = decodedRegionOutline.x + sensorPositionSequence(tBin,1);
+        decodedRegionOutline.y = decodedRegionOutline.y + sensorPositionSequence(tBin,2);
         if (isempty(inputSceneRGBrenditionPlot))
             xTicks = [];
             yTicks = [];
@@ -196,10 +223,9 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             ylabelString = '';
             titleString = '';
             colorbarStruct = [];
-            axesColor = [1 0 0];
-            decodedRegionOutline = [];
+            axesColor = [0 0 0];
             identifyTargetDecoderPositions = false;
-            inputSceneRGBrenditionPlot = initializeDecodedImagePlot(...
+            [inputSceneRGBrenditionPlot, inputSceneRGBrenditionDecodedRegionOutlinePlot] = initializeDecodedImagePlot(...
                   axesDictionary('inputSceneRGBrendition'), titleString, ...
                   sceneData.RGBforRenderingDisplay, [0 1],...
                   sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], sensorPositionSequence(tBin,2)+[sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
@@ -209,10 +235,11 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             set(axesDictionary('inputSceneRGBrendition'), ...
                 'XLim', sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], ...
                 'YLim', sensorPositionSequence(tBin,2)+ [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)]);
-            %set(inputSceneRGBrenditionPlot, 'CData', RGBsettingsAndLuminanceData.inputRGBforRenderingDisplay);
+            set(inputSceneRGBrenditionDecodedRegionOutlinePlot, 'XData', decodedRegionOutline.x, 'YData', decodedRegionOutline.y);
         end
         
         
+        % BOTTOM
         % The luminance map of the reconstructed scene patch
         if (isempty(reconstructedSceneLuminanceMapPlot))
             xTicks = [sensorData.decodedImageSpatialSupportX(1) 0 sensorData.decodedImageSpatialSupportX(end)];
@@ -220,20 +247,11 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             xlabelString = 'microns';
             ylabelString = 'reconstruction';
             titleString = ' ';
-            colorbarStruct = struct(...
-                'position', 'South', ...
-                'ticks', luminanceRangeTicks, ...
-                'tickLabels', luminanceRangeTickLabels, ...
-                'orientation', 'horizontal', ...
-                'title', '', ...
-                'fontSize', 14, ...
-                'fontName', 'Menlo', ...
-                'color', [0 1 1]...
-                );
+            colorbarStruct = [];
             axesColor = [0 0 0];
             decodedRegionOutline = []; % theDecodedRegionOutline;
             identifyTargetDecoderPositions = false;
-            reconstructedSceneLuminanceMapPlot = initializeDecodedImagePlot(...
+            [reconstructedSceneLuminanceMapPlot, ~] = initializeDecodedImagePlot(...
                     axesDictionary('reconstructedSceneLuminanceMap'), titleString, ...
                     RGBsettingsAndLuminanceData.reconstructedLuminanceMap , luminanceRange,...
                     [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
@@ -243,6 +261,7 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             set(reconstructedSceneLuminanceMapPlot, 'CData', RGBsettingsAndLuminanceData.reconstructedLuminanceMap);
         end
 
+        
         % The RGB rendition of the reconstructed scene patch
         if (isempty(reconstructedSceneRGBrenditionPlot))
             xTicks = [sensorData.decodedImageSpatialSupportX(1) 0 sensorData.decodedImageSpatialSupportX(end)];
@@ -254,7 +273,7 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             axesColor = [0 0 0];
             decodedRegionOutline = []; % theDecodedRegionOutline;
             identifyTargetDecoderPositions = false;
-            reconstructedSceneRGBrenditionPlot = initializeDecodedImagePlot(...
+            [reconstructedSceneRGBrenditionPlot, ~] = initializeDecodedImagePlot(...
                   axesDictionary('reconstructedSceneRGBrendition'), titleString, ...
                   RGBsettingsAndLuminanceData.reconstructedRGBforRenderingDisplay , [0 1],...
                   [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
@@ -264,6 +283,9 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             set(reconstructedSceneRGBrenditionPlot, 'CData', RGBsettingsAndLuminanceData.reconstructedRGBforRenderingDisplay);
         end
         
+        
+        
+        % CENTER
         % The instantaneous photocurrent of the @os mosaic 
         if (isempty(instantaneousSensorXYactivationPlot))
             xTicks = [sensorData.spatialSupportX(1) 0 sensorData.spatialSupportX(end)];
@@ -281,8 +303,9 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
                 'fontName', 'Menlo', ...
                 'color', [0 0 0]...
                 );
-            axesColor = [1 0 0];
+            axesColor = [0 0 0];
             decodedRegionOutline = theDecodedRegionOutline;
+            identifyTargetDecoderPositions = true;
             instantaneousSensorXYactivationPlot = initializeDecodedImagePlot(...
                   axesDictionary('instantaneousSensorXYactivation'), titleString, ...
                   squeeze(responseSequence(:,:,tBin)), outerSegmentResponseRange,...
@@ -300,9 +323,9 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
         if (isempty(sensorXTtracesForTargetLcontrastDecoderPlot))
             xTicks = recentTimeRange(1):100:recentTimeRange(end);
             yTicks = outerSegmentResponseRange(1):20:outerSegmentResponseRange(end);
-            xLabelString = ''; yLabelString = ''; xTickLabels = {}; yTickLabels = {};
+            xLabelString = ''; yLabelString = 'photocurrent (pA)'; xTickLabels = {}; yTickLabels = sprintf('%+2.0f\n', yTicks);
             titleString  = ''; 
-            addScaleBars = true; backgroundColor = [1 1 1];
+            addScaleBars = false; backgroundColor = [1 1 1];
             sensorXTtracesForTargetLcontrastDecoderPlot = initializeSensorTracesPlot(...
                 axesDictionary('sensorXTtracesForTargetLcontrastDecoder'), titleString, ...
                 recentTime, traces, [1 0 0], backgroundColor, addScaleBars, recentTimeRange, outerSegmentResponseRange, ...
@@ -334,7 +357,7 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
         if (isempty(sensorXTtracesForTargetScontrastDecoderPlot))
             xTicks = recentTimeRange(1):100:recentTimeRange(end);
             yTicks = outerSegmentResponseRange(1):20:outerSegmentResponseRange(end);
-            xLabelString = ''; yLabelString = ''; xTickLabels = {}; yTickLabels = sprintf('%+2.0f\n', yTicks);
+            xLabelString = ''; yLabelString = ''; xTickLabels = {}; yTickLabels = {};
             titleString  = '';
             addScaleBars = false; backgroundColor = [1 1 1];
             sensorXTtracesForTargetScontrastDecoderPlot = initializeSensorTracesPlot(...
@@ -351,16 +374,17 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
         recentInputContrastTrace = squeeze(LMScontrastInput(sensorData.targetLCone.nearestDecoderRowColCoord(1), sensorData.targetLCone.nearestDecoderRowColCoord(2), 1, recentTbins));
         if (isempty(comboInputAndReconstructionTracesForTargetLcontrastDecoderPlot))
             xTicks = recentTimeRange(1):100:recentTimeRange(end); xTickLabels = {};
-            yTicks = -1:1:4; yTickLabels = {};
-            xLabelString = ''; yLabelString = '';
+            yTicks = -1:1:4; yTickLabels = sprintf('%+2.0f\n', yTicks);
+            xLabelString = ''; yLabelString = 'Weber cone contrast';
             inputColor = LconeContrastColor;
             reconstructionColor = [0 0 0];
             titleString  = '';
             backgroundColor = [1 1 1];
+            addScaleBars = true; 
             comboInputAndReconstructionTracesForTargetLcontrastDecoderPlot = initializeComboInputReconstructionTracesPlot(...
                 axesDictionary('inputAndReconstructionTracesForTargetLcontrastDecoder'), titleString, ...
                 recentTime, recentInputContrastTrace, recentReconstructedContrastTrace, ...
-                inputColor, reconstructionColor, backgroundColor, recentTimeRange, coneContrastRange, ...
+                inputColor, reconstructionColor, backgroundColor, addScaleBars, recentTimeRange, coneContrastRange, ...
                 xTicks, yTicks, xTickLabels, yTickLabels, xLabelString, yLabelString);
         else
             set(comboInputAndReconstructionTracesForTargetLcontrastDecoderPlot.input, 'YData', recentInputContrastTrace);
@@ -379,10 +403,11 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             reconstructionColor = [0 0 0];
             titleString  = ''; 
             backgroundColor = [1 1 1];
+            addScaleBars = false; 
             comboInputAndReconstructionTracesForTargetMcontrastDecoderPlot = initializeComboInputReconstructionTracesPlot(...
                 axesDictionary('inputAndReconstructionTracesForTargetMcontrastDecoder'), titleString, ...
                 recentTime, recentInputContrastTrace, recentReconstructedContrastTrace, ...
-                inputColor, reconstructionColor, backgroundColor, recentTimeRange, coneContrastRange, ...
+                inputColor, reconstructionColor, backgroundColor, addScaleBars, recentTimeRange, coneContrastRange, ...
                 xTicks, yTicks, xTickLabels, yTickLabels, xLabelString, yLabelString);
         else
             set(comboInputAndReconstructionTracesForTargetMcontrastDecoderPlot.input, 'YData', recentInputContrastTrace);
@@ -395,16 +420,17 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
         recentInputContrastTrace = squeeze(LMScontrastInput(sensorData.targetSCone.nearestDecoderRowColCoord(1), sensorData.targetSCone.nearestDecoderRowColCoord(2), 3, recentTbins));
         if (isempty(comboInputAndReconstructionTracesForTargetScontrastDecoderPlot))
             xTicks = recentTimeRange(1):100:recentTimeRange(end); xTickLabels = {};
-            yTicks = -1:1:4; yTickLabels = sprintf('%+2.0f\n', yTicks);
+            yTicks = -1:1:4; yTickLabels = {};
             xLabelString = ''; yLabelString = '';
             inputColor = SconeContrastColor;
             reconstructionColor = [0 0 0];
             titleString  = '';
             backgroundColor = [1 1 1];
+            addScaleBars = false; 
             comboInputAndReconstructionTracesForTargetScontrastDecoderPlot = initializeComboInputReconstructionTracesPlot(...
                 axesDictionary('inputAndReconstructionTracesForTargetScontrastDecoder'), titleString, ...
                 recentTime, recentInputContrastTrace, recentReconstructedContrastTrace, ...
-                inputColor, reconstructionColor, backgroundColor, recentTimeRange, coneContrastRange, ...
+                inputColor, reconstructionColor, backgroundColor, addScaleBars, recentTimeRange, coneContrastRange, ...
                 xTicks, yTicks, xTickLabels, yTickLabels, xLabelString, yLabelString);
         else
             set(comboInputAndReconstructionTracesForTargetScontrastDecoderPlot.input, 'YData', recentInputContrastTrace);
@@ -412,59 +438,64 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
         end
         
         
-        inputConeContrasts = squeeze(LMScontrastInput(:,:,1,tBin));
-        reconstructedConeContrasts = squeeze(LMScontrastReconstruction(:,:,1,tBin));
-        if (isempty(reconstructedVSinputLcontrastPlot))
+        inputConeContrasts = squeeze(LMScontrastInput(:,:,1:3,tBin));
+        reconstructedConeContrasts = squeeze(LMScontrastReconstruction(:,:,1:3,tBin));
+        if (isempty(reconstructedVSinputContrastPlot))
             titleString = '';
-            xLabelString = '';
-            yLabelString = '';
-            xTicks = -1:1:4; xTickLabels = sprintf('%+2.0f\n', yTicks);
+            xLabelString = 'scene LMS contrasts';
+            yLabelString = 'reconstr. LMS contrasts';
+            xTicks = -1:1:4; xTickLabels = sprintf('%+2.0f\n', xTicks);
             yTicks = -1:1:4; yTickLabels = sprintf('%+2.0f\n', yTicks);
-            markerColor = LconeContrastColor;
-            reconstructedVSinputLcontrastPlot = initializeContrastScatterPlot(...
-                axesDictionary('reconstructedVSinputLcontrast'), titleString, ...
-                inputConeContrasts(:), reconstructedConeContrasts(:), ...
-                coneContrastRange, markerColor, xTicks, yTicks, xTickLabels, yTickLabels, xLabelString, yLabelString);
+            markerColors = [LconeContrastColor; MconeContrastColor; SconeContrastColor];
+            backgroundColor = [1 1 1];
+            reconstructedVSinputContrastPlot = initializeContrastScatterPlot(...
+                axesDictionary('reconstructedVSinputContrasts'), titleString, ...
+                inputConeContrasts, reconstructedConeContrasts, ...
+                coneContrastRange, markerColors, backgroundColor, xTicks, yTicks, xTickLabels, yTickLabels, xLabelString, yLabelString);
         else
-            set(reconstructedVSinputLcontrastPlot, 'XData', inputConeContrasts(:), 'YData', reconstructedConeContrasts(:));
+            updateContrastScatterPlot(reconstructedVSinputContrastPlot, inputConeContrasts, reconstructedConeContrasts);
         end
         
         
-        inputConeContrasts = squeeze(LMScontrastInput(:,:,2,tBin));
-        reconstructedConeContrasts = squeeze(LMScontrastReconstruction(:,:,2,tBin));
-        if (isempty(reconstructedVSinputMcontrastPlot))
+        
+        inputContrastRatios = squeeze(LMScontrastInput(:,:,1,tBin)) ./ squeeze(LMScontrastInput(:,:,2,tBin));
+        reconstructedContrastRatios = squeeze(LMScontrastReconstruction(:,:,1,tBin)) ./ squeeze(LMScontrastReconstruction(:,:,2,tBin));
+        if (isempty(reconstructedVSinputLvsMratioPlot))
             titleString = '';
-            xLabelString = '';
-            yLabelString = '';
-            xTicks = -1:1:4; xTickLabels = sprintf('%+2.0f\n', yTicks);
-            yTicks = -1:1:4; yTickLabels = sprintf('%+2.0f\n', yTicks);
-            markerColor = MconeContrastColor;
-            reconstructedVSinputMcontrastPlot = initializeContrastScatterPlot(...
-                axesDictionary('reconstructedVSinputMcontrast'), titleString, ...
-                inputConeContrasts(:), reconstructedConeContrasts(:), ...
-                coneContrastRange, markerColor, xTicks, yTicks, xTickLabels, yTickLabels, xLabelString, yLabelString);
+            xLabelString = 'scene L:M cRatio';
+            yLabelString = 'reconstr. L:M cRatio';
+            contrastRatioRange = [-5 5];
+            xyTicks = contrastRatioRange(1)+1:2:contrastRatioRange(end)-1; xyTickLabels = sprintf('%+2.0f\n', xyTicks);
+            markerColor = [1 0.6 0.9]; 
+            backgroundColor = [1 1 1];
+            reconstructedVSinputLvsMratioPlot = initializeContrastScatterPlot(...
+                axesDictionary('reconstructedVSinputLvsMratios'), titleString, ...
+                inputContrastRatios, reconstructedContrastRatios, ...
+                contrastRatioRange, markerColor, backgroundColor, xyTicks, xyTicks, xyTickLabels, xyTickLabels, xLabelString, yLabelString);
         else
-            set(reconstructedVSinputMcontrastPlot, 'XData', inputConeContrasts(:), 'YData', reconstructedConeContrasts(:));
+            set(reconstructedVSinputLvsMratioPlot, 'XData', inputContrastRatios(:), 'YData', reconstructedContrastRatios(:));
         end
         
-
-        inputConeContrasts = squeeze(LMScontrastInput(:,:,3,tBin));
-        reconstructedConeContrasts = squeeze(LMScontrastReconstruction(:,:,3,tBin));
-        if (isempty(reconstructedVSinputScontrastPlot))
+        inputLUMContrast = squeeze(LMScontrastInput(:,:,1,tBin) + LMScontrastInput(:,:,2,tBin));
+        reconstructedLUMContrast = squeeze(LMScontrastReconstruction(:,:,1,tBin) + LMScontrastReconstruction(:,:,2,tBin));
+        inputContrastRatios = squeeze(LMScontrastInput(:,:,3,tBin)) ./ inputLUMContrast;
+        reconstructedContrastRatios = squeeze(LMScontrastReconstruction(:,:,3,tBin)) ./ reconstructedLUMContrast;
+        if (isempty(reconstructedVSinputSvsLMratioPlot))
             titleString = '';
-            xLabelString = '';
-            yLabelString = '';
-            xTicks = -1:1:4; xTickLabels = sprintf('%+2.0f\n', yTicks);
-            yTicks = -1:1:4; yTickLabels = sprintf('%+2.0f\n', yTicks);
-            markerColor = SconeContrastColor;
-            reconstructedVSinputScontrastPlot = initializeContrastScatterPlot(...
-                axesDictionary('reconstructedVSinputScontrast'), titleString, ...
-                inputConeContrasts(:), reconstructedConeContrasts(:), ...
-                coneContrastRange, markerColor, xTicks, yTicks, xTickLabels, yTickLabels, xLabelString, yLabelString);
+            xLabelString = 'scene S:(L+M) cRatio';
+            yLabelString = 'reconstr. S:(L+M) cRatio';
+            contrastRatioRange = [-7 7];
+            xyTicks = contrastRatioRange(1)+1:3:contrastRatioRange(end)-1; xyTickLabels = sprintf('%+2.0f\n', xyTicks);
+            markerColor = (1-SconeContrastColor).^0.3; 
+            backgroundColor = [1 1 1];
+            reconstructedVSinputSvsLMratioPlot = initializeContrastScatterPlot(...
+                axesDictionary('reconstructedVSinputSvsLMratios'), titleString, ...
+                inputContrastRatios, reconstructedContrastRatios, ...
+                contrastRatioRange, markerColor, backgroundColor, xyTicks, xyTicks, xyTickLabels, xyTickLabels, xLabelString, yLabelString);
         else
-            set(reconstructedVSinputScontrastPlot, 'XData', inputConeContrasts(:), 'YData', reconstructedConeContrasts(:));
+            set(reconstructedVSinputSvsLMratioPlot, 'XData', inputContrastRatios(:), 'YData', reconstructedContrastRatios(:));
         end
-
+        
         
         drawnow;
         videoOBJ.writeVideo(getframe(hFig));
@@ -474,26 +505,54 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
 end
 
 
-function contrastScatterPlot = initializeContrastScatterPlot(theAxes, titleString, inputContrasts, reconstructedContrasts, coneContrastRange, markerColor, ...
+function contrastScatterPlot = initializeContrastScatterPlot(theAxes, titleString, inputContrasts, reconstructedContrasts, coneContrastRange, markerColors, backgroundColor, ...
     xTicks, yTicks, xTickLabels, yTickLabels, xLabelString, yLabelString)
 
     plot(theAxes, [0 0], [coneContrastRange(1) coneContrastRange(end)], 'k-', 'Color', [0.5 0.5 0.5], 'LineWidth', 1.5);
     hold(theAxes, 'on');
     plot(theAxes, [coneContrastRange(1) coneContrastRange(end)], [0 0], 'k-', 'Color', [0.5 0.5 0.5], 'LineWidth', 1.5); 
     plot(theAxes, [coneContrastRange(1) coneContrastRange(end)], [coneContrastRange(1) coneContrastRange(end)], 'k-', 'Color', [0.5 0.5 0.5], 'LineWidth', 1.5);
-    contrastScatterPlot = plot(theAxes,inputContrasts(:), reconstructedContrasts(:), ...
-        'ko', 'MarkerFaceColor', markerColor, 'MarkerEdgeColor', markerColor/2, 'MarkerSize', 8);
+    if (ndims(inputContrasts) == 2)
+        input = inputContrasts(:);
+        reconstruction = reconstructedContrasts(:);
+        markerColor = markerColors;
+        contrastScatterPlot = plot(theAxes, input(:), reconstruction(:), ...
+                'ko', 'MarkerFaceColor', markerColor, 'MarkerEdgeColor', markerColor/2, 'MarkerSize', 10);
+    elseif (ndims(inputContrasts) == 3)
+        for coneType = 1:3
+            input = inputContrasts(:,:,coneType);
+            reconstruction = reconstructedContrasts(:,:,coneType);
+            markerColor = squeeze(markerColors(coneType,:));
+            contrastScatterPlot(coneType) = plot(theAxes, input(:), reconstruction(:), ...
+                    'ko', 'MarkerFaceColor', markerColor, 'MarkerEdgeColor', markerColor/2, 'MarkerSize', 10);
+        end
+    end
     hold(theAxes, 'off');
-    set(theAxes, 'XLim', coneContrastRange, 'YLim', coneContrastRange);
-    set(theAxes, 'XTick', xTicks, 'XTickLabel', xTickLabels, 'YTick', yTicks, 'YTickLabel', yTickLabels);
-    set(theAxes, 'FontSize', 16, 'FontName', 'Menlo', 'LineWidth', 1.5);
+    set(theAxes, 'XLim', coneContrastRange, 'YLim', coneContrastRange, ...
+                 'XTick', xTicks, 'XTickLabel', xTickLabels, ...
+                 'YTick', yTicks, 'YTickLabel', yTickLabels, ...
+                 'XColor', [0.0 0.0 0.0], 'YColor', [0.0 0.0 0.0], ...
+                 'FontSize', 16, 'FontName', 'Menlo', ...
+                 'Color', backgroundColor, 'LineWidth', 1.5);
+    xlabel(theAxes, xLabelString, 'FontSize', 18, 'FontWeight', 'bold');
+    ylabel(theAxes, yLabelString, 'FontSize', 18, 'FontWeight', 'bold');
     axis(theAxes, 'square');
     box(theAxes, 'off'); grid(theAxes, 'off');
+    set(theAxes, 'GridLineStyle',  ':', 'GridColor', [0.5 0.5 0.8], 'GridAlpha', 0.8);
+    title(theAxes,  titleString,  'FontSize', 18, 'FontWeight', 'bold'); 
+end
+
+function updateContrastScatterPlot(contrastScatterPlot, inputContrasts, reconstructedContrasts)
+    for coneType = 1:3
+        input = inputContrasts(:,:,coneType);
+        reconstruction = reconstructedContrasts(:,:,coneType);
+        set(contrastScatterPlot(coneType), 'XData', input(:), 'YData', reconstruction(:));
+    end
 end
 
 
 function comboContrastPlot = initializeComboInputReconstructionTracesPlot(theAxes, titleString, recentTime, inputContrastTrace, reconstructedContrastTrace, ...
-                theInputColor, theReconstructionColor, backgroundColor, theXDataRange, theYDataRange, ...
+                theInputColor, theReconstructionColor, backgroundColor, addScaleBars, theXDataRange, theYDataRange, ...
                 xTicks, yTicks, xTickLabels, yTickLabels, xLabelString, yLabelString)
             
     comboContrastPlot.input = area(theAxes, recentTime, inputContrastTrace, 'EdgeColor', theInputColor/3, 'FaceColor', theInputColor, 'LineWidth', 1.5, 'BaseValue', 0, 'parent', theAxes);
@@ -501,6 +560,14 @@ function comboContrastPlot = initializeComboInputReconstructionTracesPlot(theAxe
     comboContrastPlot.reconstruction = plot(theAxes, recentTime, reconstructedContrastTrace, '-', 'Color', theReconstructionColor, 'LineWidth', 3);
     % Plot the baseline
     plot(theAxes, recentTime, recentTime*0, 'k-', 'Color', 1-backgroundColor, 'LineWidth', 1.5);
+    if (addScaleBars)
+        yo = yTicks(end) + 0.75;
+        dy = 0.5;
+        dx = 20;
+        plot(theAxes, [recentTime(1)+dx recentTime(1)+dx + 300], yo*[1 1], 'k-', 'Color', 1-backgroundColor, 'LineWidth', 2.0);
+        textXcoord = double(recentTime(1)+dx+70); textYcoord = yo-dy;
+        text(textXcoord, textYcoord, '300 msec', 'Parent', theAxes, 'Color', 1-backgroundColor, 'FontName', 'Menlo', 'FontSize', 16);
+    end
     hold(theAxes, 'off');
     set(theAxes, 'XLim', theXDataRange, 'YLim', [theYDataRange(1) theYDataRange(2)], ...
                  'XTick', xTicks, 'XTickLabel', xTickLabels, ...
@@ -510,10 +577,12 @@ function comboContrastPlot = initializeComboInputReconstructionTracesPlot(theAxe
                  'Color', backgroundColor, 'LineWidth', 1.5);
     %hL = legend({'input', 'reconstruction'}, 'Parent', theAxes);
    % set(hL, 'FontName', 'Menlo', 'FontSize', 16, 'Location', 'SouthWest')
-    box(theAxes, 'off'); grid(theAxes, 'off');
+    axis(theAxes, 'square');
+    box(theAxes, 'off'); grid(theAxes, 'on');
+    set(theAxes, 'GridLineStyle',  ':', 'GridColor', [0.5 0.5 0.8], 'GridAlpha', 0.8);
     xlabel(theAxes, xLabelString, 'FontSize', 18, 'FontWeight', 'bold');
     ylabel(theAxes, yLabelString, 'FontSize', 18, 'FontWeight', 'bold');
-    set(theAxes,'yAxisLocation','right');
+    set(theAxes,'yAxisLocation','left');
     title(theAxes,  titleString,  'FontSize', 18, 'FontWeight', 'bold'); 
     
 end
@@ -541,21 +610,25 @@ function osTracePlot = initializeSensorTracesPlot(theAxes, titleString, recentTi
                  'XColor', [0 0 0], 'YColor', [0 0 0], ...
                  'FontSize', 16, 'FontName', 'Menlo', ...
                  'Color', backgroundColor, 'LineWidth', 1.5);
-    box(theAxes, 'off'); grid(theAxes, 'off');
+    axis(theAxes, 'square');
+    box(theAxes, 'off'); grid(theAxes, 'on');
+    set(theAxes, 'GridLineStyle',  ':', 'GridColor', [0.5 0.5 0.8], 'GridAlpha', 0.8);
     xlabel(theAxes, xLabelString, 'FontSize', 18, 'FontWeight', 'bold');
     ylabel(theAxes, yLabelString, 'FontSize', 18, 'FontWeight', 'bold');
-    set(theAxes,'yAxisLocation','right');
+    set(theAxes,'yAxisLocation','left');
     title(theAxes,  titleString,  'FontSize', 18, 'FontWeight', 'bold');   
 end
 
 
-function decodedImagePlot = initializeDecodedImagePlot(theAxes, titleString, theCData, theCDataRange, theXDataRange, theYDataRange, spatialSupportX, spatialSupportY, decodedRegionOutline, identifyTargetDecoderPositions, sensorData, xTicks, yTicks, xLabelString, yLabelString, axesColor, cbarStruct)
+function [decodedImagePlot, decodedRegionOutlinePlot] = initializeDecodedImagePlot(theAxes, titleString, theCData, theCDataRange, theXDataRange, theYDataRange, spatialSupportX, spatialSupportY, decodedRegionOutline, identifyTargetDecoderPositions, sensorData, xTicks, yTicks, xLabelString, yLabelString, axesColor, cbarStruct)
 
     decodedImagePlot = imagesc(spatialSupportX, spatialSupportY, theCData, 'parent', theAxes);
     
     hold(theAxes, 'on');
     if (~isempty(decodedRegionOutline))
-        plot(theAxes, decodedRegionOutline.x, decodedRegionOutline.y, '-', 'Color', decodedRegionOutline.color, 'LineWidth', 2.0);
+        decodedRegionOutlinePlot = plot(theAxes, decodedRegionOutline.x, decodedRegionOutline.y, '-', 'Color', decodedRegionOutline.color, 'LineWidth', 2.0);
+    else
+        decodedRegionOutlinePlot = [];
     end
 
     if (identifyTargetDecoderPositions)
@@ -607,13 +680,13 @@ function decodedImagePlot = initializeDecodedImagePlot(theAxes, titleString, the
 end
 
 
-function updateFullScenePlot(theAxes, fullSceneSensorOutlinePlot, sensorOutline, spatialSupportX, spatialSupportY)
+function updateFullScenePlot(theAxes, fullSceneSensorOutlinePlot, sensorOutline, fullSceneDecodedRegionOutlinePlot, decodedRegionOutline, spatialSupportX, spatialSupportY)
     
     dx = max(sensorOutline.x) - min(sensorOutline.x);
     dy = max(sensorOutline.y) - min(sensorOutline.y);
     xo = min(sensorOutline.x) + dx/2;
     yo = min(sensorOutline.y) + dy/2;
-    windowWidth = 4*dx;
+    windowWidth = 2.5*dx;
     xLeft  = xo - windowWidth;
     xRight = xo + windowWidth;
     if (xLeft < min(spatialSupportX))
@@ -632,14 +705,15 @@ function updateFullScenePlot(theAxes, fullSceneSensorOutlinePlot, sensorOutline,
     set(theAxes, 'XLim', [xLeft xRight], 'YLim', yo + windowWidth*aspectRatio * [-1 1]);
     
     set(fullSceneSensorOutlinePlot, 'XData', sensorOutline.x, 'YData', sensorOutline.y);
-    
+    set(fullSceneDecodedRegionOutlinePlot, 'XData', decodedRegionOutline.x, 'YData', decodedRegionOutline.y);
 end
 
-function fullScenePlotSensorOutlinePlot = initializeFullScenePlot(theAxes, sceneData, sensorOutline)
+function [fullScenePlotSensorOutlinePlot, fullScenePlotDecodedRegionOutlinePlot] = initializeFullScenePlot(theAxes, sceneData, sensorOutline, decodedRegionOutline)
 
     imagesc(sceneData.fullSceneSpatialSupportX, sceneData.fullSceneSpatialSupportY, sceneData.RGBforRenderingDisplay, 'parent', theAxes);
     hold(theAxes, 'on');
     fullScenePlotSensorOutlinePlot = plot(theAxes, sensorOutline.x, sensorOutline.y, 'r-', 'LineWidth', 2.0);
+    fullScenePlotDecodedRegionOutlinePlot = plot(theAxes, decodedRegionOutline.x, decodedRegionOutline.y, '-', 'Color', decodedRegionOutline.color, 'LineWidth', 2.0);
     hold(theAxes, 'off');
     axis(theAxes, 'image'); axis(theAxes, 'ij');
     set(theAxes, 'XTick', [], 'YTick', []);
@@ -654,18 +728,18 @@ function [axesDictionary, hFig] = generateAxes(slideSize, slideCols, slideRows)
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
                'rowsNum', slideRows, ...
                'colsNum', slideCols, ...
-               'heightMargin',   0.02, ...
-               'widthMargin',    0.01, ...
+               'heightMargin',   0.0125, ...
+               'widthMargin',    0.005, ...
                'leftMargin',     0.015, ...
-               'rightMargin',    0.010, ...
-               'bottomMargin',   0.025, ...
-               'topMargin',      0.02);
+               'rightMargin',    0.00, ...
+               'bottomMargin',   0.05, ...
+               'topMargin',      0.01);
            
     axesDictionary = containers.Map();
     
     % The full input scene
     pos = subplotPosVectors(1,1).v;
-    axesDictionary('fullInputScene') = axes('parent', hFig, 'unit', 'normalized', 'position', [pos(1)+0.002 pos(2)+0.02 pos(3)*2.02 pos(4)]);
+    axesDictionary('fullInputScene') = axes('parent', hFig, 'unit', 'normalized', 'position', [pos(1)+0.003 pos(2)+0.02 pos(3)*1.98 pos(4)]);
     
     % The left 2 columns with luminance maps and RGB renditions
     axesDictionary('inputSceneLuminanceMap') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(3,1).v);
@@ -676,7 +750,8 @@ function [axesDictionary, hFig] = generateAxes(slideSize, slideCols, slideRows)
     axesDictionary('reconstructedSceneRGBrendition')  = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(4,2).v);
     
     % The middle: sensor activation
-    axesDictionary('instantaneousSensorXYactivation') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(2,3).v);
+    dx = 0; % 0.005;
+    axesDictionary('instantaneousSensorXYactivation') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(2,3).v + [dx 0 0 0]);
     
     % The right side: 
     % First row: L,M,S contrast decoder filters at 3 select spatial positions
@@ -685,19 +760,20 @@ function [axesDictionary, hFig] = generateAxes(slideSize, slideCols, slideRows)
     axesDictionary('targetScontastDecoderFilter') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,6).v);
     
     % Second row: outer-segment traces, weighted by the above L,M,S decoder spatial profiles
-    axesDictionary('sensorXTtracesForTargetLcontrastDecoder') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(2,4).v);
-    axesDictionary('sensorXTtracesForTargetMcontrastDecoder') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(2,5).v);
-    axesDictionary('sensorXTtracesForTargetScontrastDecoder') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(2,6).v);
+    dx = 0.02;
+    axesDictionary('sensorXTtracesForTargetLcontrastDecoder') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(2,4).v+[dx 0 0 0]);
+    axesDictionary('sensorXTtracesForTargetMcontrastDecoder') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(2,5).v+[dx 0 0 0]);
+    axesDictionary('sensorXTtracesForTargetScontrastDecoder') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(2,6).v+[dx 0 0 0]);
     
     % Third row: input and reconstructed L,M,S cone contrasts at the 3 chosen decoded locations
-    axesDictionary('inputAndReconstructionTracesForTargetLcontrastDecoder') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(3,4).v);
-    axesDictionary('inputAndReconstructionTracesForTargetMcontrastDecoder') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(3,5).v);
-    axesDictionary('inputAndReconstructionTracesForTargetScontrastDecoder') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(3,6).v);
+    axesDictionary('inputAndReconstructionTracesForTargetLcontrastDecoder') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(3,4).v+[dx 0 0 0]);
+    axesDictionary('inputAndReconstructionTracesForTargetMcontrastDecoder') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(3,5).v+[dx 0 0 0]);
+    axesDictionary('inputAndReconstructionTracesForTargetScontrastDecoder') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(3,6).v+[dx 0 0 0]);
     
     % Fourth row: instaneous scatter of reconstructed vs. input L,M,S cone contrasts at all decoded locations
-    axesDictionary('reconstructedVSinputLcontrast') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(4,4).v);
-    axesDictionary('reconstructedVSinputMcontrast') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(4,5).v);
-    axesDictionary('reconstructedVSinputScontrast') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(4,6).v);
+    axesDictionary('reconstructedVSinputContrasts') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(4,4).v+[dx 0 0 0]);
+    axesDictionary('reconstructedVSinputLvsMratios') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(4,5).v+[dx 0 0 0]);
+    axesDictionary('reconstructedVSinputSvsLMratios') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(4,6).v+[dx 0 0 0]);
 end
 
 function videoOBJ = generateVideoObject(videoFilename)
