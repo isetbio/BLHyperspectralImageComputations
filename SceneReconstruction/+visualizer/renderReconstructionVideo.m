@@ -477,10 +477,10 @@ end
 function contrastScatterPlot = initializeContrastScatterPlot(theAxes, titleString, inputContrasts, reconstructedContrasts, coneContrastRange, markerColor, ...
     xTicks, yTicks, xTickLabels, yTickLabels, xLabelString, yLabelString)
 
-    plot(theAxes, [0 0], [coneContrastRange(1) coneContrastRange(end)], 'k-', 'LineWidth', 1.5);
+    plot(theAxes, [0 0], [coneContrastRange(1) coneContrastRange(end)], 'k-', 'Color', [0.5 0.5 0.5], 'LineWidth', 1.5);
     hold(theAxes, 'on');
-    plot(theAxes, [coneContrastRange(1) coneContrastRange(end)], [0 0], 'k-', 'LineWidth', 1.5); 
-    plot(theAxes, [coneContrastRange(1) coneContrastRange(end)], [coneContrastRange(1) coneContrastRange(end)], 'k-', 'LineWidth', 1.5);
+    plot(theAxes, [coneContrastRange(1) coneContrastRange(end)], [0 0], 'k-', 'Color', [0.5 0.5 0.5], 'LineWidth', 1.5); 
+    plot(theAxes, [coneContrastRange(1) coneContrastRange(end)], [coneContrastRange(1) coneContrastRange(end)], 'k-', 'Color', [0.5 0.5 0.5], 'LineWidth', 1.5);
     contrastScatterPlot = plot(theAxes,inputContrasts(:), reconstructedContrasts(:), ...
         'ko', 'MarkerFaceColor', markerColor, 'MarkerEdgeColor', markerColor/2, 'MarkerSize', 8);
     hold(theAxes, 'off');
