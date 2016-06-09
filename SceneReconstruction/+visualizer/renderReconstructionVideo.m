@@ -8,15 +8,16 @@ function renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir, In
          oiLMScontrastInput, ...
          sceneBackgroundExcitation,  opticalImageBackgroundExcitation, ...
          sceneIndexSequence, sensorPositionSequence, responseSequence, ...
-         expParams, videoPostFix] = retrieveReconstructionData(sceneSetName, decodingDataDir, InSampleOrOutOfSample, computeSVDbasedLowRankFiltersAndPredictions);
+         expParams, svdIndex, SVDvarianceExplained, videoPostFix] = retrieveReconstructionData(sceneSetName, decodingDataDir, InSampleOrOutOfSample, computeSVDbasedLowRankFiltersAndPredictions);
     end
     
-    makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, sceneIndexSequence, sensorPositionSequence, responseSequence, expParams, videoPostFix);
+    [decoder.filters, decoder.peakTimeBins, decoder.spatioTemporalSupport, decoder.coneTypes] = retrieveDecoderData(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, svdIndex);
+    makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, sceneIndexSequence, sensorPositionSequence, responseSequence, decoder, SVDvarianceExplained, expParams, videoPostFix);
 end
 
 
 
-function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, sceneIndexSequence, sensorPositionSequence, responseSequence, expParams, videoPostFix)
+function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, sceneIndexSequence, sensorPositionSequence, responseSequence, decoder, SVDvarianceExplained, expParams, videoPostFix)
     
     % Get luminance colormap
     p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
@@ -87,13 +88,12 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
         recentTbins = tBin-recentTbinsNum:1:tBin;
         recentTime  = timeAxis(recentTbins)-timeAxis(recentTbins(end));
         recentTimeRange = [recentTime(1) recentTime(end)];
-        
             
         % Get the current scene data
         if (sceneIndexSequence(tBin) ~= previousSceneIndex)
             fprintf('Retrieving new scene data at time bin: %d\n', tBin);
             [sceneData, oiData, sensorData] = retrieveComputedDataForCurrentScene(expParams.sceneSetName, expParams.resultsDir, sceneIndexSequence(tBin), ...
-                renderingDisplay, boostFactorForOpticalImage, displayGamma, targetLdecoderXYcoords, targetMdecoderXYcoords, targetSdecoderXYcoords);
+                renderingDisplay, boostFactorForOpticalImage, displayGamma, targetLdecoderXYcoords, targetMdecoderXYcoords, targetSdecoderXYcoords, decoder);
             
             previousSceneIndex = sceneIndexSequence(tBin);
             
@@ -107,9 +107,8 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             decodedRegionOutline.y = sensorData.decodedImageOutlineY + + sensorPositionSequence(tBin,2);
             decodedRegionOutline.color = theDecodedRegionOutline.color;
             [fullSceneSensorOutlinePlot, fullSceneDecodedRegionOutlinePlot] = initializeFullScenePlot(axesDictionary('fullInputScene'), sceneData, sensorOutline, decodedRegionOutline);
+            
         end
-        
-
         
         % Convert the various LMS contrasts to RGB settings and luminances for the rendering display
         RGBsettingsAndLuminanceData = LMScontrastsToRGBsettingsAndLuminanceforRenderingDisplay(tBin, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, ...
@@ -137,13 +136,17 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             titleString = 'luminance map';
             colorbarStruct = [];
             axesColor = [0 0 0];
-            identifyTargetDecoderPositions = false;
+            identifyTargetDecoderPositions = true;
+            labelMosaicCenterUsingCrossHairs = true;
+            decoderSpatialFilterProfiles = [];
             [inputOpticalImageLuminanceMapPlot, inputOpticalImageLuminanceMapDecodedRegionOutlinePlot] = initializeDecodedImagePlot(...
                   axesDictionary('inputOpticalImageIlluminanceMap'), titleString, ...
                   oiData.LuminanceMap, luminanceRange,...
                   sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], sensorPositionSequence(tBin,2)+ [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
-                  oiData.fullOpticalImageSpatialSupportX, oiData.fullOpticalImageSpatialSupportY, decodedRegionOutline, identifyTargetDecoderPositions, sensorData,...
-                  xTicks, yTicks, xlabelString, ylabelString, axesColor, colorbarStruct);  
+                  oiData.fullOpticalImageSpatialSupportX, oiData.fullOpticalImageSpatialSupportY, ...
+                  decodedRegionOutline, identifyTargetDecoderPositions, labelMosaicCenterUsingCrossHairs, ...
+                  decoderSpatialFilterProfiles, sensorData,...
+                  xTicks, yTicks, xlabelString, ylabelString, axesColor, LconeContrastColor, MconeContrastColor, SconeContrastColor, colorbarStruct);  
         else
             set(axesDictionary('inputOpticalImageIlluminanceMap'), ...
                 'XLim', sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], ...
@@ -164,12 +167,16 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             colorbarStruct = [];
             axesColor = [0 0 0];
             identifyTargetDecoderPositions = false;
+            labelMosaicCenterUsingCrossHairs = false;
+            decoderSpatialFilterProfiles = [];
             [inputOpticalImageRGBrenditionPlot, inputOpticalImageRGBrenditionDecodedRegionOutlinePlot] = initializeDecodedImagePlot(...
                   axesDictionary('inputOpticalImageRGBrendition'), titleString, ...
                   oiData.RGBforRenderingDisplay, [0 1],...
                   sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], sensorPositionSequence(tBin,2)+ [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
-                  oiData.fullOpticalImageSpatialSupportX, oiData.fullOpticalImageSpatialSupportY, decodedRegionOutline, identifyTargetDecoderPositions, sensorData, ...
-                  xTicks, yTicks, xlabelString, ylabelString, axesColor, colorbarStruct);
+                  oiData.fullOpticalImageSpatialSupportX, oiData.fullOpticalImageSpatialSupportY, ...
+                  decodedRegionOutline, identifyTargetDecoderPositions, labelMosaicCenterUsingCrossHairs, ...
+                  decoderSpatialFilterProfiles, sensorData, ...
+                  xTicks, yTicks, xlabelString, ylabelString, axesColor, LconeContrastColor, MconeContrastColor, SconeContrastColor, colorbarStruct);
         else
             set(axesDictionary('inputOpticalImageRGBrendition'), ...
                 'XLim', sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], ...
@@ -199,12 +206,16 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
                 );
             axesColor = [0 0 0];
             identifyTargetDecoderPositions = false;
+            labelMosaicCenterUsingCrossHairs = false;
+            decoderSpatialFilterProfiles = [];
             [inputSceneLuminanceMapPlot, inputSceneLuminanceMapDecodedRegionOutlinePlot] = initializeDecodedImagePlot(...
                   axesDictionary('inputSceneLuminanceMap'), titleString, ...
                   sceneData.LuminanceMap, luminanceRange,...
                   sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], sensorPositionSequence(tBin,2)+ [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
-                  sceneData.fullSceneSpatialSupportX, sceneData.fullSceneSpatialSupportY,  decodedRegionOutline, identifyTargetDecoderPositions, sensorData, ...
-                  xTicks, yTicks, xlabelString, ylabelString, axesColor, colorbarStruct);  
+                  sceneData.fullSceneSpatialSupportX, sceneData.fullSceneSpatialSupportY,  ...
+                  decodedRegionOutline, identifyTargetDecoderPositions, labelMosaicCenterUsingCrossHairs, ...
+                  decoderSpatialFilterProfiles, sensorData, ...
+                  xTicks, yTicks, xlabelString, ylabelString, axesColor, LconeContrastColor, MconeContrastColor, SconeContrastColor, colorbarStruct);  
         else
             set(axesDictionary('inputSceneLuminanceMap'), ...
                 'XLim', sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], ...
@@ -225,12 +236,16 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             colorbarStruct = [];
             axesColor = [0 0 0];
             identifyTargetDecoderPositions = false;
+            labelMosaicCenterUsingCrossHairs = false;
+            decoderSpatialFilterProfiles = [];
             [inputSceneRGBrenditionPlot, inputSceneRGBrenditionDecodedRegionOutlinePlot] = initializeDecodedImagePlot(...
                   axesDictionary('inputSceneRGBrendition'), titleString, ...
                   sceneData.RGBforRenderingDisplay, [0 1],...
                   sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], sensorPositionSequence(tBin,2)+[sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
-                  sceneData.fullSceneSpatialSupportX, sceneData.fullSceneSpatialSupportY, decodedRegionOutline, identifyTargetDecoderPositions, sensorData, ...
-                  xTicks, yTicks, xlabelString, ylabelString, axesColor, colorbarStruct);  
+                  sceneData.fullSceneSpatialSupportX, sceneData.fullSceneSpatialSupportY, ...
+                  decodedRegionOutline, identifyTargetDecoderPositions, labelMosaicCenterUsingCrossHairs, ...
+                  decoderSpatialFilterProfiles, sensorData, ...
+                  xTicks, yTicks, xlabelString, ylabelString, axesColor, LconeContrastColor, MconeContrastColor, SconeContrastColor, colorbarStruct);  
         else
             set(axesDictionary('inputSceneRGBrendition'), ...
                 'XLim', sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], ...
@@ -251,12 +266,16 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             axesColor = [0 0 0];
             decodedRegionOutline = []; % theDecodedRegionOutline;
             identifyTargetDecoderPositions = false;
+            labelMosaicCenterUsingCrossHairs = false;
+            decoderSpatialFilterProfiles = [];
             [reconstructedSceneLuminanceMapPlot, ~] = initializeDecodedImagePlot(...
                     axesDictionary('reconstructedSceneLuminanceMap'), titleString, ...
                     RGBsettingsAndLuminanceData.reconstructedLuminanceMap , luminanceRange,...
                     [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
-                    sensorData.decodedImageSpatialSupportX, sensorData.decodedImageSpatialSupportY,  decodedRegionOutline, identifyTargetDecoderPositions, sensorData, ...
-                    xTicks, yTicks, xlabelString, ylabelString, axesColor, colorbarStruct);
+                    sensorData.decodedImageSpatialSupportX, sensorData.decodedImageSpatialSupportY,  ...
+                    decodedRegionOutline, identifyTargetDecoderPositions, labelMosaicCenterUsingCrossHairs, ...
+                    decoderSpatialFilterProfiles, sensorData, ...
+                    xTicks, yTicks, xlabelString, ylabelString, axesColor, LconeContrastColor, MconeContrastColor, SconeContrastColor, colorbarStruct);
         else
             set(reconstructedSceneLuminanceMapPlot, 'CData', RGBsettingsAndLuminanceData.reconstructedLuminanceMap);
         end
@@ -273,24 +292,67 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             axesColor = [0 0 0];
             decodedRegionOutline = []; % theDecodedRegionOutline;
             identifyTargetDecoderPositions = false;
+            labelMosaicCenterUsingCrossHairs = false;
             [reconstructedSceneRGBrenditionPlot, ~] = initializeDecodedImagePlot(...
                   axesDictionary('reconstructedSceneRGBrendition'), titleString, ...
                   RGBsettingsAndLuminanceData.reconstructedRGBforRenderingDisplay , [0 1],...
                   [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
-                  sensorData.decodedImageSpatialSupportX, sensorData.decodedImageSpatialSupportY, decodedRegionOutline, identifyTargetDecoderPositions, sensorData, ...
-                  xTicks, yTicks, xlabelString, ylabelString, axesColor, colorbarStruct);
+                  sensorData.decodedImageSpatialSupportX, sensorData.decodedImageSpatialSupportY, ...
+                  decodedRegionOutline, identifyTargetDecoderPositions, labelMosaicCenterUsingCrossHairs, ...
+                  decoderSpatialFilterProfiles, sensorData, ...
+                  xTicks, yTicks, xlabelString, ylabelString, axesColor, LconeContrastColor, MconeContrastColor, SconeContrastColor, colorbarStruct);
         else
             set(reconstructedSceneRGBrenditionPlot, 'CData', RGBsettingsAndLuminanceData.reconstructedRGBforRenderingDisplay);
         end
         
         
         
+        if (tBin == recentTbinsNum+1)
+            % The Decoder's spatial filter plots 
+            xTicks = []; 
+            yTicks = []; % [sensorData.spatialSupportY(1) 0 sensorData.spatialSupportY(end)];
+            xlabelString = '';
+            ylabelString = ''; % 'microns';
+            titleStrings = {'Lcontrast decoder', 'Mcontrast decoder', 'Scontrast decoder'};
+            decodedRegionOutline = [];
+            labelMosaicCenterUsingCrossHairs = true;
+            axesColor = [0 0 0];
+            backgroundColor = [1 1 1];
+            theDecoderSpatialFilterProfiles = initializeDecoderPlots(...
+                    axesDictionary('targetLcontastDecoderFilter'), ...
+                    axesDictionary('targetMcontastDecoderFilter'), ...
+                    axesDictionary('targetScontastDecoderFilter'), ...
+                    decoder, SVDvarianceExplained, ...
+                    sensorData.targetLCone, sensorData.targetMCone, sensorData.targetSCone, ...
+                    [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
+                    decodedRegionOutline, labelMosaicCenterUsingCrossHairs, xTicks, yTicks, xlabelString, ylabelString, titleStrings, axesColor, backgroundColor , LconeContrastColor, MconeContrastColor, SconeContrastColor);
+        
+        
+            % The LMS cone mosaic
+            titleString = '';
+            xTicks = [sensorData.spatialSupportX(1) 0 sensorData.spatialSupportX(end)]; 
+            yTicks = []; % [sensorData.spatialSupportY(1) 0 sensorData.spatialSupportY(end)];
+            xlabelString = 'microns';
+            ylabelString = '';
+            axesColor = [0 0 0];
+            backgroundColor = [1 1 1];
+            decodedRegionOutline = [];
+            labelMosaicCenterUsingCrossHairs = true;
+            
+            initializeConeMosaicPlot(axesDictionary('LMSmosaic'), titleString, sensorData,...
+                [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
+                sensorData.spatialSupportX, sensorData.spatialSupportY, ...
+                decodedRegionOutline,  labelMosaicCenterUsingCrossHairs, LconeContrastColor, MconeContrastColor, SconeContrastColor, ...
+                xTicks, yTicks, xlabelString, ylabelString, axesColor, backgroundColor);
+        end
+        
+        
         % CENTER
         % The instantaneous photocurrent of the @os mosaic 
         if (isempty(instantaneousSensorXYactivationPlot))
-            xTicks = [sensorData.spatialSupportX(1) 0 sensorData.spatialSupportX(end)];
+            xTicks = [];
             yTicks = [];
-            xlabelString = 'microns';
+            xlabelString = '';
             ylabelString = '';
             titleString = sprintf('photocurrent map\n%s, t: %2.2f sec', expParams.outerSegmentParams.type, timeAxis(tBin)/1000);
             colorbarStruct = struct(...
@@ -306,18 +368,23 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             axesColor = [0 0 0];
             decodedRegionOutline = theDecodedRegionOutline;
             identifyTargetDecoderPositions = true;
+            labelMosaicCenterUsingCrossHairs = false;
+            decoderSpatialFilterProfiles = theDecoderSpatialFilterProfiles;
             instantaneousSensorXYactivationPlot = initializeDecodedImagePlot(...
                   axesDictionary('instantaneousSensorXYactivation'), titleString, ...
                   squeeze(responseSequence(:,:,tBin)), outerSegmentResponseRange,...
                   [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
-                  sensorData.spatialSupportX, sensorData.spatialSupportY,  decodedRegionOutline, identifyTargetDecoderPositions, sensorData, ...
-                  xTicks, yTicks, xlabelString, ylabelString, axesColor, colorbarStruct);
+                  sensorData.spatialSupportX, sensorData.spatialSupportY,  decodedRegionOutline, identifyTargetDecoderPositions, labelMosaicCenterUsingCrossHairs, ...
+                  decoderSpatialFilterProfiles, sensorData, xTicks, yTicks, xlabelString, ylabelString, axesColor, LconeContrastColor, MconeContrastColor, SconeContrastColor, colorbarStruct);
         else
             set(instantaneousSensorXYactivationPlot, 'CData', squeeze(responseSequence(:,:,tBin)));
             title(axesDictionary('instantaneousSensorXYactivation'),  sprintf('photocurrent map\n%s, t: %2.2f sec', expParams.outerSegmentParams.type, timeAxis(tBin)/1000));
         end
         
-       
+        
+        
+        
+        
         % The photocurrent traces for the target Lcone
         traces = squeeze(responseSequence(sensorData.targetLCone.rowcolCoord(1), sensorData.targetLCone.rowcolCoord(2), recentTbins));
         if (isempty(sensorXTtracesForTargetLcontrastDecoderPlot))
@@ -328,7 +395,7 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             addScaleBars = false; backgroundColor = [1 1 1];
             sensorXTtracesForTargetLcontrastDecoderPlot = initializeSensorTracesPlot(...
                 axesDictionary('sensorXTtracesForTargetLcontrastDecoder'), titleString, ...
-                recentTime, traces, [1 0 0], backgroundColor, addScaleBars, recentTimeRange, outerSegmentResponseRange, ...
+                recentTime, traces, [0 0 0], backgroundColor, addScaleBars, recentTimeRange, outerSegmentResponseRange, ...
                 xTicks, yTicks, xTickLabels, yTickLabels, xLabelString, yLabelString);
         else
             set(sensorXTtracesForTargetLcontrastDecoderPlot, 'YData', traces);
@@ -345,7 +412,7 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             addScaleBars = false; backgroundColor = [1 1 1];
             sensorXTtracesForTargetMcontrastDecoderPlot = initializeSensorTracesPlot(...
                 axesDictionary('sensorXTtracesForTargetMcontrastDecoder'), titleString, ...
-                recentTime, traces, [1 0 0], backgroundColor, addScaleBars, recentTimeRange, outerSegmentResponseRange, ...
+                recentTime, traces, [0 0 0], backgroundColor, addScaleBars, recentTimeRange, outerSegmentResponseRange, ...
                 xTicks, yTicks, xTickLabels, yTickLabels, xLabelString, yLabelString);
         else
             set(sensorXTtracesForTargetMcontrastDecoderPlot, 'YData', traces);
@@ -362,7 +429,7 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             addScaleBars = false; backgroundColor = [1 1 1];
             sensorXTtracesForTargetScontrastDecoderPlot = initializeSensorTracesPlot(...
                 axesDictionary('sensorXTtracesForTargetScontrastDecoder'), titleString, ...
-                recentTime, traces, [1 0 0], backgroundColor, addScaleBars, recentTimeRange, outerSegmentResponseRange, ...
+                recentTime, traces, [0 0 0], backgroundColor, addScaleBars, recentTimeRange, outerSegmentResponseRange, ...
                 xTicks, yTicks, xTickLabels, yTickLabels, xLabelString, yLabelString);
         else
             set(sensorXTtracesForTargetScontrastDecoderPlot, 'YData', traces);
@@ -620,7 +687,9 @@ function osTracePlot = initializeSensorTracesPlot(theAxes, titleString, recentTi
 end
 
 
-function [decodedImagePlot, decodedRegionOutlinePlot] = initializeDecodedImagePlot(theAxes, titleString, theCData, theCDataRange, theXDataRange, theYDataRange, spatialSupportX, spatialSupportY, decodedRegionOutline, identifyTargetDecoderPositions, sensorData, xTicks, yTicks, xLabelString, yLabelString, axesColor, cbarStruct)
+function [decodedImagePlot, decodedRegionOutlinePlot] = initializeDecodedImagePlot(theAxes, titleString, theCData, theCDataRange, theXDataRange, theYDataRange, spatialSupportX, spatialSupportY, ...
+    decodedRegionOutline, identifyTargetDecoderPositions, labelMosaicCenterUsingCrossHairs, decoderContours, sensorData, ...
+    xTicks, yTicks, xLabelString, yLabelString, axesColor, LconeContrastColor, MconeContrastColor, SconeContrastColor, cbarStruct)
 
     decodedImagePlot = imagesc(spatialSupportX, spatialSupportY, theCData, 'parent', theAxes);
     
@@ -631,26 +700,48 @@ function [decodedImagePlot, decodedRegionOutlinePlot] = initializeDecodedImagePl
         decodedRegionOutlinePlot = [];
     end
 
+
     if (identifyTargetDecoderPositions)
         % Identify the target decoder locations
         plot(theAxes, ...
              sensorData.decodedImageSpatialSupportX(sensorData.targetLCone.nearestDecoderRowColCoord(2)), ...
              sensorData.decodedImageSpatialSupportY(sensorData.targetLCone.nearestDecoderRowColCoord(1)), ...
-             'r+', 'LineWidth', 2.0, 'MarkerSize', 14, 'MarkerFaceColor', [1 0 0], 'MarkerEdgeColor', [1 0 0]);
+             's', 'LineWidth', 2.0, 'MarkerSize', 20, 'MarkerFaceColor', 'none', 'MarkerEdgeColor', LconeContrastColor);
         plot(theAxes, ...
              sensorData.decodedImageSpatialSupportX(sensorData.targetMCone.nearestDecoderRowColCoord(2)), ...
              sensorData.decodedImageSpatialSupportY(sensorData.targetMCone.nearestDecoderRowColCoord(1)), ...
-             'r+', 'LineWidth', 2.0, 'MarkerSize', 14, 'MarkerFaceColor', [0 1 0], 'MarkerEdgeColor', [0 1 0]);
+             's', 'LineWidth', 2.0, 'MarkerSize', 20, 'MarkerFaceColor', 'none', 'MarkerEdgeColor', MconeContrastColor);
         plot(theAxes, ...
              sensorData.decodedImageSpatialSupportX(sensorData.targetSCone.nearestDecoderRowColCoord(2)), ...
              sensorData.decodedImageSpatialSupportY(sensorData.targetSCone.nearestDecoderRowColCoord(1)), ...
-             'b+', 'LineWidth', 2.0,  'MarkerSize', 14, 'MarkerFaceColor', [0 1 1], 'MarkerEdgeColor', [0 1 1]);
+             's', 'LineWidth', 2.0,  'MarkerSize', 20, 'MarkerFaceColor', 'none', 'MarkerEdgeColor', SconeContrastColor);
     end
+    
+    if (~isempty(decoderContours))
+        C = decoderContours('LconeMosaic');
+        if (~isempty(C.principalMosaicContour))
+            plot(theAxes, C.principalMosaicContour.x, C.principalMosaicContour.y, 'k-', 'Color', LconeContrastColor, 'LineWidth', 2.0);
+        end
+        C = decoderContours('MconeMosaic');
+        if (~isempty(C.principalMosaicContour))
+            plot(theAxes, C.principalMosaicContour.x, C.principalMosaicContour.y, 'k-', 'Color', MconeContrastColor, 'LineWidth', 2.0);
+        end
+        C = decoderContours('SconeMosaic');
+        if (~isempty(C.principalMosaicContour))
+            plot(theAxes, C.principalMosaicContour.x, C.principalMosaicContour.y, 'k-', 'Color', SconeContrastColor, 'LineWidth', 2.0);
+        end
+    end
+    
+    dx = spatialSupportX(2)-spatialSupportX(1);
+    dy = spatialSupportY(2)-spatialSupportY(1);
+    if (labelMosaicCenterUsingCrossHairs)
+         plot(theAxes, [theXDataRange(1)-dx/2 theXDataRange(2)+dx/2], [0 0 ], 'k-', 'LineWidth', 1.5);
+         plot(theAxes, [0 0], [theYDataRange(1)-dy/2 theYDataRange(2)+dy/2], 'k-', 'LineWidth', 1.5);
+    end
+        
     hold(theAxes, 'off');  
     
     axis(theAxes, 'image'); axis(theAxes, 'ij');
-    dx = spatialSupportX(2)-spatialSupportX(1);
-    dy = spatialSupportY(2)-spatialSupportY(1);
     set(theAxes, 'XLim', [theXDataRange(1)-dx/2 theXDataRange(2)+dx/2], ...
                  'YLim', [theYDataRange(1)-dy/2 theYDataRange(2)+dy/2], ...
                  'XTick', xTicks, 'XTickLabel', sprintf('%2.1f\n', xTicks), ...
@@ -720,6 +811,251 @@ function [fullScenePlotSensorOutlinePlot, fullScenePlotDecodedRegionOutlinePlot]
 end
 
 
+function initializeConeMosaicPlot(theAxes, titleString, sensorData, theXDataRange, theYDataRange, ...
+    spatialSupportX, spatialSupportY, ...
+    decodedRegionOutline, labelMosaicCenterUsingCrossHairs, LconeContrastColor, MconeContrastColor, SconeContrastColor, ...
+    xTicks, yTicks, xLabelString, yLabelString, axesColor, backgroundColor)
+
+    lConeIndices = find(sensorData.coneTypes == 2);
+    mConeIndices = find(sensorData.coneTypes == 3);
+    sConeIndices = find(sensorData.coneTypes == 4);
+    
+    markerSize = 90;
+    scatter(theAxes, squeeze(sensorData.conePositions(lConeIndices,1)), squeeze(sensorData.conePositions(lConeIndices,2)), markerSize,  LconeContrastColor.^1.5, 'filled', 'MarkerEdgeColor', LconeContrastColor/2);
+    hold(theAxes, 'on');
+    scatter(theAxes, squeeze(sensorData.conePositions(mConeIndices,1)), squeeze(sensorData.conePositions(mConeIndices,2)), markerSize,  MconeContrastColor.^1.5, 'filled', 'MarkerEdgeColor', MconeContrastColor/2);
+    scatter(theAxes, squeeze(sensorData.conePositions(sConeIndices,1)), squeeze(sensorData.conePositions(sConeIndices,2)), markerSize,  SconeContrastColor.^1.5, 'filled', 'MarkerEdgeColor', SconeContrastColor/2);
+    
+    if (~isempty(decodedRegionOutline))
+        plot(theAxes, decodedRegionOutline.x, decodedRegionOutline.y, '-', 'Color', decodedRegionOutline.color, 'LineWidth', 2.0);
+    end
+    
+    dx = spatialSupportX(2)-spatialSupportX(1);
+    dy = spatialSupportY(2)-spatialSupportY(1);
+    if (labelMosaicCenterUsingCrossHairs)
+        plot(theAxes, [theXDataRange(1)-dx/2 theXDataRange(2)+dx/2], [0 0 ], 'k-', 'LineWidth', 1.5);
+        plot(theAxes, [0 0], [theYDataRange(1)-dy/2 theYDataRange(2)+dy/2], 'k-', 'LineWidth', 1.5);
+    end
+    
+    hold(theAxes, 'off');
+    
+    axis(theAxes, 'image'); axis(theAxes, 'ij');
+    set(theAxes, 'XLim', [theXDataRange(1)-dx/2 theXDataRange(2)+dx/2], ...
+                 'YLim', [theYDataRange(1)-dy/2 theYDataRange(2)+dy/2], ...
+                 'XTick', xTicks, 'XTickLabel', sprintf('%2.1f\n', xTicks), ...
+                 'YTick', yTicks, 'XTickLabel', sprintf('%2.1f\n', xTicks), ...
+                 'XColor', axesColor, 'YColor', axesColor, ...
+                 'FontSize', 16, 'FontName', 'Menlo', ...
+                 'Color', backgroundColor, 'LineWidth', 1.5);   
+    box(theAxes, 'on');
+    xlabel(theAxes, xLabelString, 'FontSize', 18, 'FontWeight', 'bold', 'Color', [0 0 0]);
+    ylabel(theAxes, yLabelString, 'FontSize', 18, 'FontWeight', 'bold', 'Color', [0 0 0]);
+    title(theAxes,  titleString,  'FontSize', 18, 'FontWeight', 'bold', 'Color', [0 0 0]);  
+
+end
+
+
+function decoderContours = initializeDecoderPlots(theLdecoderAxes, theMdecoderAxes, theSdecoderAxes, decoder, SVDvarianceExplained, targetLcone, targetMcone, targetScone, ...
+    theXDataRange, theYDataRange, decodedRegionOutline, labelMosaicCenterUsingCrossHairs, xTicks, yTicks, xLabelString, yLabelString, titleStrings, axesColor, backgroundColor, LconeContrastColor, MconeContrastColor, SconeContrastColor)
+    
+    % Normalize to -1 .. +1 for plotting
+    decoder.filters = decoder.filters / max(abs(decoder.filters(:)));
+    contourLevels = [-0.8 -0.6 -0.4 -0.2 0.2 0.4 0.6 0.8];
+    
+    spatialSupportX = decoder.spatioTemporalSupport.sensorRetinalXaxis;
+    spatialSupportY = decoder.spatioTemporalSupport.sensorRetinalYaxis;
+    
+    lConeIndices = find(decoder.coneTypes == 2);
+    mConeIndices = find(decoder.coneTypes == 3);
+    sConeIndices = find(decoder.coneTypes == 4);
+             
+    decodedContrastNames = {'LconeMosaic', 'MconeMosaic', 'SconeMosaic'};
+    decoderContours = containers.Map();
+    
+    
+    for decodedContrastIndex = 1:numel(decodedContrastNames)
+        
+        switch decodedContrastIndex
+            case 1
+                    targetCone = targetLcone;
+                    theAxes = theLdecoderAxes;
+                    targetConeOutlineColor = [0 0 0];
+            case 2
+                    targetCone = targetMcone;
+                    theAxes = theMdecoderAxes;
+                    targetConeOutlineColor = [0 0 0];
+            case 3
+                    targetCone = targetScone;
+                    theAxes = theSdecoderAxes;
+                    targetConeOutlineColor = [0 0.0 0];
+        end
+        
+        
+        spatialFilter = squeeze(decoder.filters(decodedContrastIndex, targetCone.nearestDecoderRowColCoord(1), targetCone.nearestDecoderRowColCoord(2),:,:, decoder.peakTimeBins(decodedContrastIndex)));      
+        imagesc(spatialSupportX, spatialSupportY, spatialFilter, 'parent', theAxes);
+        hold(theAxes, 'on');
+        
+        
+        contourDataStruct = computeContourData(spatialFilter, contourLevels, spatialSupportX, spatialSupportY, lConeIndices, mConeIndices, sConeIndices);
+        switch decodedContrastIndex
+            case 1
+                    principalMosaicContours = contourDataStruct.LconeMosaicSamplingContours;
+                    theOtherMosaicContours  = contourDataStruct.MconeMosaicSamplingContours;
+            case 2
+                    principalMosaicContours = contourDataStruct.MconeMosaicSamplingContours;
+                    theOtherMosaicContours  = contourDataStruct.LconeMosaicSamplingContours;
+            case 3
+                    principalMosaicContours = contourDataStruct.SconeMosaicSamplingContours;
+                    theOtherMosaicContours  = contourDataStruct.LMconeMosaicSamplingContours;
+        end
+        
+        C.principalMosaicContour = [];
+        C.theOtherMosaicContour = [];
+        
+        maxLength = 0;
+        for contourNo = 1:numel(principalMosaicContours)
+            fprintf('principal contour %d/%d: level:%f, length: %d\n', contourNo, numel(principalMosaicContours), principalMosaicContours(contourNo).level, principalMosaicContours(contourNo).length);
+            if ((principalMosaicContours(contourNo).level == 0.2) && (maxLength < principalMosaicContours(contourNo).length))
+                C.principalMosaicContour = principalMosaicContours(contourNo);
+                maxLength = principalMosaicContours(contourNo).length;
+            end
+        end
+        
+        maxLength = 0;
+        for contourNo = 1:numel(theOtherMosaicContours)
+            fprintf('theOther contour %d/%d: level:%f, length: %d\n', contourNo, numel(theOtherMosaicContours), theOtherMosaicContours(contourNo).level, theOtherMosaicContours(contourNo).length);
+            if ((theOtherMosaicContours(contourNo).level == 0.2) && (maxLength < theOtherMosaicContours(contourNo).length))
+                C.theOtherMosaicContour = theOtherMosaicContours(contourNo);
+                maxLength = theOtherMosaicContours(contourNo).length;
+            end
+        end
+        
+        
+        decoderContours(decodedContrastNames{decodedContrastIndex}) = C;
+        if (~isempty(C.principalMosaicContour))
+            plot(theAxes, C.principalMosaicContour.x, C.principalMosaicContour.y, 'k-', 'LineWidth', 2.0);
+        end
+        if (~isempty(C.theOtherMosaicContour))
+            plot(theAxes, C.theOtherMosaicContour.x, C.theOtherMosaicContour.y, 'k--', 'LineWidth', 2.0);
+        end
+        
+        
+        % Superimpose the decoded region outline
+        if (~isempty(decodedRegionOutline))
+            decodedRegionOutlinePlot = plot(theAxes, decodedRegionOutline.x, decodedRegionOutline.y, '-', 'Color', decodedRegionOutline.color, 'LineWidth', 2.0);
+        else
+            decodedRegionOutlinePlot = [];
+        end
+        
+        % Superimpose the target cone
+        targetConeOutline.x = spatialSupportX(targetCone.rowcolCoord(2)) + [-1.5 -1.5 1.5 1.5  -1.5];
+        targetConeOutline.y = spatialSupportY(targetCone.rowcolCoord(1)) + [-1.5  1.5 1.5 -1.5 -1.5];
+        plot(theAxes, targetConeOutline.x, targetConeOutline.y, 'k-', 'Color', targetConeOutlineColor, 'LineWidth', 2.0);
+        
+        dx = spatialSupportX(2)-spatialSupportX(1);
+        dy = spatialSupportY(2)-spatialSupportY(1);
+        if (labelMosaicCenterUsingCrossHairs)
+            plot(theAxes, [theXDataRange(1)-dx/2 theXDataRange(2)+dx/2], [0 0 ], 'k-', 'LineWidth', 1.5);
+            plot(theAxes, [0 0], [theYDataRange(1)-dy/2 theYDataRange(2)+dy/2], 'k-', 'LineWidth', 1.5);
+        end
+        
+        hold(theAxes, 'off');
+        
+        axis(theAxes, 'image'); axis(theAxes, 'ij');
+        set(theAxes, ...
+            'XLim', [theXDataRange(1)-dx/2 theXDataRange(2)+dx/2], ...
+            'YLim', [theYDataRange(1)-dy/2 theYDataRange(2)+dy/2], ...
+            'XTick', xTicks, 'XTickLabel', sprintf('%2.1f\n', xTicks), ...
+            'YTick', yTicks, 'XTickLabel', sprintf('%2.1f\n', xTicks), ...
+            'XColor', axesColor, 'YColor', axesColor, ...
+            'CLim', [-1 1], 'FontSize', 16, 'FontName', 'Menlo', ...
+            'Color', backgroundColor, 'LineWidth', 1.5);
+             
+        xlabel(theAxes, xLabelString, 'FontSize', 18, 'FontWeight', 'bold', 'Color', [0 0 0]);
+        ylabel(theAxes, yLabelString, 'FontSize', 18, 'FontWeight', 'bold', 'Color', [0 0 0]);
+        peakTimeInMilliseconds = decoder.spatioTemporalSupport.timeAxis(decoder.peakTimeBins(decodedContrastIndex));
+        title(theAxes,  sprintf('%s (%2.0fms)',titleStrings{decodedContrastIndex}, peakTimeInMilliseconds),  'FontSize', 18, 'FontWeight', 'bold', 'Color', [0 0 0]);  
+    end
+    
+    
+    
+    function C = computeContourData(spatialFilter, contourLevels, spatialSupportX, spatialSupportY, lConeIndices, mConeIndices, sConeIndices)
+        
+        dX = spatialSupportX(2)-spatialSupportX(1);
+        dY = spatialSupportY(2)-spatialSupportY(1);
+        contourXaxis = spatialSupportX(1)-dX:1:spatialSupportX(end)+dX;
+        contourYaxis = spatialSupportY(1)-dY:1:spatialSupportY(end)+dY;
+        [xx, yy] = meshgrid(contourXaxis,contourYaxis); 
+    
+        lConeWeights = []; mConeWeights = []; sConeWeights = [];
+        lConeCoords = []; mConeCoords = []; sConeCoords = [];
+        
+        for iRow = 1:size(spatialFilter,1)
+            for iCol = 1:size(spatialFilter,2) 
+                coneLocation = [spatialSupportX(iCol) spatialSupportY(iRow)];
+                xyWeight = [coneLocation(1) coneLocation(2) spatialFilter(iRow, iCol)];
+                coneIndex = sub2ind(size(spatialFilter), iRow, iCol);
+                if ismember(coneIndex, lConeIndices)
+                    lConeCoords(size(lConeCoords,1)+1,:) = coneLocation';
+                    lConeWeights(size(lConeWeights,1)+1,:) = xyWeight;
+                elseif ismember(coneIndex, mConeIndices)
+                    mConeCoords(size(mConeCoords,1)+1,:) = coneLocation';
+                    mConeWeights(size(mConeWeights,1)+1,:) = xyWeight;
+                elseif ismember(coneIndex, sConeIndices)
+                    sConeCoords(size(sConeCoords,1)+1,:) = coneLocation';
+                    sConeWeights(size(sConeWeights,1)+1,:) = xyWeight;
+                end   
+            end
+        end
+        lmConeWeights = [lConeWeights; mConeWeights];
+        
+        if (~isempty(lConeWeights))
+            spatialWeightingKernel = griddata(lConeWeights(:,1), lConeWeights(:,2), lConeWeights(:,3), xx, yy, 'cubic');  
+            C.LconeMosaicSamplingContours = getContourStruct(contourc(contourXaxis, contourYaxis, spatialWeightingKernel, contourLevels));
+        end
+        if (~isempty(mConeWeights))
+            spatialWeightingKernel = griddata(mConeWeights(:,1), mConeWeights(:,2), mConeWeights(:,3), xx, yy, 'cubic');
+            C.MconeMosaicSamplingContours = getContourStruct(contourc(contourXaxis, contourYaxis, spatialWeightingKernel, contourLevels));
+        end
+        if (~isempty(sConeWeights))
+            spatialWeightingKernel = griddata(sConeWeights(:,1), sConeWeights(:,2), sConeWeights(:,3), xx, yy, 'cubic');
+            C.SconeMosaicSamplingContours = getContourStruct(contourc(contourXaxis, contourYaxis, spatialWeightingKernel, contourLevels));
+        end
+        if (~isempty(lmConeWeights))
+            spatialWeightingKernel = griddata(lmConeWeights(:,1), lmConeWeights(:,2), lmConeWeights(:,3), xx, yy, 'cubic');
+            C.LMconeMosaicSamplingContours = getContourStruct(contourc(contourXaxis, contourYaxis, spatialWeightingKernel, contourLevels));
+        end
+        
+        
+        function Cout = getContourStruct(C)
+            K = 0; n0 = 1;
+            while n0<=size(C,2)
+               K = K + 1;
+               n0 = n0 + C(2,n0) + 1;
+            end
+
+            % initialize output struct
+            el = cell(K,1);
+            Cout = struct('level',el,'length',el,'x',el,'y',el);
+
+            % fill the output struct
+            n0 = 1;
+            for k = 1:K
+               Cout(k).level = C(1,n0);
+               idx = (n0+1):(n0+C(2,n0));
+               Cout(k).length = C(2,n0);
+               Cout(k).x = C(1,idx);
+               Cout(k).y = C(2,idx);
+               n0 = idx(end) + 1; % next starting index
+            end
+        end
+
+    end
+    
+        
+end
+
+                
 function [axesDictionary, hFig] = generateAxes(slideSize, slideCols, slideRows)
 
     hFig = figure(1); clf; 
@@ -729,11 +1065,11 @@ function [axesDictionary, hFig] = generateAxes(slideSize, slideCols, slideRows)
                'rowsNum', slideRows, ...
                'colsNum', slideCols, ...
                'heightMargin',   0.0125, ...
-               'widthMargin',    0.005, ...
-               'leftMargin',     0.015, ...
+               'widthMargin',    0.006, ...
+               'leftMargin',     0.011, ...
                'rightMargin',    0.00, ...
                'bottomMargin',   0.05, ...
-               'topMargin',      0.01);
+               'topMargin',      0.012);
            
     axesDictionary = containers.Map();
     
@@ -753,14 +1089,18 @@ function [axesDictionary, hFig] = generateAxes(slideSize, slideCols, slideRows)
     dx = 0; % 0.005;
     axesDictionary('instantaneousSensorXYactivation') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(2,3).v + [dx 0 0 0]);
     
+    % The LMS mosaic
+    axesDictionary('LMSmosaic') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(3,3).v + [dx 0 0 0]);
+    
     % The right side: 
+    dx =  0.010;
     % First row: L,M,S contrast decoder filters at 3 select spatial positions
-    axesDictionary('targetLcontastDecoderFilter')  = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,4).v);
-    axesDictionary('targetMcontastDecoderFilter') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,5).v);
-    axesDictionary('targetScontastDecoderFilter') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,6).v);
+    axesDictionary('targetLcontastDecoderFilter')  = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,4).v+[dx 0 0 0]);
+    axesDictionary('targetMcontastDecoderFilter') = axes('parent', hFig, 'unit', 'normalized', 'position',  subplotPosVectors(1,5).v+[dx 0 0 0]);
+    axesDictionary('targetScontastDecoderFilter') = axes('parent', hFig, 'unit', 'normalized', 'position',  subplotPosVectors(1,6).v+[dx 0 0 0]);
     
     % Second row: outer-segment traces, weighted by the above L,M,S decoder spatial profiles
-    dx = 0.02;
+    dx = 0.011;
     axesDictionary('sensorXTtracesForTargetLcontrastDecoder') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(2,4).v+[dx 0 0 0]);
     axesDictionary('sensorXTtracesForTargetMcontrastDecoder') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(2,5).v+[dx 0 0 0]);
     axesDictionary('sensorXTtracesForTargetScontrastDecoder') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(2,6).v+[dx 0 0 0]);
@@ -820,7 +1160,9 @@ end
 
 
     
-function [sceneData, oiData, sensorData] = retrieveComputedDataForCurrentScene(sceneSetName, resultsDir, sceneIndex, renderingDisplay, boostFactorForOpticalImage, displayGamma, targetLdecoderXYcoords, targetMdecoderXYcoords, targetSdecoderXYcoords)
+function [sceneData, oiData, sensorData] = retrieveComputedDataForCurrentScene(sceneSetName, resultsDir, sceneIndex, renderingDisplay, boostFactorForOpticalImage, displayGamma, ...
+    targetLdecoderXYcoords, targetMdecoderXYcoords, targetSdecoderXYcoords, decoder)
+
     scanFileName = core.getScanFileName(sceneSetName, resultsDir, sceneIndex);
     load(scanFileName, 'scanData', 'scene', 'oi');
     
@@ -864,12 +1206,39 @@ function [sceneData, oiData, sensorData] = retrieveComputedDataForCurrentScene(s
     % returm other useful info: coords for the most central L,M, and S-cone
     conePositions = sensorGet(scanData{1}.scanSensor, 'xy');
     coneTypes = sensorGet(scanData{1}.scanSensor, 'cone type');
-    sensorData.targetLCone  = getTargetConeCoords(sensorData, conePositions, targetLdecoderXYcoords, find(coneTypes == 2));
-    sensorData.targetMCone  = getTargetConeCoords(sensorData, conePositions, targetMdecoderXYcoords, find(coneTypes == 3));
-    sensorData.targetSCone  = getTargetConeCoords(sensorData, conePositions, targetSdecoderXYcoords, find(coneTypes == 4));
-
     
-    function s = getTargetConeCoords(sensorData, conePositions, targetDecoderPosition, coneIndices)
+    sensorData.conePositions = conePositions;
+    sensorData.coneTypes     = coneTypes;
+    sensorData.targetLCone  = getTargetConeCoordsVersion1(sensorData, conePositions, targetLdecoderXYcoords, find(coneTypes == 2));
+    sensorData.targetMCone  = getTargetConeCoordsVersion1(sensorData, conePositions, targetMdecoderXYcoords, find(coneTypes == 3));
+    sensorData.targetSCone  = getTargetConeCoordsVersion1(sensorData, conePositions, targetSdecoderXYcoords, find(coneTypes == 4));
+
+    sensorData.targetLCone  = getTargetConeCoordsVersion2(conePositions, sensorData.targetLCone.nearestDecoderRowColCoord, 1, find(coneTypes == 2));
+    sensorData.targetMCone  = getTargetConeCoordsVersion2(conePositions, sensorData.targetMCone.nearestDecoderRowColCoord, 2, find(coneTypes == 3));
+    sensorData.targetSCone  = getTargetConeCoordsVersion2(conePositions, sensorData.targetSCone.nearestDecoderRowColCoord, 3, find(coneTypes == 4));
+    
+    
+    function s = getTargetConeCoordsVersion2(conePositions, targetDecoderRowCol, decodedContrastIndex, coneIndices)
+        % This version finds the cone that corresponding to the peak of target decoder's spatial filter
+        if isempty(coneIndices)
+            s = [];
+            return;
+        end
+        
+        spatialFilter = squeeze(decoder.filters(decodedContrastIndex, targetDecoderRowCol(1), targetDecoderRowCol(2),:,:, decoder.peakTimeBins(decodedContrastIndex)));
+        [~, peakResponseConeIndex] = max(spatialFilter(:));
+        [r,c] = ind2sub(size(spatialFilter), peakResponseConeIndex);
+   
+        s = struct(...
+            'rowcolCoord', [r c], ...
+            'xyCoord', conePositions(peakResponseConeIndex,:), ...
+            'nearestDecoderRowColCoord', targetDecoderRowCol);
+        
+        fprintf('After: %d %d \n', s.rowcolCoord(1), s.rowcolCoord(2));
+    end
+
+    function s = getTargetConeCoordsVersion1(sensorData, conePositions, targetDecoderPosition, coneIndices)
+        % This version finds the cone that is closest to the target decoder position
         if isempty(coneIndices)
             s = [];
             return;
@@ -884,18 +1253,79 @@ function [sceneData, oiData, sensorData] = retrieveComputedDataForCurrentScene(s
         d = sqrt((X-conePositions(closestConeOfSelectedType, 1)).^2 + (Y-conePositions(closestConeOfSelectedType, 2)).^2);
         [~,indexOfClosestDecoder] = min(d(:));
         [dr, rc] = ind2sub(size(X), indexOfClosestDecoder);
+        
         s = struct(...
             'rowcolCoord', [r c], ...
             'xyCoord', conePositions(closestConeOfSelectedType,:), ...
             'nearestDecoderRowColCoord', [dr rc]);
+        
+        fprintf('Before: r=%d c=%d x=%2.1f, y = %2.1f\n', s.rowcolCoord(1), s.rowcolCoord(2), s.xyCoord(1), s.xyCoord(2));
     end
 
 end
 
 
+function [decoderFilters, peakTimeBins, spatioTemporalSupport, coneTypes] = retrieveDecoderData(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions, svdIndex)
+    fprintf('\nLoading decoder filter ...');
+    fileName = fullfile(decodingDataDir, sprintf('%s_decodingFilter.mat', sceneSetName));
+    load(fileName, 'wVector',  'spatioTemporalSupport', 'coneTypes', 'expParams');
+    fprintf('Done.\n');
+    
+    if (computeSVDbasedLowRankFiltersAndPredictions)
+        load(fileName, 'wVectorSVDbased', 'SVDbasedLowRankFilterVariancesExplained');%, 'Utrain', 'Strain', 'Vtrain');
+        wVector = squeeze(wVectorSVDbased(svdIndex,:,:));
+    end
+    
+    %Separate the bias terms (1st row)
+    biasTerms = wVector(1,:);
+    wVector = wVector(2:end,:);
+    
+    % Allocate memory for unpacked stimDecoder
+    sensorRows      = numel(spatioTemporalSupport.sensorRetinalYaxis);
+    sensorCols      = numel(spatioTemporalSupport.sensorRetinalXaxis);
+    xSpatialBinsNum = numel(spatioTemporalSupport.sensorFOVxaxis);                   % spatial support of decoded scene
+    ySpatialBinsNum = numel(spatioTemporalSupport.sensorFOVyaxis);
+    timeAxis        = spatioTemporalSupport.timeAxis;
+    timeBinsNum     = numel(timeAxis);
+    decoderFilters  = zeros(3, ySpatialBinsNum, xSpatialBinsNum, sensorRows, sensorCols, timeBinsNum);
+    
+    % Unpack the wVector into the stimDecoder
+    for stimConeContrastIndex = 1:3
+        for ySpatialBin = 1:ySpatialBinsNum
+        for xSpatialBin = 1:xSpatialBinsNum
+            stimulusDimension = sub2ind([ySpatialBinsNum xSpatialBinsNum 3], ySpatialBin, xSpatialBin, stimConeContrastIndex);
+            for coneRow = 1:sensorRows
+            for coneCol = 1:sensorCols
+                coneIndex = sub2ind([sensorRows sensorCols], coneRow, coneCol);
+                neuralResponseFeatureIndices = (coneIndex-1)*timeBinsNum + (1:timeBinsNum);
+                decoderFilters(stimConeContrastIndex, ySpatialBin, xSpatialBin, coneRow, coneCol, :) = ...
+                    squeeze(wVector(neuralResponseFeatureIndices, stimulusDimension));       
+            end % coneRow
+            end % coneCol
+        end % xSpatialBin
+        end % ySpatialBin
+    end % coneContrastIndex
+    
+    % Find time of peak separately for the L-, M- and the S-cone decoders
+    coneString = {'Lcone contrast', 'Mcone contrast', 'Scone contrast'};
+    for decoderConeContrastIndex = 1:numel(coneString)
+        % determine coords of peak response
+        spatioTemporalFilter = squeeze(decoderFilters(decoderConeContrastIndex, :, :, :,:,:));
+        % searh for the peak within +/- 50 msec from 0
+        timeRange = 50;
+        indicesForPeakResponseEstimation = find(abs(spatioTemporalSupport.timeAxis) <= timeRange);
+        tmp = squeeze(spatioTemporalFilter(:,:,:,:,indicesForPeakResponseEstimation));
+        [~, theIndexOfMaxResponse] = max(abs(tmp(:)));
+        [peakConeRow, peakConeCol, peakDecoderYpos, peakDecoderXpos, idx] = ind2sub(size(tmp), theIndexOfMaxResponse);
+        peakTimeBins(decoderConeContrastIndex) = indicesForPeakResponseEstimation(idx);
+    end % stimConeContrastIndex
+    
+end
+
+
 function [timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, ...
           sceneBackgroundExcitation,  opticalImageBackgroundExcitation, sceneIndexSequence, sensorPositionSequence, ...
-          responseSequence, expParams, videoPostfix] = ...
+          responseSequence, expParams, svdIndex,SVDvarianceExplained, videoPostfix] = ...
           retrieveReconstructionData(sceneSetName, decodingDataDir, InSampleOrOutOfSample, computeSVDbasedLowRankFiltersAndPredictions)
     
     if (strcmp(InSampleOrOutOfSample, 'InSample'))
@@ -912,7 +1342,9 @@ function [timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastIn
                        'trainingTimeAxis', 'originalTrainingStimulusSize', ...
                        'trainingSceneIndexSequence', 'trainingSensorPositionSequence', 'expParams');
         videoPostfix = sprintf('PINVbased');
-
+        svdIndex = [];
+        SVDvarianceExplained = [];
+        
         if (computeSVDbasedLowRankFiltersAndPredictions)
             load(fileName, 'CtrainPredictionSVDbased', 'SVDbasedLowRankFilterVariancesExplained');
             svdIndex = core.promptUserForChoiceFromSelectionOfChoices('Select desired variance explained for the reconstruction filters', SVDbasedLowRankFilterVariancesExplained);
@@ -920,8 +1352,8 @@ function [timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastIn
                 return;
             end
             videoPostfix = sprintf('SVD_%2.3f%%VarianceExplained',SVDbasedLowRankFilterVariancesExplained(svdIndex));
+            SVDvarianceExplained = SVDbasedLowRankFilterVariancesExplained(svdIndex);
             CtrainPrediction = squeeze(CtrainPredictionSVDbased(svdIndex,:, :));
-            
         end
         
         LMScontrastInput = decoder.reformatStimulusSequence('FromDesignMatrixFormat',...
