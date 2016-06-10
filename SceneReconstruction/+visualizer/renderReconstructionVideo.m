@@ -335,14 +335,14 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             xlabelString = 'microns';
             ylabelString = '';
             axesColor = [0 0 0];
-            backgroundColor = [1 1 1];
+            backgroundColor = [0.3 0.3 0.3];
             decodedRegionOutline = [];
             labelMosaicCenterUsingCrossHairs = true;
-            
+            decoderSpatialFilterProfiles = theDecoderSpatialFilterProfiles;
             initializeConeMosaicPlot(axesDictionary('LMSmosaic'), titleString, sensorData,...
                 [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
                 sensorData.spatialSupportX, sensorData.spatialSupportY, ...
-                decodedRegionOutline,  labelMosaicCenterUsingCrossHairs, LconeContrastColor, MconeContrastColor, SconeContrastColor, ...
+                decodedRegionOutline,  labelMosaicCenterUsingCrossHairs,  decoderSpatialFilterProfiles, LconeContrastColor, MconeContrastColor, SconeContrastColor, ...
                 xTicks, yTicks, xlabelString, ylabelString, axesColor, backgroundColor);
         end
         
@@ -447,7 +447,7 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             reconstructionColor = [0 0 0];
             titleString  = '';
             backgroundColor = [1 1 1];
-            addScaleBars = true; 
+            addScaleBars = false; 
             comboInputAndReconstructionTracesForTargetLcontrastDecoderPlot = initializeComboInputReconstructionTracesPlot(...
                 axesDictionary('inputAndReconstructionTracesForTargetLcontrastDecoder'), titleString, ...
                 recentTime, recentInputContrastTrace, recentReconstructedContrastTrace, ...
@@ -493,7 +493,7 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             reconstructionColor = [0 0 0];
             titleString  = '';
             backgroundColor = [1 1 1];
-            addScaleBars = false; 
+            addScaleBars = true; 
             comboInputAndReconstructionTracesForTargetScontrastDecoderPlot = initializeComboInputReconstructionTracesPlot(...
                 axesDictionary('inputAndReconstructionTracesForTargetScontrastDecoder'), titleString, ...
                 recentTime, recentInputContrastTrace, recentReconstructedContrastTrace, ...
@@ -509,8 +509,8 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
         reconstructedConeContrasts = squeeze(LMScontrastReconstruction(:,:,1:3,tBin));
         if (isempty(reconstructedVSinputContrastPlot))
             titleString = '';
-            xLabelString = 'scene LMS contrasts';
-            yLabelString = 'reconstr. LMS contrasts';
+            xLabelString = 'scene LMS contrast';
+            yLabelString = 'reconstr. LMS contrast';
             xTicks = -1:1:4; xTickLabels = sprintf('%+2.0f\n', xTicks);
             yTicks = -1:1:4; yTickLabels = sprintf('%+2.0f\n', yTicks);
             markerColors = [LconeContrastColor; MconeContrastColor; SconeContrastColor];
@@ -630,9 +630,9 @@ function comboContrastPlot = initializeComboInputReconstructionTracesPlot(theAxe
     if (addScaleBars)
         yo = yTicks(end) + 0.75;
         dy = 0.5;
-        dx = 20;
-        plot(theAxes, [recentTime(1)+dx recentTime(1)+dx + 300], yo*[1 1], 'k-', 'Color', 1-backgroundColor, 'LineWidth', 2.0);
-        textXcoord = double(recentTime(1)+dx+70); textYcoord = yo-dy;
+        dx = -350;
+        plot(theAxes, [recentTime(end)+dx recentTime(end)+dx + 300], yo*[1 1], 'k-', 'Color', 1-backgroundColor, 'LineWidth', 2.0);
+        textXcoord = double(recentTime(end)+dx+70); textYcoord = yo-dy;
         text(textXcoord, textYcoord, '300 msec', 'Parent', theAxes, 'Color', 1-backgroundColor, 'FontName', 'Menlo', 'FontSize', 16);
     end
     hold(theAxes, 'off');
@@ -720,15 +720,15 @@ function [decodedImagePlot, decodedRegionOutlinePlot] = initializeDecodedImagePl
     if (~isempty(decoderContours))
         C = decoderContours('LconeMosaic');
         if (~isempty(C.principalMosaicContour))
-            plot(theAxes, C.principalMosaicContour.x, C.principalMosaicContour.y, 'k-', 'Color', LconeContrastColor, 'LineWidth', 2.0);
+            plot(theAxes, C.principalMosaicContour.x, C.principalMosaicContour.y, 'k-', 'Color', LconeContrastColor, 'LineWidth', 3.0);
         end
         C = decoderContours('MconeMosaic');
         if (~isempty(C.principalMosaicContour))
-            plot(theAxes, C.principalMosaicContour.x, C.principalMosaicContour.y, 'k-', 'Color', MconeContrastColor, 'LineWidth', 2.0);
+            plot(theAxes, C.principalMosaicContour.x, C.principalMosaicContour.y, 'k-', 'Color', MconeContrastColor, 'LineWidth', 3.0);
         end
         C = decoderContours('SconeMosaic');
         if (~isempty(C.principalMosaicContour))
-            plot(theAxes, C.principalMosaicContour.x, C.principalMosaicContour.y, 'k-', 'Color', SconeContrastColor, 'LineWidth', 2.0);
+            plot(theAxes, C.principalMosaicContour.x, C.principalMosaicContour.y, 'k-', 'Color', SconeContrastColor, 'LineWidth', 3.0);
         end
     end
     
@@ -813,18 +813,19 @@ end
 
 function initializeConeMosaicPlot(theAxes, titleString, sensorData, theXDataRange, theYDataRange, ...
     spatialSupportX, spatialSupportY, ...
-    decodedRegionOutline, labelMosaicCenterUsingCrossHairs, LconeContrastColor, MconeContrastColor, SconeContrastColor, ...
+    decodedRegionOutline, labelMosaicCenterUsingCrossHairs, decoderContours, LconeContrastColor, MconeContrastColor, SconeContrastColor, ...
     xTicks, yTicks, xLabelString, yLabelString, axesColor, backgroundColor)
 
     lConeIndices = find(sensorData.coneTypes == 2);
     mConeIndices = find(sensorData.coneTypes == 3);
     sConeIndices = find(sensorData.coneTypes == 4);
     
-    markerSize = 90;
-    scatter(theAxes, squeeze(sensorData.conePositions(lConeIndices,1)), squeeze(sensorData.conePositions(lConeIndices,2)), markerSize,  LconeContrastColor.^1.5, 'filled', 'MarkerEdgeColor', LconeContrastColor/2);
+    markerSize = 140;
+    markerSymbol = 's';
+    scatter(theAxes, squeeze(sensorData.conePositions(lConeIndices,1)), squeeze(sensorData.conePositions(lConeIndices,2)), markerSize, markerSymbol, 'MarkerFaceColor', LconeContrastColor*0.7,  'MarkerEdgeColor', 'none');
     hold(theAxes, 'on');
-    scatter(theAxes, squeeze(sensorData.conePositions(mConeIndices,1)), squeeze(sensorData.conePositions(mConeIndices,2)), markerSize,  MconeContrastColor.^1.5, 'filled', 'MarkerEdgeColor', MconeContrastColor/2);
-    scatter(theAxes, squeeze(sensorData.conePositions(sConeIndices,1)), squeeze(sensorData.conePositions(sConeIndices,2)), markerSize,  SconeContrastColor.^1.5, 'filled', 'MarkerEdgeColor', SconeContrastColor/2);
+    scatter(theAxes, squeeze(sensorData.conePositions(mConeIndices,1)), squeeze(sensorData.conePositions(mConeIndices,2)), markerSize, markerSymbol, 'MarkerFaceColor', MconeContrastColor*0.7,  'MarkerEdgeColor', 'none');
+    scatter(theAxes, squeeze(sensorData.conePositions(sConeIndices,1)), squeeze(sensorData.conePositions(sConeIndices,2)), markerSize, markerSymbol, 'MarkerFaceColor', SconeContrastColor*0.7,  'MarkerEdgeColor', 'none');
     
     if (~isempty(decodedRegionOutline))
         plot(theAxes, decodedRegionOutline.x, decodedRegionOutline.y, '-', 'Color', decodedRegionOutline.color, 'LineWidth', 2.0);
@@ -835,6 +836,22 @@ function initializeConeMosaicPlot(theAxes, titleString, sensorData, theXDataRang
     if (labelMosaicCenterUsingCrossHairs)
         plot(theAxes, [theXDataRange(1)-dx/2 theXDataRange(2)+dx/2], [0 0 ], 'k-', 'LineWidth', 1.5);
         plot(theAxes, [0 0], [theYDataRange(1)-dy/2 theYDataRange(2)+dy/2], 'k-', 'LineWidth', 1.5);
+    end
+    
+    
+    if (~isempty(decoderContours))
+        C = decoderContours('LconeMosaic');
+        if (~isempty(C.principalMosaicContour))
+            plot(theAxes, C.principalMosaicContour.x, C.principalMosaicContour.y, 'k-', 'Color', LconeContrastColor, 'LineWidth', 3.0);
+        end
+        C = decoderContours('MconeMosaic');
+        if (~isempty(C.principalMosaicContour))
+            plot(theAxes, C.principalMosaicContour.x, C.principalMosaicContour.y, 'k-', 'Color', MconeContrastColor, 'LineWidth', 3.0);
+        end
+        C = decoderContours('SconeMosaic');
+        if (~isempty(C.principalMosaicContour))
+            plot(theAxes, C.principalMosaicContour.x, C.principalMosaicContour.y, 'k-', 'Color', SconeContrastColor, 'LineWidth', 3.0);
+        end
     end
     
     hold(theAxes, 'off');
@@ -1065,7 +1082,7 @@ function [axesDictionary, hFig] = generateAxes(slideSize, slideCols, slideRows)
                'rowsNum', slideRows, ...
                'colsNum', slideCols, ...
                'heightMargin',   0.0125, ...
-               'widthMargin',    0.006, ...
+               'widthMargin',    0.004, ...
                'leftMargin',     0.011, ...
                'rightMargin',    0.00, ...
                'bottomMargin',   0.05, ...
