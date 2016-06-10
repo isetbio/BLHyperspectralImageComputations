@@ -283,6 +283,7 @@ function hFig = generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spat
     % Helper drawing function
     function generateContourPlot(spatialWeightingKernel, weightsRange, coneCoordsSubmosaic1, RGBColor1, coneCoordsSubmosaic2,  RGBColor2)
         
+        w = [];
         for coneIndex = 1:size(coneCoordsSubmosaic1,1)
             coneXcoord = coneCoordsSubmosaic1(coneIndex,1);
             coneYcoord = coneCoordsSubmosaic1(coneIndex,2);
@@ -291,6 +292,10 @@ function hFig = generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spat
             w(coneIndex) = spatialWeightingKernel(iy,ix);
         end
 
+        if isempty(w)
+            return;
+        end
+        
         cStep = max(weightsRange)/12;
         boost = 2;
        % w(abs(w) < cStep) = 0;
