@@ -71,13 +71,22 @@ function scanData = computeScanData(scene,  oi,  sensor, osOBJ, ...
         scanSensor = sensorSet(scanSensor, 'positions',   sensorPositionSequence/sensorSampleSeparationInMicrons(1));
 
         % Compute photocurrents for this scan path
-        if (isa(osOBJ, 'osIdentity'))
-            photoCurrentSequence = isomerizationRateSequence; % osGet(osOBJ, 'PhotonRate');
+        if (isfield(osOBJ, 'isMultiType')) && (osOBJ.isMultiType)
+            osOBJ.linear.osCompute(scanSensor);
+            osOBJ.biophys.osCompute(scanSensor);
+            photoCurrentSequence.isMultiType = true;
+            photoCurrentSequence.identity = isomerizationRateSequence;
+            photoCurrentSequence.linear   = osGet(osOBJ.linear, 'ConeCurrentSignal');
+            photoCurrentSequence.biophys  = osGet(osOBJ.biophys, 'ConeCurrentSignal');
         else
-            osOBJ.osCompute(scanSensor);
-            photoCurrentSequence = osGet(osOBJ, 'ConeCurrentSignal');
+            if (isa(osOBJ, 'osIdentity'))
+                photoCurrentSequence = isomerizationRateSequence; % osGet(osOBJ, 'PhotonRate');
+            else
+                osOBJ.osCompute(scanSensor);
+                photoCurrentSequence = osGet(osOBJ, 'ConeCurrentSignal');
+            end
         end
-        
+
         % Assemble the LMS excitation sequence for this scanpath (both at the scene level and the optical image level) 
         [sceneLMSexcitationSequence, oiLMSexcitationSequence] = generateLMSexcitationSequence(...
             scanPathEyePositionIndices, sensorPositionsInMicrons, sensorFOVRowRange, sensorFOVColRange,...
@@ -100,8 +109,143 @@ function scanData = computeScanData(scene,  oi,  sensor, osOBJ, ...
         timeDimensionIndex = ndims(isomerizationRateSequence); lowPassSignal = true;
         [isomerizationRateSequence,  ~, ~, ~] = core.subsampleTemporally(isomerizationRateSequence,  scanTimeAxis, initialTimePeriodExcuded, timeDimensionIndex, lowPassSignal, decodedSceneTemporalSampling);
         
-        timeDimensionIndex = ndims(photoCurrentSequence); lowPassSignal = true;
-        [photoCurrentSequence, ~, ~, ~] = core.subsampleTemporally(photoCurrentSequence,  scanTimeAxis, initialTimePeriodExcuded, timeDimensionIndex, lowPassSignal, decodedSceneTemporalSampling);
+        lowPassSignal = true;
+        if (isfield(osOBJ, 'isMultiType')) && (osOBJ.isMultiType)
+            timeDimensionIndex = ndims(photoCurrentSequence.identity);
+            [~,~,tBins] = size(photoCurrentSequence.identity);
+           
+            figure(998); clf
+            mosaicRowToVisualize = 11;
+            mosaicColToVisualize = 13;
+            maxIsomerization = max(squeeze(photoCurrentSequence.identity(mosaicRowToVisualize, mosaicColToVisualize,:)));
+            maxLinear = max(squeeze(photoCurrentSequence.linear(mosaicRowToVisualize, mosaicColToVisualize, :)));
+            maxBiophys = max(squeeze(photoCurrentSequence.biophys(mosaicRowToVisualize, mosaicColToVisualize, :)));
+            subplot(3,1,1);
+            plot(1:tBins, squeeze(photoCurrentSequence.identity(mosaicRowToVisualize, mosaicColToVisualize, :))/maxIsomerization, 'k-'); hold on
+            plot(1:tBins, squeeze(photoCurrentSequence.linear(mosaicRowToVisualize, mosaicColToVisualize, :))/maxLinear, 'r-'); hold off
+            legend({'isomerizations', 'linear'});
+            xlabel('time');
+            subplot(3,1,2);
+            plot(1:tBins, squeeze(photoCurrentSequence.linear(mosaicRowToVisualize, mosaicColToVisualize, :))/maxLinear, 'r-'); hold on
+            plot(1:tBins, squeeze(photoCurrentSequence.biophys(mosaicRowToVisualize, mosaicColToVisualize, :))/maxBiophys, 'b -'); hold off
+            xlabel('time');
+            legend({'linear', 'biophys'});
+            subplot(3,1,3);
+            plot(1:tBins, squeeze(photoCurrentSequence.identity(mosaicRowToVisualize, mosaicColToVisualize, :))/maxIsomerization, 'k-'); hold on
+            plot(1:tBins, squeeze(photoCurrentSequence.biophys(mosaicRowToVisualize, mosaicColToVisualize, :))/maxBiophys, 'b -'); hold off
+            legend({'isomerizations', 'biophys'});
+            xlabel('time');
+            drawnow;
+            
+            figure(999); clf;
+            subplot(1,3,1);
+            plot(photoCurrentSequence.identity(:), photoCurrentSequence.linear(:), 'k.');
+            xlabel('isomerization'); ylabel('linear photocurrent'); axis 'square'
+            subplot(1,3,2);
+            plot(photoCurrentSequence.linear(:), photoCurrentSequence.biophys(:), 'k.');
+            xlabel('linear photocurrent'); ylabel('biophys photocurrent'); axis 'square'
+            subplot(1,3,3);
+            plot(photoCurrentSequence.identity(:), photoCurrentSequence.biophys(:), 'k.');
+            xlabel('isomerization'); ylabel('biophys photocurrent'); axis 'square'
+            drawnow
+            
+            figure(1000); clf;
+            subplot(1,3,1);
+            plot(squeeze(photoCurrentSequence.identity(mosaicRowToVisualize, mosaicColToVisualize, :)), squeeze(photoCurrentSequence.linear(mosaicRowToVisualize, mosaicColToVisualize, :)), 'k.');
+            xlabel('isomerization'); ylabel('linear photocurrent'); axis 'square'
+            subplot(1,3,2);
+            plot(squeeze(photoCurrentSequence.linear(mosaicRowToVisualize, mosaicColToVisualize, :)), squeeze(photoCurrentSequence.biophys(mosaicRowToVisualize, mosaicColToVisualize, :)), 'k.');
+            xlabel('linear photocurrent'); ylabel('biophys photocurrent'); axis 'square'
+            subplot(1,3,3);
+            plot(squeeze(photoCurrentSequence.identity(mosaicRowToVisualize, mosaicColToVisualize, :)), squeeze(photoCurrentSequence.biophys(mosaicRowToVisualize, mosaicColToVisualize, :)), 'k.');
+            xlabel('isomerization'); ylabel('biophys photocurrent'); axis 'square'
+            drawnow
+            
+            figure(1001); clf
+            [r, lags] = xcorr(squeeze(photoCurrentSequence.identity(mosaicRowToVisualize, mosaicColToVisualize, :)), squeeze(photoCurrentSequence.linear(mosaicRowToVisualize, mosaicColToVisualize, :)));
+            plot(lags, r, 'b-');
+            drawnow
+            
+            
+            [photoCurrentSequence.identity, ~, ~, ~] = core.subsampleTemporally(photoCurrentSequence.identity,  scanTimeAxis, initialTimePeriodExcuded, timeDimensionIndex, lowPassSignal, decodedSceneTemporalSampling);
+            [photoCurrentSequence.linear, ~, ~, ~] = core.subsampleTemporally(photoCurrentSequence.linear,  scanTimeAxis, initialTimePeriodExcuded, timeDimensionIndex, lowPassSignal, decodedSceneTemporalSampling);
+            [photoCurrentSequence.biophys, ~, ~, ~] = core.subsampleTemporally(photoCurrentSequence.biophys,  scanTimeAxis, initialTimePeriodExcuded, timeDimensionIndex, lowPassSignal, decodedSceneTemporalSampling);
+            [~,~,tBins] = size(photoCurrentSequence.identity);
+            
+            % Compute correlation between isomerization and os linear
+            [r, lags] = xcorr(squeeze(photoCurrentSequence.identity(mosaicRowToVisualize, mosaicColToVisualize, :)), squeeze(photoCurrentSequence.linear(mosaicRowToVisualize, mosaicColToVisualize, :)));
+            r = r / max(r(:));
+            lags = lags*decodedSceneTemporalSampling;
+            indices = find(abs(lags) < 3000);
+            lags = lags(indices);
+            r = r(indices);
+            idx = find(max(r));
+            delayOfMaxCorrelation = lags(idx);
+            
+            figure(2998); clf;
+            mosaicRowToVisualize = 11;
+            mosaicColToVisualize = 13;
+            maxIsomerization = max(squeeze(photoCurrentSequence.identity(mosaicRowToVisualize, mosaicColToVisualize,:)));
+            maxLinear = max(squeeze(photoCurrentSequence.linear(mosaicRowToVisualize, mosaicColToVisualize, :)));
+            maxBiophys = max(squeeze(photoCurrentSequence.biophys(mosaicRowToVisualize, mosaicColToVisualize, :)));
+            subplot(3,1,1);
+            plot(1:tBins, squeeze(photoCurrentSequence.identity(mosaicRowToVisualize, mosaicColToVisualize, :))/maxIsomerization, 'k-'); hold on
+            plot(1:tBins, squeeze(photoCurrentSequence.linear(mosaicRowToVisualize, mosaicColToVisualize, :))/maxLinear, 'r-'); hold off
+            legend({'isomerizations', 'linear'});
+            xlabel('time');
+            subplot(3,1,2);
+            plot(1:tBins, squeeze(photoCurrentSequence.linear(mosaicRowToVisualize, mosaicColToVisualize, :))/maxLinear, 'r-'); hold on
+            plot(1:tBins, squeeze(photoCurrentSequence.biophys(mosaicRowToVisualize, mosaicColToVisualize, :))/maxBiophys, 'b -'); hold off
+            xlabel('time');
+            legend({'linear', 'biophys'});
+            subplot(3,1,3);
+            plot(1:tBins, squeeze(photoCurrentSequence.identity(mosaicRowToVisualize, mosaicColToVisualize, :))/maxIsomerization, 'k-'); hold on
+            plot(1:tBins, squeeze(photoCurrentSequence.biophys(mosaicRowToVisualize, mosaicColToVisualize, :))/maxBiophys, 'b -'); hold off
+            legend({'isomerizations', 'biophys'});
+            xlabel('time');
+            drawnow;
+            
+            figure(2999);
+            clf;
+            subplot(1,3,1);
+            plot(photoCurrentSequence.identity(:), photoCurrentSequence.linear(:), 'k.');
+            xlabel('isomerization'); ylabel('linear photocurrent'); axis 'square'
+            subplot(1,3,2);
+            plot(photoCurrentSequence.linear(:), photoCurrentSequence.biophys(:), 'k.');
+            xlabel('linear photocurrent'); ylabel('biophys photocurrent'); axis 'square'
+            subplot(1,3,3);
+            plot(photoCurrentSequence.identity(:), photoCurrentSequence.biophys(:), 'k.');
+            xlabel('isomerization'); ylabel('biophys photocurrent'); axis 'square'
+            drawnow
+            
+            figure(3000);
+            clf;
+            subplot(1,3,1);
+            plot(squeeze(photoCurrentSequence.identity(mosaicRowToVisualize, mosaicColToVisualize, :)), squeeze(photoCurrentSequence.linear(mosaicRowToVisualize, mosaicColToVisualize, :)), 'k.');
+            xlabel('isomerization'); ylabel('linear photocurrent'); axis 'square'
+            subplot(1,3,2);
+            plot(squeeze(photoCurrentSequence.linear(mosaicRowToVisualize, mosaicColToVisualize, :)), squeeze(photoCurrentSequence.biophys(mosaicRowToVisualize, mosaicColToVisualize, :)), 'k.');
+            xlabel('linear photocurrent'); ylabel('biophys photocurrent'); axis 'square'
+            subplot(1,3,3);
+            plot(squeeze(photoCurrentSequence.identity(mosaicRowToVisualize, mosaicColToVisualize, :)), squeeze(photoCurrentSequence.biophys(mosaicRowToVisualize, mosaicColToVisualize, :)), 'k.');
+            xlabel('isomerization'); ylabel('biophys photocurrent'); axis 'square'
+            drawnow
+            
+            figure(3001)
+            clf;
+            plot(lags*decodedSceneTemporalSampling, r, 'bs-');
+            hold on;
+            plot(delayOfMaxCorrelation*decodedSceneTemporalSampling, [-1 1], 'b-');
+            hold off;
+            xlabel('isomerization - photocurrent delay (ms)');
+            drawnow
+            pause
+            
+            
+        else
+            timeDimensionIndex = ndims(photoCurrentSequence); 
+            [photoCurrentSequence, ~, ~, ~] = core.subsampleTemporally(photoCurrentSequence,  scanTimeAxis, initialTimePeriodExcuded, timeDimensionIndex, lowPassSignal, decodedSceneTemporalSampling);
+        end
         
         % transform LMS excitation sequence into Weber contrast
         % 10 mssec after trailingAdaptationPeriod until 10 msec before end of scan time axis

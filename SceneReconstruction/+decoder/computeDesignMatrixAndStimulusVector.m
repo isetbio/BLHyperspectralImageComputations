@@ -33,8 +33,7 @@ function [X, C, Coi] = computeDesignMatrixAndStimulusVector(signals, stimulus, s
             if (timeBins(end) <= size(signals,2))
                 X(row, startingColumn:endingColumn) = signals(coneIndex, timeBins);
             else
-                fprintf('At row: %d (coneIndex:%d), column %d exceeds size(signals,2): %d\n', row, coneIndex, timeBins(end), size(signals,2));
-                pause
+                error('At row: %d (coneIndex:%d), column %d exceeds size(signals,2): %d\n', row, coneIndex, timeBins(end), size(signals,2));
             end 
         end % coneIndex
         

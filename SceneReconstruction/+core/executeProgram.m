@@ -96,8 +96,9 @@ function executeProgram(instructionSet, whichDataSet, opticalElements, inertPigm
                 visualizePerformanceForVarianceExplained = [];  %99.99;  % empty for all variance levels, 
                 visualizer.renderPerformanceFigures(sceneSetName, decodingDataDir,  visualizePerformanceForVarianceExplained, 'InAndOutOfSample');
 
-            case 'makeReconstructionVideo'
-                visualizer.renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir);
+            case 'makeInSampleReconstructionVideo'
+                visualizePerformanceForVarianceExplained = [];  %99.99;  % empty for all variance levels, 
+                visualizer.renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir, 'InSample');
 
             case 'visualizeConeMosaic'
                 visualizer.renderConeMosaic(sceneSetName, resultsDir, decodingDataDir);
