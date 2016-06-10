@@ -280,9 +280,17 @@ function hFig = generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spat
             coneYcoord = coneCoordsSubmosaic1(coneIndex,2);
             [~,ix] = min(abs(x-coneXcoord));
             [~,iy] = min(abs(y-coneYcoord));
-            w(coneIndex) = spatialWeightingKernel(iy,ix);
+            w1(coneIndex) = abs(spatialWeightingKernel(iy,ix));
         end
 
+        for coneIndex = 1:size(coneCoordsSubmosaic2,1)
+            coneXcoord = coneCoordsSubmosaic2(coneIndex,1);
+            coneYcoord = coneCoordsSubmosaic2(coneIndex,2);
+            [~,ix] = min(abs(x-coneXcoord));
+            [~,iy] = min(abs(y-coneYcoord));
+            w2(coneIndex) = abs(spatialWeightingKernel(iy,ix));
+        end
+        
         cStep = max(weightsRange)/12;
         boost = 2;
        % w(abs(w) < cStep) = 0;
@@ -291,7 +299,7 @@ function hFig = generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spat
         % Plot the cones
         markerSize = 80;
         for coneIndex = 1:size(coneCoordsSubmosaic1,1)
-            RGBColors1(coneIndex,:) = [1 1 1]*(1-w(coneIndex)) + RGBColor1 * w(coneIndex);
+            RGBColors1(coneIndex,:) = [1 1 1]*(1-w1(coneIndex)) + RGBColor1 * w1(coneIndex);
         end
         RGBColors1(RGBColors1>1) = 1;
         RGBColors1(RGBColors1<0) = 0;
@@ -301,7 +309,7 @@ function hFig = generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spat
         
         if (~isempty(coneCoordsSubmosaic2))
             for coneIndex = 1:size(coneCoordsSubmosaic2,1)
-                RGBColors2(coneIndex,:) = [1 1 1]*(1-w(coneIndex)) + RGBColor2 * w(coneIndex);
+                RGBColors2(coneIndex,:) = [1 1 1]*(1-w2(coneIndex)) + RGBColor2 * w2(coneIndex);
             end
             RGBColors2(RGBColors2>1) = 1;
             RGBColors2(RGBColors2<0) = 0;
@@ -310,14 +318,17 @@ function hFig = generateSubMosaicSamplingFigures(stimDecoder, weightsRange, spat
         
         contourLineColor = [0.4 0.4 0.4];
         % negative contours
+        contourLevels = -0.9:0.2:-0.1;
+        
         hold on
-        [C,H] = contour(xx,yy, spatialWeightingKernel, (weightsRange(1):cStep:-cStep));
+        [C,H] = contour(xx,yy, spatialWeightingKernel, contourLevels);
         H.LineWidth = 1;
         H.LineStyle = '--';
         H.LineColor = contourLineColor;
         
         % positive contours
-        [C,H] = contour(xx,yy, spatialWeightingKernel, (cStep:cStep:weightsRange(2)));
+        contourLevels = 0.1:0.2:0.9;
+        [C,H] = contour(xx,yy, spatialWeightingKernel, contourLevels);
         H.LineWidth = 1;
         H.LineStyle = '-';
         H.LineColor = contourLineColor;
