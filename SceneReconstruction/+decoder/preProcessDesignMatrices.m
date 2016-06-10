@@ -15,12 +15,12 @@
     tic
     computeRank = true;
     designMatrixPreprocessing = [];
-    [Xtrain, originalXtrainRank, designMatrixPreprocessing] = preProcessDesignMatrix(Xtrain, preProcessingParams, computeRank, designMatrixPreprocessing);
+    [Xtrain, originalXtrainRank, postProcessXtrainRank, designMatrixPreprocessing] = preProcessDesignMatrix(Xtrain, preProcessingParams, computeRank, designMatrixPreprocessing);
     fprintf('Done with pre-processing of training matrix after %2.1f minutes.\n', toc/60);
     
     fprintf('3. Saving training matrix  ... ');
     tic
-    save(fileNameXtrain, 'Xtrain', 'originalXtrainRank', '-append');
+    save(fileNameXtrain, 'Xtrain', 'originalXtrainRank', 'postProcessXtrainRank', 'designMatrixPreprocessing', '-append');
     clear 'Xtrain';
     
     
@@ -34,18 +34,18 @@
     fprintf('2. Preprocessing test matrix  [%d x %d]... \n', testingSamples, filterDimensions);
     tic
     computeRank = false;
-    [Xtest, ~, ~] = preProcessDesignMatrix(Xtest, preProcessingParams, computeRank, designMatrixPreprocessing);
+    [Xtest, ~, ~, ~] = preProcessDesignMatrix(Xtest, preProcessingParams, computeRank, designMatrixPreprocessing);
     fprintf('Done  with pre-processing of test matrix after %2.1f minutes.\n', toc/60);
     
     fprintf('3. Saving test matrix  ... ');
     tic
-    save(fileNameXtest, 'Xtest', '-append');
+    save(fileNameXtest, 'Xtest', 'designMatrixPreprocessing', '-append');
     fprintf('Done after %2.1f minutes.\n', toc/60);
     clear 'Xtest'
 end
 
 
-function [X, originalXRank, designMatrixPreprocessing] = preProcessDesignMatrix(X, preProcessingParams, computeRank, designMatrixPreprocessing)
+function [X, originalXRank, postProcessXRank, designMatrixPreprocessing] = preProcessDesignMatrix(X, preProcessingParams, computeRank, designMatrixPreprocessing)
 
     % remove first column of ones
     X = X(:,2:end);
@@ -53,6 +53,7 @@ function [X, originalXRank, designMatrixPreprocessing] = preProcessDesignMatrix(
     timeSamples = size(X,1);
     filterDimensions = size(X,2);
     originalXRank = [];
+    postProcessXRank = [];
     
     if (~isempty(designMatrixPreprocessing))
         % Passed designMatrixPreprocessing is non empty, so use that one
@@ -89,7 +90,7 @@ function [X, originalXRank, designMatrixPreprocessing] = preProcessDesignMatrix(
     % Passed designMatrixPreprocessing is empty, so compute one
     if (preProcessingParams.designMatrixBased > 0)
         if (computeRank)
-            fprintf('2aa. Computing rank(originalX) [%d x %d]...',  timeSamples, filterDimensions);
+            fprintf('2aa. Computing rank (original X) [%d x %d]...',  timeSamples, filterDimensions);
             tic
             originalXRank = rank(X);
             fprintf('Done after %2.1f minutes.\n', toc/60);
@@ -97,10 +98,10 @@ function [X, originalXRank, designMatrixPreprocessing] = preProcessDesignMatrix(
         end
         
         % Compute degree of whiteness of X
-        varianceCovarianceMatrix = 1/timeSamples*(X')*X;
-        upperDiagElements = triu(varianceCovarianceMatrix, 1);
-        originalXCovariances = upperDiagElements(:);
-        normOfOriginalXCovariances = sqrt(1/numel(originalXCovariances)*sum(originalXCovariances.^2));
+        %varianceCovarianceMatrix = 1/timeSamples*(X')*X;
+        %upperDiagElements = triu(varianceCovarianceMatrix, 1);
+        %originalXCovariances = upperDiagElements(:);
+        %normOfOriginalXCovariances = sqrt(1/numel(originalXCovariances)*sum(originalXCovariances.^2));
    
         tic
         fprintf('\t2a. Centering (X) [%d x %d]...',  timeSamples, filterDimensions);
@@ -135,12 +136,20 @@ function [X, originalXRank, designMatrixPreprocessing] = preProcessDesignMatrix(
             end
         end
         
-        varianceCovarianceMatrix = 1/timeSamples*(X')*X;
-        upperDiagElements = triu(varianceCovarianceMatrix, 1);
-        originalXCovariances = upperDiagElements(:);
-        normOfpreProcessedXCovariances = sqrt(1/numel(originalXCovariances)*sum(originalXCovariances.^2));
-        fprintf('\nNorm of covariances: original(X) = %2.2f, preProcessed(X) = %2.2f\n', normOfOriginalXCovariances, normOfpreProcessedXCovariances);
+        %varianceCovarianceMatrix = 1/timeSamples*(X')*X;
+        %upperDiagElements = triu(varianceCovarianceMatrix, 1);
+        %originalXCovariances = upperDiagElements(:);
+        %normOfpreProcessedXCovariances = sqrt(1/numel(originalXCovariances)*sum(originalXCovariances.^2));
+        %fprintf('\nNorm of covariances: original(X) = %2.2f, preProcessed(X) = %2.2f\n', normOfOriginalXCovariances, normOfpreProcessedXCovariances);
     
+        if (computeRank)
+            fprintf('2d. Computing rank (post-process X) [%d x %d]...',  timeSamples, filterDimensions);
+            tic
+            postProcessXRank = rank(X);
+            fprintf('Done after %2.1f minutes.\n', toc/60);
+            fprintf('<strong>Rank (post-process X) = %d</strong>\n', postProcessXRank);
+        end
+        
         % add first column of all ones back
         X = cat(2, ones(size(X,1), 1), X);
     end
