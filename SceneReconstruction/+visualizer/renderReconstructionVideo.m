@@ -803,15 +803,21 @@ function [decodedImagePlot, decodedRegionOutlinePlot] = initializeDecodedImagePl
     if (~isempty(decoderContours))
         C = decoderContours('LconeMosaic');
         if (~isempty(C.principalMosaicContour))
-            plot(theAxes, C.principalMosaicContour.x, C.principalMosaicContour.y, 'k-', 'Color', LconeContrastColor, 'LineWidth', 3.0);
+            for i = 1:numel(C.principalMosaicContour)
+                plot(theAxes, C.principalMosaicContour{i}.x, C.principalMosaicContour{i}.y, 'k-', 'Color', LconeContrastColor, 'LineWidth', 3.0);
+            end
         end
         C = decoderContours('MconeMosaic');
         if (~isempty(C.principalMosaicContour))
-            plot(theAxes, C.principalMosaicContour.x, C.principalMosaicContour.y, 'k-', 'Color', MconeContrastColor, 'LineWidth', 3.0);
+            for i = 1:numel(C.principalMosaicContour)
+                plot(theAxes, C.principalMosaicContour{i}.x, C.principalMosaicContour{i}.y, 'k-', 'Color', MconeContrastColor, 'LineWidth', 3.0);
+            end
         end
         C = decoderContours('SconeMosaic');
         if (~isempty(C.principalMosaicContour))
-            plot(theAxes, C.principalMosaicContour.x, C.principalMosaicContour.y, 'k-', 'Color', SconeContrastColor, 'LineWidth', 3.0);
+            for i = 1:numel(C.principalMosaicContour)
+                plot(theAxes, C.principalMosaicContour{i}.x, C.principalMosaicContour{i}.y, 'k-', 'Color', SconeContrastColor, 'LineWidth', 3.0);
+            end
         end
     end
     
@@ -921,19 +927,28 @@ function initializeConeMosaicPlot(theAxes, titleString, sensorData, theXDataRang
         plot(theAxes, [0 0], [theYDataRange(1)-dy/2 theYDataRange(2)+dy/2], 'k-', 'LineWidth', 1.5);
     end
     
-    
+        
+        
     if (~isempty(decoderContours))
         C = decoderContours('LconeMosaic');
         if (~isempty(C.principalMosaicContour))
-            plot(theAxes, C.principalMosaicContour.x, C.principalMosaicContour.y, 'k-', 'Color', LconeContrastColor, 'LineWidth', 3.0);
+            for i = 1:numel(C.principalMosaicContour)
+                plot(theAxes, C.principalMosaicContour{i}.x, C.principalMosaicContour{i}.y, 'k-', 'Color', LconeContrastColor, 'LineWidth', 3.0);
+            end
         end
+        
         C = decoderContours('MconeMosaic');
         if (~isempty(C.principalMosaicContour))
-            plot(theAxes, C.principalMosaicContour.x, C.principalMosaicContour.y, 'k-', 'Color', MconeContrastColor, 'LineWidth', 3.0);
+            for i = 1:numel(C.principalMosaicContour)
+                plot(theAxes, C.principalMosaicContour{i}.x, C.principalMosaicContour{i}.y, 'k-', 'Color', MconeContrastColor, 'LineWidth', 3.0);
+            end
         end
+        
         C = decoderContours('SconeMosaic');
         if (~isempty(C.principalMosaicContour))
-            plot(theAxes, C.principalMosaicContour.x, C.principalMosaicContour.y, 'k-', 'Color', SconeContrastColor, 'LineWidth', 3.0);
+            for i = 1:numel(C.principalMosaicContour)
+                plot(theAxes, C.principalMosaicContour{i}.x, C.principalMosaicContour{i}.y, 'k-', 'Color', SconeContrastColor, 'LineWidth', 3.0);
+            end
         end
     end
     

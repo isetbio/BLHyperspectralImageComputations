@@ -211,7 +211,7 @@ function renderConeMosaicPlot(theAxes, contourData, contourColor, sensorData, sp
     dX = spatialSupportX(2)-spatialSupportX(1);
     dY = spatialSupportY(2)-spatialSupportY(1);
     
-    markerSize = 130;
+    markerSize = 180;
     markerSymbol = 's';
     scatter(theAxes, squeeze(sensorData.conePositions(lConeIndices,1)), squeeze(sensorData.conePositions(lConeIndices,2)), markerSize, markerSymbol, 'MarkerFaceColor', LconeContrastColor*0.8,  'MarkerEdgeColor', 'none');
     hold(theAxes, 'on');
