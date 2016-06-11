@@ -802,21 +802,21 @@ function [decodedImagePlot, decodedRegionOutlinePlot] = initializeDecodedImagePl
     
     if (~isempty(decoderContours))
         C = decoderContours('LconeMosaic');
-        if (~isempty(C.principalMosaicContour))
-            for i = 1:numel(C.principalMosaicContour)
-                plot(theAxes, C.principalMosaicContour{i}.x, C.principalMosaicContour{i}.y, 'k-', 'Color', LconeContrastColor, 'LineWidth', 3.0);
+        if (~isempty(C.principalMosaicContours))
+            for i = 1:numel(C.principalMosaicContours)
+                plot(theAxes, C.principalMosaicContour(i).x, C.principalMosaicContours(i).y, 'k-', 'Color', LconeContrastColor, 'LineWidth', 3.0);
             end
         end
         C = decoderContours('MconeMosaic');
-        if (~isempty(C.principalMosaicContour))
-            for i = 1:numel(C.principalMosaicContour)
-                plot(theAxes, C.principalMosaicContour{i}.x, C.principalMosaicContour{i}.y, 'k-', 'Color', MconeContrastColor, 'LineWidth', 3.0);
+        if (~isempty(C.principalMosaicContours))
+            for i = 1:numel(C.principalMosaicContours)
+                plot(theAxes, C.principalMosaicContours(i).x, C.principalMosaicContours(i).y, 'k-', 'Color', MconeContrastColor, 'LineWidth', 3.0);
             end
         end
         C = decoderContours('SconeMosaic');
-        if (~isempty(C.principalMosaicContour))
-            for i = 1:numel(C.principalMosaicContour)
-                plot(theAxes, C.principalMosaicContour{i}.x, C.principalMosaicContour{i}.y, 'k-', 'Color', SconeContrastColor, 'LineWidth', 3.0);
+        if (~isempty(C.principalMosaicContours))
+            for i = 1:numel(C.principalMosaicContours)
+                plot(theAxes, C.principalMosaicContours(i).x, C.principalMosaicContours(i).y, 'k-', 'Color', SconeContrastColor, 'LineWidth', 3.0);
             end
         end
     end
