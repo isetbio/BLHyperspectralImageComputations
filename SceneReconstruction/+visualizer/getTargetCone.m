@@ -27,7 +27,6 @@ function s = getTargetConeCoordsVersion1(sensorData, conePositions, targetDecode
             'xyCoord', conePositions(closestConeOfSelectedType,:), ...
             'nearestDecoderRowColCoord', [dr rc]);
         
-        fprintf('Before: r=%d c=%d x=%2.1f, y = %2.1f\n', s.rowcolCoord(1), s.rowcolCoord(2), s.xyCoord(1), s.xyCoord(2));
 end
 
 function s = getTargetConeCoordsVersion2(decoder, conePositions, targetDecoderRowCol, decodedContrastIndex, coneIndices)
@@ -45,6 +44,4 @@ function s = getTargetConeCoordsVersion2(decoder, conePositions, targetDecoderRo
             'rowcolCoord', [r c], ...
             'xyCoord', conePositions(peakResponseConeIndex,:), ...
             'nearestDecoderRowColCoord', targetDecoderRowCol);
-        
-        fprintf('After: %d %d \n', s.rowcolCoord(1), s.rowcolCoord(2));
 end

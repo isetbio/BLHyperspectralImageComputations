@@ -18,26 +18,24 @@ function renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir, In
     targetLdecoderXYcoords = [7 10];
     targetMdecoderXYcoords = [14 -6];
     targetSdecoderXYcoords = [0 0];
+    scanData = [];
     sensorData = visualizer.retrieveSensorData(sceneSetName, resultsDir, decoder, targetLdecoderXYcoords, targetMdecoderXYcoords, targetSdecoderXYcoords);
     
-    makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, sceneIndexSequence, sensorPositionSequence, responseSequence, decoder, sensorData, SVDvarianceExplained, expParams, videoPostFix);
+    makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, sceneIndexSequence, sensorPositionSequence, responseSequence, decoder, targetLdecoderXYcoords, targetMdecoderXYcoords, targetSdecoderXYcoords, sensorData, SVDvarianceExplained, expParams, videoPostFix);
 end
 
 
 
-function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, sceneIndexSequence, sensorPositionSequence, responseSequence, decoder, sensorData, SVDvarianceExplained, expParams, videoPostFix)
+function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, sceneIndexSequence, sensorPositionSequence, responseSequence, decoder, targetLdecoderXYcoords, targetMdecoderXYcoords, targetSdecoderXYcoords, sensorData, SVDvarianceExplained, expParams, videoPostFix)
     
-    % Get luminance colormap
-    p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
-    load(fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'), 'grayRedLUT');
-    colormap(grayRedLUT); 
+    lConeIndices = find(sensorData.coneTypes == 2);
+    mConeIndices = find(sensorData.coneTypes == 3);
+    sConeIndices = find(sensorData.coneTypes == 4);
     
     % Generate colors for L,M,S contrast traces
     LconeContrastColor = [255 170 190]/255;
     MconeContrastColor = [120 255 224]/255;
     SconeContrastColor = [170 180 255]/255;
-    
-    
     
     
     % Generate super display for rendering
@@ -58,6 +56,11 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
     slideSize = [1920 1080]; slideCols = 6; slideRows = 4;
     [axesDictionary, hFig] = generateAxes(slideSize, slideCols, slideRows);
 
+     % Get luminance colormap
+    p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
+    load(fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'), 'grayRedLUT');
+    colormap(grayRedLUT); 
+    
     % Generate video object
     videoFilename = fullfile(expParams.decodingDataDir, sprintf('ReconstructionInSample%s.m4v', videoPostFix));
     videoOBJ = generateVideoObject(videoFilename);
@@ -87,21 +90,71 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
     reconstructedVSinputLvsMratioPlot = [];
     reconstructedVSinputSvsLMratioPlot = [];
     
+    % time to spend on each scene
+    sceneVisualizationTimeInMilliseconds = 10000;
+    tBinsToVisualizePerScene = round(sceneVisualizationTimeInMilliseconds/(timeAxis(2)-timeAxis(1)));
     
     previousSceneIndex = 0;
+    maxCbefore = 0;
+    previousLdecoderXYcoords = targetLdecoderXYcoords;
+    targetDecoderRowColCoord = [];
+    
     for tBin = recentTbinsNum+1:numel(timeAxis)
         
+        % Find the (row,col) position of the decoder that has the max input contrast
+        % This is so we can constantly update the visualized cone/decoder
+        % with the max response
+        inputConeContrasts = squeeze(LMScontrastInput(:,:,1:3,tBin));
+        [maxCnow, idx] = max(inputConeContrasts(:));
+        
+        
+        updateVisualizedDecoder = false;  
+        if (maxCnow > 3*maxCbefore)
+            maxCbefore = maxCnow;
+            [decoderRow, decoderCol, ~] = ind2sub([size(LMScontrastInput,1) size(LMScontrastInput,2) size(LMScontrastInput,3)], idx);
+            targetDecoderRowColCoord = [decoderRow decoderCol];  
+            targetLdecoderXYcoords = [sensorData.decodedImageSpatialSupportX(decoderCol) sensorData.decodedImageSpatialSupportY(decoderRow)];
+            targetMdecoderXYcoords = targetLdecoderXYcoords;
+            targetSdecoderXYcoords = targetLdecoderXYcoords;
+            sensorData.targetLCone = visualizer.getTargetCone(decoder, sensorData, sensorData.conePositions, targetLdecoderXYcoords, 1, lConeIndices);
+            sensorData.targetMCone = visualizer.getTargetCone(decoder, sensorData, sensorData.conePositions, targetMdecoderXYcoords, 2, mConeIndices);
+            sensorData.targetSCone = visualizer.getTargetCone(decoder, sensorData, sensorData.conePositions, targetSdecoderXYcoords, 3, sConeIndices);
+    
+            if (any(targetLdecoderXYcoords-previousLdecoderXYcoords))
+                updateVisualizedDecoder = true;
+                previousLdecoderXYcoords = targetLdecoderXYcoords;
+            end
+        else
+           maxCbefore = maxCbefore*0.95; 
+        end
+        
+        if (tBin == recentTbinsNum+1)
+            maxCbefore = maxCnow;
+            [decoderRow, decoderCol, ~] = ind2sub([size(LMScontrastInput,1) size(LMScontrastInput,2) size(LMScontrastInput,3)], idx);
+            targetDecoderRowColCoord = [decoderRow decoderCol]; 
+            updateVisualizedDecoder = true;
+        end
+        
+    
         recentTbins = tBin-recentTbinsNum:1:tBin;
         recentTime  = timeAxis(recentTbins)-timeAxis(recentTbins(end));
         recentTimeRange = [recentTime(1) recentTime(end)];
             
+        correctionFactor = 0.003;
+        eyePositionCorrection.x = sensorPositionSequence(tBin,1)*correctionFactor;
+        eyePositionCorrection.y = sensorPositionSequence(tBin,2)*correctionFactor;
+        fprintf('t: %2.2f, xpos: %2.2f, correction: %2.4f\n', timeAxis(tBin), sensorPositionSequence(tBin,1), sensorPositionSequence(tBin,1)*correctionFactor);
+            
         % Get the current scene data
+        updateSceneData = false;
         if (sceneIndexSequence(tBin) ~= previousSceneIndex)
             fprintf('Retrieving new scene data at time bin: %d\n', tBin);
             [sceneData, oiData] = retrieveComputedDataForCurrentScene(expParams.sceneSetName, expParams.resultsDir, sceneIndexSequence(tBin), ...
                 renderingDisplay, boostFactorForOpticalImage, displayGamma);
             
             previousSceneIndex = sceneIndexSequence(tBin);
+            updateSceneData = true;
+            tBinForCurrentScene = tBin;
             
             % The decoder region outline
             theDecodedRegionOutline = struct('x', sensorData.decodedImageOutlineX, 'y', sensorData.decodedImageOutlineY, 'color', [0 0 0]);
@@ -115,6 +168,10 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             [fullSceneSensorOutlinePlot, fullSceneDecodedRegionOutlinePlot] = initializeFullScenePlot(axesDictionary('fullInputScene'), sceneData, sensorOutline, decodedRegionOutline);
         end
         
+        if (tBin > tBinForCurrentScene + tBinsToVisualizePerScene)
+            continue;
+        end
+        
         % Convert the various LMS contrasts to RGB settings and luminances for the rendering display
         RGBsettingsAndLuminanceData = LMScontrastsToRGBsettingsAndLuminanceforRenderingDisplay(tBin, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, ...
                         sceneBackgroundExcitation,  opticalImageBackgroundExcitation, renderingDisplay, boostFactorForOpticalImage, displayGamma);
@@ -124,7 +181,9 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
         sensorOutline.y = sensorData.spatialOutlineY + sensorPositionSequence(tBin,2);
         decodedRegionOutline.x = sensorData.decodedImageOutlineX + sensorPositionSequence(tBin,1);
         decodedRegionOutline.y = sensorData.decodedImageOutlineY + sensorPositionSequence(tBin,2);
-        updateFullScenePlot(axesDictionary('fullInputScene'), fullSceneSensorOutlinePlot, sensorOutline, fullSceneDecodedRegionOutlinePlot, decodedRegionOutline, sceneData.fullSceneSpatialSupportX, sceneData.fullSceneSpatialSupportY);
+        updateFullScenePlot(axesDictionary('fullInputScene'), fullSceneSensorOutlinePlot, sensorOutline, ...
+            fullSceneDecodedRegionOutlinePlot, decodedRegionOutline, eyePositionCorrection, ...
+            sceneData.fullSceneSpatialSupportX, sceneData.fullSceneSpatialSupportY);
         
         
         % TOP PLOTS
@@ -140,7 +199,7 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             titleString = 'luminance map';
             colorbarStruct = [];
             axesColor = [0 0 0];
-            identifyTargetDecoderPositions = true;
+            identifyTargetDecoderPositions = false;
             labelMosaicCenterUsingCrossHairs = true;
             decoderSpatialFilterProfiles = [];
             [inputOpticalImageLuminanceMapPlot, inputOpticalImageLuminanceMapDecodedRegionOutlinePlot] = initializeDecodedImagePlot(...
@@ -152,10 +211,13 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
                   decoderSpatialFilterProfiles, sensorData,...
                   xTicks, yTicks, xlabelString, ylabelString, axesColor, LconeContrastColor, MconeContrastColor, SconeContrastColor, colorbarStruct);  
         else
+            if (updateSceneData)
+                set(inputOpticalImageLuminanceMapPlot, 'CData', oiData.LuminanceMap);
+            end
             set(axesDictionary('inputOpticalImageIlluminanceMap'), ...
-                'XLim', sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], ...
-                'YLim', sensorPositionSequence(tBin,2)+ [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)]);
-            set(inputOpticalImageLuminanceMapDecodedRegionOutlinePlot, 'XData', decodedRegionOutline.x, 'YData', decodedRegionOutline.y);
+                'XLim', sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)] + eyePositionCorrection.x, ...
+                'YLim', sensorPositionSequence(tBin,2)+ [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)] + eyePositionCorrection.y);
+            set(inputOpticalImageLuminanceMapDecodedRegionOutlinePlot, 'XData', decodedRegionOutline.x + eyePositionCorrection.x, 'YData', decodedRegionOutline.y + eyePositionCorrection.y);
         end
         
         % The RGB rendition  of the input optical image patch
@@ -182,10 +244,13 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
                   decoderSpatialFilterProfiles, sensorData, ...
                   xTicks, yTicks, xlabelString, ylabelString, axesColor, LconeContrastColor, MconeContrastColor, SconeContrastColor, colorbarStruct);
         else
+            if (updateSceneData)
+                set(inputOpticalImageRGBrenditionPlot, 'CData', oiData.RGBforRenderingDisplay);
+            end
             set(axesDictionary('inputOpticalImageRGBrendition'), ...
-                'XLim', sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], ...
-                'YLim', sensorPositionSequence(tBin,2)+ [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)]);
-            set(inputOpticalImageRGBrenditionDecodedRegionOutlinePlot, 'XData', decodedRegionOutline.x, 'YData', decodedRegionOutline.y);
+                'XLim', sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end) + eyePositionCorrection.x], ...
+                'YLim', sensorPositionSequence(tBin,2)+ [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end) + eyePositionCorrection.y]);
+            set(inputOpticalImageRGBrenditionDecodedRegionOutlinePlot, 'XData', decodedRegionOutline.x + eyePositionCorrection.x, 'YData', decodedRegionOutline.y + eyePositionCorrection.y);
         end
         
         
@@ -221,10 +286,13 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
                   decoderSpatialFilterProfiles, sensorData, ...
                   xTicks, yTicks, xlabelString, ylabelString, axesColor, LconeContrastColor, MconeContrastColor, SconeContrastColor, colorbarStruct);  
         else
+            if (updateSceneData)
+                set(inputSceneLuminanceMapPlot, 'CData', sceneData.LuminanceMap);
+            end
             set(axesDictionary('inputSceneLuminanceMap'), ...
-                'XLim', sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], ...
-                'YLim', sensorPositionSequence(tBin,2)+ [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)]);
-            set(inputSceneLuminanceMapDecodedRegionOutlinePlot, 'XData', decodedRegionOutline.x, 'YData', decodedRegionOutline.y);
+                'XLim', sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)] + eyePositionCorrection.x, ...
+                'YLim', sensorPositionSequence(tBin,2)+ [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)] + eyePositionCorrection.y);
+            set(inputSceneLuminanceMapDecodedRegionOutlinePlot, 'XData', decodedRegionOutline.x+ eyePositionCorrection.x, 'YData', decodedRegionOutline.y+ eyePositionCorrection.y);
         end
         
         % The RGB rendition of the input scene patch
@@ -251,10 +319,13 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
                   decoderSpatialFilterProfiles, sensorData, ...
                   xTicks, yTicks, xlabelString, ylabelString, axesColor, LconeContrastColor, MconeContrastColor, SconeContrastColor, colorbarStruct);  
         else
+            if (updateSceneData)
+                set(inputSceneRGBrenditionPlot, 'CData', sceneData.RGBforRenderingDisplay);
+            end
             set(axesDictionary('inputSceneRGBrendition'), ...
-                'XLim', sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], ...
-                'YLim', sensorPositionSequence(tBin,2)+ [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)]);
-            set(inputSceneRGBrenditionDecodedRegionOutlinePlot, 'XData', decodedRegionOutline.x, 'YData', decodedRegionOutline.y);
+                'XLim', sensorPositionSequence(tBin,1)+ [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)] + eyePositionCorrection.x, ...
+                'YLim', sensorPositionSequence(tBin,2)+ [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)] + eyePositionCorrection.y);
+            set(inputSceneRGBrenditionDecodedRegionOutlinePlot, 'XData', decodedRegionOutline.x + eyePositionCorrection.x, 'YData', decodedRegionOutline.y + eyePositionCorrection.y);
         end
         
         
@@ -274,7 +345,7 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             decoderSpatialFilterProfiles = [];
             [reconstructedSceneLuminanceMapPlot, ~] = initializeDecodedImagePlot(...
                     axesDictionary('reconstructedSceneLuminanceMap'), titleString, ...
-                    RGBsettingsAndLuminanceData.reconstructedLuminanceMap , luminanceRange,...
+                    RGBsettingsAndLuminanceData.reconstructedLuminanceMap, luminanceRange,...
                     [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
                     sensorData.decodedImageSpatialSupportX, sensorData.decodedImageSpatialSupportY,  ...
                     decodedRegionOutline, identifyTargetDecoderPositions, labelMosaicCenterUsingCrossHairs, ...
@@ -311,7 +382,7 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
         
         
         
-        if (tBin == recentTbinsNum+1)
+        if (updateVisualizedDecoder)
             % The Decoder's spatial filter plots 
             xTicks = []; 
             yTicks = []; % [sensorData.spatialSupportY(1) 0 sensorData.spatialSupportY(end)];
@@ -327,7 +398,7 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
                     axesDictionary('targetMcontastDecoderFilter'), ...
                     axesDictionary('targetScontastDecoderFilter'), ...
                     decoder, SVDvarianceExplained, ...
-                    sensorData.targetLCone, sensorData.targetMCone, sensorData.targetSCone, ...
+                    sensorData.targetLCone, sensorData.targetMCone, sensorData.targetSCone, targetDecoderRowColCoord, ...
                     [sensorData.spatialSupportX(1) sensorData.spatialSupportX(end)], [sensorData.spatialSupportY(1) sensorData.spatialSupportY(end)], ...
                     decodedRegionOutline, labelMosaicCenterUsingCrossHairs, xTicks, yTicks, xlabelString, ylabelString, titleStrings, axesColor, backgroundColor , LconeContrastColor, MconeContrastColor, SconeContrastColor);
         
@@ -340,7 +411,7 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             ylabelString = '';
             axesColor = [0 0 0];
             backgroundColor = [0.3 0.3 0.3];
-            decodedRegionOutline = [];
+            decodedRegionOutline = theDecodedRegionOutline;
             labelMosaicCenterUsingCrossHairs = true;
             decoderSpatialFilterProfiles = theDecoderSpatialFilterProfiles;
             initializeConeMosaicPlot(axesDictionary('LMSmosaic'), titleString, sensorData,...
@@ -353,7 +424,7 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
         
         % CENTER
         % The instantaneous photocurrent of the @os mosaic 
-        if (isempty(instantaneousSensorXYactivationPlot))
+        if (isempty(instantaneousSensorXYactivationPlot)) || (updateVisualizedDecoder)
             xTicks = [];
             yTicks = [];
             xlabelString = '';
@@ -371,7 +442,7 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
                 );
             axesColor = [0 0 0];
             decodedRegionOutline = theDecodedRegionOutline;
-            identifyTargetDecoderPositions = true;
+            identifyTargetDecoderPositions = false;
             labelMosaicCenterUsingCrossHairs = false;
             decoderSpatialFilterProfiles = theDecoderSpatialFilterProfiles;
             instantaneousSensorXYactivationPlot = initializeDecodedImagePlot(...
@@ -783,7 +854,7 @@ function [decodedImagePlot, decodedRegionOutlinePlot] = initializeDecodedImagePl
 end
 
 
-function updateFullScenePlot(theAxes, fullSceneSensorOutlinePlot, sensorOutline, fullSceneDecodedRegionOutlinePlot, decodedRegionOutline, spatialSupportX, spatialSupportY)
+function updateFullScenePlot(theAxes, fullSceneSensorOutlinePlot, sensorOutline, fullSceneDecodedRegionOutlinePlot, decodedRegionOutline, eyePosCorrection, spatialSupportX, spatialSupportY)
     
     dx = max(sensorOutline.x) - min(sensorOutline.x);
     dy = max(sensorOutline.y) - min(sensorOutline.y);
@@ -807,8 +878,8 @@ function updateFullScenePlot(theAxes, fullSceneSensorOutlinePlot, sensorOutline,
     aspectRatio = 0.5*axesPos(4)/axesPos(3);
     set(theAxes, 'XLim', [xLeft xRight], 'YLim', yo + windowWidth*aspectRatio * [-1 1]);
     
-    set(fullSceneSensorOutlinePlot, 'XData', sensorOutline.x, 'YData', sensorOutline.y);
-    set(fullSceneDecodedRegionOutlinePlot, 'XData', decodedRegionOutline.x, 'YData', decodedRegionOutline.y);
+    set(fullSceneSensorOutlinePlot, 'XData', sensorOutline.x+eyePosCorrection.x, 'YData', sensorOutline.y+eyePosCorrection.y);
+    set(fullSceneDecodedRegionOutlinePlot, 'XData', decodedRegionOutline.x+eyePosCorrection.x, 'YData', decodedRegionOutline.y+eyePosCorrection.y);
 end
 
 function [fullScenePlotSensorOutlinePlot, fullScenePlotDecodedRegionOutlinePlot] = initializeFullScenePlot(theAxes, sceneData, sensorOutline, decodedRegionOutline)
@@ -832,7 +903,7 @@ function initializeConeMosaicPlot(theAxes, titleString, sensorData, theXDataRang
     mConeIndices = find(sensorData.coneTypes == 3);
     sConeIndices = find(sensorData.coneTypes == 4);
     
-    markerSize = 140;
+    markerSize = 180;
     markerSymbol = 's';
     scatter(theAxes, squeeze(sensorData.conePositions(lConeIndices,1)), squeeze(sensorData.conePositions(lConeIndices,2)), markerSize, markerSymbol, 'MarkerFaceColor', LconeContrastColor*0.7,  'MarkerEdgeColor', 'none');
     hold(theAxes, 'on');
@@ -867,7 +938,7 @@ function initializeConeMosaicPlot(theAxes, titleString, sensorData, theXDataRang
     end
     
     hold(theAxes, 'off');
-    box(theAxes, 'off'); grid(theAxes, 'off');
+    box(theAxes, 'on'); grid(theAxes, 'off');
     
     axis(theAxes, 'image'); axis(theAxes, 'ij');
     set(theAxes, 'XLim', [theXDataRange(1)-dx/2 theXDataRange(2)+dx/2], ...
@@ -885,12 +956,12 @@ function initializeConeMosaicPlot(theAxes, titleString, sensorData, theXDataRang
 end
 
 
-function decoderContours = initializeDecoderPlots(theLdecoderAxes, theMdecoderAxes, theSdecoderAxes, decoder, SVDvarianceExplained, targetLcone, targetMcone, targetScone, ...
+function decoderContours = initializeDecoderPlots(theLdecoderAxes, theMdecoderAxes, theSdecoderAxes, decoder, SVDvarianceExplained, targetLcone, targetMcone, targetScone, targetDecoderRowColCoord, ...
     theXDataRange, theYDataRange, decodedRegionOutline, labelMosaicCenterUsingCrossHairs, xTicks, yTicks, xLabelString, yLabelString, titleStrings, axesColor, backgroundColor, LconeContrastColor, MconeContrastColor, SconeContrastColor)
     
     % Normalize to -1 .. +1 for plotting
     decoder.filters = decoder.filters / max(abs(decoder.filters(:)));
-    individualMosaicContourLevels = [-0.95 -0.75 -0.5 -0.25  0.25 0.5 0.75 0.95];
+    individualMosaicContourLevels = [-0.95 -0.75 -0.5 -0.2  0.2 0.5 0.75 0.95];
     
     spatialSupportX = decoder.spatioTemporalSupport.sensorRetinalXaxis;
     spatialSupportY = decoder.spatioTemporalSupport.sensorRetinalYaxis;
@@ -921,7 +992,7 @@ function decoderContours = initializeDecoderPlots(theLdecoderAxes, theMdecoderAx
         end
         
         
-        spatialFilter = squeeze(decoder.filters(decodedContrastIndex, targetCone.nearestDecoderRowColCoord(1), targetCone.nearestDecoderRowColCoord(2),:,:, decoder.peakTimeBins(decodedContrastIndex)));      
+        spatialFilter = squeeze(decoder.filters(decodedContrastIndex, targetDecoderRowColCoord(1), targetDecoderRowColCoord(2),:,:, decoder.peakTimeBins(decodedContrastIndex)));      
         imagesc(spatialSupportX, spatialSupportY, spatialFilter, 'parent', theAxes);
         hold(theAxes, 'on');
         
@@ -940,34 +1011,38 @@ function decoderContours = initializeDecoderPlots(theLdecoderAxes, theMdecoderAx
                     theOtherMosaicContours  = contourDataStruct.LMconeMosaicSamplingContours;
         end
         
-        C.principalMosaicContour = [];
-        C.theOtherMosaicContour = [];
+        C.principalMosaicContour = {};
+        C.theOtherMosaicContour = {};
         
-        maxLength = 0;
+        minLengthForInclusion = 10; i = 1;
         for contourNo = 1:numel(principalMosaicContours)
-            fprintf('principal contour %d/%d: level:%f, length: %d\n', contourNo, numel(principalMosaicContours), principalMosaicContours(contourNo).level, principalMosaicContours(contourNo).length);
-            if ((principalMosaicContours(contourNo).level == 0.5) && (maxLength < principalMosaicContours(contourNo).length))
-                C.principalMosaicContour = principalMosaicContours(contourNo);
-                maxLength = principalMosaicContours(contourNo).length;
+            %fprintf('principal contour %d/%d: level:%f, length: %d\n', contourNo, numel(principalMosaicContours), principalMosaicContours(contourNo).level, principalMosaicContours(contourNo).length);
+            if ((abs(principalMosaicContours(contourNo).level) < 0.5) && (principalMosaicContours(contourNo).length > minLengthForInclusion)) || (abs(principalMosaicContours(contourNo).level) >= 0.5)
+                C.principalMosaicContour{i} = principalMosaicContours(contourNo);
+                i = i+1;
             end
         end
         
-        maxLength = 0;
+        i = 1;
         for contourNo = 1:numel(theOtherMosaicContours)
-            fprintf('theOther contour %d/%d: level:%f, length: %d\n', contourNo, numel(theOtherMosaicContours), theOtherMosaicContours(contourNo).level, theOtherMosaicContours(contourNo).length);
-            if ((theOtherMosaicContours(contourNo).level == 0.5) && (maxLength < theOtherMosaicContours(contourNo).length))
-                C.theOtherMosaicContour = theOtherMosaicContours(contourNo);
-                maxLength = theOtherMosaicContours(contourNo).length;
-            end
+           % fprintf('theOther contour %d/%d: level:%f, length: %d\n', contourNo, numel(theOtherMosaicContours), theOtherMosaicContours(contourNo).level, theOtherMosaicContours(contourNo).length);
+           if ((abs(theOtherMosaicContours(contourNo).level) < 0.5) && (theOtherMosaicContours(contourNo).length > minLengthForInclusion)) || (abs(theOtherMosaicContours(contourNo).level) >= 0.5)
+                C.theOtherMosaicContours{i} = theOtherMosaicContours(contourNo);
+                i = i+1;
+            end 
         end
         
         
         decoderContours(decodedContrastNames{decodedContrastIndex}) = C;
         if (~isempty(C.principalMosaicContour))
-            plot(theAxes, C.principalMosaicContour.x, C.principalMosaicContour.y, 'k-', 'LineWidth', 2.0);
+            for i = 1:numel(C.principalMosaicContour)
+                plot(theAxes, C.principalMosaicContour{i}.x, C.principalMosaicContour{i}.y, 'k-', 'LineWidth', 2.0);
+            end
         end
         if (~isempty(C.theOtherMosaicContour))
-            plot(theAxes, C.theOtherMosaicContour.x, C.theOtherMosaicContour.y, 'k--', 'LineWidth', 2.0);
+            for i = 1:numel(C.theOtherMosaicContour)
+                plot(theAxes, C.theOtherMosaicContour{i}.x, C.theOtherMosaicContour{i}.y, 'k--', 'LineWidth', 2.0);
+            end
         end
         
         

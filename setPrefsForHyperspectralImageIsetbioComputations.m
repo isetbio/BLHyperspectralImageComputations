@@ -6,9 +6,11 @@ function setPrefsForHyperspectralImageIsetbioComputations
     switch (sysInfo.localHostName)
         case 'IoneanPelagos'
             dropBoxLocation = '/Volumes/IoneanPelagosTM/Dropbox/Dropbox (Aguirre-Brainard Lab)';
+            
         case 'Manta'
             % dropbox location for Manta (Nicolas' iMac)
             dropBoxLocation = '/Volumes/Manta TM HD/Dropbox (Aguirre-Brainard Lab)';
+            %dropBoxLocation = '/Volumes/IthakasPassport/Dropbox/Dropbox (Aguirre-Brainard Lab)';
         case 'Ithaka'
             % dropbox location for Manta (Nicolas' MacBook Pro)
             dropBoxLocation = '/Volumes/IthakasPassport/Dropbox/Dropbox (Aguirre-Brainard Lab)';

@@ -1,17 +1,17 @@
-function responseSequence = reformatDesignMatrixToOriginalResponse(X,  rawTrainingResponsePreprocessing, expParams)
+function responseSequence = reformatDesignMatrixToOriginalResponse(X,  rawTrainingResponsePreprocessing, preProcessingParams, decoderParams, sensorParams)
 
-    if (expParams.preProcessingParams.designMatrixBased > 0)
-        error('Undoing designMatric preprocessing not implemented yet');
+    if (preProcessingParams.designMatrixBased > 1)
+        error('Undoing designMatric preprocessing at level (%d) not implemented yet', preProcessingParams.designMatrixBased);
     end
     
-    if (expParams.preProcessingParams.rawResponseBased > 0)
+    if (preProcessingParams.rawResponseBased > 0)
         rawTrainingResponsePreprocessing
         error('Undoing raw response preprocessing not implemented yet');
     end
     
     
-    latencyBins = expParams.decoderParams.latencyInMillseconds / expParams.decoderParams.temporalSamplingInMilliseconds;
-    memoryBins  = expParams.decoderParams.memoryInMilliseconds / expParams.decoderParams.temporalSamplingInMilliseconds;
+    latencyBins = decoderParams.latencyInMillseconds / decoderParams.temporalSamplingInMilliseconds;
+    memoryBins  = decoderParams.memoryInMilliseconds / decoderParams.temporalSamplingInMilliseconds;
     if (latencyBins >= 0) 
         minTimeBin = 0;
     else
@@ -23,7 +23,7 @@ function responseSequence = reformatDesignMatrixToOriginalResponse(X,  rawTraini
     % Do not include the last (memoryBins-minTimeBin) bins because we do
     % not have points for all the filter lags
     totalBins = validTimeBins + (memoryBins-minTimeBin);
-    conesNum = expParams.sensorParams.spatialGrid(1) * expParams.sensorParams.spatialGrid(2);
+    conesNum = sensorParams.spatialGrid(1) * sensorParams.spatialGrid(2);
     signals = zeros(conesNum, totalBins);
     
     shiftToAlignWithScene = 0;
@@ -39,7 +39,7 @@ function responseSequence = reformatDesignMatrixToOriginalResponse(X,  rawTraini
         end % coneIndex
     end % row
     
-    originalSize = [expParams.sensorParams.spatialGrid(1) expParams.sensorParams.spatialGrid(2) totalBins];
+    originalSize = [sensorParams.spatialGrid(1) sensorParams.spatialGrid(2) totalBins];
     responseSequence = decoder.reformatResponseSequence('FromDesignMatrixFormat', signals, originalSize); 
 end
 
