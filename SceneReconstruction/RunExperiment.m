@@ -45,8 +45,8 @@ function RunExperiment
 
     % Specify outer-segment type
     %osType = '@osIdentity';
-    osType = '@osLinear';
-    %osType = '@osBiophys';
+    %osType = '@osLinear';
+    osType = '@osBiophys';
     
     % Specify the data set to use
     whichDataSet =  'harvard_machester_upenn';      % 'very_small', 'small', 'harvard', 'upenn', 'large', 'original', 'harvard_machester_upenn'

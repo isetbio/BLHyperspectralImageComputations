@@ -804,7 +804,7 @@ function [decodedImagePlot, decodedRegionOutlinePlot] = initializeDecodedImagePl
         C = decoderContours('LconeMosaic');
         if (~isempty(C.principalMosaicContours))
             for i = 1:numel(C.principalMosaicContours)
-                plot(theAxes, C.principalMosaicContour(i).x, C.principalMosaicContours(i).y, 'k-', 'Color', LconeContrastColor, 'LineWidth', 3.0);
+                plot(theAxes, C.principalMosaicContours(i).x, C.principalMosaicContours(i).y, 'k-', 'Color', LconeContrastColor, 'LineWidth', 3.0);
             end
         end
         C = decoderContours('MconeMosaic');
