@@ -15,6 +15,7 @@ function preProcessDesignMatrices(sceneSetName, decodingDataDir)
     tic
     computeRank = true;
     designMatrixPreprocessing = [];
+    
     [Xtrain, originalXtrainRank, designMatrixPreprocessing] = preProcessDesignMatrix(Xtrain, preProcessingParams, computeRank, designMatrixPreprocessing);
     fprintf('Done with pre-processing of training matrix after %2.1f minutes.\n', toc/60);
     
