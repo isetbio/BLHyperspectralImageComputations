@@ -26,47 +26,47 @@ function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, training
             totalTrainingScansNum = totalTrainingScansNum + 1;
             if (totalTrainingScansNum == 1)
                 dt = scanData{scanIndex}.timeAxis(2)-scanData{scanIndex}.timeAxis(1);
-                trainingTimeAxis                        = single(scanData{scanIndex}.timeAxis);
+                trainingTimeAxis                        = double(scanData{scanIndex}.timeAxis);
                 trainingScanInsertionTimes              = trainingTimeAxis(1);
-                trainingSceneIndexSequence              = repmat(single(sceneIndex), [1 numel(scanData{scanIndex}.timeAxis)]);
+                trainingSceneIndexSequence              = repmat(double(sceneIndex), [1 numel(scanData{scanIndex}.timeAxis)]);
                 coneTypes                               = sensorGet(scanData{scanIndex}.scanSensor, 'coneType');
                 sensorFOVxaxis                          = scanData{scanIndex}.sensorFOVxaxis;
                 sensorFOVyaxis                          = scanData{scanIndex}.sensorFOVyaxis;
                 sensorRetinalXaxis                      = scanData{scanIndex}.sensorRetinalXaxis;
                 sensorRetinalYaxis                      = scanData{scanIndex}.sensorRetinalYaxis;
-                trainingSensorPositionSequence          = single(scanData{scanIndex}.sensorPositionSequence);
-                trainingSceneLMScontrastSequence        = single(scanData{scanIndex}.sceneLMScontrastSequence);
-                trainingOpticalImageLMScontrastSequence = single(scanData{scanIndex}.oiLMScontrastSequence);
-                trainingPhotoCurrentSequence            = single(scanData{scanIndex}.photoCurrentSequence);
-                trainingSceneLMSbackground              = single(scanData{scanIndex}.sceneBackgroundExcitations);
-                trainingOpticalImageLMSbackground       = single(scanData{scanIndex}.oiBackgroundExcitations);
+                trainingSensorPositionSequence          = double(scanData{scanIndex}.sensorPositionSequence);
+                trainingSceneLMScontrastSequence        = double(scanData{scanIndex}.sceneLMScontrastSequence);
+                trainingOpticalImageLMScontrastSequence = double(scanData{scanIndex}.oiLMScontrastSequence);
+                trainingPhotoCurrentSequence            = double(scanData{scanIndex}.photoCurrentSequence);
+                trainingSceneLMSbackground              = double(scanData{scanIndex}.sceneBackgroundExcitations);
+                trainingOpticalImageLMSbackground       = double(scanData{scanIndex}.oiBackgroundExcitations);
             else
                 trainingTimeAxis = cat(2, ...
-                    trainingTimeAxis, single(scanData{scanIndex}.timeAxis + trainingTimeAxis(end) + dt));
+                    trainingTimeAxis, double(scanData{scanIndex}.timeAxis + trainingTimeAxis(end) + dt));
                 
                 insertionPoints = numel(scanData{scanIndex}.timeAxis);
                 trainingScanInsertionTimes = cat(2, trainingScanInsertionTimes, trainingTimeAxis(end-insertionPoints+1));
                 
                 trainingSceneIndexSequence = cat(2, ...
-                    trainingSceneIndexSequence, repmat(single(sceneIndex), [1 numel(scanData{scanIndex}.timeAxis)]));
+                    trainingSceneIndexSequence, repmat(double(sceneIndex), [1 numel(scanData{scanIndex}.timeAxis)]));
                 
                 trainingSensorPositionSequence = cat(1, ...
-                    trainingSensorPositionSequence, single(scanData{scanIndex}.sensorPositionSequence));
+                    trainingSensorPositionSequence, double(scanData{scanIndex}.sensorPositionSequence));
                 
                 trainingSceneLMScontrastSequence = cat(4, ...
-                    trainingSceneLMScontrastSequence,  single(scanData{scanIndex}.sceneLMScontrastSequence));
+                    trainingSceneLMScontrastSequence,  double(scanData{scanIndex}.sceneLMScontrastSequence));
                 
                 trainingOpticalImageLMScontrastSequence = cat(4, ...
-                    trainingOpticalImageLMScontrastSequence, single(scanData{scanIndex}.oiLMScontrastSequence));
+                    trainingOpticalImageLMScontrastSequence, double(scanData{scanIndex}.oiLMScontrastSequence));
                 
                 trainingPhotoCurrentSequence = cat(3, ...
-                    trainingPhotoCurrentSequence,  single(scanData{scanIndex}.photoCurrentSequence));
+                    trainingPhotoCurrentSequence,  double(scanData{scanIndex}.photoCurrentSequence));
                 
                 trainingSceneLMSbackground = cat(2, ...
-                    trainingSceneLMSbackground, single(scanData{scanIndex}.sceneBackgroundExcitations));
+                    trainingSceneLMSbackground, double(scanData{scanIndex}.sceneBackgroundExcitations));
                     
                 trainingOpticalImageLMSbackground = cat(2, ...
-                    trainingOpticalImageLMSbackground, single(scanData{scanIndex}.oiBackgroundExcitations));
+                    trainingOpticalImageLMSbackground, double(scanData{scanIndex}.oiBackgroundExcitations));
             end 
         end % scanIndex - training
         
@@ -79,42 +79,42 @@ function assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, training
             totalTestingScansNum = totalTestingScansNum + 1;
             if (totalTestingScansNum == 1)
                 dt = scanData{scanIndex}.timeAxis(2)-scanData{scanIndex}.timeAxis(1);
-                testingTimeAxis = single(scanData{scanIndex}.timeAxis);
+                testingTimeAxis = double(scanData{scanIndex}.timeAxis);
                 testingScanInsertionTimes              = trainingTimeAxis(1);
-                testingSceneIndexSequence              = repmat(single(sceneIndex), [1 numel(scanData{scanIndex}.timeAxis)]);
-                testingSensorPositionSequence          = single(scanData{scanIndex}.sensorPositionSequence);
-                testingSceneLMScontrastSequence        = single(scanData{scanIndex}.sceneLMScontrastSequence);
-                testingOpticalImageLMScontrastSequence = single(scanData{scanIndex}.oiLMScontrastSequence);
-                testingPhotoCurrentSequence            = single(scanData{scanIndex}.photoCurrentSequence);
-                testingSceneLMSbackground              = single(scanData{scanIndex}.sceneBackgroundExcitations);
-                testingOpticalImageLMSbackground       = single(scanData{scanIndex}.oiBackgroundExcitations);
+                testingSceneIndexSequence              = repmat(double(sceneIndex), [1 numel(scanData{scanIndex}.timeAxis)]);
+                testingSensorPositionSequence          = double(scanData{scanIndex}.sensorPositionSequence);
+                testingSceneLMScontrastSequence        = double(scanData{scanIndex}.sceneLMScontrastSequence);
+                testingOpticalImageLMScontrastSequence = double(scanData{scanIndex}.oiLMScontrastSequence);
+                testingPhotoCurrentSequence            = double(scanData{scanIndex}.photoCurrentSequence);
+                testingSceneLMSbackground              = double(scanData{scanIndex}.sceneBackgroundExcitations);
+                testingOpticalImageLMSbackground       = double(scanData{scanIndex}.oiBackgroundExcitations);
             else
                 testingTimeAxis = cat(2, ...
-                    testingTimeAxis, single(scanData{scanIndex}.timeAxis + testingTimeAxis(end) + dt));
+                    testingTimeAxis, double(scanData{scanIndex}.timeAxis + testingTimeAxis(end) + dt));
                 
                 insertionPoints = numel(scanData{scanIndex}.timeAxis);
                 testingScanInsertionTimes = cat(2, testingScanInsertionTimes, testingTimeAxis(end-insertionPoints+1));
                
                 testingSceneIndexSequence = cat(2, ...
-                    testingSceneIndexSequence, repmat(single(sceneIndex), [1 numel(scanData{scanIndex}.timeAxis)]));
+                    testingSceneIndexSequence, repmat(double(sceneIndex), [1 numel(scanData{scanIndex}.timeAxis)]));
                 
                 testingSensorPositionSequence = cat(1, ...
-                    testingSensorPositionSequence, single(scanData{scanIndex}.sensorPositionSequence));
+                    testingSensorPositionSequence, double(scanData{scanIndex}.sensorPositionSequence));
                 
                 testingSceneLMScontrastSequence = cat(4, ...
-                    testingSceneLMScontrastSequence,  single(scanData{scanIndex}.sceneLMScontrastSequence));
+                    testingSceneLMScontrastSequence,  double(scanData{scanIndex}.sceneLMScontrastSequence));
                 
                 testingOpticalImageLMScontrastSequence = cat(4, ...
-                    testingOpticalImageLMScontrastSequence, single(scanData{scanIndex}.oiLMScontrastSequence));
+                    testingOpticalImageLMScontrastSequence, double(scanData{scanIndex}.oiLMScontrastSequence));
                 
                 testingPhotoCurrentSequence = cat(3, ...
-                    testingPhotoCurrentSequence,  single(scanData{scanIndex}.photoCurrentSequence));
+                    testingPhotoCurrentSequence,  double(scanData{scanIndex}.photoCurrentSequence));
                 
                 testingSceneLMSbackground = cat(2, ...
-                    testingSceneLMSbackground, single(scanData{scanIndex}.sceneBackgroundExcitations));
+                    testingSceneLMSbackground, double(scanData{scanIndex}.sceneBackgroundExcitations));
                     
                 testingOpticalImageLMSbackground = cat(2, ...
-                    testingOpticalImageLMSbackground, single(scanData{scanIndex}.oiBackgroundExcitations));
+                    testingOpticalImageLMSbackground, double(scanData{scanIndex}.oiBackgroundExcitations));
     
             end
         end % scanIndex - testing

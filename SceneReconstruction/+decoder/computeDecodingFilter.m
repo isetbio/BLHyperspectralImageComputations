@@ -9,17 +9,34 @@ function computeDecodingFilter(sceneSetName, decodingDataDir, SVDbasedLowRankFil
         'expParams', 'preProcessingParams', 'rawTrainingResponsePreprocessing', 'coneTypes', 'spatioTemporalSupport');
     fprintf('Done after %2.1f minutes.\n', toc/60);
     
-   
     
-    % Compute the rank of X
+    
     timeSamples = size(Xtrain,1);
     filterDimensions = size(Xtrain,2);
     stimulusDimensions = size(Ctrain,2);
-    fprintf('2a. Computing rank(X) [%d (time samples) x %d (filter dimensions)]... ',  timeSamples, filterDimensions);
-    tic
-    XtrainRank = rank(Xtrain);
-    fprintf('Done after %2.1f minutes. ', toc/60);
-    fprintf('<strong>Rank (X) = %d</strong>\n', XtrainRank);
+        
+    computeSVDbasedFilters = true;
+    if (computeSVDbasedFilters)
+        % Compute and save the SVD decomposition of X so we can check (later) how the
+        % filter dynamics depend on the # of SVD components
+        fprintf('2a. Computing SVD of design matrix [%d x %d]... ',  size(Xtrain,1), size(Xtrain,2));
+        tic
+        [Utrain, Strain, Vtrain] = svd(Xtrain, 'econ');
+        
+        s = diag(Strain);
+        tol = max(size(Xtrain))*eps(max(s));
+        XtrainRank = sum(s > tol);
+        fprintf('Done after %2.1f minutes.\n', toc/60);
+        fprintf('<strong>Rank (X) (computed via its SVD) = %d</strong>\n', XtrainRank);
+    else
+        % Compute the rank of X
+        fprintf('2a. Computing rank(X) [%d (time samples) x %d (filter dimensions)]... ',  timeSamples, filterDimensions);
+        tic
+        XtrainRank = rank(Xtrain);
+        fprintf('Done after %2.1f minutes. ', toc/60);
+        fprintf('<strong>Rank (X) (computed directly) = %d</strong>\n', XtrainRank);
+    end
+      
      
     fprintf('2b. Computing optimal linear decoding filter: pinv(X) [%d x %d] ... ', timeSamples, filterDimensions);
     tic
@@ -30,16 +47,8 @@ function computeDecodingFilter(sceneSetName, decodingDataDir, SVDbasedLowRankFil
     tic
     wVector = pseudoInverseOfX * Ctrain;
     fprintf('Done after %2.1f minutes.\n', toc/60);
-    
-    
-    
-    computeSVDbasedFilters = true;
+
     if (computeSVDbasedFilters)
-        % Compute and save the SVD decomposition of X so we can check (later) how the
-        % filter dynamics depend on the # of SVD components
-        fprintf('2d. Computing SVD-based low-rank approximation filters [%d x %d]... ',  size(Xtrain,1), size(Xtrain,2));
-        tic
-        [Utrain, Strain, Vtrain] = svd(Xtrain, 'econ');
         
         % Add one more variance explained, corresponding to the XtrainRank
         SVDcomponentsNum = XtrainRank;
@@ -47,13 +56,12 @@ function computeDecodingFilter(sceneSetName, decodingDataDir, SVDbasedLowRankFil
         SVDbasedLowRankFilterVariancesExplained(numel(SVDbasedLowRankFilterVariancesExplained)+1) = varianceExplainedAtTrainRankComponents;
         SVDbasedLowRankFilterVariancesExplained = sort(SVDbasedLowRankFilterVariancesExplained);
         
-        
+        fprintf('2ad. Computing SVD-based low-rank approximation filters [%d x %d]... ',  size(Xtrain,1), size(Xtrain,2));
         wVectorSVDbased = zeros(numel(SVDbasedLowRankFilterVariancesExplained), filterDimensions, stimulusDimensions);
         for kIndex = 1:numel(SVDbasedLowRankFilterVariancesExplained)
             varExplained = SVDbasedLowRankFilterVariancesExplained(kIndex);
             [wVectorSVDbased(kIndex,:,:), includedComponentsNum(kIndex)] = decoder.lowRankSVDbasedDecodingVector(Utrain, Strain, Vtrain, Ctrain, varExplained);
         end
-        fprintf('Done after %2.1f minutes.\n', toc/60);
     end
     
     

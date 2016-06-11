@@ -70,12 +70,12 @@ function executeProgram(instructionSet, whichDataSet, opticalElements, inertPigm
                 visualizer.renderScan(sceneSetName, resultsDir, sceneIndex);
 
             case 'assembleTrainingDataSet'
-                trainingDataPercentange = 70;
-                testingDataPercentage = 30;
+                trainingDataPercentange = 50;
+                testingDataPercentage = 50;
                 core.assembleTrainingSet(sceneSetName, resultsDir, decodingDataDir, trainingDataPercentange, testingDataPercentage, preProcessingParams);
 
             case 'computeDecodingFilter'
-                SVDbasedLowRankFilterVariancesExplained = [85 90 92 94 95 96 97 98 99 99.2 99.4 99.6 99.8 99.90 99.925 99.950 99.990 99.995 99.999];
+                SVDbasedLowRankFilterVariancesExplained = [85 90 92.5 95 96 97 98 99 99.2 99.4 99.6 99.8 99.90 99.925 99.950 99.990 99.995 99.999];
                 decoder.computeDecodingFilter(sceneSetName, decodingDataDir, SVDbasedLowRankFilterVariancesExplained);
                 
             case 'computeOutOfSamplePrediction'
