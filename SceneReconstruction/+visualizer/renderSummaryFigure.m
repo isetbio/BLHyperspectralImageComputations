@@ -34,9 +34,9 @@ function renderSummaryFigure(sceneSetName, resultsDir, decodingDataDir)
     %targetMdecoderXYcoords = [14 -6];
     %targetSdecoderXYcoords = [0 0];
     
-    targetLdecoderXYcoords = [-11 0];
-    targetMdecoderXYcoords = [-11 0];
-    targetSdecoderXYcoords = [-11 0];
+    targetLdecoderXYcoords = [6-6];
+    targetMdecoderXYcoords = [6 -6];
+    targetSdecoderXYcoords = [6 -6];
     
     sensorData = visualizer.retrieveSensorData(sceneSetName, resultsDir, decoder, targetLdecoderXYcoords, targetMdecoderXYcoords, targetSdecoderXYcoords);
     decodedRegionOutline.x = sensorData.decodedImageOutlineX;
@@ -46,8 +46,8 @@ function renderSummaryFigure(sceneSetName, resultsDir, decodingDataDir)
     
     % Locations (relative to the target cone) for which to display temporal filters
     conesStride = 2;
-    visualizedYcoords = targetCone.rowcolCoord(1) + (-1:2) * conesStride;
-    visualizedXcoords = targetCone.rowcolCoord(2) + (-2:2) * conesStride;
+    visualizedYcoords = targetCone.rowcolCoord(1) + (-1:1) * conesStride;
+    visualizedXcoords = targetCone.rowcolCoord(2) + (-2:3) * conesStride;
         
     
     
@@ -98,57 +98,59 @@ function renderSummaryFigure(sceneSetName, resultsDir, decodingDataDir)
         spatialFilter = squeeze(decoder.filters(decodedContrastIndex, targetCone.nearestDecoderRowColCoord(1), targetCone.nearestDecoderRowColCoord(2),:,:, decoder.peakTimeBins(decodedContrastIndex)));       
         contourStruct = visualizer.computeContourData(spatialFilter, contourLevels, spatialSupportX, spatialSupportY, lConeIndices, mConeIndices, sConeIndices);
 
-        for mosaicIndex = 1:3
-            switch mosaicIndex
+        for mosaicType = 1:3
+            switch mosaicType
                 case 1
-                        theAxes = axesDictionary('LmosaicSpatialFilter');
-                        if (decodedContrastIndex == 3)
-                            contourData = contourStruct.SconeMosaicSamplingContours;
-                            yLabelString = 'S-mosaic pooling';
-                        else
-                            contourData = contourStruct.LconeMosaicSamplingContours;
-                            yLabelString = 'L-mosaic pooling';
-                        end
-                        xTicks = []; % [spatialSupportX(1) 0 spatialSupportX(end)];
-                        yTicks = []; % [spatialSupportY(1) 0 spatialSupportY(end)];
+                        theAxes = axesDictionary('AllMosaicsSpatialFilter');
+                        yLabelString = '';
+                        xTicks = [spatialSupportX(1) 0 spatialSupportX(end)];
+                        yTicks = [spatialSupportY(1) 0 spatialSupportY(end)];
                         
                         xLabelString = '';
-                        titleString = ''; 
+                        titleString = 'all mosaics pooling'; 
                 case 2
-                        theAxes = axesDictionary('MmosaicSpatialFilter');
-                        if (decodedContrastIndex == 3)
-                            contourData = contourStruct.LMconeMosaicSamplingContours;
-                            yLabelString = 'LM-mosaic pooling';
+                        theAxes = axesDictionary('PrincipalMosaicPooling');
+                        if (decodedContrastIndex == 1) || (decodedContrastIndex == 2)
+                            contourData = contourStruct.LconeMosaicSamplingContours;
+                            titleString = 'L-mosaic pooling';
                         else
-                            contourData = contourStruct.MconeMosaicSamplingContours;
-                            yLabelString = 'M-mosaic pooling';
+                            contourData = contourStruct.SconeMosaicSamplingContours;
+                            titleString = 'S-mosaic pooling';
                         end
-                        
-                        contourData = contourStruct.MconeMosaicSamplingContours;
                         xTicks = [];
                         yTicks = []; % [spatialSupportY(1) 0 spatialSupportY(end)];
                         xLabelString = '';
-                        titleString = ''; 
-                case 3
-                        theAxes = axesDictionary('SmosaicSpatialFilter');
-                        xTicks = [spatialSupportX(1) 0 spatialSupportX(end)];
-                        yTicks = []; % [spatialSupportY(1) 0 spatialSupportY(end)];
                         yLabelString = '';
+                case 3
+                        theAxes = axesDictionary('SecondaryMosaicPooling');
+                        if (decodedContrastIndex == 1) || (decodedContrastIndex == 2)
+                            contourData = contourStruct.MconeMosaicSamplingContours;
+                            titleString = 'M-mosaic pooling';
+                        else
+                            contourData = contourStruct.LMconeMosaicSamplingContours;
+                            titleString = 'LM-mosaic pooling';
+                        end
+                        
+                        xTicks = []; % [spatialSupportX(1) 0 spatialSupportX(end)];
+                        yTicks = []; % [spatialSupportY(1) 0 spatialSupportY(end)];
                         xLabelString = '';
-                        titleString = ''; 
+                        yLabelString = '';
+                        
             end
 
-            labelMosaicCenterUsingCrossHairs = false;
-            if (mosaicIndex == 3)
-                backgroundColor = [0.3 0.3 0.3];
-                renderConeMosaicPlot(theAxes,sensorData, spatialSupportX, spatialSupportY, ...
-                    LconeContrastColor, MconeContrastColor, SconeContrastColor, ...
-                    xTicks, yTicks, axesColor, backgroundColor, xLabelString, yLabelString, titleString);
-            else
-                renderSpatialFilter(theAxes, spatialFilter, contourData, spatialSupportX, spatialSupportY, ...
+            labelMosaicCenterUsingCrossHairs = true;
+            if (mosaicType == 1)
+                noContourData = [];
+                renderSpatialFilter(theAxes, spatialFilter, noContourData, spatialSupportX, spatialSupportY, ...
                     visualizedXcoords, visualizedYcoords, ...
                     decodedRegionOutline, labelMosaicCenterUsingCrossHairs, decoderLocation, ...
                     xTicks, yTicks, xLabelString, yLabelString, titleString);
+            else
+                backgroundColor = [0.3 0.3 0.3];
+                contourColor = [1 1 1];
+                renderConeMosaicPlot(theAxes, contourData, contourColor, sensorData, spatialSupportX, spatialSupportY, ...
+                    LconeContrastColor, MconeContrastColor, SconeContrastColor, labelMosaicCenterUsingCrossHairs, ...
+                    xTicks, yTicks, axesColor, backgroundColor, xLabelString, yLabelString, titleString);  
             end
         end   % mosaicIndex 
 
@@ -200,7 +202,7 @@ function renderSummaryFigure(sceneSetName, resultsDir, decodingDataDir)
     end % decodedContrast
 end
 
-function renderConeMosaicPlot(theAxes, sensorData, spatialSupportX, spatialSupportY, LconeContrastColor, MconeContrastColor, SconeContrastColor, xTicks, yTicks, axesColor, backgroundColor, xLabelString, yLabelString, titleString)
+function renderConeMosaicPlot(theAxes, contourData, contourColor, sensorData, spatialSupportX, spatialSupportY, LconeContrastColor, MconeContrastColor, SconeContrastColor, labelMosaicCenterUsingCrossHairs, xTicks, yTicks, axesColor, backgroundColor, xLabelString, yLabelString, titleString)
     
     lConeIndices = find(sensorData.coneTypes == 2);
     mConeIndices = find(sensorData.coneTypes == 3);
@@ -211,11 +213,27 @@ function renderConeMosaicPlot(theAxes, sensorData, spatialSupportX, spatialSuppo
     
     markerSize = 130;
     markerSymbol = 's';
-    scatter(theAxes, squeeze(sensorData.conePositions(lConeIndices,1)), squeeze(sensorData.conePositions(lConeIndices,2)), markerSize, markerSymbol, 'MarkerFaceColor', LconeContrastColor*0.9,  'MarkerEdgeColor', 'none');
+    scatter(theAxes, squeeze(sensorData.conePositions(lConeIndices,1)), squeeze(sensorData.conePositions(lConeIndices,2)), markerSize, markerSymbol, 'MarkerFaceColor', LconeContrastColor*0.8,  'MarkerEdgeColor', 'none');
     hold(theAxes, 'on');
-    scatter(theAxes, squeeze(sensorData.conePositions(mConeIndices,1)), squeeze(sensorData.conePositions(mConeIndices,2)), markerSize, markerSymbol, 'MarkerFaceColor', MconeContrastColor*0.9,  'MarkerEdgeColor', 'none');
-    scatter(theAxes, squeeze(sensorData.conePositions(sConeIndices,1)), squeeze(sensorData.conePositions(sConeIndices,2)), markerSize, markerSymbol, 'MarkerFaceColor', SconeContrastColor*0.9,  'MarkerEdgeColor', 'none');
-   
+    scatter(theAxes, squeeze(sensorData.conePositions(mConeIndices,1)), squeeze(sensorData.conePositions(mConeIndices,2)), markerSize, markerSymbol, 'MarkerFaceColor', MconeContrastColor*0.8,  'MarkerEdgeColor', 'none');
+    scatter(theAxes, squeeze(sensorData.conePositions(sConeIndices,1)), squeeze(sensorData.conePositions(sConeIndices,2)), markerSize, markerSymbol, 'MarkerFaceColor', SconeContrastColor*0.8,  'MarkerEdgeColor', 'none');
+    
+    if (labelMosaicCenterUsingCrossHairs)
+        plot(theAxes, [spatialSupportX(1) spatialSupportX(end)], [0 0 ], 'k-', 'LineWidth', 1.5);
+        plot(theAxes, [0 0], [spatialSupportY(1) spatialSupportY(end)], 'k-', 'LineWidth', 1.5);
+    end
+    
+    % Superimpose the (select) contours
+    contourLengthThreshold = 10;
+    for contourNo = 1:numel(contourData)
+       fprintf('Contour %d/%d: level:%2.2f, length: %d. Will be plotted.\n', contourNo, numel(contourData), contourData(contourNo).level, contourData(contourNo).length);
+       if ((abs(contourData(contourNo).level) <= 0.3) && contourData(contourNo).length < contourLengthThreshold )
+           fprintf(2, 'Contour %d/%d: level:%f, length: %d. Will not be plotted.\n', contourNo, numel(contourData), contourData(contourNo).level, contourData(contourNo).length);
+           continue;
+       end
+       plot(theAxes, contourData(contourNo).x, contourData(contourNo).y, '-', 'Color', contourColor, 'LineWidth', 3.0);
+    end
+    
     hold(theAxes, 'off');
     
     axis(theAxes, 'image'); axis(theAxes, 'ij');
@@ -279,17 +297,18 @@ function renderSpatialFilter(theAxes, spatialFilter, contourData, spatialSupport
     imagesc(spatialSupportX, spatialSupportY, spatialFilter, 'parent', theAxes);
     hold(theAxes, 'on');
     
-    % Superimpose the (select) contours
-    contourLengthThreshold = 10;
-    for contourNo = 1:numel(contourData)
-       fprintf('Contour %d/%d: level:%2.2f, length: %d. Will be plotted.\n', contourNo, numel(contourData), contourData(contourNo).level, contourData(contourNo).length);
-       if ((abs(contourData(contourNo).level) <= 0.3) && contourData(contourNo).length < contourLengthThreshold )
-           fprintf(2, 'Contour %d/%d: level:%f, length: %d. Will not be plotted.\n', contourNo, numel(contourData), contourData(contourNo).level, contourData(contourNo).length);
-           continue;
-       end
-       plot(theAxes, contourData(contourNo).x, contourData(contourNo).y, 'k-', 'LineWidth', 2.0);
+    if (~isempty(contourData))
+        % Superimpose the (select) contours
+        contourLengthThreshold = 10;
+        for contourNo = 1:numel(contourData)
+           fprintf('Contour %d/%d: level:%2.2f, length: %d. Will be plotted.\n', contourNo, numel(contourData), contourData(contourNo).level, contourData(contourNo).length);
+           if ((abs(contourData(contourNo).level) <= 0.3) && contourData(contourNo).length < contourLengthThreshold )
+               fprintf(2, 'Contour %d/%d: level:%f, length: %d. Will not be plotted.\n', contourNo, numel(contourData), contourData(contourNo).level, contourData(contourNo).length);
+               continue;
+           end
+           plot(theAxes, contourData(contourNo).x, contourData(contourNo).y, 'k-', 'LineWidth', 2.0);
+        end
     end
-        
     
     % Identify locations for which we display temporal filters
     if ((~isempty(visualizedXcoords)) && (~isempty(visualizedYcoords))) 
@@ -320,7 +339,7 @@ function renderSpatialFilter(theAxes, spatialFilter, contourData, spatialSupport
         'XLim', [spatialSupportX(1)-dX/2 spatialSupportX(end)+dX/2], ...
         'YLim', [spatialSupportY(1)-dY/2 spatialSupportY(end)+dY/2], ...
         'XTick', xTicks, 'XTickLabel', sprintf('%+2.1f\n', xTicks), ...
-        'YTick', yTicks, 'YTickLabel', sprintf('%+2.1f\n', xTicks), ...
+        'YTick', yTicks, 'YTickLabel', sprintf('%+2.1f\n', yTicks), ...
         'XColor', axesColor, 'YColor', axesColor, ...
         'CLim', [-1 1], 'FontSize', 16, 'FontName', 'Menlo', ...
         'Color', backgroundColor, 'LineWidth', 1.5);
@@ -349,7 +368,7 @@ function renderPerformancePlot(theAxes, inputC, reconstructedC, dotColor, axesCo
         'XLim', xLims, ...
         'YLim', yLims, ...
         'XTick', xTicks, 'XTickLabel', sprintf('%+2.0f\n', xTicks), ...
-        'YTick', yTicks, 'YTickLabel', sprintf('%+2.0f\n', xTicks), ...
+        'YTick', yTicks, 'YTickLabel', sprintf('%+2.0f\n', yTicks), ...
         'XColor', axesColor, 'YColor', axesColor, ...
          'FontSize', 16, 'FontName', 'Menlo', ...
         'Color', backgroundColor, 'LineWidth', 1.5);
@@ -370,26 +389,27 @@ function [axesDictionary, hFig] = generateAxes(slideSize, slideCols, slideRows, 
                'colsNum', slideCols, ...
                'heightMargin',   0.015, ...
                'widthMargin',    0.010, ...
-               'leftMargin',     0.02, ...
-               'rightMargin',    0.02, ...
-               'bottomMargin',   0.07, ...
+               'leftMargin',     0.03, ...
+               'rightMargin',    0.01, ...
+               'bottomMargin',   0.09, ...
                'topMargin',      0.015);
            
     axesDictionary = containers.Map();
     
+
     % first column
-    axesDictionary('performancePlot')      = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,1).v);
-    dy = -0.04;
-    axesDictionary('LmosaicSpatialFilter') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(2,1).v+[0 dy 0 0]);
-    axesDictionary('MmosaicSpatialFilter') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(3,1).v+[0 dy 0 0]);
-    axesDictionary('SmosaicSpatialFilter') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(4,1).v+[0 dy 0 0]);
+    axesDictionary('performancePlot')      = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,1).v+[0.06 0 0 0]);
+    dy = 0.0;
+    axesDictionary('AllMosaicsSpatialFilter') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,3).v+[-0.01 dy 0 0]);
+    axesDictionary('PrincipalMosaicPooling') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,4).v+[0 dy 0 0]);
+    axesDictionary('SecondaryMosaicPooling') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,5).v+[0.01 dy 0 0]);
     
-    dy = -0.01;
-    dx = 0.02;
+    dy = -0.04;
+    dx = 0.00;
     % second colum
-    for xPosIndex = 1:5
-        for yPosIndex = 1:4
-            axesDictionary(sprintf('temporalFilter_%d%d',yPosIndex,xPosIndex)) = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(yPosIndex,1+xPosIndex).v+[dx dy 0 0]);
+    for xPosIndex = 1:6
+        for yPosIndex = 1:3
+            axesDictionary(sprintf('temporalFilter_%d%d',yPosIndex,xPosIndex)) = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(yPosIndex+1,xPosIndex).v+[dx dy 0 0]);
         end
     end
     
