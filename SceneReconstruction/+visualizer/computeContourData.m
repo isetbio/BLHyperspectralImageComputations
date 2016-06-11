@@ -29,19 +29,19 @@ function C = computeContourData(spatialFilter, contourLevels, spatialSupportX, s
     lmConeWeights = [lConeWeights; mConeWeights];
 
     if (~isempty(lConeWeights))
-        C.LconeMosaicSpatialWeightingKernel = smoothKernel(xx,yy,griddata(lConeWeights(:,1), lConeWeights(:,2), lConeWeights(:,3), xx, yy, 'v4'));  
+        C.LconeMosaicSpatialWeightingKernel = griddata(lConeWeights(:,1), lConeWeights(:,2), lConeWeights(:,3), xx, yy, 'cubic');  
         C.LconeMosaicSamplingContours = getContourStruct(contourc(contourXaxis, contourYaxis, C.LconeMosaicSpatialWeightingKernel , contourLevels));
     end
     if (~isempty(mConeWeights))
-        C.MconeMosaicSpatialWeightingKernel  = smoothKernel(xx,yy,griddata(mConeWeights(:,1), mConeWeights(:,2), mConeWeights(:,3), xx, yy, 'v4'));
+        C.MconeMosaicSpatialWeightingKernel  = griddata(mConeWeights(:,1), mConeWeights(:,2), mConeWeights(:,3), xx, yy, 'cubic');
         C.MconeMosaicSamplingContours = getContourStruct(contourc(contourXaxis, contourYaxis, C.MconeMosaicSpatialWeightingKernel, contourLevels));
     end
     if (~isempty(sConeWeights))
-        C.SconeMosaicSpatialWeightingKernel = smoothKernel(xx,yy,griddata(sConeWeights(:,1), sConeWeights(:,2), sConeWeights(:,3), xx, yy, 'v4'));
+        C.SconeMosaicSpatialWeightingKernel = griddata(sConeWeights(:,1), sConeWeights(:,2), sConeWeights(:,3), xx, yy, 'cubic');
         C.SconeMosaicSamplingContours = getContourStruct(contourc(contourXaxis, contourYaxis, C.SconeMosaicSpatialWeightingKernel, contourLevels));
     end
     if (~isempty(lmConeWeights))
-        C.LMconeMosaicSpatialWeightingKernel = smoothKernel(xx,yy,griddata(lmConeWeights(:,1), lmConeWeights(:,2), lmConeWeights(:,3), xx, yy, 'v4'));
+        C.LMconeMosaicSpatialWeightingKernel = griddata(lmConeWeights(:,1), lmConeWeights(:,2), lmConeWeights(:,3), xx, yy, 'cubic');
         C.LMconeMosaicSamplingContours = getContourStruct(contourc(contourXaxis, contourYaxis, C.LMconeMosaicSpatialWeightingKernel, contourLevels));
     end
 end

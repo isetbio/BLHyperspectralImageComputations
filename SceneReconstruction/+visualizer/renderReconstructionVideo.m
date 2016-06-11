@@ -21,12 +21,12 @@ function renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir, In
     scanData = [];
     sensorData = visualizer.retrieveSensorData(sceneSetName, resultsDir, decoder, targetLdecoderXYcoords, targetMdecoderXYcoords, targetSdecoderXYcoords);
     
-    makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, sceneIndexSequence, sensorPositionSequence, responseSequence, decoder, targetLdecoderXYcoords, targetMdecoderXYcoords, targetSdecoderXYcoords, sensorData, SVDvarianceExplained, expParams, decodingDataDir, videoPostFix);
+    makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, sceneIndexSequence, sensorPositionSequence, responseSequence, decoder, targetLdecoderXYcoords, targetMdecoderXYcoords, targetSdecoderXYcoords, sensorData, SVDvarianceExplained, expParams, decodingDataDir, resultsDir, videoPostFix);
 end
 
 
 
-function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, sceneIndexSequence, sensorPositionSequence, responseSequence, decoder, targetLdecoderXYcoords, targetMdecoderXYcoords, targetSdecoderXYcoords, sensorData, SVDvarianceExplained, expParams, decodingDataDir, videoPostFix)
+function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, sceneIndexSequence, sensorPositionSequence, responseSequence, decoder, targetLdecoderXYcoords, targetMdecoderXYcoords, targetSdecoderXYcoords, sensorData, SVDvarianceExplained, expParams, decodingDataDir, resultsDir, videoPostFix)
     
     lConeIndices = find(sensorData.coneTypes == 2);
     mConeIndices = find(sensorData.coneTypes == 3);
@@ -931,23 +931,23 @@ function initializeConeMosaicPlot(theAxes, titleString, sensorData, theXDataRang
         
     if (~isempty(decoderContours))
         C = decoderContours('LconeMosaic');
-        if (~isempty(C.principalMosaicContour))
-            for i = 1:numel(C.principalMosaicContour)
-                plot(theAxes, C.principalMosaicContour{i}.x, C.principalMosaicContour{i}.y, 'k-', 'Color', LconeContrastColor, 'LineWidth', 3.0);
+        if (~isempty(C.principalMosaicContours))
+            for i = 1:numel(C.principalMosaicContours)
+                plot(theAxes, C.principalMosaicContours(i).x, C.principalMosaicContours(i).y, 'k-', 'Color', LconeContrastColor, 'LineWidth', 3.0);
             end
         end
         
         C = decoderContours('MconeMosaic');
-        if (~isempty(C.principalMosaicContour))
-            for i = 1:numel(C.principalMosaicContour)
-                plot(theAxes, C.principalMosaicContour{i}.x, C.principalMosaicContour{i}.y, 'k-', 'Color', MconeContrastColor, 'LineWidth', 3.0);
+        if (~isempty(C.principalMosaicContours))
+            for i = 1:numel(C.principalMosaicContours)
+                plot(theAxes, C.principalMosaicContours(i).x, C.principalMosaicContours(i).y, 'k-', 'Color', MconeContrastColor, 'LineWidth', 3.0);
             end
         end
         
         C = decoderContours('SconeMosaic');
-        if (~isempty(C.principalMosaicContour))
-            for i = 1:numel(C.principalMosaicContour)
-                plot(theAxes, C.principalMosaicContour{i}.x, C.principalMosaicContour{i}.y, 'k-', 'Color', SconeContrastColor, 'LineWidth', 3.0);
+        if (~isempty(C.principalMosaicContours))
+            for i = 1:numel(C.principalMosaicContours)
+                plot(theAxes, C.principalMosaicContours(i).x, C.principalMosaicContours(i).y, 'k-', 'Color', SconeContrastColor, 'LineWidth', 3.0);
             end
         end
     end
@@ -976,7 +976,7 @@ function decoderContours = initializeDecoderPlots(theLdecoderAxes, theMdecoderAx
     
     % Normalize to -1 .. +1 for plotting
     decoder.filters = decoder.filters / max(abs(decoder.filters(:)));
-    individualMosaicContourLevels = [-0.95 -0.75 -0.5 -0.2  0.2 0.5 0.75 0.95];
+    individualMosaicContourLevels = [-0.3 0.3];
     
     spatialSupportX = decoder.spatioTemporalSupport.sensorRetinalXaxis;
     spatialSupportY = decoder.spatioTemporalSupport.sensorRetinalYaxis;
@@ -1012,51 +1012,33 @@ function decoderContours = initializeDecoderPlots(theLdecoderAxes, theMdecoderAx
         hold(theAxes, 'on');
         
         
-        contourDataStruct = visualizer.computeContourData(spatialFilter/max(abs(spatialFilter(:))), individualMosaicContourLevels, spatialSupportX, spatialSupportY, lConeIndices, mConeIndices, sConeIndices);
+        contourDataStruct = visualizer.computeContourData(spatialFilter/max(abs(spatialFilter(:))), ...
+            individualMosaicContourLevels, spatialSupportX, spatialSupportY, lConeIndices, mConeIndices, sConeIndices);
+        
         switch decodedContrastIndex
             case 1
-                    principalMosaicContours = contourDataStruct.LconeMosaicSamplingContours;
-                    theOtherMosaicContours  = contourDataStruct.MconeMosaicSamplingContours;
+                    C.principalMosaicContours = contourDataStruct.LconeMosaicSamplingContours;
+                    C.theOtherMosaicContours  = contourDataStruct.MconeMosaicSamplingContours;
             case 2
-                    principalMosaicContours = contourDataStruct.MconeMosaicSamplingContours;
-                    theOtherMosaicContours  = contourDataStruct.LconeMosaicSamplingContours;
+                    C.principalMosaicContours = contourDataStruct.MconeMosaicSamplingContours;
+                    C.theOtherMosaicContours  = contourDataStruct.LconeMosaicSamplingContours;
             case 3
-                    principalMosaicContours = contourDataStruct.SconeMosaicSamplingContours;
-                    
-                    theOtherMosaicContours  = contourDataStruct.LMconeMosaicSamplingContours;
+                    C.principalMosaicContours = contourDataStruct.SconeMosaicSamplingContours;
+                    C.theOtherMosaicContours  = contourDataStruct.LMconeMosaicSamplingContours;
         end
         
-        C.principalMosaicContour = {};
-        C.theOtherMosaicContour = {};
-        
-        minLengthForInclusion = 10; i = 1;
-        for contourNo = 1:numel(principalMosaicContours)
-            %fprintf('principal contour %d/%d: level:%f, length: %d\n', contourNo, numel(principalMosaicContours), principalMosaicContours(contourNo).level, principalMosaicContours(contourNo).length);
-            if ((abs(principalMosaicContours(contourNo).level) < 0.5) && (principalMosaicContours(contourNo).length > minLengthForInclusion)) || (abs(principalMosaicContours(contourNo).level) >= 0.5)
-                C.principalMosaicContour{i} = principalMosaicContours(contourNo);
-                i = i+1;
-            end
-        end
-        
-        i = 1;
-        for contourNo = 1:numel(theOtherMosaicContours)
-           % fprintf('theOther contour %d/%d: level:%f, length: %d\n', contourNo, numel(theOtherMosaicContours), theOtherMosaicContours(contourNo).level, theOtherMosaicContours(contourNo).length);
-           if ((abs(theOtherMosaicContours(contourNo).level) < 0.5) && (theOtherMosaicContours(contourNo).length > minLengthForInclusion)) || (abs(theOtherMosaicContours(contourNo).level) >= 0.5)
-                C.theOtherMosaicContours{i} = theOtherMosaicContours(contourNo);
-                i = i+1;
-            end 
-        end
-        
+
         
         decoderContours(decodedContrastNames{decodedContrastIndex}) = C;
-        if (~isempty(C.principalMosaicContour))
-            for i = 1:numel(C.principalMosaicContour)
-                plot(theAxes, C.principalMosaicContour{i}.x, C.principalMosaicContour{i}.y, 'k-', 'LineWidth', 2.0);
+        if (~isempty(C.principalMosaicContours))
+            for i = 1:numel(C.principalMosaicContours)
+                plot(theAxes, C.principalMosaicContours(i).x, C.principalMosaicContours(i).y, 'k-', 'LineWidth', 2.0);
             end
         end
-        if (~isempty(C.theOtherMosaicContour))
-            for i = 1:numel(C.theOtherMosaicContour)
-                plot(theAxes, C.theOtherMosaicContour{i}.x, C.theOtherMosaicContour{i}.y, 'k--', 'LineWidth', 2.0);
+
+        if (~isempty(C.theOtherMosaicContours))
+            for i = 1:numel(C.theOtherMosaicContours)
+                plot(theAxes, C.theOtherMosaicContours(i).x, C.theOtherMosaicContours(i).y, 'k--', 'LineWidth', 2.0);
             end
         end
         
