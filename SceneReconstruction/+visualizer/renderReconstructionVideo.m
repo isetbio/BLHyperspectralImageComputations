@@ -21,12 +21,12 @@ function renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir, In
     scanData = [];
     sensorData = visualizer.retrieveSensorData(sceneSetName, resultsDir, decoder, targetLdecoderXYcoords, targetMdecoderXYcoords, targetSdecoderXYcoords);
     
-    makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, sceneIndexSequence, sensorPositionSequence, responseSequence, decoder, targetLdecoderXYcoords, targetMdecoderXYcoords, targetSdecoderXYcoords, sensorData, SVDvarianceExplained, expParams, videoPostFix);
+    makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, sceneIndexSequence, sensorPositionSequence, responseSequence, decoder, targetLdecoderXYcoords, targetMdecoderXYcoords, targetSdecoderXYcoords, sensorData, SVDvarianceExplained, expParams, decodingDataDir, videoPostFix);
 end
 
 
 
-function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, sceneIndexSequence, sensorPositionSequence, responseSequence, decoder, targetLdecoderXYcoords, targetMdecoderXYcoords, targetSdecoderXYcoords, sensorData, SVDvarianceExplained, expParams, videoPostFix)
+function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oiLMScontrastInput, sceneBackgroundExcitation,  opticalImageBackgroundExcitation, sceneIndexSequence, sensorPositionSequence, responseSequence, decoder, targetLdecoderXYcoords, targetMdecoderXYcoords, targetSdecoderXYcoords, sensorData, SVDvarianceExplained, expParams, decodingDataDir, videoPostFix)
     
     lConeIndices = find(sensorData.coneTypes == 2);
     mConeIndices = find(sensorData.coneTypes == 3);
@@ -62,7 +62,7 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
     colormap(grayRedLUT); 
     
     % Generate video object
-    videoFilename = fullfile(expParams.decodingDataDir, sprintf('ReconstructionInSample%s.m4v', videoPostFix));
+    videoFilename = fullfile(decodingDataDir, sprintf('ReconstructionInSample%s.m4v', videoPostFix));
     videoOBJ = generateVideoObject(videoFilename);
 
     % Reset all plots (Left side)

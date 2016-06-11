@@ -197,7 +197,7 @@ function renderSummaryFigure(sceneSetName, resultsDir, decodingDataDir)
         
         
         drawnow;
-        imageFileName = fullfile(expParams.decodingDataDir, 'Summary');
+        imageFileName = fullfile(decodingDataDir, 'Summary');
         NicePlot.exportFigToPDF(sprintf('%s.pdf', imageFileName), hFig, 300);
      
     
