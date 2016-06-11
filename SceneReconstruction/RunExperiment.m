@@ -14,9 +14,10 @@ function RunExperiment
        % 'visualizeScan' ...                        % visualize the responses from one scan - under construction
        %'visualizeInSamplePerformance' ...          % visualize the decoder's in-sample deperformance
        %'visualizeOutOfSamplePerformance' ...       % visualize the decoder's out-of-sample deperformance
-       'visualizeInAndOutOfSamplePerformance' ...   % visualize the decoder's in & out-of-sample deperformance
-       'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
-       % 'makeReconstructionVideo' ...              % generate video of the reconstruction
+       %'visualizeInAndOutOfSamplePerformance' ...   % visualize the decoder's in & out-of-sample deperformance
+       %'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
+       % 'makeSummaryFigure', ...
+       'makeInSampleReconstructionVideo' ...              % generate video of the reconstruction
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
     };
 
@@ -39,12 +40,12 @@ function RunExperiment
     microFixationGain = 1;                          % use 0 for static stimulation (i.e., stimuli flashed on for time = meanFixationDuration), 1 for normal eye movements
         
     % Specify preprocessing params
-    designMatrixBasedPreProcessing = 1;             % 0: none, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+    designMatrixBasedPreProcessing = 0;             % 0: none, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
     rawResponseBasedPreProcessing = 0;              % 0: none, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
 
     % Specify outer-segment type
-    osType = '@osIdentity';
-    %osType = '@osLinear';
+    %osType = '@osIdentity';
+    osType = '@osLinear';
     %osType = '@osBiophys';
     
     % Specify the data set to use
