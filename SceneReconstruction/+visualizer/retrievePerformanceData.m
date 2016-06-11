@@ -4,14 +4,20 @@ function [Ctrain, CtrainPrediction, Ctest, CtestPrediction, SVDvarianceExplained
     load(fileName, 'Ctrain', 'CtrainPrediction', 'originalTrainingStimulusSize', 'expParams');
   
     % Perform conversion to single and save it back to file
-    CtrainSinglePrecision = single(Ctrain);
-    CtrainPredictionSinglePrecision = single(CtrainPrediction);
+    conversionWasPerformed = false;
+    if (isa(Ctrain, 'double'))
+        Ctrain = single(Ctrain);
+        CtrainPrediction = single(CtrainPrediction);
+        conversionWasPerformed = true;
+    end
     
-    whos('-file', fileName);
-    pause
+
     if (computeSVDbasedLowRankFiltersAndPredictions)
         load(fileName, 'CtrainPredictionSVDbased', 'SVDbasedLowRankFilterVariancesExplained');
-        CtrainPredictionSVDbasedSinglePrecision = single(CtrainPredictionSVDbased);
+        if (isa(Ctrain, 'CtrainPredictionSVDbased'))
+            CtrainPredictionSVDbased = single(CtrainPredictionSVDbased);
+            conversionWasPerformed = true;
+        end
         svdIndex = core.promptUserForChoiceFromSelectionOfChoices('Select desired variance explained for the reconstruction filters', SVDbasedLowRankFilterVariancesExplained);
         if (numel(svdIndex)>1)
             return;
@@ -20,22 +26,36 @@ function [Ctrain, CtrainPrediction, Ctest, CtestPrediction, SVDvarianceExplained
         CtrainPrediction = squeeze(CtrainPredictionSVDbased(svdIndex,:, :));
     end
        
-    fprintf('Saving single-precision in-sample data\n');
-    save(fileName, 'CtrainSinglePrecision', 'CtrainPredictionSinglePrecision', 'CtrainPredictionSVDbasedSinglePrecision', '-append');
+    if (conversionWasPerformed)
+        fprintf('Saving single-precision in-sample data\n');
+        save(fileName, 'Ctrain', 'CtrainPrediction', 'CtrainPredictionSVDbased', '-append');
+    end
+    
     
     fprintf('\nLoading out-of-sample prediction data ...');
     fileName = fullfile(decodingDataDir, sprintf('%s_outOfSamplePrediction.mat', sceneSetName));
     load(fileName, 'Ctest', 'CtestPrediction', 'originalTestingStimulusSize');
-    CtestSinglePrecision = single(Ctest);
-    CtestPredictionSinglePrecision = single(CtestPrediction);
+    
+    conversionWasPerformed = false;
+    if (isa(Ctest, 'double'))
+        Ctest = single(Ctest);
+        CtestPrediction= single(CtestPrediction);
+        conversionWasPerformed = true;
+    end
+    
     if (computeSVDbasedLowRankFiltersAndPredictions)
         load(fileName, 'CtestPredictionSVDbased', 'SVDbasedLowRankFilterVariancesExplained');
-        CtestPredictionSVDbasedSinglePrecision = single(CtestPredictionSVDbased);
+        if (isa(CtestPredictionSVDbased, 'double'))
+            CtestPredictionSVDbased = single(CtestPredictionSVDbased);
+            conversionWasPerformed = true;
+        end
         CtestPrediction = squeeze(CtestPredictionSVDbased(svdIndex,:, :));
     end
     
-    fprintf('Saving single-precision outof-sample data\n');
-    save(fileName, 'CtestSinglePrecision', 'CtestPredictionSinglePrecision', 'CtestPredictionSVDbasedSinglePrecision', '-append');
+    if (conversionWasPerformed)
+        fprintf('Saving single-precision outof-sample data\n');
+        save(fileName, 'Ctest', 'CtestPrediction', 'CtestPredictionSVDbased', '-append');
+    end
     
     CtrainPrediction  = ...
         decoder.reformatStimulusSequence('FromDesignMatrixFormat', ...
