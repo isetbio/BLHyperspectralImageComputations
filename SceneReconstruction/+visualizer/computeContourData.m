@@ -29,27 +29,54 @@ function C = computeContourData(spatialFilter, contourLevels, spatialSupportX, s
     lmConeWeights = [lConeWeights; mConeWeights];
 
     if (~isempty(lConeWeights))
-        C.LconeMosaicSpatialWeightingKernel = smoothKernel(xx,yy,griddata(lConeWeights(:,1), lConeWeights(:,2), lConeWeights(:,3), xx, yy, 'cubic'));  
+        C.LconeMosaicSpatialWeightingKernel = smoothKernel(xx,yy,griddata(lConeWeights(:,1), lConeWeights(:,2), lConeWeights(:,3), xx, yy, 'v4'));  
         C.LconeMosaicSamplingContours = getContourStruct(contourc(contourXaxis, contourYaxis, C.LconeMosaicSpatialWeightingKernel , contourLevels));
     end
     if (~isempty(mConeWeights))
-        C.MconeMosaicSpatialWeightingKernel  = smoothKernel(xx,yy,griddata(mConeWeights(:,1), mConeWeights(:,2), mConeWeights(:,3), xx, yy, 'cubic'));
+        C.MconeMosaicSpatialWeightingKernel  = smoothKernel(xx,yy,griddata(mConeWeights(:,1), mConeWeights(:,2), mConeWeights(:,3), xx, yy, 'v4'));
         C.MconeMosaicSamplingContours = getContourStruct(contourc(contourXaxis, contourYaxis, C.MconeMosaicSpatialWeightingKernel, contourLevels));
     end
     if (~isempty(sConeWeights))
-        C.SconeMosaicSpatialWeightingKernel = smoothKernel(xx,yy,griddata(sConeWeights(:,1), sConeWeights(:,2), sConeWeights(:,3), xx, yy, 'cubic'));
+        C.SconeMosaicSpatialWeightingKernel = smoothKernel(xx,yy,griddata(sConeWeights(:,1), sConeWeights(:,2), sConeWeights(:,3), xx, yy, 'v4'));
         C.SconeMosaicSamplingContours = getContourStruct(contourc(contourXaxis, contourYaxis, C.SconeMosaicSpatialWeightingKernel, contourLevels));
     end
     if (~isempty(lmConeWeights))
-        C.LMconeMosaicSpatialWeightingKernel = smoothKernel(xx,yy,griddata(lmConeWeights(:,1), lmConeWeights(:,2), lmConeWeights(:,3), xx, yy, 'cubic'));
+        C.LMconeMosaicSpatialWeightingKernel = smoothKernel(xx,yy,griddata(lmConeWeights(:,1), lmConeWeights(:,2), lmConeWeights(:,3), xx, yy, 'v4'));
         C.LMconeMosaicSamplingContours = getContourStruct(contourc(contourXaxis, contourYaxis, C.LMconeMosaicSpatialWeightingKernel, contourLevels));
     end
 end
        
 function smoothedKernel = smoothKernel(xx,yy,kernel)
+
+    smoothedKernel  = kernel;
+    return;
+    
+    maxBefore = max(abs(kernel(:)));
     sigma = 3.0;
     f = exp(-0.5*(xx/sigma).^2) .* exp(-0.5*(yy/sigma).^2);
     smoothedKernel = conv2(kernel, f, 'same');
+    maxAfter = max(abs(smoothedKernel(:)))
+    smoothedKernel = smoothedKernel/maxAfter*maxBefore;
+    
+    commonRange(1) = min([min(kernel(:)) min(smoothedKernel(:))]) 
+    commonRange(2) = max([max(kernel(:)) max(smoothedKernel(:))]) 
+    
+    figure(10);
+    clf;
+    subplot(1,3,1);
+    imagesc(kernel)
+    set(gca, 'CLim', commonRange);
+    axis 'image'
+    subplot(1,3,2)
+    imagesc(smoothedKernel)
+    set(gca, 'CLim', commonRange);
+    axis 'image'
+    subplot(1,3,3);
+    imagesc(f/max(f(:)))
+    axis 'image'
+    colormap(gray)
+    drawnow
+    pause
 end
 
 

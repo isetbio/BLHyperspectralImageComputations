@@ -51,7 +51,9 @@ function renderSummaryFigure(sceneSetName, resultsDir, decodingDataDir)
     
     slideSize = [1920 1080]; slideCols = 6; slideRows = 4;
     
-    for decodedContrastIndex = 1:3
+    coneNames = {'Lcone', 'Mcone', 'Scone'};
+    
+    for decodedContrastIndex = 1:numel(coneNames)
         
         figureNo = 10 + decodedContrastIndex;
         [axesDictionary, hFig] = generateAxes(slideSize, slideCols, slideRows, figureNo);
@@ -197,11 +199,9 @@ function renderSummaryFigure(sceneSetName, resultsDir, decodingDataDir)
         
         
         drawnow;
-        imageFileName = fullfile(decodingDataDir, 'Summary');
+        imageFileName = fullfile(decodingDataDir, sprintf('Summary_%s', coneNames{decodedContrastIndex}));
         NicePlot.exportFigToPDF(sprintf('%s.pdf', imageFileName), hFig, 300);
-     
-    
-    end % decodedContrast
+    end % decodedContrastIndex
 end
 
 

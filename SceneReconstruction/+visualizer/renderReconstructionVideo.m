@@ -149,7 +149,7 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
         updateSceneData = false;
         if (sceneIndexSequence(tBin) ~= previousSceneIndex)
             fprintf('Retrieving new scene data at time bin: %d\n', tBin);
-            [sceneData, oiData] = retrieveComputedDataForCurrentScene(expParams.sceneSetName, expParams.resultsDir, sceneIndexSequence(tBin), ...
+            [sceneData, oiData] = retrieveComputedDataForCurrentScene(expParams.sceneSetName, resultsDir, sceneIndexSequence(tBin), ...
                 renderingDisplay, boostFactorForOpticalImage, displayGamma);
             
             previousSceneIndex = sceneIndexSequence(tBin);
