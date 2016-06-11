@@ -1,7 +1,5 @@
 function renderSummaryFigure(sceneSetName, resultsDir, decodingDataDir)
 
-
-    
     % Get luminance colormap
     p = getpref('HyperSpectralImageIsetbioComputations', 'sceneReconstructionProject');
     load(fullfile(p.rootPath, p.colormapsSubDir, 'CustomColormaps.mat'), 'grayRedLUT');
@@ -18,7 +16,7 @@ function renderSummaryFigure(sceneSetName, resultsDir, decodingDataDir)
     % computeSVDbasedLowRankFiltersAndPredictions = false;  % PINV based
   
     % Get performance data
-    [trainInputC, trainReconstructedC, testInputC, testReconstructedC, SVDvarianceExplained, svdIndex] = ...
+    [trainInputC, trainReconstructedC, testInputC, testReconstructedC, SVDvarianceExplained, svdIndex, expParams] = ...
         visualizer.retrievePerformanceData(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions);
     
     
@@ -199,8 +197,14 @@ function renderSummaryFigure(sceneSetName, resultsDir, decodingDataDir)
         
         
         drawnow;
+        imageFileName = fullfile(expParams.decodingDataDir, 'Summary');
+        NicePlot.exportFigToPDF(sprintf('%s.pdf', imageFileName), hFig, 300);
+     
+    
     end % decodedContrast
 end
+
+
 
 function renderConeMosaicPlot(theAxes, contourData, contourColor, sensorData, spatialSupportX, spatialSupportY, LconeContrastColor, MconeContrastColor, SconeContrastColor, labelMosaicCenterUsingCrossHairs, xTicks, yTicks, axesColor, backgroundColor, xLabelString, yLabelString, titleString)
     
