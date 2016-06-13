@@ -99,6 +99,9 @@ function executeProgram(instructionSet, whichDataSet, opticalElements, inertPigm
             case 'makeSummaryFigure'
                 visualizer.renderSummaryFigure(sceneSetName, resultsDir, decodingDataDir);
                 
+            case 'makePerformanceFigure'
+                visualizer.makePerformanceFigure(sceneSetName, decodingDataDir);
+                
             case 'makeInSampleReconstructionVideo'
                 visualizePerformanceForVarianceExplained = [];  %99.99;  % empty for all variance levels, 
                 visualizer.renderReconstructionVideo(sceneSetName, resultsDir, decodingDataDir, 'InSample');

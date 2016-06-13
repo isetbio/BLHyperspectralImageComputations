@@ -36,6 +36,9 @@ function [Ctrain, CtrainPrediction, Ctest, CtestPrediction, SVDvarianceExplained
     
         SVDvarianceExplained = SVDbasedLowRankFilterVariancesExplained(svdIndex);
         CtrainPrediction = squeeze(CtrainPredictionSVDbased(svdIndex,:, :));
+    else
+        SVDvarianceExplained = [];
+        svdIndex = [];
     end
        
     

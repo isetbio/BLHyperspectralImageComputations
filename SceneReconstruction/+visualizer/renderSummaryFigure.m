@@ -13,7 +13,7 @@ function renderSummaryFigure(sceneSetName, resultsDir, decodingDataDir)
     
     % Whether to use the SVD-based filters/predictions
     computeSVDbasedLowRankFiltersAndPredictions = true;  % SVD based
-    % computeSVDbasedLowRankFiltersAndPredictions = false;  % PINV based
+    computeSVDbasedLowRankFiltersAndPredictions = false;  % PINV based
   
     % Get performance data
     [trainInputC, trainReconstructedC, testInputC, testReconstructedC, SVDvarianceExplained, svdIndex, expParams] = ...
@@ -44,7 +44,7 @@ function renderSummaryFigure(sceneSetName, resultsDir, decodingDataDir)
     
     % Locations (relative to the target cone) for which to display temporal filters
     conesStride = 2;
-    visualizedYcoords = targetCone.rowcolCoord(1) + (-1:1) * conesStride;
+    visualizedYcoords = targetCone.rowcolCoord(1) + (-1:1) * conesStride*2;
     visualizedXcoords = targetCone.rowcolCoord(2) + (-2:3) * conesStride;
         
     
@@ -63,26 +63,36 @@ function renderSummaryFigure(sceneSetName, resultsDir, decodingDataDir)
             case 1
                     %targetCone = sensorData.targetLCone;
                     titleString = 'L-contrast decoder';
-                    inputContrast         = squeeze(testInputC(targetCone.nearestDecoderRowColCoord(2),targetCone.nearestDecoderRowColCoord(1), 1,:));
-                    reconstructedContrast  = squeeze(testReconstructedC(targetCone.nearestDecoderRowColCoord(2),targetCone.nearestDecoderRowColCoord(1), 1,:));
+                    inputContrastInSample         = squeeze(trainInputC(targetCone.nearestDecoderRowColCoord(2),targetCone.nearestDecoderRowColCoord(1), 1,:));
+                    reconstructedContrastInSample  = squeeze(trainReconstructedC(targetCone.nearestDecoderRowColCoord(2),targetCone.nearestDecoderRowColCoord(1), 1,:));
+                    inputContrastOutOfSample         = squeeze(testInputC(targetCone.nearestDecoderRowColCoord(2),targetCone.nearestDecoderRowColCoord(1), 1,:));
+                    reconstructedContrastOutOfSample  = squeeze(testReconstructedC(targetCone.nearestDecoderRowColCoord(2),targetCone.nearestDecoderRowColCoord(1), 1,:));
                     dotColor = LconeContrastColor*0.8;
             case 2
                     %targetCone = sensorData.targetMCone;
                     titleString = 'M-contrast decoder';
-                    inputContrast         = squeeze(testInputC(targetCone.nearestDecoderRowColCoord(2),targetCone.nearestDecoderRowColCoord(1), 2,:));
-                    reconstructedContrast  = squeeze(testReconstructedC(targetCone.nearestDecoderRowColCoord(2),targetCone.nearestDecoderRowColCoord(1), 2,:));
+                    inputContrastInSample          = squeeze(trainInputC(targetCone.nearestDecoderRowColCoord(2),targetCone.nearestDecoderRowColCoord(1), 2,:));
+                    reconstructedContrastInSample   = squeeze(trainReconstructedC(targetCone.nearestDecoderRowColCoord(2),targetCone.nearestDecoderRowColCoord(1), 2,:));
+                    inputContrastOutOfSample          = squeeze(testInputC(targetCone.nearestDecoderRowColCoord(2),targetCone.nearestDecoderRowColCoord(1), 2,:));
+                    reconstructedContrastOutOfSample   = squeeze(testReconstructedC(targetCone.nearestDecoderRowColCoord(2),targetCone.nearestDecoderRowColCoord(1), 2,:));
                     dotColor = MconeContrastColor*0.8;
             case 3
                     %targetCone = sensorData.targetSCone;
                     titleString = 'S-contrast decoder';
-                    inputContrast         = squeeze(testInputC(targetCone.nearestDecoderRowColCoord(2),targetCone.nearestDecoderRowColCoord(1), 3,:));
-                    reconstructedContrast  = squeeze(testReconstructedC(targetCone.nearestDecoderRowColCoord(2),targetCone.nearestDecoderRowColCoord(1), 3,:));
+                    inputContrastOutOfSample          = squeeze(trainInputC(targetCone.nearestDecoderRowColCoord(2),targetCone.nearestDecoderRowColCoord(1), 3,:));
+                    reconstructedContrastOutOfSample   = squeeze(trainReconstructedC(targetCone.nearestDecoderRowColCoord(2),targetCone.nearestDecoderRowColCoord(1), 3,:));
+                    inputContrastOutOfSample          = squeeze(testInputC(targetCone.nearestDecoderRowColCoord(2),targetCone.nearestDecoderRowColCoord(1), 3,:));
+                    reconstructedContrastOutOfSample   = squeeze(testReconstructedC(targetCone.nearestDecoderRowColCoord(2),targetCone.nearestDecoderRowColCoord(1), 3,:));
                     dotColor = SconeContrastColor*0.8;
         end
         
         % Render the out-of-sample performance of the visualized decoder
         axesColor = [0 0 0]; backgroundColor = [1 1 1]; 
-        renderPerformancePlot(axesDictionary('performancePlot'), inputContrast, reconstructedContrast, dotColor, axesColor, backgroundColor, titleString);
+        renderPerformancePlot(axesDictionary('inSamplePerformancePlot'), inputContrastInSample, reconstructedContrastInSample, dotColor, axesColor, backgroundColor, sprintf('%s (in-sample)', titleString));
+        
+        axesColor = [0 0 0]; backgroundColor = [1 1 1]; 
+        renderPerformancePlot(axesDictionary('outOfSamplePerformancePlot'), inputContrastOutOfSample, reconstructedContrastOutOfSample, dotColor, axesColor, backgroundColor, sprintf('%s (out-of-sample)', titleString));
+        
         
         
         decoderLocation.x = sensorData.decodedImageSpatialSupportX(targetCone.nearestDecoderRowColCoord(2));
@@ -358,11 +368,13 @@ function renderPerformancePlot(theAxes, inputC, reconstructedC, dotColor, axesCo
     yLims = [-2 5];
     xTicks = -1:1:5;
     yTicks = -1:1:5;
-    plot(theAxes, [xLims(1) yLims(2)], [yLims(1) yLims(2)], 'k-', 'LineWidth', 1.5);
+    plot(theAxes, inputC, reconstructedC, '.', 'MarkerEdgeColor', dotColor, 'MarkerSize', 16, 'MarkerFaceColor', dotColor);
     hold(theAxes, 'on');
+    plot(theAxes, [xLims(1) yLims(2)], [yLims(1) yLims(2)], 'k-', 'LineWidth', 1.5);
+    
     plot(theAxes, [0 0], yLims, 'k-', 'LineWidth', 1.5);
     plot(theAxes, xLims, [0 0], 'k-', 'LineWidth', 1.5);
-    plot(theAxes, inputC, reconstructedC, '.', 'MarkerEdgeColor', dotColor, 'MarkerSize', 16, 'MarkerFaceColor', dotColor);
+    
     hold(theAxes, 'off');
     
     box(theAxes, 'off'); grid(theAxes, 'off');
@@ -402,11 +414,12 @@ function [axesDictionary, hFig] = generateAxes(slideSize, slideCols, slideRows, 
     
 
     % first column
-    axesDictionary('performancePlot')      = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,1).v+[0.06 0 0 0]);
+    axesDictionary('inSamplePerformancePlot')      = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,1).v); % +[0.06 0 0 0]);
+    axesDictionary('outOfSamplePerformancePlot')   = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,2).v); % +[0.06 0 0 0]);
     dy = 0.0;
-    axesDictionary('AllMosaicsSpatialFilter') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,3).v+[-0.01 dy 0 0]);
-    axesDictionary('PrincipalMosaicPooling') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,4).v+[0 dy 0 0]);
-    axesDictionary('SecondaryMosaicPooling') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,5).v+[0.01 dy 0 0]);
+    axesDictionary('AllMosaicsSpatialFilter') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,4).v+[-0.01 dy 0 0]);
+    axesDictionary('PrincipalMosaicPooling') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,5).v+[0 dy 0 0]);
+    axesDictionary('SecondaryMosaicPooling') = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,6).v+[0.01 dy 0 0]);
     
     dy = -0.04;
     dx = 0.00;
