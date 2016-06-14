@@ -7,7 +7,7 @@ function contrastOSresponses(sceneSetName, linearDecodingDataDir, biophysDecodin
     
     coneRow = 11;
     coneCol = 13;
-    timePointsToReturn = 5000;
+    timePointsToReturn = 30000;
     
     [timeAxis1, linearResponseSequence] = retrieveResponseData(...
         sceneSetName, linearDecodingDataDir, coneRow, coneCol, timePointsToReturn, InSampleOrOutOfSample);
@@ -15,9 +15,22 @@ function contrastOSresponses(sceneSetName, linearDecodingDataDir, biophysDecodin
     [timeAxis2, biophysResponseSequence] = retrieveResponseData(...
         sceneSetName, biophysDecodingDataDir, coneRow, coneCol, timePointsToReturn, InSampleOrOutOfSample);
  
-    figure(1); clf;
+    hFig = figure(1); clf;
+    set(hFig, 'Color', [1 1 1], 'Position', [10 10 1080 1080], 'MenuBar', 'none');
+    subplot('Position', [0.06 0.06 0.93 0.93])
     plot(linearResponseSequence, biophysResponseSequence, 'k.');
+    hold on;
+    plot([-60 40], [-100 0], 'r-', 'LineWidth', 2.0);
+    hold off
+    set(gca, 'FontSize', 18, 'FontName', 'Menlo', 'YLim', [-100 0], 'XLim', [-60 40]);
+    xlabel('@osLinear response', 'FontSize', 20, 'FontName', 'Menlo');
+    ylabel('@osBiophys response', 'FontSize', 20, 'FonrName', 'Menlo');
     drawnow;
+    imageFileName = fullfile(decodingDataDir, sprintf('LinearVsBiophysResponse'));
+    fprintf(2, 'Figure saved in %s\n', imageFileName);
+    NicePlot.exportFigToPNG(sprintf('%s.png', imageFileName), hFig, 300);
+    save('data.mat', 'linearResponseSequence', 'biophysResponseSequence')
+    
     
 end
 
