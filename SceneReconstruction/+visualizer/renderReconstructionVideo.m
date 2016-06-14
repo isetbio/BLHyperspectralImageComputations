@@ -467,12 +467,15 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
             if (strcmp(expParams.outerSegmentParams.type, '@osIdentity'))
                 responseRangeStep = round((outerSegmentResponseRange(end)-outerSegmentResponseRange(1))/5); 
                 yLabelString = 'isomerization rate';
+                yTicks = outerSegmentResponseRange(1): responseRangeStep: outerSegmentResponseRange(end);
+                yTickLabels = sprintf('%+2.0fK\n', yTicks/1000);
             else
                 responseRangeStep = 20; 
                 yLabelString = 'photocurrent (pA)';
+                yTicks = outerSegmentResponseRange(1): responseRangeStep: outerSegmentResponseRange(end);
+                yTickLabels = sprintf('%+2.0f\n', yTicks);
             end
-            yTicks = outerSegmentResponseRange(1): responseRangeStep: outerSegmentResponseRange(end);
-            yTickLabels = sprintf('%+2.0f\n', yTicks);
+            
             xLabelString = ''; xTickLabels = {};
             titleString  = ''; 
             addScaleBars = false; backgroundColor = [1 1 1];
@@ -489,7 +492,18 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
         traces = squeeze(responseSequence(sensorData.targetMCone.rowcolCoord(1), sensorData.targetMCone.rowcolCoord(2), recentTbins));
         if (isempty(sensorXTtracesForTargetMcontrastDecoderPlot))
             xTicks = recentTimeRange(1):100:recentTimeRange(end);
-            yTicks = outerSegmentResponseRange(1):20:outerSegmentResponseRange(end);
+            if (strcmp(expParams.outerSegmentParams.type, '@osIdentity'))
+                responseRangeStep = round((outerSegmentResponseRange(end)-outerSegmentResponseRange(1))/5); 
+                yLabelString = 'isomerization rate';
+                yTicks = outerSegmentResponseRange(1): responseRangeStep: outerSegmentResponseRange(end);
+                yTickLabels = sprintf('%+2.0fK\n', yTicks/1000);
+            else
+                responseRangeStep = 20; 
+                yLabelString = 'photocurrent (pA)';
+                yTicks = outerSegmentResponseRange(1): responseRangeStep: outerSegmentResponseRange(end);
+                yTickLabels = sprintf('%+2.0f\n', yTicks);
+            end
+            
             xLabelString = ''; yLabelString = ''; xTickLabels = {}; yTickLabels = {};
             titleString  = ''; 
             addScaleBars = false; backgroundColor = [1 1 1];
@@ -506,7 +520,17 @@ function makeVideoClip(timeAxis, LMScontrastInput, LMScontrastReconstruction, oi
         traces = squeeze(responseSequence(sensorData.targetSCone.rowcolCoord(1), sensorData.targetSCone.rowcolCoord(2), recentTbins));
         if (isempty(sensorXTtracesForTargetScontrastDecoderPlot))
             xTicks = recentTimeRange(1):100:recentTimeRange(end);
-            yTicks = outerSegmentResponseRange(1):20:outerSegmentResponseRange(end);
+            if (strcmp(expParams.outerSegmentParams.type, '@osIdentity'))
+                responseRangeStep = round((outerSegmentResponseRange(end)-outerSegmentResponseRange(1))/5); 
+                yLabelString = 'isomerization rate';
+                yTicks = outerSegmentResponseRange(1): responseRangeStep: outerSegmentResponseRange(end);
+                yTickLabels = sprintf('%+2.0fK\n', yTicks/1000);
+            else
+                responseRangeStep = 20; 
+                yLabelString = 'photocurrent (pA)';
+                yTicks = outerSegmentResponseRange(1): responseRangeStep: outerSegmentResponseRange(end);
+                yTickLabels = sprintf('%+2.0f\n', yTicks);
+            end
             xLabelString = ''; yLabelString = ''; xTickLabels = {}; yTickLabels = {};
             titleString  = '';
             addScaleBars = false; backgroundColor = [1 1 1];
