@@ -98,6 +98,14 @@ function executeProgram(instructionSet, whichDataSet, opticalElements, inertPigm
 
             case 'makeSummaryFigure'
                 visualizer.renderSummaryFigure(sceneSetName, resultsDir, decodingDataDir);
+               
+            case 'contrastOSresponses'
+                biophysDecodingDataDir = expParams.decodingDataDir;
+                linearDecodingDataDir = strrep(expParams.decodingDataDir, '@osBiophys', '@osLinear');
+                visualizer.contrastOSresponses(sceneSetName, linearDecodingDataDir, biophysDecodingDataDir);
+                
+            case 'makePerformanceFigure'
+                visualizer.makePerformanceFigure(sceneSetName, decodingDataDir);
                 
             case 'makeInSampleReconstructionVideo'
                 visualizePerformanceForVarianceExplained = [];  %99.99;  % empty for all variance levels, 

@@ -1,0 +1,66 @@
+function [Cin, CoutPINV, CoutSVD, SVDbasedLowRankFilterVariancesExplained, includedComponentsNum, XtrainRank] = retrievePerformanceDataFull(sceneSetName, decodingDataDir, InorOutOfSample)
+
+    includedComponentsNum = [];
+    XtrainRank = [];
+    
+
+    fileName = fullfile(decodingDataDir, sprintf('%s_%s.mat', sceneSetName, InorOutOfSample));
+
+    decoderRow = 5;
+    decoderCol = 7;
+    
+    if (strcmp(InorOutOfSample, 'inSamplePrediction')) 
+        fprintf(2,'Loading from in-sample data from %s\n', fileName);
+        load(fileName, 'Ctrain', 'CtrainPrediction', ...
+            'includedComponentsNum', 'XtrainRank', ...
+            'originalTrainingStimulusSize', 'expParams');
+
+        Ctrain  = decoder.reformatStimulusSequence('FromDesignMatrixFormat', ...
+            decoder.shiftStimulusSequence(Ctrain, expParams.decoderParams), ...
+            originalTrainingStimulusSize ...
+        );
+        Cin = squeeze(Ctrain(decoderRow, decoderCol, :,:)); clear 'Ctrain';
+        
+        CtrainPrediction  = decoder.reformatStimulusSequence('FromDesignMatrixFormat', ...
+            decoder.shiftStimulusSequence(CtrainPrediction, expParams.decoderParams), ...
+            originalTrainingStimulusSize ...
+        );
+        CoutPINV = squeeze(CtrainPrediction(decoderRow, decoderCol, :,:)); clear 'CtrainPrediction';
+        
+        load(fileName, 'CtrainPredictionSVDbased', 'SVDbasedLowRankFilterVariancesExplained');
+        for svdIndex = 1:size(CtrainPredictionSVDbased,1)
+            tmp = decoder.reformatStimulusSequence('FromDesignMatrixFormat', ...
+                decoder.shiftStimulusSequence(squeeze(CtrainPredictionSVDbased(svdIndex,:,:)), expParams.decoderParams), ...
+                originalTrainingStimulusSize ...
+            );
+            CoutSVD(svdIndex, :,:) = squeeze(tmp(decoderRow, decoderCol, :,:));
+        end
+        clear 'CtrainPredictionSVDbased'
+    else
+        fprintf(2,'Loading from out of-sample data from %s\n', fileName);
+        load(fileName, 'Ctest', 'CtestPrediction', 'originalTestingStimulusSize', 'expParams');
+
+        Ctest  = decoder.reformatStimulusSequence('FromDesignMatrixFormat', ...
+            decoder.shiftStimulusSequence(Ctest, expParams.decoderParams), ...
+            originalTestingStimulusSize ...
+        );
+        Cin = squeeze(Ctest(decoderRow, decoderCol, :,:)); clear 'Ctest';
+        
+        CtestPrediction  = decoder.reformatStimulusSequence('FromDesignMatrixFormat', ...
+            decoder.shiftStimulusSequence(CtestPrediction, expParams.decoderParams), ...
+            originalTestingStimulusSize ...
+        );
+        CoutPINV = squeeze(CtestPrediction(decoderRow, decoderCol, :,:)); clear 'CtestPrediction';
+        
+        load(fileName, 'CtestPredictionSVDbased', 'SVDbasedLowRankFilterVariancesExplained');
+        for svdIndex = 1:size(CtestPredictionSVDbased,1)
+            tmp = decoder.reformatStimulusSequence('FromDesignMatrixFormat', ...
+                decoder.shiftStimulusSequence(squeeze(CtestPredictionSVDbased(svdIndex,:,:)), expParams.decoderParams), ...
+                originalTestingStimulusSize ...
+            );
+            CoutSVD(svdIndex, :,:) = squeeze(tmp(decoderRow, decoderCol, :,:));
+        end
+        clear 'CtestPredictionSVDbased'
+    end
+    
+end

@@ -1,10 +1,9 @@
-function [Ctrain, CtrainPrediction, Ctest, CtestPrediction, SVDvarianceExplained, svdIndex, expParams] = retrievePerformanceData(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions)
+function [Ctrain, CtrainPrediction, Ctest, CtestPrediction, SVDvarianceExplained, svdIndex, expParams, includedComponentsNum, XtrainRank] = retrievePerformanceData(sceneSetName, decodingDataDir, computeSVDbasedLowRankFiltersAndPredictions)
     fprintf('\nLoading in-sample prediction data ...');
     fileName = fullfile(decodingDataDir, sprintf('%s_inSamplePrediction.mat', sceneSetName));
 
     whos('-file', fileName)
-    pause;
-    load(fileName, 'Ctrain', 'CtrainPrediction', 'originalTrainingStimulusSize', 'expParams');
+    load(fileName, 'Ctrain', 'CtrainPrediction', 'includedComponentsNum', 'XtrainRank', 'originalTrainingStimulusSize', 'expParams');
    
     % Perform conversion to single and save it back to file
     conversionWasPerformed = false;
@@ -18,6 +17,7 @@ function [Ctrain, CtrainPrediction, Ctest, CtestPrediction, SVDvarianceExplained
             save(fileName, 'Ctrain', 'CtrainPrediction', '-append');
     end
         
+
     if (computeSVDbasedLowRankFiltersAndPredictions)
         load(fileName, 'CtrainPredictionSVDbased', 'SVDbasedLowRankFilterVariancesExplained');
         if (isa(CtrainPredictionSVDbased, 'double'))
@@ -36,6 +36,9 @@ function [Ctrain, CtrainPrediction, Ctest, CtestPrediction, SVDvarianceExplained
     
         SVDvarianceExplained = SVDbasedLowRankFilterVariancesExplained(svdIndex);
         CtrainPrediction = squeeze(CtrainPredictionSVDbased(svdIndex,:, :));
+    else
+        SVDvarianceExplained = [];
+        svdIndex = [];
     end
        
     
@@ -44,7 +47,6 @@ function [Ctrain, CtrainPrediction, Ctest, CtestPrediction, SVDvarianceExplained
     fprintf('\nLoading out-of-sample prediction data ...');
     fileName = fullfile(decodingDataDir, sprintf('%s_outOfSamplePrediction.mat', sceneSetName));
     whos('-file', fileName)
-    pause;
     load(fileName, 'Ctest', 'CtestPrediction', 'originalTestingStimulusSize');
     
     conversionWasPerformed = false;

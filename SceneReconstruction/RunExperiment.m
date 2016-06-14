@@ -16,8 +16,10 @@ function RunExperiment
        %'visualizeOutOfSamplePerformance' ...       % visualize the decoder's out-of-sample deperformance
        %'visualizeInAndOutOfSamplePerformance' ...   % visualize the decoder's in & out-of-sample deperformance
        %'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
-       % 'makeSummaryFigure', ...
-       'makeInSampleReconstructionVideo' ...              % generate video of the reconstruction
+       %'makePerformanceFigure' ...
+       %'makeSummaryFigure' ...
+       'contrastOSresponses' ...
+       %'makeInSampleReconstructionVideo' ...              % generate video of the reconstruction 
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
     };
 
@@ -31,7 +33,8 @@ function RunExperiment
     
     % Specify mosaic size, mosaic LMS densities, and reconstructed stimulus spatial resolution
     mosaicSize = [22 26];                           % coneRows, coneCols
-    mosaicLMSdensities = [0.6 0.3 0.1];             % densities of LMS cones
+    %mosaicLMSdensities = [0.59 0.31 0.1];             % noise-free osLinear case
+    mosaicLMSdensities = [0.6 0.3 0.1]; 
     reconstructedStimulusSpatialResolutionInMicrons = 3;
     
     % Specify eye movement kinetics
@@ -45,7 +48,7 @@ function RunExperiment
 
     % Specify outer-segment type
     %osType = '@osIdentity';
-    %osType = '@osLinear';
+    osType = '@osLinear';
     osType = '@osBiophys';
     
     % Specify the data set to use
