@@ -18,8 +18,8 @@ function RunExperiment
        %'visualizeDecodingFilter' ...                % visualize the decoder filter's spatiotemporal dynamics
        %'makePerformanceFigure' ...
        %'makeSummaryFigure' ...
-       'contrastOSresponses' ...
-       %'makeInSampleReconstructionVideo' ...              % generate video of the reconstruction 
+       %'contrastOSresponses' ...
+       'makeInSampleReconstructionVideo' ...              % generate video of the reconstruction 
        % 'visualizeConeMosaic' ...                  % visualize the LMS cone mosaic used
     };
 
@@ -33,8 +33,8 @@ function RunExperiment
     
     % Specify mosaic size, mosaic LMS densities, and reconstructed stimulus spatial resolution
     mosaicSize = [22 26];                           % coneRows, coneCols
-    %mosaicLMSdensities = [0.59 0.31 0.1];             % noise-free osLinear case
-    mosaicLMSdensities = [0.6 0.3 0.1]; 
+    mosaicLMSdensities = [0.59 0.31 0.1];             % noise-free osLinear case
+    %mosaicLMSdensities = [0.6 0.3 0.1]; 
     reconstructedStimulusSpatialResolutionInMicrons = 3;
     
     % Specify eye movement kinetics
@@ -43,13 +43,13 @@ function RunExperiment
     microFixationGain = 1;                          % use 0 for static stimulation (i.e., stimuli flashed on for time = meanFixationDuration), 1 for normal eye movements
         
     % Specify preprocessing params
-    designMatrixBasedPreProcessing = 0;             % 0: none, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
+    designMatrixBasedPreProcessing = 1;             % 0: none, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
     rawResponseBasedPreProcessing = 0;              % 0: none, 1:centering, 2:centering+std.dev normalization, 3:centering+norm+whitening
 
     % Specify outer-segment type
     %osType = '@osIdentity';
     osType = '@osLinear';
-    osType = '@osBiophys';
+    %osType = '@osBiophys';
     
     % Specify the data set to use
     whichDataSet =  'harvard_machester_upenn';      % 'very_small', 'small', 'harvard', 'upenn', 'large', 'original', 'harvard_machester_upenn'
