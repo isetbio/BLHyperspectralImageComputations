@@ -31,7 +31,7 @@ function inconsistentSpectralData = generateRadianceDataStruct(obj)
         radianceMap = radianceMap / (obj.illuminant.wave(2)-obj.illuminant.wave(1));
         
         % Compute and store XYZ image
-        obj.sceneXYZmap = MultispectralToSensorImage(radianceMap, WlsToS(obj.illuminant.wave), obj.sensorXYZ.T, obj.sensorXYZ.S);
+        obj.sceneXYZmap = rtbMultispectralToSensorImage(radianceMap, WlsToS(obj.illuminant.wave), obj.sensorXYZ.T, obj.sensorXYZ.S);
     
         % Compute and store luminance map
         obj.sceneLuminanceMap = obj.wattsToLumens * squeeze(obj.sceneXYZmap(:,:,2));

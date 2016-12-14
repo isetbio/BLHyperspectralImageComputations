@@ -34,7 +34,7 @@ function PlotMacbethChartReflectances
         multispectralImage = repmat(theRadiance, [100,100,1]);
        
         % multispectral to XYZ
-        XYZimage = MultispectralToSensorImage(multispectralImage, WlsToS(wave), sensorXYZ.T, sensorXYZ.S);
+        XYZimage = rtbMultispectralToSensorImage(multispectralImage, WlsToS(wave), sensorXYZ.T, sensorXYZ.S);
         % to cal Format
         [XYZcalFormat, nCols, mRows] = ImageToCalFormat(XYZimage);
         % compute sRGB image
